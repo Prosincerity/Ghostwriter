@@ -1,4 +1,4 @@
-# Gh0stwrit3r.exe
+# ghostwriter.exe
 
 A free, open-source, no-bloat, no-AI Android app for writing rap lyrics — built to eventually feel like an IDE for bars.
 

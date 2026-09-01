@@ -1,6 +1,6 @@
 # Feature Roadmap
 
-This document is the single source of truth for where Gh0stwrit3r.exe is headed. Keep it updated as features land.
+This document is the single source of truth for where ghostwriter.exe is headed. Keep it updated as features land.
 
 ## Guiding rules
 

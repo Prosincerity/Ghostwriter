@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.gh0stwrit3r.exe"
+    namespace = "com.ghostwriter.exe"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.gh0stwrit3r.exe"
+        applicationId = "com.ghostwriter.exe"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

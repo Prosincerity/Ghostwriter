@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Gh0stwrit3r"
+rootProject.name = "ghostwriter"
 include(":app")

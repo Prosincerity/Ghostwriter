@@ -1,4 +1,4 @@
-package com.gh0stwrit3r.exe
+package com.ghostwriter.exe
 
 import org.junit.Test
 
