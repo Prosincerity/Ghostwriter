@@ -1,11 +1,14 @@
 package com.ghostwriter.exe.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.DropdownMenu
@@ -39,6 +42,8 @@ import com.ghostwriter.exe.data.Settings as AppSettings
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
+
     val context = LocalContext.current
 
     var intervalSeconds by remember { mutableIntStateOf(AppSettings.getAutosaveIntervalSeconds(context)) }
@@ -60,6 +65,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
         ) {
             Text("Autosave interval", style = MaterialTheme.typography.titleLarge)
@@ -100,7 +106,7 @@ private fun LabeledDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box {
+    Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
             Text(label(selected))
         }

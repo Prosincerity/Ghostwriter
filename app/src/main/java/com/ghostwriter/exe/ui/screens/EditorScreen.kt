@@ -1,6 +1,8 @@
 package com.ghostwriter.exe.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -28,10 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ghostwriter.exe.data.ProjectStorage
 import com.ghostwriter.exe.data.Settings as AppSettings
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /**
  * The Phase 1 notepad, now with a title bar (back + settings) and a
@@ -48,6 +53,8 @@ fun EditorScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
+
     val context = LocalContext.current
     val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
 
@@ -66,7 +73,9 @@ fun EditorScreen(
             delay(intervalSeconds * 1000L)
             intervalSeconds = AppSettings.getAutosaveIntervalSeconds(context)
             keepCount = AppSettings.getAutosaveCount(context)
-            ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount)
+            withContext(Dispatchers.IO) {
+                ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount)
+            }
         }
     }
 
@@ -81,7 +90,13 @@ fun EditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(projectTitle) },
+                title = {
+                    Text(
+                        text = projectTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
@@ -101,6 +116,7 @@ fun EditorScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .imePadding()
                 .padding(16.dp),
             placeholder = { Text("Start writing...") },
             textStyle = MaterialTheme.typography.bodyLarge,

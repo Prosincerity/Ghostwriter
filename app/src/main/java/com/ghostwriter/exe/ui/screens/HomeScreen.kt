@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -31,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
 /**
@@ -83,7 +86,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
                     items(existingProjects) { title ->
                         ListItem(
                             headlineContent = { Text(title) },
@@ -99,6 +102,7 @@ fun HomeScreen(
 
     if (showTitleDialog) {
         NewProjectDialog(
+            existingProjects = existingProjects,
             onConfirm = { title ->
                 showTitleDialog = false
                 onCreateProject(title)
@@ -109,8 +113,14 @@ fun HomeScreen(
 }
 
 @Composable
-private fun NewProjectDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun NewProjectDialog(
+    existingProjects: List<String>,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
     var text by remember { mutableStateOf("") }
+    val candidate = text.trim().ifBlank { "Untitled" }
+    val isDuplicate = existingProjects.any { it.equals(candidate, ignoreCase = true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -121,11 +131,18 @@ private fun NewProjectDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit)
                 onValueChange = { text = it },
                 singleLine = true,
                 placeholder = { Text("Untitled") },
+                supportingText = if (isDuplicate) {
+                    { Text("Track already exists (will open existing)") }
+                } else null,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { onConfirm(candidate) }
+                ),
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(text.ifBlank { "Untitled" }) }) {
-                Text("Create")
+            TextButton(onClick = { onConfirm(candidate) }) {
+                Text(if (isDuplicate) "Open" else "Create")
             }
         },
         dismissButton = {

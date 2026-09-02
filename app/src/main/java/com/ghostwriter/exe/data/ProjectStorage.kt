@@ -31,18 +31,27 @@ object ProjectStorage {
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
 
     fun projectDir(context: Context, title: String): File =
-        File(rootDir(context), sanitize(title)).apply { mkdirs() }
+        File(rootDir(context), sanitizeTitle(title)).apply { mkdirs() }
 
     fun listProjects(context: Context): List<String> =
-        rootDir(context).listFiles { f -> f.isDirectory }
+        rootDir(context).listFiles { f -> f.isDirectory && !f.name.startsWith(".") }
             ?.map { it.name }
             ?.sorted()
             ?: emptyList()
 
-    /** Most recent saved content for a project, or an empty string for a brand-new one. */
+    /**
+     * Most recent saved content for a project. Checks autosave1.txt first,
+     * and falls back to older backups if autosave1 is missing or unreadable.
+     */
     fun loadLatest(projectDir: File): String {
-        val latest = File(projectDir, "autosave1.txt")
-        return if (latest.exists()) latest.readText() else ""
+        for (i in 1..5) {
+            val file = File(projectDir, "autosave$i.txt")
+            if (file.exists()) {
+                val text = runCatching { file.readText() }.getOrNull()
+                if (text != null) return text
+            }
+        }
+        return ""
     }
 
     /**
@@ -51,19 +60,39 @@ object ProjectStorage {
      * doesn't keep burning through backup slots.
      */
     fun rotateAndSave(projectDir: File, content: String, keepCount: Int) {
-        val newest = File(projectDir, "autosave1.txt")
-        if (newest.exists() && newest.readText() == content) return
+        runCatching {
+            val newest = File(projectDir, "autosave1.txt")
+            if (newest.exists() && newest.readText() == content) return
 
-        for (i in keepCount downTo 2) {
-            val src = File(projectDir, "autosave${i - 1}.txt")
-            val dst = File(projectDir, "autosave$i.txt")
-            if (src.exists()) src.copyTo(dst, overwrite = true)
+            for (i in keepCount downTo 2) {
+                val src = File(projectDir, "autosave${i - 1}.txt")
+                val dst = File(projectDir, "autosave$i.txt")
+                if (src.exists()) src.copyTo(dst, overwrite = true)
+            }
+
+            // Prune any backups beyond keepCount (e.g. if keepCount was reduced in Settings)
+            for (i in (keepCount + 1)..10) {
+                val oldBackup = File(projectDir, "autosave$i.txt")
+                if (oldBackup.exists()) oldBackup.delete()
+            }
+
+            // Write to a temporary file first, then replace newest to prevent corruption on crash
+            val temp = File(projectDir, "autosave1.tmp")
+            temp.writeText(content)
+            if (newest.exists()) {
+                newest.delete()
+            }
+            if (!temp.renameTo(newest)) {
+                temp.copyTo(newest, overwrite = true)
+                temp.delete()
+            }
         }
-        newest.writeText(content)
     }
 
-    private fun sanitize(title: String): String {
-        val cleaned = title.trim().replace(Regex("""[\\/:*?"<>|]"""), "_")
+    fun sanitizeTitle(title: String): String {
+        val cleaned = title.trim()
+            .replace(Regex("""[\\/:*?"<>|\x00-\x1F]"""), "_")
+            .trim { it == '.' || it == ' ' }
         return cleaned.ifBlank { "untitled" }
     }
 }
