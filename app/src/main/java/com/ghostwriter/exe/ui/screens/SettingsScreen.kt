@@ -124,7 +124,7 @@ private fun LabeledDropdown(
     }
 }
 
-private fun formatInterval(seconds: Int): String = when {
+internal fun formatInterval(seconds: Int): String = when {
     seconds < 60 -> "$seconds seconds"
     seconds % 60 == 0 -> "${seconds / 60} minute" + if (seconds / 60 > 1) "s" else ""
     else -> "$seconds seconds"
