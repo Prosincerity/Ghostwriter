@@ -40,10 +40,19 @@ object ProjectStorage {
             ?: emptyList()
 
     /**
-     * Most recent saved content for a project. Checks autosave1.txt first,
-     * and falls back to older backups if autosave1 is missing or unreadable.
+     * Most recent saved content for a project. Checks <title>.txt first if present
+     * and up-to-date, then checks autosave1.txt, and falls back to older backups
+     * if autosave1 is missing or unreadable.
      */
     fun loadLatest(projectDir: File): String {
+        val manualFile = File(projectDir, "${projectDir.name}.txt")
+        val autosaveFile = File(projectDir, "autosave1.txt")
+
+        if (manualFile.exists() && (!autosaveFile.exists() || manualFile.lastModified() >= autosaveFile.lastModified())) {
+            val text = runCatching { manualFile.readText() }.getOrNull()
+            if (text != null) return text
+        }
+
         for (i in 1..5) {
             val file = File(projectDir, "autosave$i.txt")
             if (file.exists()) {
@@ -52,6 +61,28 @@ object ProjectStorage {
             }
         }
         return ""
+    }
+
+    /**
+     * Manually saves [content] as "<title>.txt" inside [projectDir].
+     * Also synchronizes the autosave backup ring so the backup ring stays up to date.
+     */
+    fun saveManual(projectDir: File, title: String, content: String, keepCount: Int) {
+        runCatching {
+            val fileName = "${sanitizeTitle(title)}.txt"
+            val target = File(projectDir, fileName)
+            val temp = File(projectDir, "$fileName.tmp")
+            temp.writeText(content)
+            if (target.exists()) {
+                target.delete()
+            }
+            if (!temp.renameTo(target)) {
+                temp.copyTo(target, overwrite = true)
+                temp.delete()
+            }
+
+            rotateAndSave(projectDir, content, keepCount)
+        }
     }
 
     /**

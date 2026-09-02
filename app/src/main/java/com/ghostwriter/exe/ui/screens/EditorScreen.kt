@@ -1,5 +1,6 @@
 package com.ghostwriter.exe.ui.screens
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -24,18 +25,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ghostwriter.exe.R
 import com.ghostwriter.exe.data.ProjectStorage
 import com.ghostwriter.exe.data.Settings as AppSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -56,6 +61,7 @@ fun EditorScreen(
     BackHandler(onBack = onBack)
 
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
 
     var lyrics by rememberSaveable(projectTitle) {
@@ -103,6 +109,23 @@ fun EditorScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            ProjectStorage.saveManual(projectDir, projectTitle, lyrics, keepCount)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    context,
+                                    "Saved ${ProjectStorage.sanitizeTitle(projectTitle)}.txt",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_save),
+                            contentDescription = "Save",
+                        )
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }

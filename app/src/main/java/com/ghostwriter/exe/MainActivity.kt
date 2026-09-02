@@ -31,7 +31,7 @@ import com.ghostwriter.exe.ui.theme.GhostwriterTheme
 private sealed class Screen {
     data object Home : Screen()
     data class Editor(val projectTitle: String) : Screen()
-    data class SettingsFrom(val projectTitle: String) : Screen()
+    data class Settings(val returnTo: Screen) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -62,6 +62,7 @@ private fun GhostwriterApp() {
                 screen = Screen.Editor(cleanTitle)
             },
             onOpenProject = { title -> screen = Screen.Editor(title) },
+            onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Home) },
         )
 
         is Screen.Editor -> EditorScreen(
@@ -70,11 +71,11 @@ private fun GhostwriterApp() {
                 projects = ProjectStorage.listProjects(context)
                 screen = Screen.Home
             },
-            onOpenSettings = { screen = Screen.SettingsFrom(current.projectTitle) },
+            onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Editor(current.projectTitle)) },
         )
 
-        is Screen.SettingsFrom -> SettingsScreen(
-            onBack = { screen = Screen.Editor(current.projectTitle) },
+        is Screen.Settings -> SettingsScreen(
+            onBack = { screen = current.returnTo },
         )
     }
 }
