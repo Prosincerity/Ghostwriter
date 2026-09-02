@@ -4,88 +4,73 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import com.ghostwriter.exe.data.ProjectStorage
+import com.ghostwriter.exe.ui.screens.EditorScreen
+import com.ghostwriter.exe.ui.screens.HomeScreen
+import com.ghostwriter.exe.ui.screens.SettingsScreen
 import com.ghostwriter.exe.ui.theme.GhostwriterTheme
 
 /**
- * Phase 1 (MVP): a barebones, full-screen plain-text notepad.
+ * Navigation between the three screens is a tiny hand-rolled sealed
+ * class rather than the Navigation-Compose library — three screens
+ * doesn't justify that dependency yet. Swap it in later if the screen
+ * count grows.
  *
- * This is intentionally simple. Everything in FEATURES.md — syllable
- * gutter, bar counter, rhyme coloring, hyphenation, dictionary — will
- * wrap around this same text buffer without changing this core screen's
- * job: let someone write bars with zero friction.
+ * Known trade-off: this navigation state is NOT saved across a
+ * configuration change (e.g. rotation). To avoid needing a custom
+ * Saver for it, MainActivity is instead set to handle orientation
+ * changes itself in the manifest, so the Activity — and this state —
+ * isn't recreated on rotation in the first place.
  */
+private sealed class Screen {
+    data object Home : Screen()
+    data class Editor(val projectTitle: String) : Screen()
+    data class SettingsFrom(val projectTitle: String) : Screen()
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             GhostwriterTheme {
-                NotepadScreen()
+                GhostwriterApp()
             }
         }
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun NotepadScreen() {
-    // rememberSaveable survives rotation; Phase 2 swaps this for real
-    // persistence + autosave (see FEATURES.md).
-    var lyrics by rememberSaveable { mutableStateOf("") }
+private fun GhostwriterApp() {
+    val context = LocalContext.current
+    var screen by remember { mutableStateOf<Screen>(Screen.Home) }
+    var projects by remember { mutableStateOf(ProjectStorage.listProjects(context)) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Gh0stwrit3r") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                ),
-            )
-        },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
-            TextField(
-                value = lyrics,
-                onValueChange = { lyrics = it },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                placeholder = { Text("Start writing...") },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                ),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                ),
-            )
-        }
+    when (val current = screen) {
+        is Screen.Home -> HomeScreen(
+            existingProjects = projects,
+            onCreateProject = { title ->
+                ProjectStorage.projectDir(context, title) // creates the folder immediately
+                projects = ProjectStorage.listProjects(context)
+                screen = Screen.Editor(title)
+            },
+            onOpenProject = { title -> screen = Screen.Editor(title) },
+        )
+
+        is Screen.Editor -> EditorScreen(
+            projectTitle = current.projectTitle,
+            onBack = { screen = Screen.Home },
+            onOpenSettings = { screen = Screen.SettingsFrom(current.projectTitle) },
+        )
+
+        is Screen.SettingsFrom -> SettingsScreen(
+            onBack = { screen = Screen.Editor(current.projectTitle) },
+        )
     }
 }
