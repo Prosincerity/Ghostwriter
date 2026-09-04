@@ -17,21 +17,33 @@ A free, open-source, no-bloat, no-AI Android app for writing rap lyrics — buil
 
 - Kotlin
 - Jetpack Compose + Material 3 (modern declarative UI)
+- Android AOSP framework (built-in `android.media.MediaPlayer`, built-in `org.json`)
 - Android Studio + Gradle (Kotlin DSL)
+
+## Documentation
+
+Comprehensive project documentation lives in the [`documentation/`](documentation/) folder:
+
+- **[Feature Roadmap](documentation/FEATURES.md)** — Phased feature list and progress tracking
+- **[Agent Context & Architecture](documentation/AGENT_CONTEXT.md)** — Core design principles, storage layouts, media player specs, and decisions
+- **[Setup Notes](documentation/SETUP_NOTES.md)** — Bootstrapping and setup history
 
 ## Roadmap
 
-See [FEATURES.md](FEATURES.md) for the full, detailed feature roadmap.
+See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature roadmap.
 
-**Phase 1 — MVP (current):**
-- Barebones plain-text notepad, one screen, modern dark UI.
+**Phase 1 — MVP (completed):**
+- Barebones plain-text notepad, modern dark UI, local file persistence.
 
-**Phase 2 — Songwriting environment:**
+**Phase 2 — Songwriting environment (in progress):**
+- Autosave & rolling backup ring (`autosave1.txt`..`autosaveN.txt`)
+- In-editor offline beat / media player (built-in AOSP `MediaPlayer`)
+- Instrumentals library & project beat management (global beats folder + self-contained project beats)
+- Project metadata (`project.json` for musical key, BPM, timestamps)
 - Syllable counter column (left, per line, IDE-style)
 - Bar counter (right, greyed-out separator: `|` or `/`)
 - Customizable hyphenation
 - Syllable-level rhyme detection with per-rhyme-group coloring
-- Autosave, autosave backups, optional cloud sync
 - Import / export lyrics
 - Dictionary + rhyme dictionary
 - Tested code, following current Android testing best practices

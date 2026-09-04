@@ -41,19 +41,26 @@ you have to "modernize" or "improve" things in ways that conflict with them:
   version numbers without reason — they drift fast and the wizard/Android
   Studio keeps them in sync correctly)
 - `compileSdk`/`targetSdk` 37, `minSdk` 24
+- Audio playback: `android.media.MediaPlayer` (built-in AOSP core framework,
+  offline-only, zero external libraries)
+- Project metadata: `org.json` (built-in Android SDK `JSONObject`/`JSONArray`,
+  zero external serialization libraries)
 - No navigation library (hand-rolled sealed-class navigation, see below)
 - No DI framework (project is small enough not to need one yet)
-- No local database yet (plain text files on disk — see storage section)
+- No local database yet (plain text files & JSON on disk — see storage section)
 
 ## 4. Repository structure (current)
 
 ```
 Gh0stwrit3r.exe/
 ├── README.md
-├── FEATURES.md              ← the full phased feature roadmap, keep updated
-├── SETUP_NOTES.md
 ├── LICENSE                  ← MIT
 ├── .gitignore
+├── documentation/           ← all project documentation lives here
+│   ├── README.md            ← documentation index & guide
+│   ├── FEATURES.md          ← the full phased feature roadmap, keep updated
+│   ├── SETUP_NOTES.md       ← project creation and Android Studio setup
+│   └── AGENT_CONTEXT.md     ← agent handoff, architecture guide & decisions
 ├── app/
 │   ├── build.gradle.kts
 │   └── src/
@@ -63,7 +70,7 @@ Gh0stwrit3r.exe/
 │       │       ├── MainActivity.kt         ← navigation host (see §6)
 │       │       ├── data/
 │       │       │   ├── Settings.kt         ← SharedPreferences wrapper
-│       │       │   └── ProjectStorage.kt   ← file I/O, autosave rotation
+│       │       │   └── ProjectStorage.kt   ← file I/O, autosaves, metadata & beat storage
 │       │       └── ui/
 │       │           ├── screens/
 │       │           │   ├── HomeScreen.kt
@@ -73,7 +80,7 @@ Gh0stwrit3r.exe/
 │       │               ├── Color.kt        ← dark "terminal" palette
 │       │               ├── Theme.kt
 │       │               └── Type.kt         ← monospace typography
-│       ├── test/java/com/ghostwriter/exe/
+│       ├── test/java/com/ghostwriter/exe/  ← unit tests (ProjectStorageTest, SettingsFormatTest)
 │       └── androidTest/java/com/ghostwriter/exe/
 └── gradle/libs.versions.toml
 ```
@@ -109,10 +116,13 @@ Walking through what each file does:
   (song) lives at:
   ```
   <context.getExternalFilesDir(null)>/ghostwriter/<sanitized title>/
-      autosave1.txt   ← always the MOST RECENT snapshot
+      autosave1.txt        ← always the MOST RECENT snapshot
       autosave2.txt
       ...
-      autosave{N}.txt ← oldest kept
+      autosave{N}.txt      ← oldest kept
+      <title>.txt          ← manual save snapshot
+      project.json         ← project metadata (BPM, key, beat file, timestamps)
+      beat.<ext>           ← assigned instrumental audio file for this project
   ```
   This is the app's own external-files directory — no runtime storage
   permission needed, private to the app, wiped on uninstall, works
@@ -122,6 +132,36 @@ Walking through what each file does:
   `autosave1.txt`; it no-ops if content hasn't changed, so an idle editor
   doesn't burn through backup slots. `loadLatest()` just reads
   `autosave1.txt` if present.
+
+  **Beat & Instrumental Storage Architecture:**
+  - **Global instrumentals directory:** Located at a user-accessible path such
+    as `Music/Gh0stwrit3r/Instrumentals/` (or via app external files / Storage
+    Access Framework). Users drop their beats (`.mp3`, `.wav`, `.ogg`, `.flac`,
+    `.m4a`) here.
+  - **Project beat assignment:** When a user selects a beat from the global
+    instrumentals library, it is copied into the project directory (e.g. as
+    `beat.<ext>` or recorded by name). This ensures projects remain 100%
+    self-contained and portable even if global files are moved or deleted.
+
+  **Project Metadata (`project.json`):**
+  - Stored inside each project directory using Android's built-in `org.json`
+    (`JSONObject`, zero third-party dependencies).
+  - Schema captures musical and organizational details:
+    ```json
+    {
+      "version": 1,
+      "title": "Song Title",
+      "bpm": 92,
+      "key": "C# Minor",
+      "timeSignature": "4/4",
+      "beatFile": "beat.mp3",
+      "beatOriginalName": "dark_boombap_92bpm.mp3",
+      "createdAt": 1756980000000,
+      "updatedAt": 1756985000000,
+      "notes": ""
+    }
+    ```
+
   **Known limitation, intentional for now:** this directory isn't easily
   user-browsable via a stock file manager because of Android's scoped
   storage rules. That's fine for autosave/backup, but real Import/Export
@@ -147,7 +187,20 @@ Walking through what each file does:
   A `LaunchedEffect` loop calls `delay(intervalSeconds * 1000L)` then
   re-reads settings and calls `rotateAndSave`. A `DisposableEffect`'s
   `onDispose` does one more save when the screen is left (back to Home, or
-  into Settings), so nothing is lost between ticks.
+  into Settings), so nothing is lost between ticks. Top bar includes manual
+  save (`<title>.txt`) and quick access to Settings.
+
+  **Offline Beat Player (Planned in Editor):**
+  - Integrated directly into the songwriting environment. Songwriters can loop
+    and listen to their beats while actively typing lyrics.
+  - Powered by the native AOSP `android.media.MediaPlayer` API (no heavy
+    libraries like ExoPlayer).
+  - Controls: Play/Pause/Resume, Loop toggle (enabled by default for continuous
+    verse writing), seek scrubber with `mm:ss` timestamp display, and volume.
+  - Displays project metadata (BPM, musical key) alongside beat controls.
+  - Lifecycle: Audio playback runs in background while writing and is cleanly
+    released on screen disposal.
+
   **Known simplification:** if the user changes the autosave interval while
   a wait is already in progress, the in-progress wait finishes on the OLD
   interval; the new interval applies starting the following cycle. Not a
@@ -178,10 +231,9 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Test files** (`ExampleUnitTest.kt`, `ExampleInstrumentedTest.kt`) — still
-  the wizard-generated placeholders. No real tests exist yet. Writing real,
-  focused unit tests for `ProjectStorage`'s rotation logic (pure file I/O,
-  easy to test with a temp directory) would be a good early task.
+- **Test files** (`ProjectStorageTest.kt`, `SettingsFormatTest.kt`) — Unit
+  tests cover `ProjectStorage`'s directory creation, autosave rotation,
+  manual saves, and settings interval formatting. Run locally via JUnit.
 
 ## 6. Deliberate architectural decisions — please don't silently reverse these
 
@@ -195,6 +247,13 @@ just "fix" it without flagging it first:
 5. `configChanges` on the Activity instead of a custom `Saver` for nav state.
 6. No Navigation library, no DI framework, no local database — kept minimal
    on purpose while the app is small.
+7. `android.media.MediaPlayer` (built into AOSP framework) instead of ExoPlayer/Media3
+   for audio playback, maintaining zero added library bloat and native offline AOSP compatibility.
+8. `org.json` (built into Android framework) instead of external serialization libraries
+   (Gson, Moshi, kotlinx.serialization) for `project.json` metadata.
+9. Self-contained project storage (assigned beat files copied into the project directory
+   and metadata saved in `project.json`), paired with a global beats directory
+   (`Music/Gh0stwrit3r/Instrumentals/`) for browsing and selecting beats.
 
 ## 7. Known technical debt (not yet addressed, tracked, but not urgent)
 
@@ -208,7 +267,6 @@ just "fix" it without flagging it first:
   `Saver` for the sealed class or a switch to Navigation-Compose (which
   handles this for free).
 - No duplicate-project-name handling.
-- No tests yet beyond wizard placeholders.
 
 ## 8. Full feature roadmap (from FEATURES.md — keep this file updated as you work)
 
@@ -224,6 +282,18 @@ default.
 **Phase 2 — Songwriting environment** — in progress
 - [x] Autosave — continuous autosave, configurable interval, rolling backup
       ring (`autosave1.txt`..`autosaveN.txt`, N configurable)
+- [ ] **Offline beat / media player** — in-editor background audio player
+      for instrumentals while songwriting. Built strictly using Android
+      framework's built-in AOSP `MediaPlayer` (no heavy external libraries).
+      Controls for play/pause, loop toggle, seek bar, and volume.
+- [ ] **Instrumentals library & project beat management** — global folder
+      (e.g. `Music/Gh0stwrit3r/Instrumentals/` or user-accessible directory)
+      where users drop beats; assigning a beat copies/stores it directly
+      into the project directory so projects stay self-contained.
+- [ ] **Project metadata (`project.json`)** — JSON file in each project
+      directory storing musical key, BPM, assigned beat file, title, and
+      timestamps, using Android's built-in `org.json` (no third-party JSON
+      libraries).
 - [ ] Cloud sync (optional, user-provided backend/account — must stay
       AOSP-friendly: WebDAV/Nextcloud/S3-compatible, explicitly NOT Firebase)
 - [ ] **Syllable counter column** — left-hand gutter, one number per line,
@@ -270,7 +340,9 @@ feature; they may want a different one first.
 
 ## 10. Before you start making changes
 
-1. Read `README.md`, `FEATURES.md`, and `SETUP_NOTES.md` in the repo.
+1. Read the documentation files in `documentation/`:
+   `documentation/README.md`, `documentation/FEATURES.md`,
+   `documentation/SETUP_NOTES.md`, and `documentation/AGENT_CONTEXT.md`.
 2. Read every file listed in §4 — the project is small enough to read in
    full before editing anything.
 3. Check which branch you're on (`dev` for active work; don't commit

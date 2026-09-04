@@ -2,7 +2,7 @@
 
 This repo currently contains:
 
-- `README.md`, `FEATURES.md`, `LICENSE`, `.gitignore` — ready to use as-is.
+- `README.md`, `LICENSE`, `.gitignore`, and `documentation/` — ready to use as-is.
 - `app/src/main/java/com/ghostwriter/exe/` — a Phase 1 barebones notepad screen
   (`MainActivity.kt`) plus a small Material 3 dark theme
   (`ui/theme/Color.kt`, `Theme.kt`, `Type.kt`).
@@ -24,7 +24,7 @@ open Android Studio.
 3. Copy this repo's files into the generated project folder, allowing
    `MainActivity.kt` and the `ui/theme/` files to overwrite the wizard's
    generated versions.
-4. Copy this repo's `.gitignore`, `LICENSE`, `README.md`, and `FEATURES.md`
+4. Copy this repo's `.gitignore`, `LICENSE`, `README.md`, and `documentation/` folder
    into the project root (the wizard also generates its own `.gitignore` —
    compare the two and merge; they're nearly identical).
 5. Reopen the project in Android Studio and let Gradle sync.
