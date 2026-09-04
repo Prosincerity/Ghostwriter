@@ -94,7 +94,9 @@ not intentional.
 ## 5. What's actually built right now
 
 **Phase 1 (barebones notepad)** — done.
-**Phase 2, first feature (autosave + rolling backups + settings)** — done.
+**Phase 2 features landed so far:**
+- Autosave + rolling backups + settings — done.
+- Project metadata (`project.json`) + in-editor Project Info dialog — done.
 
 Walking through what each file does:
 
@@ -290,10 +292,10 @@ default.
       (e.g. `Music/Gh0stwrit3r/Instrumentals/` or user-accessible directory)
       where users drop beats; assigning a beat copies/stores it directly
       into the project directory so projects stay self-contained.
-- [ ] **Project metadata (`project.json`)** — JSON file in each project
-      directory storing musical key, BPM, assigned beat file, title, and
-      timestamps, using Android's built-in `org.json` (no third-party JSON
-      libraries).
+- [x] **Project metadata (`project.json`)** — in-editor Project Info dialog and
+      JSON file in each project directory storing musical key, BPM, time signature,
+      notes, assigned beat references, and timestamps, using Android's built-in
+      `org.json` (no third-party JSON libraries).
 - [ ] Cloud sync (optional, user-provided backend/account — must stay
       AOSP-friendly: WebDAV/Nextcloud/S3-compatible, explicitly NOT Firebase)
 - [ ] **Syllable counter column** — left-hand gutter, one number per line,
