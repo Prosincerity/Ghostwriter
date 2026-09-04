@@ -21,7 +21,8 @@ This document is the single source of truth for where ghostwriter.exe is headed.
 - [ ] **Bar counter** — right-hand side, bars separated by a greyed-out `|` or `/` (user-configurable)
 - [ ] **Hyphenation** — auto-hyphenate every word, customizable separator character (e.g. `-` or space), toggle on/off
 - [ ] **Rhyme detection** — syllable-by-syllable analysis within a bar; syllables that rhyme with another syllable get a unique, consistent color per rhyme group
-- [ ] **Autosave** — continuous autosave, rolling autosave backups, optional cloud sync (user-provided backend/account)
+- [x] **Autosave** — continuous autosave with a configurable interval, plus a rolling ring of `autosave1.txt`..`autosaveN.txt` backups (N configurable)
+- [ ] **Cloud sync** (optional, user-provided backend/account — AOSP-friendly, so avoid anything requiring Google Play Services)
 - [ ] **Import / export** — plain text at minimum; consider `.docx`/`.pdf` export later
 - [ ] **Dictionary** — word lookup while writing
 - [ ] **Rhyme dictionary** — look up rhymes on demand when stuck

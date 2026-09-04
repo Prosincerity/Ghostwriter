@@ -42,6 +42,10 @@ See [FEATURES.md](FEATURES.md) for the full, detailed feature roadmap.
 2. Let Gradle sync.
 3. Run on an emulator or device (min SDK / target SDK as set in `app/build.gradle.kts`).
 
+## Development
+
+Built solo, pair-programmed with AI assistants: originally scaffolded and developed through Phase 2 autosave using Anthropic Claude, and actively developed using Google Antigravity. (Note: the app itself strictly contains no AI features or bloat — see philosophy).
+
 ## Contributing
 
 Issues and PRs welcome once the initial scaffolding is in place. Please keep the "no AI, no bloat" philosophy in mind for any feature contribution.
