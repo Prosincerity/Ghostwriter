@@ -126,4 +126,35 @@ object ProjectStorage {
             .trim { it == '.' || it == ' ' }
         return cleaned.ifBlank { "untitled" }
     }
+
+    fun metadataFile(projectDir: File): File =
+        File(projectDir, "project.json")
+
+    fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {
+        val file = metadataFile(projectDir)
+        if (!file.exists()) {
+            return ProjectMetadata(title = fallbackTitle)
+        }
+        return runCatching {
+            ProjectMetadata.fromJsonString(file.readText(), fallbackTitle)
+        }.getOrElse {
+            ProjectMetadata(title = fallbackTitle)
+        }
+    }
+
+    fun saveMetadata(projectDir: File, metadata: ProjectMetadata) {
+        runCatching {
+            val file = metadataFile(projectDir)
+            val temp = File(projectDir, "project.json.tmp")
+            val updated = metadata.copy(updatedAt = System.currentTimeMillis())
+            temp.writeText(updated.toJsonObject().toString(2))
+            if (file.exists()) {
+                file.delete()
+            }
+            if (!temp.renameTo(file)) {
+                temp.copyTo(file, overwrite = true)
+                temp.delete()
+            }
+        }
+    }
 }

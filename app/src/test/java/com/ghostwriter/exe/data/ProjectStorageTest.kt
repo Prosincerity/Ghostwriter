@@ -153,7 +153,7 @@ class ProjectStorageTest {
         val projectDir = tempFolder.newFolder("Summer_Bars")
         ProjectStorage.saveManual(projectDir, "Summer Bars", "Spitting heat", keepCount = 3)
 
-        val manualFile = File(projectDir, "Summer_Bars.txt")
+        val manualFile = File(projectDir, "${ProjectStorage.sanitizeTitle("Summer Bars")}.txt")
         assertTrue("Manual file should exist", manualFile.exists())
         assertEquals("Spitting heat", manualFile.readText())
 
