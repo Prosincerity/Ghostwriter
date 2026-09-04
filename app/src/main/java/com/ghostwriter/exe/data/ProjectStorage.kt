@@ -157,4 +157,97 @@ object ProjectStorage {
             }
         }
     }
+
+    // --- Beat & Instrumental storage helpers ---
+
+    val SUPPORTED_AUDIO_EXTENSIONS: Set<String> = setOf("mp3", "wav", "ogg", "flac", "m4a", "aac")
+
+    fun instrumentalsDir(context: Context): File =
+        File(context.getExternalFilesDir(null), "instrumentals").apply { mkdirs() }
+
+    /**
+     * Lists all supported audio beat files in [dir], sorted alphabetically.
+     */
+    fun listInstrumentals(dir: File): List<File> =
+        dir.listFiles { file ->
+            file.isFile && file.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+        }?.sortedBy { it.name.lowercase() } ?: emptyList()
+
+    /**
+     * Resolves the assigned beat file for [projectDir].
+     * Looks up metadata first, then falls back to any existing `beat.*` file.
+     */
+    fun getProjectBeatFile(projectDir: File, metadata: ProjectMetadata? = null): File? {
+        val meta = metadata ?: loadMetadata(projectDir, projectDir.name)
+        val fileName = meta.beatFile
+        if (!fileName.isNullOrBlank()) {
+            val file = File(projectDir, fileName)
+            if (file.exists()) return file
+        }
+        // Fallback: check if a beat file exists on disk
+        return projectDir.listFiles { f ->
+            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+        }?.firstOrNull()
+    }
+
+    /**
+     * Assigns [sourceFile] as the beat for [projectDir].
+     * Copies the file to `projectDir/beat.<ext>`, removes any previous beat file
+     * with a different extension, and updates `project.json`.
+     */
+    fun assignBeatToProject(
+        projectDir: File,
+        sourceFile: File,
+        originalName: String = sourceFile.name,
+    ): File {
+        val ext = sourceFile.extension.ifBlank { "mp3" }
+        val destFile = File(projectDir, "beat.$ext")
+
+        // Delete any old beat files with a different extension
+        projectDir.listFiles { f ->
+            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS && f != destFile
+        }?.forEach { it.delete() }
+
+        sourceFile.copyTo(destFile, overwrite = true)
+
+        val currentMeta = loadMetadata(projectDir, projectDir.name)
+        val updatedMeta = currentMeta.copy(
+            beatFile = destFile.name,
+            beatOriginalName = originalName,
+        )
+        saveMetadata(projectDir, updatedMeta)
+
+        return destFile
+    }
+
+    /**
+     * Unassigns and removes the beat from [projectDir], updating `project.json`.
+     */
+    fun removeBeatFromProject(projectDir: File) {
+        projectDir.listFiles { f ->
+            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+        }?.forEach { it.delete() }
+
+        val currentMeta = loadMetadata(projectDir, projectDir.name)
+        val updatedMeta = currentMeta.copy(
+            beatFile = null,
+            beatOriginalName = null,
+        )
+        saveMetadata(projectDir, updatedMeta)
+    }
+
+    /**
+     * Imports an audio file into [instrumentalsDir] via [copyAction].
+     */
+    fun importInstrumental(
+        instrumentalsDir: File,
+        fileName: String,
+        copyAction: (destination: File) -> Unit,
+    ): File {
+        val baseName = sanitizeTitle(fileName.substringBeforeLast('.'))
+        val ext = if (fileName.contains('.')) fileName.substringAfterLast('.').lowercase() else "mp3"
+        val dest = File(instrumentalsDir, "$baseName.$ext")
+        copyAction(dest)
+        return dest
+    }
 }
