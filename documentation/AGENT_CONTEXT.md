@@ -30,14 +30,14 @@ you have to "modernize" or "improve" things in ways that conflict with them:
   Android UI toolkit and is the only UI approach used in this project — no
   XML layouts, no legacy Views system.
 - **Solo dev, Git branching.** `main` = stable/working. `dev` = active
-  feature work. The owner works inside Android Studio and now also
-  Antigravity.
+  feature work. The owner works inside Android Studio and uses assisted coding
+  with Google Antigravity and OpenAI Codex.
 
 ## 3. Tech stack (as of last verified state)
 
 - Kotlin (2.2.10 at last check)
 - Jetpack Compose + Material 3 (Compose BOM 2026.02.01 at last check)
-- Android Gradle Plugin 9.3.2, Gradle 9.5 (wizard-generated, don't hand-edit
+- Android Gradle Plugin 9.4.0, Gradle 9.6 (wizard-generated, don't hand-edit
   version numbers without reason — they drift fast and the wizard/Android
   Studio keeps them in sync correctly)
 - `compileSdk`/`targetSdk` 37, `minSdk` 24
@@ -137,14 +137,15 @@ Walking through what each file does:
   `autosave1.txt` if present.
 
   **Beat & Instrumental Storage Architecture:**
-  - **Global instrumentals directory:** Located at a user-accessible path such
-    as `Music/Gh0stwrit3r/Instrumentals/` (or via app external files / Storage
-    Access Framework). Users drop their beats (`.mp3`, `.wav`, `.ogg`, `.flac`,
-    `.m4a`) here.
-  - **Project beat assignment:** When a user selects a beat from the global
-    instrumentals library, it is copied into the project directory (e.g. as
-    `beat.<ext>` or recorded by name). This ensures projects remain 100%
-    self-contained and portable even if global files are moved or deleted.
+  - **Current project beat import:** When a project has no assigned beat, the
+    editor opens Android's Storage Access Framework picker for supported audio
+    files (`.mp3`, `.wav`, `.ogg`, `.flac`, `.m4a`, `.aac`). The selected file
+    is copied into the project directory as `beat.<ext>`, and its original name
+    is stored in `project.json`. This makes the project self-contained and
+    portable even if the source file is moved or deleted.
+  - **Global instrumentals directory:** A browsable global library at a
+    user-accessible path such as `Music/Gh0stwrit3r/Instrumentals/` remains
+    planned. Do not treat it as implemented yet.
 
   **Project Metadata (`project.json`):**
   - Stored inside each project directory using Android's built-in `org.json`
@@ -180,9 +181,10 @@ Walking through what each file does:
   placeholder for later. Below that, a "Recent" list shows existing project
   folders (added proactively — without it, autosaved work could never be
   reopened; this wasn't explicitly requested but was necessary for the
-  feature to be useful). **No duplicate-title protection yet** — creating a
-  project with a name that already exists just reopens/merges into that
-  same folder.
+  feature to be useful). Each recent project has a delete action with an
+  irreversible-data confirmation; deletion removes its complete directory.
+  **No duplicate-title protection yet** — creating a project with a name that
+  already exists just reopens/merges into that same folder.
 
 - **`ui/screens/EditorScreen.kt`** — The actual text editor. Full-screen
   `TextField`, monospace, dark theme. Text state uses `rememberSaveable` (not
@@ -237,9 +239,11 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Test files** (`ProjectStorageTest.kt`, `SettingsFormatTest.kt`) — Unit
-  tests cover `ProjectStorage`'s directory creation, autosave rotation,
-  manual saves, and settings interval formatting. Run locally via JUnit.
+- **Test files** (`ProjectStorageTest.kt`, `ProjectStorageBeatTest.kt`,
+  `ProjectMetadataTest.kt`, `BeatPlayerTest.kt`, `SettingsFormatTest.kt`) —
+  Unit tests cover storage creation, deletion, autosave rotation, manual saves,
+  project metadata, beat storage helpers, player state, and settings interval
+  formatting. Run locally via JUnit.
 
 ## 6. Deliberate architectural decisions — please don't silently reverse these
 
@@ -292,10 +296,11 @@ default.
       for instrumentals while songwriting. Built strictly using Android
       framework's built-in AOSP `MediaPlayer` (no heavy external libraries).
       Controls for play/pause, loop toggle, seek bar, and volume.
-- [ ] **Instrumentals library & project beat management** — global folder
-      (e.g. `Music/Gh0stwrit3r/Instrumentals/` or user-accessible directory)
-      where users drop beats; assigning a beat copies/stores it directly
-      into the project directory so projects stay self-contained.
+- [ ] **Instrumentals library & project beat management** — direct import into
+      a project is complete, but the browsable global folder (e.g.
+      `Music/Gh0stwrit3r/Instrumentals/` or another user-accessible directory)
+      remains to be built. Assigned beats are copied into the project directory
+      so projects stay self-contained.
 - [x] **Project metadata (`project.json`)** — in-editor Project Info dialog and
       JSON file in each project directory storing musical key, BPM, time signature,
       notes, assigned beat references, and timestamps, using Android's built-in

@@ -38,8 +38,8 @@ See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature road
 **Phase 2 — Songwriting environment (in progress):**
 - Autosave & rolling backup ring (`autosave1.txt`..`autosaveN.txt`) (completed)
 - In-editor project info dialog & project metadata (`project.json` for musical key, BPM, timestamps) (completed)
-- In-editor offline beat / media player (built-in AOSP `MediaPlayer`)
-- Instrumentals library & project beat management (global beats folder + self-contained project beats)
+- In-editor offline beat / media player with project-local beat import (completed; built-in AOSP `MediaPlayer`)
+- Instrumentals library & project beat management (global beats library still planned; imported project beats are self-contained)
 - Syllable counter column (left, per line, IDE-style)
 - Bar counter (right, greyed-out separator: `|` or `/`)
 - Customizable hyphenation
@@ -56,7 +56,7 @@ See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature road
 
 ## Development
 
-Built solo, pair-programmed with AI assistants: originally scaffolded and developed through Phase 2 autosave using Anthropic Claude, and actively developed using Google Antigravity. (Note: the app itself strictly contains no AI features or bloat — see philosophy).
+Built solo with assisted coding tools: originally scaffolded and developed through Phase 2 autosave using Anthropic Claude, then actively developed with Google Antigravity and OpenAI Codex. (Note: the app itself strictly contains no AI features or bloat — see philosophy).
 
 ## Contributing
 

@@ -5,7 +5,7 @@ Welcome to the project documentation directory for **Gh0stwrit3r.exe**. All desi
 ## Documentation Index
 
 - **[FEATURES.md](FEATURES.md)**  
-  The single source of truth for the phased feature roadmap, what features are currently implemented (MVP notepad, autosave rotation), what is planned next (offline beat player, global instrumentals folder, project metadata, syllable/bar counters, rhyme detection), and non-goals (strict no-AI, no-bloat policy).
+  The single source of truth for the phased feature roadmap, what is currently implemented (MVP notepad, autosave rotation, project metadata, offline beat player with project-local import), what is planned next (global instrumentals library, syllable/bar counters, rhyme detection), and non-goals (strict no-AI, no-bloat policy).
 
 - **[AGENT_CONTEXT.md](AGENT_CONTEXT.md)**  
   Comprehensive developer and AI-assistant handoff document. Details:
