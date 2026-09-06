@@ -18,6 +18,7 @@ import java.io.File
  *   - Graceful no-ops when not prepared
  *   - seekTo clamping arithmetic
  *   - Loop toggle state
+ *   - Volume state and clamping
  *   - load() failure on a non-existent file
  *   - release() being safe to call multiple times
  */
@@ -114,6 +115,32 @@ class BeatPlayerTest {
         assertFalse(player.isLooping)
         player.setLooping(true)
         assertTrue(player.isLooping)
+    }
+
+    // --- Volume ---
+
+    @Test
+    fun freshPlayer_defaultsToFullVolume() {
+        val player = BeatPlayer()
+        assertEquals(1f, player.volume)
+    }
+
+    @Test
+    fun setVolume_updatesVolumeWithinValidRange() {
+        val player = BeatPlayer()
+        player.setVolume(0.35f)
+        assertEquals(0.35f, player.volume)
+    }
+
+    @Test
+    fun setVolume_clampsValuesOutsideValidRange() {
+        val player = BeatPlayer()
+
+        player.setVolume(-0.5f)
+        assertEquals(0f, player.volume)
+
+        player.setVolume(1.5f)
+        assertEquals(1f, player.volume)
     }
 
     // --- load() with a missing file ---

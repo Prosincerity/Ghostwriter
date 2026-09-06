@@ -31,6 +31,10 @@ class BeatPlayer {
     var isLooping: Boolean = true
         private set
 
+    /** Playback volume, from silent (0f) to full volume (1f). */
+    var volume: Float = 1f
+        private set
+
     /**
      * Current playback position in milliseconds.
      * Returns 0 when not prepared.
@@ -59,6 +63,7 @@ class BeatPlayer {
             val mp = MediaPlayer().also { player = it }
             mp.setDataSource(beatFile.absolutePath)
             mp.isLooping = isLooping
+            mp.setVolume(volume, volume)
             mp.prepare()
             prepared = true
             true
@@ -110,6 +115,15 @@ class BeatPlayer {
     fun setLooping(loop: Boolean) {
         isLooping = loop
         player?.isLooping = loop
+    }
+
+    /**
+     * Sets playback volume. Values outside the valid [0f, 1f] range are
+     * clamped before being applied to both channels of the active player.
+     */
+    fun setVolume(volume: Float) {
+        this.volume = volume.coerceIn(0f, 1f)
+        player?.setVolume(this.volume, this.volume)
     }
 
     /**
