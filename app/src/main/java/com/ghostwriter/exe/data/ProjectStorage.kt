@@ -40,6 +40,18 @@ object ProjectStorage {
             ?: emptyList()
 
     /**
+     * Permanently deletes the project directory for [title], including all
+     * lyrics, autosaves, metadata, and any copied beat file.
+     */
+    fun deleteProject(context: Context, title: String): Boolean =
+        deleteProjectDirectory(File(rootDir(context), sanitizeTitle(title)))
+
+    internal fun deleteProjectDirectory(projectDir: File): Boolean {
+        if (!projectDir.isDirectory) return false
+        return runCatching { projectDir.deleteRecursively() }.getOrDefault(false)
+    }
+
+    /**
      * Most recent saved content for a project. Checks <title>.txt first if present
      * and up-to-date, then checks autosave1.txt, and falls back to older backups
      * if autosave1 is missing or unreadable.

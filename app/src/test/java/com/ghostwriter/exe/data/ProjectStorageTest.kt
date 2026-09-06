@@ -50,6 +50,27 @@ class ProjectStorageTest {
         assertEquals("untitled", ProjectStorage.sanitizeTitle("   "))
     }
 
+    // --- project deletion tests ---
+
+    @Test
+    fun deleteProjectDirectory_removesAllProjectContents() {
+        val projectDir = tempFolder.newFolder("delete_me")
+        File(projectDir, "delete_me.txt").writeText("lyrics")
+        File(projectDir, "autosave1.txt").writeText("latest lyrics")
+        File(projectDir, "autosave2.txt").writeText("older lyrics")
+        File(projectDir, "project.json").writeText("{\"title\":\"delete_me\"}")
+        File(projectDir, "beat.mp3").writeText("beat data")
+
+        assertTrue(ProjectStorage.deleteProjectDirectory(projectDir))
+        assertFalse(projectDir.exists())
+    }
+
+    @Test
+    fun deleteProjectDirectory_returnsFalseForMissingProject() {
+        val missingProject = File(tempFolder.root, "missing_project")
+        assertFalse(ProjectStorage.deleteProjectDirectory(missingProject))
+    }
+
     // --- rotateAndSave tests ---
 
     @Test

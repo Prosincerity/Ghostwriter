@@ -1,6 +1,7 @@
 package com.ghostwriter.exe
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.ghostwriter.exe.data.ProjectStorage
@@ -15,6 +17,9 @@ import com.ghostwriter.exe.ui.screens.EditorScreen
 import com.ghostwriter.exe.ui.screens.HomeScreen
 import com.ghostwriter.exe.ui.screens.SettingsScreen
 import com.ghostwriter.exe.ui.theme.GhostwriterTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Navigation between the three screens is a tiny hand-rolled sealed
@@ -49,6 +54,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun GhostwriterApp() {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var projects by remember { mutableStateOf(ProjectStorage.listProjects(context)) }
 
@@ -62,6 +68,20 @@ private fun GhostwriterApp() {
                 screen = Screen.Editor(cleanTitle)
             },
             onOpenProject = { title -> screen = Screen.Editor(title) },
+            onDeleteProject = { title ->
+                coroutineScope.launch {
+                    val deleted = withContext(Dispatchers.IO) {
+                        ProjectStorage.deleteProject(context, title)
+                    }
+                    if (deleted) {
+                        projects = withContext(Dispatchers.IO) {
+                            ProjectStorage.listProjects(context)
+                        }
+                    } else {
+                        Toast.makeText(context, "Couldn't delete $title", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
             onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Home) },
         )
 

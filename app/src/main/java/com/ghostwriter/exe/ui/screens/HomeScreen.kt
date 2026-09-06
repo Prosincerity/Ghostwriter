@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -49,9 +50,11 @@ fun HomeScreen(
     existingProjects: List<String>,
     onCreateProject: (String) -> Unit,
     onOpenProject: (String) -> Unit,
+    onDeleteProject: (String) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     var showTitleDialog by remember { mutableStateOf(false) }
+    var projectToDelete by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -102,6 +105,14 @@ fun HomeScreen(
                     items(existingProjects) { title ->
                         ListItem(
                             headlineContent = { Text(title) },
+                            trailingContent = {
+                                IconButton(onClick = { projectToDelete = title }) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription = "Delete $title",
+                                    )
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onOpenProject(title) },
@@ -120,6 +131,33 @@ fun HomeScreen(
                 onCreateProject(title)
             },
             onDismiss = { showTitleDialog = false },
+        )
+    }
+
+    projectToDelete?.let { title ->
+        AlertDialog(
+            onDismissRequest = { projectToDelete = null },
+            title = { Text("Delete project?") },
+            text = {
+                Text(
+                    "Delete \"$title\" and all of its lyrics, autosaves, project info, and beat? This cannot be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteProject(title)
+                        projectToDelete = null
+                    },
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { projectToDelete = null }) {
+                    Text("Cancel")
+                }
+            },
         )
     }
 }
