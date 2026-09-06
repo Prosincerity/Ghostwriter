@@ -97,6 +97,7 @@ not intentional.
 **Phase 2 features landed so far:**
 - Autosave + rolling backups + settings — done.
 - Project metadata (`project.json`) + in-editor Project Info dialog — done.
+- Offline beat player + project-local beat import — done.
 
 Walking through what each file does:
 
@@ -192,14 +193,17 @@ Walking through what each file does:
   into Settings), so nothing is lost between ticks. Top bar includes manual
   save (`<title>.txt`) and quick access to Settings.
 
-  **Offline Beat Player (Planned in Editor):**
+  **Offline Beat Player (in Editor):**
   - Integrated directly into the songwriting environment. Songwriters can loop
     and listen to their beats while actively typing lyrics.
   - Powered by the native AOSP `android.media.MediaPlayer` API (no heavy
     libraries like ExoPlayer).
-  - Controls: Play/Pause/Resume, Loop toggle (enabled by default for continuous
-    verse writing), seek scrubber with `mm:ss` timestamp display, and volume.
-  - Displays project metadata (BPM, musical key) alongside beat controls.
+  - Controls: Play/Pause/Resume, Play from start, Loop toggle (enabled by
+    default for continuous verse writing), seek scrubber, and volume.
+  - When no beat is assigned, an Import beat button opens Android's Storage
+    Access Framework picker for supported audio files, then copies the selected
+    file into the project directory and begins playback.
+  - Displays the selected beat's original filename without its extension.
   - Lifecycle: Audio playback runs in background while writing and is cleanly
     released on screen disposal.
 
@@ -284,7 +288,7 @@ default.
 **Phase 2 — Songwriting environment** — in progress
 - [x] Autosave — continuous autosave, configurable interval, rolling backup
       ring (`autosave1.txt`..`autosaveN.txt`, N configurable)
-- [ ] **Offline beat / media player** — in-editor background audio player
+- [x] **Offline beat / media player** — in-editor background audio player
       for instrumentals while songwriting. Built strictly using Android
       framework's built-in AOSP `MediaPlayer` (no heavy external libraries).
       Controls for play/pause, loop toggle, seek bar, and volume.

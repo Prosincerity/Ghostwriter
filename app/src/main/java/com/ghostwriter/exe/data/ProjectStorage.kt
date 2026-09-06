@@ -211,8 +211,20 @@ object ProjectStorage {
         projectDir: File,
         sourceFile: File,
         originalName: String = sourceFile.name,
+    ): File = assignBeatToProject(projectDir, originalName) { destination ->
+        sourceFile.copyTo(destination, overwrite = true)
+    }
+
+    /**
+     * Copies a selected beat into [projectDir] via [copyAction], preserving the
+     * original name in metadata while storing the project copy as `beat.<ext>`.
+     */
+    fun assignBeatToProject(
+        projectDir: File,
+        originalName: String,
+        copyAction: (destination: File) -> Unit,
     ): File {
-        val ext = sourceFile.extension.ifBlank { "mp3" }
+        val ext = originalName.substringAfterLast('.', "mp3").lowercase().ifBlank { "mp3" }
         val destFile = File(projectDir, "beat.$ext")
 
         // Delete any old beat files with a different extension
@@ -220,7 +232,7 @@ object ProjectStorage {
             f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS && f != destFile
         }?.forEach { it.delete() }
 
-        sourceFile.copyTo(destFile, overwrite = true)
+        copyAction(destFile)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(

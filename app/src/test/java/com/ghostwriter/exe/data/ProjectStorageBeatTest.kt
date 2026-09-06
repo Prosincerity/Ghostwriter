@@ -76,6 +76,25 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun assignBeatToProject_copyActionStoresSelectedFileAndOriginalName() {
+        val projectDir = tempFolder.newFolder("SelectedBeatSong")
+
+        val assigned = ProjectStorage.assignBeatToProject(
+            projectDir = projectDir,
+            originalName = "Midnight Loop.FLAC",
+        ) { destination ->
+            destination.writeText("selected beat content")
+        }
+
+        assertEquals("beat.flac", assigned.name)
+        assertEquals("selected beat content", assigned.readText())
+        assertEquals(
+            "Midnight Loop.FLAC",
+            ProjectStorage.loadMetadata(projectDir, "SelectedBeatSong").beatOriginalName,
+        )
+    }
+
+    @Test
     fun removeBeatFromProject_deletesFileAndClearsMetadata() {
         val projectDir = tempFolder.newFolder("AcapellaTrack")
         val sourceBeat = tempFolder.newFile("temp_beat.mp3")

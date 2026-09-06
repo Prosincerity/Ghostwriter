@@ -2,6 +2,8 @@ package com.ghostwriter.exe.ui.screens
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -62,6 +65,8 @@ import com.ghostwriter.exe.data.ProjectMetadata
 import com.ghostwriter.exe.data.ProjectStorage
 import com.ghostwriter.exe.data.Settings as AppSettings
 import com.ghostwriter.exe.media.BeatPlayer
+import android.net.Uri
+import android.provider.OpenableColumns
 import java.io.File
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -102,14 +107,58 @@ fun EditorScreen(
     }
     var showInfoDialog by rememberSaveable { mutableStateOf(false) }
 
-    // The temporary first player integration loads only the conventional
-    // project-local beat.mp3. Beat assignment/library UI will replace this
-    // direct lookup once that feature is added.
     val beatPlayer = remember(projectTitle) { BeatPlayer() }
     var isBeatReady by remember(projectTitle) { mutableStateOf(false) }
-    val beatFile = remember(projectTitle) { File(projectDir, "beat.mp3") }
-    LaunchedEffect(projectTitle) {
-        isBeatReady = beatPlayer.load(beatFile)
+    var beatFile by remember(projectTitle) {
+        mutableStateOf(ProjectStorage.getProjectBeatFile(projectDir, metadata))
+    }
+    var playImportedBeat by remember(projectTitle) { mutableStateOf(false) }
+    LaunchedEffect(beatFile) {
+        isBeatReady = beatFile?.let(beatPlayer::load) == true
+        if (isBeatReady && playImportedBeat) {
+            beatPlayer.play()
+            playImportedBeat = false
+        }
+    }
+
+    val importBeatLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+
+        coroutineScope.launch {
+            val imported = withContext(Dispatchers.IO) {
+                runCatching {
+                    val originalName = displayNameFor(context, uri) ?: "beat.mp3"
+                    val extension = originalName.substringAfterLast('.', "").lowercase()
+                    require(extension in ProjectStorage.SUPPORTED_AUDIO_EXTENSIONS) {
+                        "Choose an MP3, WAV, OGG, FLAC, M4A, or AAC file"
+                    }
+
+                    val assigned = ProjectStorage.assignBeatToProject(
+                        projectDir = projectDir,
+                        originalName = originalName,
+                    ) { destination ->
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            destination.outputStream().use { output -> input.copyTo(output) }
+                        } ?: error("Couldn't read the selected beat")
+                    }
+                    assigned to ProjectStorage.loadMetadata(projectDir, projectTitle)
+                }
+            }
+
+            imported.onSuccess { (assigned, updatedMetadata) ->
+                metadata = updatedMetadata
+                playImportedBeat = true
+                beatFile = assigned
+            }.onFailure {
+                Toast.makeText(
+                    context,
+                    it.message ?: "Couldn't import the selected beat",
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
     }
 
     // MediaPlayer owns native audio resources, so it must be released when
@@ -210,7 +259,22 @@ fun EditorScreen(
             BeatPlayerPanel(
                 beatPlayer = beatPlayer,
                 isBeatReady = isBeatReady,
-                beatFileName = beatFile.name,
+                beatDisplayName = metadata.beatOriginalName?.let { originalName ->
+                    originalName.substringBeforeLast('.', originalName)
+                }
+                    ?: beatFile?.nameWithoutExtension.orEmpty(),
+                onImportBeat = {
+                    importBeatLauncher.launch(
+                        arrayOf(
+                            "audio/mpeg",
+                            "audio/wav",
+                            "audio/ogg",
+                            "audio/flac",
+                            "audio/mp4",
+                            "audio/aac",
+                        )
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -241,7 +305,8 @@ fun EditorScreen(
 private fun BeatPlayerPanel(
     beatPlayer: BeatPlayer,
     isBeatReady: Boolean,
-    beatFileName: String,
+    beatDisplayName: String,
+    onImportBeat: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
@@ -270,12 +335,19 @@ private fun BeatPlayerPanel(
 
     Card(modifier = modifier.height(104.dp)) {
         if (!isBeatReady) {
-            Text(
-                text = "beat.mp3 not found",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(
+                    text = "No beat selected",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = onImportBeat,
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    Text("Import beat")
+                }
+            }
             return@Card
         }
 
@@ -285,7 +357,7 @@ private fun BeatPlayerPanel(
                 .padding(horizontal = 12.dp, vertical = 4.dp),
         ) {
             Text(
-                text = beatFileName,
+                text = beatDisplayName,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.labelSmall,
@@ -366,6 +438,19 @@ private fun BeatPlayerPanel(
                 )
             }
         }
+    }
+}
+
+private fun displayNameFor(context: android.content.Context, uri: Uri): String? {
+    return context.contentResolver.query(
+        uri,
+        arrayOf(OpenableColumns.DISPLAY_NAME),
+        null,
+        null,
+        null,
+    )?.use { cursor ->
+        val nameColumn = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        if (nameColumn >= 0 && cursor.moveToFirst()) cursor.getString(nameColumn) else null
     }
 }
 
