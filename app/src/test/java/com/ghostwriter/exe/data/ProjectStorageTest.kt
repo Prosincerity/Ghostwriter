@@ -10,6 +10,50 @@ import java.io.File
 
 class ProjectStorageTest {
 
+    @Test
+    fun resolveProjectTitle_reusesExistingCasingAndSanitizedName() {
+        assertEquals("My_Track", ProjectStorage.resolveProjectTitle("my/track", listOf("My_Track")))
+        assertEquals("New_Track", ProjectStorage.resolveProjectTitle("New/Track", emptyList()))
+    }
+
+    @Test
+    fun manualSave_replacesExistingContentsWithoutLeavingTemporaryFiles() {
+        val project = tempFolder.newFolder("replace")
+        assertTrue(ProjectStorage.saveManual(project, "replace", "first", 3))
+        assertTrue(ProjectStorage.saveManual(project, "replace", "second", 3))
+        assertEquals("second", File(project, "replace.txt").readText())
+        assertEquals("second", ProjectStorage.loadLatest(project))
+        assertFalse(project.list()!!.any { it.endsWith(".tmp") })
+    }
+
+    @Test
+    fun unchangedLyrics_stillPruneBackupsAfterCountReduction() {
+        val project = tempFolder.newFolder("prune")
+        for (i in 1..5) ProjectStorage.rotateAndSave(project, "take $i", 5)
+        ProjectStorage.rotateAndSave(project, "take 5", 3)
+        assertEquals("take 5", File(project, "autosave1.txt").readText())
+        assertFalse(File(project, "autosave4.txt").exists())
+        assertFalse(File(project, "autosave5.txt").exists())
+    }
+
+    @Test
+    fun loadLatest_recoversManualSaveWhenAutosavesAreUnreadable() {
+        val project = tempFolder.newFolder("recovery")
+        File(project, "recovery.txt").apply {
+            writeText("recover me")
+            setLastModified(1000)
+        }
+        File(project, "autosave1.txt").mkdir()
+        assertEquals("recover me", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun saveFailures_areReportedToCaller() {
+        val missing = File(tempFolder.root, "missing")
+        assertFalse(ProjectStorage.saveManual(missing, "song", "lyrics", 3))
+        assertFalse(ProjectStorage.saveMetadata(missing, ProjectMetadata("song")))
+    }
+
     @Rule
     @JvmField
     val tempFolder = TemporaryFolder()

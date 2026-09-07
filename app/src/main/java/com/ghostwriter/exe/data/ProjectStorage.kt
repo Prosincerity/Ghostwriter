@@ -2,6 +2,7 @@ package com.ghostwriter.exe.data
 
 import android.content.Context
 import java.io.File
+import java.io.IOException
 
 /**
  * Handles the on-disk layout for lyric projects.
@@ -46,6 +47,7 @@ object ProjectStorage {
     fun deleteProject(context: Context, title: String): Boolean =
         deleteProjectDirectory(File(rootDir(context), sanitizeTitle(title)))
 
+    @Synchronized
     internal fun deleteProjectDirectory(projectDir: File): Boolean {
         if (!projectDir.isDirectory) return false
         return runCatching { projectDir.deleteRecursively() }.getOrDefault(false)
@@ -72,38 +74,39 @@ object ProjectStorage {
                 if (text != null) return text
             }
         }
-        return ""
+        // An older manual save is still preferable to losing all text when
+        // every autosave is unreadable.
+        return runCatching { manualFile.readText() }.getOrDefault("")
     }
 
     /**
      * Manually saves [content] as "<title>.txt" inside [projectDir].
      * Also synchronizes the autosave backup ring so the backup ring stays up to date.
      */
-    fun saveManual(projectDir: File, title: String, content: String, keepCount: Int) {
+    @Synchronized
+    fun saveManual(projectDir: File, title: String, content: String, keepCount: Int): Boolean =
         runCatching {
             val fileName = "${sanitizeTitle(title)}.txt"
             val target = File(projectDir, fileName)
-            val temp = File(projectDir, "$fileName.tmp")
-            temp.writeText(content)
-            if (target.exists()) {
-                target.delete()
-            }
-            if (!temp.renameTo(target)) {
-                temp.copyTo(target, overwrite = true)
-                temp.delete()
-            }
+            writeTextSafely(target, content)
 
             rotateAndSave(projectDir, content, keepCount)
-        }
-    }
+        }.isSuccess
 
     /**
      * Rotates the backup ring and writes [content] as the new autosave1.txt.
      * No-ops if [content] already matches what's saved, so an idle editor
      * doesn't keep burning through backup slots.
      */
+    @Synchronized
     fun rotateAndSave(projectDir: File, content: String, keepCount: Int) {
         runCatching {
+            require(keepCount in Settings.COUNT_OPTIONS)
+            // Settings changes apply even when the lyrics haven't changed.
+            for (i in (keepCount + 1)..10) {
+                val oldBackup = File(projectDir, "autosave$i.txt")
+                if (oldBackup.exists()) oldBackup.delete()
+            }
             val newest = File(projectDir, "autosave1.txt")
             if (newest.exists() && newest.readText() == content) return
 
@@ -113,22 +116,18 @@ object ProjectStorage {
                 if (src.exists()) src.copyTo(dst, overwrite = true)
             }
 
-            // Prune any backups beyond keepCount (e.g. if keepCount was reduced in Settings)
-            for (i in (keepCount + 1)..10) {
-                val oldBackup = File(projectDir, "autosave$i.txt")
-                if (oldBackup.exists()) oldBackup.delete()
-            }
+            writeTextSafely(newest, content)
+        }
+    }
 
-            // Write to a temporary file first, then replace newest to prevent corruption on crash
-            val temp = File(projectDir, "autosave1.tmp")
-            temp.writeText(content)
-            if (newest.exists()) {
-                newest.delete()
-            }
-            if (!temp.renameTo(newest)) {
-                temp.copyTo(newest, overwrite = true)
-                temp.delete()
-            }
+    /** Replace only after writing succeeds; never delete the last good copy first. */
+    private fun writeTextSafely(target: File, content: String) {
+        val staged = File.createTempFile("save-", ".tmp", target.parentFile)
+        try {
+            staged.writeText(content)
+            if (!staged.renameTo(target)) throw IOException("Couldn't replace ${target.name}")
+        } finally {
+            staged.delete()
         }
     }
 
@@ -137,6 +136,12 @@ object ProjectStorage {
             .replace(Regex("""[\\/:*?"<>|\x00-\x1F]"""), "_")
             .trim { it == '.' || it == ' ' }
         return cleaned.ifBlank { "untitled" }
+    }
+
+    /** Match the folder name used on disk, including an existing name's casing. */
+    fun resolveProjectTitle(title: String, existingProjects: List<String>): String {
+        val sanitized = sanitizeTitle(title)
+        return existingProjects.firstOrNull { it.equals(sanitized, ignoreCase = true) } ?: sanitized
     }
 
     fun metadataFile(projectDir: File): File =
@@ -154,21 +159,13 @@ object ProjectStorage {
         }
     }
 
-    fun saveMetadata(projectDir: File, metadata: ProjectMetadata) {
+    @Synchronized
+    fun saveMetadata(projectDir: File, metadata: ProjectMetadata): Boolean =
         runCatching {
             val file = metadataFile(projectDir)
-            val temp = File(projectDir, "project.json.tmp")
             val updated = metadata.copy(updatedAt = System.currentTimeMillis())
-            temp.writeText(updated.toJsonObject().toString(2))
-            if (file.exists()) {
-                file.delete()
-            }
-            if (!temp.renameTo(file)) {
-                temp.copyTo(file, overwrite = true)
-                temp.delete()
-            }
-        }
-    }
+            writeTextSafely(file, updated.toJsonObject().toString(2))
+        }.isSuccess
 
     // --- Beat & Instrumental storage helpers ---
 
@@ -194,7 +191,9 @@ object ProjectStorage {
         val fileName = meta.beatFile
         if (!fileName.isNullOrBlank()) {
             val file = File(projectDir, fileName)
-            if (file.exists()) return file
+            if (file.isFile && file.canonicalFile.parentFile == projectDir.canonicalFile &&
+                file.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+            ) return file
         }
         // Fallback: check if a beat file exists on disk
         return projectDir.listFiles { f ->
@@ -207,6 +206,7 @@ object ProjectStorage {
      * Copies the file to `projectDir/beat.<ext>`, removes any previous beat file
      * with a different extension, and updates `project.json`.
      */
+    @Synchronized
     fun assignBeatToProject(
         projectDir: File,
         sourceFile: File,
@@ -219,27 +219,40 @@ object ProjectStorage {
      * Copies a selected beat into [projectDir] via [copyAction], preserving the
      * original name in metadata while storing the project copy as `beat.<ext>`.
      */
+    @Synchronized
     fun assignBeatToProject(
         projectDir: File,
         originalName: String,
         copyAction: (destination: File) -> Unit,
     ): File {
-        val ext = originalName.substringAfterLast('.', "mp3").lowercase().ifBlank { "mp3" }
+        val ext = originalName.substringAfterLast('.', "").lowercase()
+        require(ext in SUPPORTED_AUDIO_EXTENSIONS) { "Unsupported audio file extension" }
         val destFile = File(projectDir, "beat.$ext")
 
-        // Delete any old beat files with a different extension
+        // A failed stream copy must not truncate or delete the previous beat.
+        val stagedFile = File.createTempFile("beat-import-", ".tmp", projectDir)
+        try {
+            copyAction(stagedFile)
+            if (!stagedFile.renameTo(destFile)) {
+                throw IOException("Couldn't store the selected beat")
+            }
+        } finally {
+            stagedFile.delete()
+        }
+
+        // Remove the old format only after the new file has been copied.
         projectDir.listFiles { f ->
             f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS && f != destFile
         }?.forEach { it.delete() }
-
-        copyAction(destFile)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(
             beatFile = destFile.name,
             beatOriginalName = originalName,
         )
-        saveMetadata(projectDir, updatedMeta)
+        if (!saveMetadata(projectDir, updatedMeta)) {
+            throw IOException("Couldn't save the beat's project information")
+        }
 
         return destFile
     }
@@ -247,6 +260,7 @@ object ProjectStorage {
     /**
      * Unassigns and removes the beat from [projectDir], updating `project.json`.
      */
+    @Synchronized
     fun removeBeatFromProject(projectDir: File) {
         projectDir.listFiles { f ->
             f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS

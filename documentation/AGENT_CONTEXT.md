@@ -132,9 +132,13 @@ Walking through what each file does:
   identically on AOSP (it's a core Android API, not Play-Services-gated).
   `rotateAndSave()` shifts every file up one index (dropping anything past
   the configured keep-count) then writes the current text into
-  `autosave1.txt`; it no-ops if content hasn't changed, so an idle editor
-  doesn't burn through backup slots. `loadLatest()` just reads
-  `autosave1.txt` if present.
+  `autosave1.txt`; unchanged content does not rotate the ring, but reducing the
+  backup count still prunes old snapshots. `loadLatest()` prefers an up-to-date
+  manual save, otherwise reads the newest readable autosave, with the manual
+  save as a last recovery fallback. Text and metadata writes stage a temporary
+  file before replacement. Storage mutations are synchronized to prevent
+  overlapping operations from interleaving; manual and metadata saves return
+  success flags used by the editor's feedback.
 
   **Beat & Instrumental Storage Architecture:**
   - **Current project beat import:** When a project has no assigned beat, the
@@ -183,8 +187,8 @@ Walking through what each file does:
   reopened; this wasn't explicitly requested but was necessary for the
   feature to be useful). Each recent project has a delete action with an
   irreversible-data confirmation; deletion removes its complete directory.
-  **No duplicate-title protection yet** — creating a project with a name that
-  already exists just reopens/merges into that same folder.
+  New-project names are sanitized before duplicate matching. A case-insensitive
+  match opens the existing folder using its actual casing.
 
 - **`ui/screens/EditorScreen.kt`** — The actual text editor. Full-screen
   `TextField`, monospace, dark theme. Text state uses `rememberSaveable` (not
@@ -206,6 +210,10 @@ Walking through what each file does:
     Access Framework picker for supported audio files, then copies the selected
     file into the project directory and begins playback.
   - Displays the selected beat's original filename without its extension.
+  - Imports stage the stream copy before replacing audio, so a failed copy
+    preserves the previous beat. Imports explicitly reload the player even
+    when the destination filename is unchanged. Import is disabled while a
+    copy is in progress, and load failures are reported.
   - Lifecycle: Audio playback runs in background while writing and is cleanly
     released on screen disposal.
 
@@ -267,16 +275,34 @@ just "fix" it without flagging it first:
 
 ## 7. Known technical debt (not yet addressed, tracked, but not urgent)
 
-- File I/O in `ProjectStorage` runs on the calling coroutine (effectively
-  the main thread via `LaunchedEffect`) rather than `Dispatchers.IO`. Fine
-  for small text files; would need addressing if files/backup counts grow
-  large.
+- Storage methods run on the calling thread. Periodic autosaves, manual saves,
+  metadata saves, beat copies, and deletion use `Dispatchers.IO`; initial reads
+  and the editor's final disposal save still run on the main thread. Storage
+  mutations share a lock, so a large import can delay another save.
+- Player preparation remains synchronous on the main thread. JVM player tests
+  cover wrapper state, not real decoding or device lifecycle behavior.
+- Beat-file replacement and metadata replacement are separate operations, not
+  a single transaction. A metadata-write failure is reported, but may leave the
+  new audio paired with old metadata.
 - Navigation state (`Screen`) does not survive process death (Android
   killing the app in the background under memory pressure) — only survives
   simple rotation, thanks to `configChanges`. A real fix needs a custom
   `Saver` for the sealed class or a switch to Navigation-Compose (which
   handles this for free).
-- No duplicate-project-name handling.
+- Player volume, loop preference, and position remain session-only.
+
+### Maintenance review (2026-09-07)
+
+- Extracted `ui/screens/ProjectInfoDialog.kt` from the editor for readability.
+- Consolidated staged text writes and optional JSON-string parsing; removed
+  unused imports and corrected the player state comment.
+- Fixed unchanged-content backup pruning, manual-save recovery fallback,
+  same-path beat reloads, failed-copy preservation, duplicate-name resolution,
+  misleading save-success messages, player release ordering, and NaN volume.
+- Kept the global instrumentals helpers, beat-removal helper, and Home Import
+  placeholder for planned features.
+- `./gradlew test lint` passed with 58 JVM tests. Emulator checks remain needed
+  for the picker, playback, and screen lifecycle changes.
 
 ## 8. Full feature roadmap (from FEATURES.md — keep this file updated as you work)
 

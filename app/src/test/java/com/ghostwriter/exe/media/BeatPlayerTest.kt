@@ -24,6 +24,19 @@ import java.io.File
  */
 class BeatPlayerTest {
 
+    @Test
+    fun setVolume_ignoresNaNAndKeepsPreviousVolume() {
+        val player = BeatPlayer()
+        player.setVolume(0.5f)
+        player.setVolume(Float.NaN)
+        assertEquals(0.5f, player.volume)
+    }
+
+    @Test
+    fun load_rejectsDirectoryWithoutCreatingMediaPlayer() {
+        assertFalse(BeatPlayer().load(tempFolder.root))
+    }
+
     @get:Rule
     val tempFolder = TemporaryFolder()
 

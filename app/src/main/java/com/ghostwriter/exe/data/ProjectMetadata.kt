@@ -1,7 +1,6 @@
 package com.ghostwriter.exe.data
 
 import org.json.JSONObject
-import java.io.File
 
 /**
  * Metadata for a lyric project, stored in project.json.
@@ -35,17 +34,20 @@ data class ProjectMetadata(
     }
 
     companion object {
+        private fun JSONObject.optionalString(name: String): String? =
+            if (isNull(name)) null else optString(name).ifBlank { null }
+
         fun fromJsonObject(json: JSONObject, fallbackTitle: String): ProjectMetadata {
             val title = json.optString("title", fallbackTitle).ifBlank { fallbackTitle }
             val bpm = if (json.has("bpm") && !json.isNull("bpm")) {
                 val parsed = json.optInt("bpm", -1)
                 if (parsed > 0) parsed else null
             } else null
-            val key = if (json.has("key") && !json.isNull("key")) json.optString("key").ifBlank { null } else null
-            val timeSignature = if (json.has("timeSignature") && !json.isNull("timeSignature")) json.optString("timeSignature").ifBlank { null } else null
-            val notes = if (json.has("notes") && !json.isNull("notes")) json.optString("notes").ifBlank { null } else null
-            val beatFile = if (json.has("beatFile") && !json.isNull("beatFile")) json.optString("beatFile").ifBlank { null } else null
-            val beatOriginalName = if (json.has("beatOriginalName") && !json.isNull("beatOriginalName")) json.optString("beatOriginalName").ifBlank { null } else null
+            val key = json.optionalString("key")
+            val timeSignature = json.optionalString("timeSignature")
+            val notes = json.optionalString("notes")
+            val beatFile = json.optionalString("beatFile")
+            val beatOriginalName = json.optionalString("beatOriginalName")
             val createdAt = json.optLong("createdAt", System.currentTimeMillis())
             val updatedAt = json.optLong("updatedAt", System.currentTimeMillis())
             val version = json.optInt("version", 1)

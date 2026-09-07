@@ -62,7 +62,7 @@ private fun GhostwriterApp() {
         is Screen.Home -> HomeScreen(
             existingProjects = projects,
             onCreateProject = { title ->
-                val cleanTitle = ProjectStorage.sanitizeTitle(title)
+                val cleanTitle = ProjectStorage.resolveProjectTitle(title, projects)
                 ProjectStorage.projectDir(context, cleanTitle) // creates the folder immediately
                 projects = ProjectStorage.listProjects(context)
                 screen = Screen.Editor(cleanTitle)

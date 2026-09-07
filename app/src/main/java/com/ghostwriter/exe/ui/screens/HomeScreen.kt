@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.ghostwriter.exe.data.ProjectStorage
 
 /**
  * Phase 1's screen becomes the editor; this is the new entry point.
@@ -169,8 +170,8 @@ private fun NewProjectDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
-    val candidate = text.trim().ifBlank { "Untitled" }
-    val isDuplicate = existingProjects.any { it.equals(candidate, ignoreCase = true) }
+    val candidate = ProjectStorage.resolveProjectTitle(text.trim().ifBlank { "Untitled" }, existingProjects)
+    val isDuplicate = candidate in existingProjects
 
     AlertDialog(
         onDismissRequest = onDismiss,

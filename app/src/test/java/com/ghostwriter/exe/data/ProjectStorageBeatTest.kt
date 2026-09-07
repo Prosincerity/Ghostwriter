@@ -12,6 +12,47 @@ import java.io.File
 
 class ProjectStorageBeatTest {
 
+    @Test
+    fun failedImport_preservesExistingBeatAndMetadata() {
+        val project = tempFolder.newFolder("failed_import")
+        ProjectStorage.assignBeatToProject(project, "original.mp3") { it.writeText("original") }
+        val metadataBefore = File(project, "project.json").readText()
+        for (name in listOf("replacement.mp3", "replacement.wav")) {
+            val result = runCatching {
+                ProjectStorage.assignBeatToProject(project, name) {
+                    it.writeText("partial")
+                    throw java.io.IOException("Interrupted copy")
+                }
+            }
+            assertTrue(result.isFailure)
+            assertEquals("original", File(project, "beat.mp3").readText())
+            assertEquals(metadataBefore, File(project, "project.json").readText())
+            assertEquals(setOf("beat.mp3", "project.json"), project.list()!!.toSet())
+        }
+    }
+
+    @Test
+    fun getProjectBeatFile_rejectsOutsideFilesAndDirectories() {
+        val project = tempFolder.newFolder("bounded_beat")
+        File(tempFolder.root, "outside.mp3").writeText("outside")
+        File(project, "directory.mp3").mkdir()
+        for (name in listOf("../outside.mp3", "directory.mp3")) {
+            assertNull(ProjectStorage.getProjectBeatFile(project, ProjectMetadata("song", beatFile = name)))
+        }
+    }
+
+    @Test
+    fun assignBeatToProject_rejectsUnsupportedExtensionBeforeCopy() {
+        val project = tempFolder.newFolder("unsupported")
+        val result = runCatching {
+            ProjectStorage.assignBeatToProject(project, "notes.txt") {
+                throw AssertionError("Copy must not run")
+            }
+        }
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+        assertTrue(project.list()!!.isEmpty())
+    }
+
     @get:Rule
     val tempFolder = TemporaryFolder()
 

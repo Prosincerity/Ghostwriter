@@ -13,7 +13,7 @@ import java.io.File
  *   is disposed so the OS can reclaim audio resources.
  * - Looping defaults to ON: rap songwriters almost always want their
  *   instrumental to loop continuously while writing verses.
- * - State is a simple data class; callers observe it via Compose state
+ * - State is exposed through properties; callers observe it via Compose state
  *   (see EditorScreen) rather than callbacks or flows.
  */
 class BeatPlayer {
@@ -58,7 +58,7 @@ class BeatPlayer {
      */
     fun load(beatFile: File): Boolean {
         release()
-        if (!beatFile.exists()) return false
+        if (!beatFile.isFile) return false
         return runCatching {
             val mp = MediaPlayer().also { player = it }
             mp.setDataSource(beatFile.absolutePath)
@@ -122,6 +122,7 @@ class BeatPlayer {
      * clamped before being applied to both channels of the active player.
      */
     fun setVolume(volume: Float) {
+        if (volume.isNaN()) return
         this.volume = volume.coerceIn(0f, 1f)
         player?.setVolume(this.volume, this.volume)
     }
@@ -132,14 +133,12 @@ class BeatPlayer {
      * multiple times.
      */
     fun release() {
-        runCatching {
-            player?.run {
-                if (isPlaying) stop()
-                release()
-            }
-        }
+        // release() already stops playback; querying/stopping first can throw
+        // in an error state and prevent native resources from being released.
+        val previousPlayer = player
         player = null
         prepared = false
+        runCatching { previousPlayer?.release() }
     }
 
     private companion object {
