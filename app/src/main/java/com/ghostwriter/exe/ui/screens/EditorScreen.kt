@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +38,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -109,6 +111,7 @@ fun EditorScreen(
         mutableStateOf(ProjectStorage.getProjectBeatFile(projectDir, metadata))
     }
     var isImporting by remember(projectTitle) { mutableStateOf(false) }
+    var isReassigningBeat by remember(projectTitle) { mutableStateOf(false) }
     LaunchedEffect(beatPlayer) {
         isBeatReady = beatFile?.let(beatPlayer::load) == true
     }
@@ -286,6 +289,24 @@ fun EditorScreen(
                         )
                     )
                 },
+                onReassignBeat = {
+                    isReassigningBeat = true
+                    beatPlayer.release()
+                    isBeatReady = false
+                    coroutineScope.launch {
+                        try {
+                            val updatedMetadata = withContext(Dispatchers.IO) {
+                                ProjectStorage.removeBeatFromProject(projectDir)
+                                ProjectStorage.loadMetadata(projectDir, projectTitle)
+                            }
+                            metadata = updatedMetadata
+                            beatFile = null
+                        } finally {
+                            isReassigningBeat = false
+                        }
+                    }
+                },
+                isReassigningBeat = isReassigningBeat,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -319,6 +340,8 @@ private fun BeatPlayerPanel(
     isImporting: Boolean,
     beatDisplayName: String,
     onImportBeat: () -> Unit,
+    onReassignBeat: () -> Unit,
+    isReassigningBeat: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
@@ -351,16 +374,22 @@ private fun BeatPlayerPanel(
         if (!isBeatReady) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
-                    text = "No beat selected",
+                    text = if (isReassigningBeat) "Removing beat…" else "No beat selected",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Button(
                     onClick = onImportBeat,
-                    enabled = !isImporting,
+                    enabled = !isImporting && !isReassigningBeat,
                     modifier = Modifier.padding(top = 4.dp),
                 ) {
-                    Text(if (isImporting) "Importing…" else "Import beat")
+                    Text(
+                        when {
+                            isReassigningBeat -> "Removing…"
+                            isImporting -> "Importing…"
+                            else -> "Import beat"
+                        }
+                    )
                 }
             }
             return@Card
@@ -401,6 +430,16 @@ private fun BeatPlayerPanel(
             )
 
             Box(modifier = Modifier.fillMaxWidth()) {
+                TextButton(
+                    onClick = onReassignBeat,
+                    enabled = !isReassigningBeat,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                ) {
+                    Text("Reassign", style = MaterialTheme.typography.labelSmall)
+                }
                 Row(
                     modifier = Modifier.align(Alignment.Center),
                     verticalAlignment = Alignment.CenterVertically,
