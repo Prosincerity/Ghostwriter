@@ -1,6 +1,6 @@
-# Gh0stwrit3r.exe — Documentation
+# Ghostwriter — Documentation
 
-Welcome to the project documentation directory for **Gh0stwrit3r.exe**. All design documents, architecture specifications, feature roadmaps, and setup instructions live in this directory.
+Welcome to the project documentation directory for **Ghostwriter**, a songwriting environment. All design documents, architecture specifications, feature roadmaps, and setup instructions live in this directory.
 
 ## Documentation Index
 
@@ -13,7 +13,7 @@ Welcome to the project documentation directory for **Gh0stwrit3r.exe**. All desi
   - Tech stack specifications (Kotlin, Compose BOM, Android Gradle Plugin, AOSP built-in `MediaPlayer`, built-in `org.json`).
   - Architecture breakdown of all current screens (`HomeScreen`, `EditorScreen`, `SettingsScreen`) and data handlers (`Settings`, `ProjectStorage`).
   - Offline Beat Player design and lifecycle management.
-  - Beat storage architecture (self-contained project folders and global `Music/Gh0stwrit3r/Instrumentals/` folder).
+  - Beat storage architecture (self-contained project folders and global `Music/Ghostwriter/Instrumentals/` folder).
   - Project metadata specification (`project.json`).
   - Deliberate architectural decisions and test coverage.
 

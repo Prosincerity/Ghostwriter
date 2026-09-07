@@ -1,6 +1,8 @@
-# ghostwriter.exe
+# Ghostwriter
 
-A free, open-source, no-bloat, no-AI Android app for writing rap lyrics — built to eventually feel like an IDE for bars.
+**Songwriting Environment**
+
+Ghostwriter is a free, open-source, no-bloat, no-AI Android app for writing rap lyrics — built to eventually feel like an IDE for bars.
 
 ## Status
 

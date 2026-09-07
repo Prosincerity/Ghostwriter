@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.ghostwriter.exe"
+    namespace = "com.prosincerity.ghostwriter"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.ghostwriter.exe"
+        applicationId = "com.prosincerity.ghostwriter"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

@@ -1,10 +1,10 @@
-# Project handoff: Gh0stwrit3r.exe
+# Project handoff: Ghostwriter
 
 ## 1. What this project is
 
-**Gh0stwrit3r.exe** is a free, open-source Android app for writing rap
-lyrics, built solo. Repo: `github.com/Prosincerity/Gh0stwrit3r.exe` (MIT
-licensed, public). It currently runs as a barebones notepad and is being
+**Ghostwriter** is a free, open-source Android app for writing rap lyrics,
+built solo. Its tagline is **Songwriting Environment**. The repository is MIT
+licensed and public. It currently runs as a barebones notepad and is being
 grown, feature by feature, into a full songwriting environment.
 
 ## 2. Non-negotiable philosophy — read this before suggesting anything
@@ -52,7 +52,7 @@ you have to "modernize" or "improve" things in ways that conflict with them:
 ## 4. Repository structure (current)
 
 ```
-Gh0stwrit3r.exe/
+Ghostwriter/
 ├── README.md
 ├── LICENSE                  ← MIT
 ├── .gitignore
@@ -66,7 +66,7 @@ Gh0stwrit3r.exe/
 │   └── src/
 │       ├── main/
 │       │   ├── AndroidManifest.xml
-│       │   └── java/com/ghostwriter/exe/
+│       │   └── java/com/prosincerity/ghostwriter/
 │       │       ├── MainActivity.kt         ← navigation host (see §6)
 │       │       ├── data/
 │       │       │   ├── Settings.kt         ← SharedPreferences wrapper
@@ -80,16 +80,15 @@ Gh0stwrit3r.exe/
 │       │               ├── Color.kt        ← dark "terminal" palette
 │       │               ├── Theme.kt
 │       │               └── Type.kt         ← monospace typography
-│       ├── test/java/com/ghostwriter/exe/  ← unit tests (ProjectStorageTest, SettingsFormatTest)
-│       └── androidTest/java/com/ghostwriter/exe/
+│       ├── test/java/com/prosincerity/ghostwriter/  ← unit tests (ProjectStorageTest, SettingsFormatTest)
+│       └── androidTest/java/com/prosincerity/ghostwriter/
 └── gradle/libs.versions.toml
 ```
 
-Package name is `com.ghostwriter.exe` everywhere — note this is NOT the same
-as the app's display name/repo name `Gh0stwrit3r.exe`. An earlier mismatch
-(`com.Gh0stwrit3r.exe` vs `com.ghostwriter.exe`) was already found and fixed;
-if you ever see a stray reference to the old casing, that's a leftover bug,
-not intentional.
+The Android namespace and application ID are both
+`com.prosincerity.ghostwriter`. The visible app name is **Ghostwriter** and
+the tagline is **Songwriting Environment**. If a `com.ghostwriter.exe`
+reference remains, it is a stale identifier that must be migrated.
 
 ## 5. What's actually built right now
 
@@ -148,7 +147,7 @@ Walking through what each file does:
     is stored in `project.json`. This makes the project self-contained and
     portable even if the source file is moved or deleted.
   - **Global instrumentals directory:** A browsable global library at a
-    user-accessible path such as `Music/Gh0stwrit3r/Instrumentals/` remains
+    user-accessible path such as `Music/Ghostwriter/Instrumentals/` remains
     planned. Do not treat it as implemented yet.
 
   **Project Metadata (`project.json`):**
@@ -271,7 +270,7 @@ just "fix" it without flagging it first:
    (Gson, Moshi, kotlinx.serialization) for `project.json` metadata.
 9. Self-contained project storage (assigned beat files copied into the project directory
    and metadata saved in `project.json`), paired with a global beats directory
-   (`Music/Gh0stwrit3r/Instrumentals/`) for browsing and selecting beats.
+   (`Music/Ghostwriter/Instrumentals/`) for browsing and selecting beats.
 
 ## 7. Known technical debt (not yet addressed, tracked, but not urgent)
 
@@ -324,7 +323,7 @@ default.
       Controls for play/pause, loop toggle, seek bar, and volume.
 - [ ] **Instrumentals library & project beat management** — direct import into
       a project is complete, but the browsable global folder (e.g.
-      `Music/Gh0stwrit3r/Instrumentals/` or another user-accessible directory)
+      `Music/Ghostwriter/Instrumentals/` or another user-accessible directory)
       remains to be built. Assigned beats are copied into the project directory
       so projects stay self-contained.
 - [x] **Project metadata (`project.json`)** — in-editor Project Info dialog and

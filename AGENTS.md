@@ -1,4 +1,4 @@
-# Gh0stwrit3r.exe agent instructions
+# Ghostwriter agent instructions
 
 Before modifying code, read:
 
