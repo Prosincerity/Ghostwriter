@@ -1,6 +1,6 @@
 # Ghostwriter — Documentation
 
-Welcome to the project documentation directory for **Ghostwriter**, a songwriting environment. All design documents, architecture specifications, feature roadmaps, and setup instructions live in this directory.
+Welcome to the project documentation directory for **Ghostwriter**, a songwriting environment. The public repository is `github.com/Prosincerity/Ghostwriter`. All design documents, architecture specifications, feature roadmaps, and setup instructions live in this directory.
 
 ## Documentation Index
 

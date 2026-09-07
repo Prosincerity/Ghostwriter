@@ -3,9 +3,10 @@
 ## 1. What this project is
 
 **Ghostwriter** is a free, open-source Android app for writing rap lyrics,
-built solo. Its tagline is **Songwriting Environment**. The repository is MIT
-licensed and public. It currently runs as a barebones notepad and is being
-grown, feature by feature, into a full songwriting environment.
+built solo. Its tagline is **Songwriting Environment**. The repository is
+MIT licensed and public at `github.com/Prosincerity/Ghostwriter`. It currently
+runs as a barebones notepad and is being grown, feature by feature, into a
+full songwriting environment.
 
 ## 2. Non-negotiable philosophy — read this before suggesting anything
 
