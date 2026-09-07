@@ -3,6 +3,8 @@ package com.ghostwriter.exe.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +29,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -66,11 +69,10 @@ fun SettingsScreen(onBack: () -> Unit) {
                 .fillMaxWidth()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            Text("Autosave interval", style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(8.dp))
-            LabeledDropdown(
+            SettingsDropdownRow(
+                description = "Autosave interval",
                 options = AppSettings.INTERVAL_OPTIONS_SECONDS,
                 selected = intervalSeconds,
                 label = ::formatInterval,
@@ -80,11 +82,10 @@ fun SettingsScreen(onBack: () -> Unit) {
                 },
             )
 
-            Spacer(Modifier.height(32.dp))
-
-            Text("Number of autosave backups", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(8.dp))
-            LabeledDropdown(
+
+            SettingsDropdownRow(
+                description = "Autosave backups",
                 options = AppSettings.COUNT_OPTIONS,
                 selected = autosaveCount,
                 label = { it.toString() },
@@ -98,7 +99,8 @@ fun SettingsScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun LabeledDropdown(
+private fun SettingsDropdownRow(
+    description: String,
     options: List<Int>,
     selected: Int,
     label: (Int) -> String,
@@ -106,19 +108,33 @@ private fun LabeledDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-            Text(label(selected))
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(label(option)) },
-                    onClick = {
-                        onSelect(option)
-                        expanded = false
-                    },
-                )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = description,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Box {
+            OutlinedButton(
+                onClick = { expanded = true },
+                modifier = Modifier.height(36.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+            ) {
+                Text(label(selected), style = MaterialTheme.typography.labelMedium)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(label(option)) },
+                        onClick = {
+                            onSelect(option)
+                            expanded = false
+                        },
+                    )
+                }
             }
         }
     }
