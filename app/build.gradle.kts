@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.ghostwriter.exe"
+    namespace = "com.prosincerity.ghostwriter"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.ghostwriter.exe"
+        applicationId = "com.prosincerity.ghostwriter"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
@@ -40,12 +40,14 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20231013")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

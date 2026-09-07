@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Gh0stwrit3r</string>
+    <string name="app_name">Ghostwriter</string>
+    <string name="app_tagline">Songwriting Environment</string>
 </resources>
