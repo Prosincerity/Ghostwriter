@@ -47,10 +47,55 @@ object ProjectStorage {
     fun deleteProject(context: Context, title: String): Boolean =
         deleteProjectDirectory(File(rootDir(context), sanitizeTitle(title)))
 
+    /**
+     * Renames a project without changing its contents. The title-based manual
+     * save file and the metadata title are updated to match the new folder.
+     *
+     * @return the renamed project title, or null if the source is missing, the
+     * destination already exists, or the rename cannot be completed safely.
+     */
+    fun renameProject(context: Context, currentTitle: String, requestedTitle: String): String? =
+        renameProjectDirectory(
+            projectDir = File(rootDir(context), sanitizeTitle(currentTitle)),
+            requestedTitle = requestedTitle,
+        )?.name
+
     @Synchronized
     internal fun deleteProjectDirectory(projectDir: File): Boolean {
         if (!projectDir.isDirectory) return false
         return runCatching { projectDir.deleteRecursively() }.getOrDefault(false)
+    }
+
+    @Synchronized
+    internal fun renameProjectDirectory(projectDir: File, requestedTitle: String): File? {
+        if (!projectDir.isDirectory) return null
+
+        val renamedTitle = sanitizeTitle(requestedTitle)
+        if (projectDir.name == renamedTitle) return projectDir
+
+        val renamedProjectDir = File(projectDir.parentFile ?: return null, renamedTitle)
+        if (renamedProjectDir.exists()) return null
+
+        val originalManualSave = File(projectDir, "${projectDir.name}.txt")
+        val renamedManualSave = File(projectDir, "$renamedTitle.txt")
+        val manualSaveWasRenamed = originalManualSave.isFile
+        if (manualSaveWasRenamed && !originalManualSave.renameTo(renamedManualSave)) return null
+
+        if (!projectDir.renameTo(renamedProjectDir)) {
+            if (manualSaveWasRenamed) renamedManualSave.renameTo(originalManualSave)
+            return null
+        }
+
+        val renamedMetadata = loadMetadata(renamedProjectDir, renamedTitle).copy(title = renamedTitle)
+        if (!saveMetadata(renamedProjectDir, renamedMetadata)) {
+            // Keep the old project intact if its metadata cannot be updated.
+            if (renamedProjectDir.renameTo(projectDir) && manualSaveWasRenamed) {
+                File(projectDir, "$renamedTitle.txt").renameTo(originalManualSave)
+            }
+            return null
+        }
+
+        return renamedProjectDir
     }
 
     /**

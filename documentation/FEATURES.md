@@ -13,7 +13,7 @@ This document is the single source of truth for where Ghostwriter is headed. Kee
 - [x] Single full-screen text editor
 - [x] Modern, clean, dark-friendly UI (Material 3)
 - [x] Create / delete lyric documents
-- [ ] Rename lyric documents
+- [x] Rename lyric documents
 - [x] Basic local persistence (survives app restart)
 
 ## Phase 2 — Songwriting environment

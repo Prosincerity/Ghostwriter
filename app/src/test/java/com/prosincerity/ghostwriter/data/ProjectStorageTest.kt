@@ -2,6 +2,8 @@ package com.prosincerity.ghostwriter.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -113,6 +115,51 @@ class ProjectStorageTest {
     fun deleteProjectDirectory_returnsFalseForMissingProject() {
         val missingProject = File(tempFolder.root, "missing_project")
         assertFalse(ProjectStorage.deleteProjectDirectory(missingProject))
+    }
+
+    // --- project renaming tests ---
+
+    @Test
+    fun renameProjectDirectory_movesContentsAndUpdatesTitleBasedFiles() {
+        val projectDir = tempFolder.newFolder("Old Track")
+        assertTrue(ProjectStorage.saveManual(projectDir, "Old Track", "saved lyrics", 3))
+        File(projectDir, "autosave2.txt").writeText("older lyrics")
+        File(projectDir, "beat.mp3").writeText("beat data")
+        assertTrue(
+            ProjectStorage.saveMetadata(
+                projectDir,
+                ProjectMetadata(title = "Old Track", bpm = 90, beatFile = "beat.mp3"),
+            )
+        )
+
+        val renamedDir = ProjectStorage.renameProjectDirectory(projectDir, "New/Track")
+
+        assertNotNull(renamedDir)
+        val destination = renamedDir!!
+        assertEquals("New_Track", destination.name)
+        assertFalse(projectDir.exists())
+        assertEquals("saved lyrics", File(destination, "New_Track.txt").readText())
+        assertFalse(File(destination, "Old Track.txt").exists())
+        assertEquals("older lyrics", File(destination, "autosave2.txt").readText())
+        assertEquals("beat data", File(destination, "beat.mp3").readText())
+        assertEquals("saved lyrics", ProjectStorage.loadLatest(destination))
+
+        val metadata = ProjectStorage.loadMetadata(destination, destination.name)
+        assertEquals("New_Track", metadata.title)
+        assertEquals(90, metadata.bpm)
+        assertEquals("beat.mp3", metadata.beatFile)
+    }
+
+    @Test
+    fun renameProjectDirectory_rejectsAnExistingDestination() {
+        val source = tempFolder.newFolder("source")
+        File(source, "source.txt").writeText("source lyrics")
+        val existing = tempFolder.newFolder("existing")
+        File(existing, "existing.txt").writeText("existing lyrics")
+
+        assertNull(ProjectStorage.renameProjectDirectory(source, "existing"))
+        assertEquals("source lyrics", File(source, "source.txt").readText())
+        assertEquals("existing lyrics", File(existing, "existing.txt").readText())
     }
 
     // --- rotateAndSave tests ---

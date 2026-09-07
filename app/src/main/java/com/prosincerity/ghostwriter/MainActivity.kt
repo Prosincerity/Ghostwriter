@@ -82,6 +82,20 @@ private fun GhostwriterApp() {
                     }
                 }
             },
+            onRenameProject = { currentTitle, renamedTitle ->
+                coroutineScope.launch {
+                    val renamed = withContext(Dispatchers.IO) {
+                        ProjectStorage.renameProject(context, currentTitle, renamedTitle)
+                    }
+                    if (renamed != null) {
+                        projects = withContext(Dispatchers.IO) {
+                            ProjectStorage.listProjects(context)
+                        }
+                    } else {
+                        Toast.makeText(context, "Couldn't rename $currentTitle", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
             onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Home) },
         )
 

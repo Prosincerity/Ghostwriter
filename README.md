@@ -35,7 +35,8 @@ Comprehensive project documentation lives in the [`documentation/`](documentatio
 See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature roadmap.
 
 **Phase 1 — MVP (completed):**
-- Barebones plain-text notepad, modern dark UI, local file persistence.
+- Barebones plain-text notepad, modern dark UI, local file persistence, and
+  project renaming.
 
 **Phase 2 — Songwriting environment (in progress):**
 - Autosave & rolling backup ring (`autosave1.txt`..`autosaveN.txt`) (completed)

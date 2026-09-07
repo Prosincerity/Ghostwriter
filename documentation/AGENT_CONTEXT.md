@@ -185,10 +185,13 @@ Walking through what each file does:
   placeholder for later. Below that, a "Recent" list shows existing project
   folders (added proactively — without it, autosaved work could never be
   reopened; this wasn't explicitly requested but was necessary for the
-  feature to be useful). Each recent project has a delete action with an
-  irreversible-data confirmation; deletion removes its complete directory.
-  New-project names are sanitized before duplicate matching. A case-insensitive
-  match opens the existing folder using its actual casing.
+  feature to be useful). Each recent project has an overflow menu with rename
+  and delete actions. Rename preserves the project contents, renames the
+  title-based manual save, and updates metadata; it rejects a destination name
+  that already exists. Deletion has an irreversible-data confirmation and
+  removes the complete directory. New-project names are sanitized before
+  duplicate matching. A case-insensitive match opens the existing folder using
+  its actual casing.
 
 - **`ui/screens/EditorScreen.kt`** — The actual text editor. Full-screen
   `TextField`, monospace, dark theme. Text state uses `rememberSaveable` (not
@@ -313,6 +316,7 @@ default.
 - Single full-screen text editor
 - Modern, dark-friendly Material 3 UI
 - Create/open lyric documents
+- Rename lyric documents
 - Basic local persistence
 
 **Phase 2 — Songwriting environment** — in progress
