@@ -234,12 +234,13 @@ Walking through what each file does:
   pattern rather than switching to `ExposedDropdownMenuBox`, to avoid
   reintroducing that version-drift risk.
 
-- **`ui/theme/`** — Dark, "terminal/hacker notebook" palette (`Color.kt`):
-  near-black background, a terminal-green accent color. `Type.kt` sets the
-  editor's body text to `FontFamily.Monospace` deliberately — this matters
-  for later features, because the syllable-counter gutter and bar-counter
-  column (see roadmap) need predictable, fixed-width character alignment
-  next to each line, which only works cleanly with a monospace font.
+- **`ui/theme/`** — Dark palette (`Color.kt`): `#121212` background,
+  `#1E1E1E` elevated surfaces, `#F2F2F2` text, `#FF4500` primary controls,
+  `#8B5CF6` secondary actions, and `#2A2A2A` outlines/dividers. `Type.kt`
+  sets the editor's body text to `FontFamily.Monospace` deliberately — this
+  matters for later features, because the syllable-counter gutter and
+  bar-counter column (see roadmap) need predictable, fixed-width character
+  alignment next to each line, which only works cleanly with a monospace font.
 
 - **`AndroidManifest.xml`** — `MainActivity` has
   `android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"`.
