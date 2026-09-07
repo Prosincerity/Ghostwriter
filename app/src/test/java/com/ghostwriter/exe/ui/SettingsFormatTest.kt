@@ -2,11 +2,19 @@ package com.ghostwriter.exe.ui
 
 import com.ghostwriter.exe.data.Settings
 import com.ghostwriter.exe.ui.screens.formatInterval
+import com.ghostwriter.exe.ui.screens.formatPlaybackTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsFormatTest {
+
+    @Test
+    fun formatPlaybackTime_displaysMinutesAndPaddedSeconds() {
+        assertEquals("0:00", formatPlaybackTime(0))
+        assertEquals("0:30", formatPlaybackTime(30_999))
+        assertEquals("2:30", formatPlaybackTime(150_000))
+    }
 
     @Test
     fun formatInterval_secondsUnderOneMinute() {

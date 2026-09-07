@@ -12,11 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.filled.Pause
@@ -324,6 +327,8 @@ private fun BeatPlayerPanel(
     var isSeeking by remember(beatPlayer) { mutableStateOf(false) }
     var pendingSeekPositionMs by remember(beatPlayer) { mutableFloatStateOf(0f) }
     var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
+    var volumeBeforeMute by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
+    var isMuted by remember(beatPlayer) { mutableStateOf(beatPlayer.volume == 0f) }
     var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
 
     // MediaPlayer has no Compose-observable position state. Poll only while
@@ -342,7 +347,7 @@ private fun BeatPlayerPanel(
         }
     }
 
-    Card(modifier = modifier.height(104.dp)) {
+    Card(modifier = modifier.height(112.dp)) {
         if (!isBeatReady) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
@@ -387,6 +392,12 @@ private fun BeatPlayerPanel(
                 },
                 valueRange = 0f..durationMs.coerceAtLeast(1).toFloat(),
                 modifier = Modifier.height(20.dp),
+            )
+            Text(
+                text = "${formatPlaybackTime(currentPositionMs)}/${formatPlaybackTime(durationMs)}",
+                maxLines = 1,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -434,21 +445,58 @@ private fun BeatPlayerPanel(
                         )
                     }
                 }
-                Slider(
-                    value = volume,
-                    onValueChange = { newVolume ->
-                        beatPlayer.setVolume(newVolume)
-                        volume = beatPlayer.volume
-                    },
-                    valueRange = 0f..1f,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .height(16.dp)
-                        .width(64.dp),
-                )
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = {
+                            if (isMuted) {
+                                beatPlayer.setVolume(volumeBeforeMute.takeIf { it > 0f } ?: 1f)
+                                volume = beatPlayer.volume
+                                isMuted = false
+                            } else {
+                                if (volume > 0f) volumeBeforeMute = volume
+                                beatPlayer.setVolume(0f)
+                                volume = 0f
+                                isMuted = true
+                            }
+                        },
+                        modifier = Modifier.size(32.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (isMuted) {
+                                Icons.AutoMirrored.Filled.VolumeOff
+                            } else {
+                                Icons.AutoMirrored.Filled.VolumeUp
+                            },
+                            contentDescription = if (isMuted) "Unmute" else "Mute",
+                        )
+                    }
+                    Slider(
+                        value = volume,
+                        onValueChange = { newVolume ->
+                            beatPlayer.setVolume(newVolume)
+                            volume = beatPlayer.volume
+                            if (volume > 0f) volumeBeforeMute = volume
+                            isMuted = volume == 0f
+                        },
+                        valueRange = 0f..1f,
+                        modifier = Modifier
+                            .height(16.dp)
+                            .width(56.dp),
+                    )
+                }
             }
         }
     }
+}
+
+internal fun formatPlaybackTime(milliseconds: Int): String {
+    val totalSeconds = (milliseconds.coerceAtLeast(0) / 1_000)
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "$minutes:${seconds.toString().padStart(2, '0')}"
 }
 
 private fun displayNameFor(context: android.content.Context, uri: Uri): String? {
