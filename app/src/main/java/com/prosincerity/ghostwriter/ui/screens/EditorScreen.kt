@@ -130,11 +130,14 @@ fun EditorScreen(
     var waveformRevision by remember(projectTitle) { mutableIntStateOf(0) }
     var waveformCancellation by remember(projectTitle) { mutableStateOf<AtomicBoolean?>(null) }
     var cancellationRequested by remember(projectTitle) { mutableStateOf(false) }
+    var waveformPreparationCancelled by remember(projectTitle) { mutableStateOf(false) }
     var autoPlayWhenWaveformReady by remember(projectTitle) { mutableStateOf(false) }
     var isImportedBeatPreparation by remember(projectTitle) { mutableStateOf(false) }
-    var pendingLongBeatPreparation by remember { mutableStateOf<PendingBeatPreparation?>(null) }
-    var markerPositionToAdd by remember { mutableStateOf<Long?>(null) }
-    var markerToEdit by remember { mutableStateOf<WaveformMarker?>(null) }
+    var pendingLongBeatPreparation by remember(projectTitle) {
+        mutableStateOf<PendingBeatPreparation?>(null)
+    }
+    var markerPositionToAdd by remember(projectTitle) { mutableStateOf<Long?>(null) }
+    var markerToEdit by remember(projectTitle) { mutableStateOf<WaveformMarker?>(null) }
 
     // Decoding a full beat can take noticeable time, so it happens once for
     // each assigned/reassigned beat on IO. Playback waits for this work so the
@@ -146,6 +149,7 @@ fun EditorScreen(
             isWaveformLoading = false
             isBeatReady = false
             isImportedBeatPreparation = false
+            waveformPreparationCancelled = false
             return@LaunchedEffect
         }
 
@@ -153,6 +157,7 @@ fun EditorScreen(
         val cancellation = AtomicBoolean(false)
         waveformCancellation = cancellation
         cancellationRequested = false
+        waveformPreparationCancelled = false
         isWaveformLoading = true
         isBeatReady = false
         try {
@@ -174,17 +179,21 @@ fun EditorScreen(
             }
         } catch (cancellation: java.util.concurrent.CancellationException) {
             if (!cancellationRequested) throw cancellation
-            if (beatFile == currentBeat && removeBeatOnCancellation) {
-                val updatedMetadata = withContext(Dispatchers.IO) {
-                    ProjectStorage.removeBeatFromProject(projectDir)
-                    ProjectStorage.loadMetadata(projectDir, projectTitle)
+            if (beatFile == currentBeat) {
+                if (removeBeatOnCancellation) {
+                    val updatedMetadata = withContext(Dispatchers.IO) {
+                        ProjectStorage.removeBeatFromProject(projectDir)
+                        ProjectStorage.loadMetadata(projectDir, projectTitle)
+                    }
+                    metadata = updatedMetadata
+                    beatFile = null
+                    waveformRevision++
+                    isImportedBeatPreparation = false
+                } else {
+                    waveformPreparationCancelled = true
                 }
-                metadata = updatedMetadata
-                beatFile = null
                 waveformAmplitudes = IntArray(0)
-                waveformRevision++
                 autoPlayWhenWaveformReady = false
-                isImportedBeatPreparation = false
             }
         } finally {
             if (waveformCancellation === cancellation) {
@@ -415,7 +424,9 @@ fun EditorScreen(
                     cancellationRequested = true
                     waveformCancellation?.set(true)
                 },
-                canCancelWaveformPreparation = isImportedBeatPreparation,
+                cancelRemovesImportedBeat = isImportedBeatPreparation,
+                waveformPreparationCancelled = waveformPreparationCancelled,
+                onRetryWaveformPreparation = { waveformRevision++ },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -533,7 +544,7 @@ fun EditorScreen(
             title = { Text("Long audio file") },
             text = {
                 Text(
-                    "This beat is ${formatPlaybackTime(pendingBeat.durationMs.toInt())} long. " +
+                    "This beat is ${formatPlaybackTime(pendingBeat.durationMs)} long. " +
                         "Creating its waveform may take a while."
                 )
             },
@@ -587,7 +598,9 @@ private fun BeatPlayerPanel(
     onMarkerClick: (WaveformMarker) -> Unit,
     onMarkerMove: (WaveformMarker, Long) -> Unit,
     onCancelWaveformPreparation: () -> Unit,
-    canCancelWaveformPreparation: Boolean,
+    cancelRemovesImportedBeat: Boolean,
+    waveformPreparationCancelled: Boolean,
+    onRetryWaveformPreparation: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
@@ -626,13 +639,28 @@ private fun BeatPlayerPanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
                 )
-                if (canCancelWaveformPreparation) {
-                    Button(
-                        onClick = onCancelWaveformPreparation,
-                        modifier = Modifier.padding(top = 8.dp),
-                    ) {
-                        Text("Cancel import")
-                    }
+                Button(
+                    onClick = onCancelWaveformPreparation,
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Text(if (cancelRemovesImportedBeat) "Cancel import" else "Cancel preparation")
+                }
+            }
+            return@Card
+        }
+
+        if (waveformPreparationCancelled) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(
+                    text = "Waveform preparation canceled",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = onRetryWaveformPreparation,
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Text("Retry")
                 }
             }
             return@Card
@@ -685,8 +713,11 @@ private fun BeatPlayerPanel(
                 },
                 onAddMarker = onAddMarker,
                 onMarkerClick = { marker ->
-                    beatPlayer.seekTo(marker.positionMs.toInt())
-                    currentPositionMs = marker.positionMs.toInt()
+                    val markerPositionMs = marker.positionMs
+                        .coerceIn(0L, durationMs.toLong())
+                        .toInt()
+                    beatPlayer.seekTo(markerPositionMs)
+                    currentPositionMs = markerPositionMs
                     onMarkerClick(marker)
                 },
                 onMarkerMoveFinished = onMarkerMove,
@@ -695,7 +726,8 @@ private fun BeatPlayerPanel(
                     .weight(1f),
             )
             Text(
-                text = "${formatPlaybackTime(currentPositionMs)}/${formatPlaybackTime(durationMs)}",
+                text = "${formatPlaybackTime(currentPositionMs.toLong())}/" +
+                    formatPlaybackTime(durationMs.toLong()),
                 maxLines = 1,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -828,7 +860,7 @@ private fun WaveformMarkerDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    text = "Position: ${formatPlaybackTime(positionMs.toInt())}",
+                    text = "Position: ${formatPlaybackTime(positionMs)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp),
@@ -857,7 +889,7 @@ private fun WaveformMarkerDialog(
     )
 }
 
-internal fun formatPlaybackTime(milliseconds: Int): String {
+internal fun formatPlaybackTime(milliseconds: Long): String {
     val totalSeconds = (milliseconds.coerceAtLeast(0) / 1_000)
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60

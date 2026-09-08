@@ -14,6 +14,7 @@ class SettingsFormatTest {
         assertEquals("0:00", formatPlaybackTime(0))
         assertEquals("0:30", formatPlaybackTime(30_999))
         assertEquals("2:30", formatPlaybackTime(150_000))
+        assertEquals("60000:00", formatPlaybackTime(3_600_000_000L))
     }
 
     @Test
