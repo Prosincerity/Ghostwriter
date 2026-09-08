@@ -150,7 +150,7 @@ fun WaveformView(
             }
 
             markers.forEach { marker ->
-                val displayPositionMs = if (marker == draggedMarker) pendingMarkerPositionMs else marker.positionMs
+                val displayPositionMs = if (marker === draggedMarker) pendingMarkerPositionMs else marker.positionMs
                 val markerX = drawingViewport.positionToX(displayPositionMs, durationMs, size.width)
                 if (markerX in -48.dp.toPx()..size.width) {
                     drawLine(

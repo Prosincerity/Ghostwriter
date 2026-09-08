@@ -390,7 +390,7 @@ fun EditorScreen(
                 onAddMarker = { positionMs -> markerPositionToAdd = positionMs },
                 onMarkerClick = { marker -> markerToEdit = marker },
                 onMarkerMove = { marker, positionMs ->
-                    val markerIndex = metadata.markers.indexOf(marker)
+                    val markerIndex = metadata.markers.indexOfFirst { it === marker }
                     if (markerIndex >= 0 && marker.positionMs != positionMs) {
                         val updatedMarkers = metadata.markers.toMutableList().apply {
                             this[markerIndex] = marker.copy(positionMs = positionMs)
@@ -469,7 +469,7 @@ fun EditorScreen(
             initialLabel = marker.label,
             positionMs = marker.positionMs,
             onSave = { label ->
-                val markerIndex = metadata.markers.indexOf(marker)
+                val markerIndex = metadata.markers.indexOfFirst { it === marker }
                 if (markerIndex < 0) {
                     markerToEdit = null
                     return@WaveformMarkerDialog
@@ -494,7 +494,7 @@ fun EditorScreen(
                 markerToEdit = null
             },
             onDelete = {
-                val markerIndex = metadata.markers.indexOf(marker)
+                val markerIndex = metadata.markers.indexOfFirst { it === marker }
                 if (markerIndex < 0) {
                     markerToEdit = null
                     return@WaveformMarkerDialog
