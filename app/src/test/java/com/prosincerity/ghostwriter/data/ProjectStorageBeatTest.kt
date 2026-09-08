@@ -9,8 +9,51 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.concurrent.CancellationException
 
 class ProjectStorageBeatTest {
+
+    @Test
+    fun loadOrExtractWaveform_cancelledBeforeExtractionDoesNotCreateCache() {
+        val project = tempFolder.newFolder("cancel_before_extraction")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        var extractionCalled = false
+
+        val result = runCatching {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 3, shouldCancel = { true }) { _, _ ->
+                extractionCalled = true
+                intArrayOf(1, 2, 3)
+            }
+        }
+
+        assertTrue(result.exceptionOrNull() is CancellationException)
+        assertFalse(extractionCalled)
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+        assertEquals("beat", beat.readText())
+    }
+
+    @Test
+    fun loadOrExtractWaveform_cancelledDuringExtractionPreservesPreviousCache() {
+        val project = tempFolder.newFolder("cancel_during_extraction")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(7, 8)))
+        val cacheBefore = ProjectStorage.waveformCacheFile(project).readText()
+        var cancelled = false
+        var extractionCalled = false
+
+        val result = runCatching {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 3, shouldCancel = { cancelled }) { _, _ ->
+                extractionCalled = true
+                cancelled = true
+                intArrayOf(1, 2, 3)
+            }
+        }
+
+        assertTrue(extractionCalled)
+        assertTrue(result.exceptionOrNull() is CancellationException)
+        assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readText())
+        assertEquals("beat", beat.readText())
+    }
 
     @Test
     fun waveformCache_roundTripsOnlyAtItsOriginalResolution() {
