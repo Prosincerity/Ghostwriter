@@ -4,6 +4,7 @@ import android.content.Context
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.CancellationException
 
 /**
  * Handles the on-disk layout for lyric projects.
@@ -269,11 +270,15 @@ object ProjectStorage {
         projectDir: File,
         beatFile: File,
         targetSampleCount: Int = WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+        shouldCancel: () -> Boolean = { false },
     ): IntArray = loadOrExtractWaveform(
         projectDir = projectDir,
         beatFile = beatFile,
         targetSampleCount = targetSampleCount,
-        extract = WaveformExtractor::extractAmplitudes,
+        shouldCancel = shouldCancel,
+        extract = { file, sampleCount ->
+            WaveformExtractor.extractAmplitudes(file, sampleCount, shouldCancel)
+        },
     )
 
     @Synchronized
@@ -281,6 +286,7 @@ object ProjectStorage {
         projectDir: File,
         beatFile: File,
         targetSampleCount: Int,
+        shouldCancel: () -> Boolean = { false },
         extract: (File, Int) -> IntArray,
     ): IntArray {
         if (
@@ -289,13 +295,19 @@ object ProjectStorage {
             runCatching { beatFile.canonicalFile.parentFile == projectDir.canonicalFile }.getOrDefault(false).not()
         ) return IntArray(0)
 
+        throwIfWaveformCancelled(shouldCancel)
         loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
 
         val amplitudes = extract(beatFile, targetSampleCount)
+        throwIfWaveformCancelled(shouldCancel)
         if (amplitudes.isEmpty() || amplitudes.size == targetSampleCount) {
             saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
         }
         return amplitudes
+    }
+
+    private fun throwIfWaveformCancelled(shouldCancel: () -> Boolean) {
+        if (shouldCancel()) throw CancellationException("Waveform extraction cancelled")
     }
 
     fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {

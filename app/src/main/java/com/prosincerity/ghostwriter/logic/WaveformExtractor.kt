@@ -7,6 +7,7 @@ import android.media.MediaFormat
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.CancellationException
 import kotlin.math.abs
 
 /**
@@ -24,20 +25,47 @@ object WaveformExtractor {
     private const val DEQUEUE_TIMEOUT_US = 10_000L
 
     /**
+     * Returns the duration of the first audio track, or null if it cannot be
+     * read. This only reads container metadata; it does not decode the beat.
+     */
+    fun durationMs(file: File): Long? {
+        if (!file.isFile) return null
+        val extractor = MediaExtractor()
+        return try {
+                extractor.setDataSource(file.absolutePath)
+                val trackIndex = extractor.findAudioTrack() ?: return null
+                val durationUs = extractor.getTrackFormat(trackIndex)
+                    .longOrNull(MediaFormat.KEY_DURATION)
+                    ?: return null
+                (durationUs / 1_000L).takeIf { it > 0L }
+        } catch (_: Exception) {
+            null
+        } finally {
+            extractor.release()
+        }
+    }
+
+    /**
      * Returns [targetSampleCount] peak amplitudes for a decodable audio file.
      * Amplitudes range from 0 to 32,768. Invalid, unsupported, or corrupt
-     * files return an empty array so an unavailable waveform never blocks
-     * beat playback.
+     * files return an empty array. [shouldCancel] is checked throughout
+     * decoding and throws [CancellationException] without writing a cache.
      */
-    fun extractAmplitudes(file: File, targetSampleCount: Int = DEFAULT_TARGET_SAMPLE_COUNT): IntArray {
+    fun extractAmplitudes(
+        file: File,
+        targetSampleCount: Int = DEFAULT_TARGET_SAMPLE_COUNT,
+        shouldCancel: () -> Boolean = { false },
+    ): IntArray {
         if (targetSampleCount <= 0 || !file.isFile) return IntArray(0)
 
-        return runCatching {
-            decodeFramePeaks(file).let { framePeaks ->
-                if (framePeaks.isEmpty()) IntArray(0)
-                else downsampleFramePeaks(framePeaks, targetSampleCount)
-            }
-        }.getOrElse { IntArray(0) }
+        return try {
+            checkCancelled(shouldCancel)
+            decodePeakBuckets(file, targetSampleCount, shouldCancel)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            IntArray(0)
+        }
     }
 
     /**
@@ -57,20 +85,21 @@ object WaveformExtractor {
         }
     }
 
-    private fun decodeFramePeaks(file: File): IntArray {
+    private fun decodePeakBuckets(
+        file: File,
+        targetSampleCount: Int,
+        shouldCancel: () -> Boolean,
+    ): IntArray {
         val extractor = MediaExtractor()
         var codec: MediaCodec? = null
         var codecStarted = false
 
         try {
             extractor.setDataSource(file.absolutePath)
-            val audioTrackIndex = (0 until extractor.trackCount).firstOrNull { trackIndex ->
-                extractor.getTrackFormat(trackIndex)
-                    .getString(MediaFormat.KEY_MIME)
-                    ?.startsWith("audio/") == true
-            } ?: return IntArray(0)
-
+            val audioTrackIndex = extractor.findAudioTrack() ?: return IntArray(0)
             val inputFormat = extractor.getTrackFormat(audioTrackIndex)
+            val durationUs = inputFormat.longOrNull(MediaFormat.KEY_DURATION) ?: return IntArray(0)
+            if (durationUs <= 0L) return IntArray(0)
             val mimeType = inputFormat.getString(MediaFormat.KEY_MIME) ?: return IntArray(0)
             extractor.selectTrack(audioTrackIndex)
 
@@ -80,13 +109,15 @@ object WaveformExtractor {
             activeCodec.start()
             codecStarted = true
 
-            val peakBuilder = IntArrayBuilder()
+            val buckets = IntArray(targetSampleCount)
             val bufferInfo = MediaCodec.BufferInfo()
             var outputFormat = inputFormat
             var inputEnded = false
             var outputEnded = false
+            var decodedFrameCount = 0L
 
             while (!outputEnded) {
+                checkCancelled(shouldCancel)
                 if (!inputEnded) {
                     val inputIndex = activeCodec.dequeueInputBuffer(DEQUEUE_TIMEOUT_US)
                     if (inputIndex >= 0) {
@@ -122,7 +153,14 @@ object WaveformExtractor {
                     else -> if (outputIndex >= 0) {
                         try {
                             activeCodec.getOutputBuffer(outputIndex)?.let { outputBuffer ->
-                                appendFramePeaks(outputBuffer, bufferInfo, outputFormat, peakBuilder)
+                                decodedFrameCount += appendFramePeaksToBuckets(
+                                    buffer = outputBuffer,
+                                    bufferInfo = bufferInfo,
+                                    format = outputFormat,
+                                    durationUs = durationUs,
+                                    buckets = buckets,
+                                    shouldCancel = shouldCancel,
+                                )
                             }
                             outputEnded = bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
                         } finally {
@@ -132,7 +170,7 @@ object WaveformExtractor {
                 }
             }
 
-            return peakBuilder.toIntArray()
+            return if (decodedFrameCount > 0L) buckets else IntArray(0)
         } finally {
             if (codecStarted) runCatching { codec?.stop() }
             runCatching { codec?.release() }
@@ -140,15 +178,18 @@ object WaveformExtractor {
         }
     }
 
-    private fun appendFramePeaks(
+    private fun appendFramePeaksToBuckets(
         buffer: ByteBuffer,
         bufferInfo: MediaCodec.BufferInfo,
         format: MediaFormat,
-        peakBuilder: IntArrayBuilder,
-    ) {
-        if (bufferInfo.size <= 0) return
+        durationUs: Long,
+        buckets: IntArray,
+        shouldCancel: () -> Boolean,
+    ): Long {
+        if (bufferInfo.size <= 0) return 0L
 
         val channelCount = format.integerOrDefault(MediaFormat.KEY_CHANNEL_COUNT, 1).coerceAtLeast(1)
+        val sampleRate = format.integerOrDefault(MediaFormat.KEY_SAMPLE_RATE, 44_100).coerceAtLeast(1)
         val pcmEncoding = format.integerOrDefault(
             MediaFormat.KEY_PCM_ENCODING,
             AudioFormat.ENCODING_PCM_16BIT,
@@ -159,7 +200,7 @@ object WaveformExtractor {
             else -> 2
         }
         val bytesPerFrame = bytesPerSample * channelCount
-        if (bytesPerFrame <= 0) return
+        if (bytesPerFrame <= 0) return 0L
 
         val readable = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN).apply {
             clear()
@@ -171,7 +212,9 @@ object WaveformExtractor {
             limit(end)
         }
 
+        var frameIndex = 0L
         while (readable.remaining() >= bytesPerFrame) {
+            if (frameIndex % 256L == 0L) checkCancelled(shouldCancel)
             var framePeak = 0
             repeat(channelCount) {
                 val amplitude = when (pcmEncoding) {
@@ -183,24 +226,28 @@ object WaveformExtractor {
                 }
                 framePeak = maxOf(framePeak, amplitude)
             }
-            peakBuilder.add(framePeak)
+            val frameTimeUs = bufferInfo.presentationTimeUs + (frameIndex * 1_000_000L / sampleRate)
+            val bucketIndex = ((frameTimeUs.coerceIn(0L, durationUs) * buckets.size) / durationUs)
+                .toInt()
+                .coerceAtMost(buckets.lastIndex)
+            buckets[bucketIndex] = maxOf(buckets[bucketIndex], framePeak)
+            frameIndex++
         }
+        return frameIndex
     }
 
-    private class IntArrayBuilder {
-        private var values = IntArray(1_024)
-        private var size = 0
-
-        fun add(value: Int) {
-            if (size == values.size) values = values.copyOf(values.size * 2)
-            values[size++] = value
+    private fun MediaExtractor.findAudioTrack(): Int? =
+        (0 until trackCount).firstOrNull { trackIndex ->
+            getTrackFormat(trackIndex).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
         }
-
-        fun isEmpty(): Boolean = size == 0
-
-        fun toIntArray(): IntArray = values.copyOf(size)
-    }
 
     private fun MediaFormat.integerOrDefault(key: String, defaultValue: Int): Int =
         if (containsKey(key)) getInteger(key) else defaultValue
+
+    private fun MediaFormat.longOrNull(key: String): Long? =
+        if (containsKey(key)) getLong(key) else null
+
+    private fun checkCancelled(shouldCancel: () -> Boolean) {
+        if (shouldCancel()) throw CancellationException("Waveform extraction cancelled")
+    }
 }

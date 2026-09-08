@@ -63,6 +63,7 @@ import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
+import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.BeatPlayer
 import com.prosincerity.ghostwriter.ui.components.WaveformView
 import android.net.Uri
@@ -74,6 +75,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+
+private const val LONG_BEAT_WARNING_MS = 10 * 60 * 1_000L
+
+private data class PendingBeatPreparation(
+    val file: File,
+    val durationMs: Long,
+)
 
 /**
  * The Phase 1 notepad, now with a title bar (back + settings) and a
@@ -118,28 +128,65 @@ fun EditorScreen(
     var waveformAmplitudes by remember(projectTitle) { mutableStateOf(IntArray(0)) }
     var isWaveformLoading by remember(projectTitle) { mutableStateOf(false) }
     var waveformRevision by remember(projectTitle) { mutableIntStateOf(0) }
+    var waveformCancellation by remember(projectTitle) { mutableStateOf<AtomicBoolean?>(null) }
+    var cancellationRequested by remember(projectTitle) { mutableStateOf(false) }
+    var autoPlayWhenWaveformReady by remember(projectTitle) { mutableStateOf(false) }
+    var pendingLongBeatPreparation by remember { mutableStateOf<PendingBeatPreparation?>(null) }
     var markerPositionToAdd by remember { mutableStateOf<Long?>(null) }
     var markerToEdit by remember { mutableStateOf<WaveformMarker?>(null) }
-    LaunchedEffect(beatPlayer) {
-        isBeatReady = beatFile?.let(beatPlayer::load) == true
-    }
 
     // Decoding a full beat can take noticeable time, so it happens once for
-    // each assigned/reassigned beat on IO. ProjectStorage reuses waveform.dat
-    // on subsequent editor opens.
+    // each assigned/reassigned beat on IO. Playback waits for this work so the
+    // player never appears before waveform.dat has been written.
     LaunchedEffect(beatFile, waveformRevision) {
         val currentBeat = beatFile
         if (currentBeat == null) {
             waveformAmplitudes = IntArray(0)
             isWaveformLoading = false
+            isBeatReady = false
             return@LaunchedEffect
         }
 
+        val cancellation = AtomicBoolean(false)
+        waveformCancellation = cancellation
+        cancellationRequested = false
         isWaveformLoading = true
-        waveformAmplitudes = withContext(Dispatchers.IO) {
-            ProjectStorage.loadOrExtractWaveform(projectDir, currentBeat)
+        isBeatReady = false
+        try {
+            waveformAmplitudes = withContext(Dispatchers.IO) {
+                ProjectStorage.loadOrExtractWaveform(
+                    projectDir = projectDir,
+                    beatFile = currentBeat,
+                    shouldCancel = cancellation::get,
+                )
+            }
+            if (cancellation.get()) throw java.util.concurrent.CancellationException()
+
+            isBeatReady = beatPlayer.load(currentBeat)
+            if (isBeatReady && autoPlayWhenWaveformReady) beatPlayer.play()
+            autoPlayWhenWaveformReady = false
+            if (!isBeatReady) {
+                Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
+            }
+        } catch (_: java.util.concurrent.CancellationException) {
+            if (!cancellationRequested) throw java.util.concurrent.CancellationException()
+            if (cancellationRequested && beatFile == currentBeat) {
+                val updatedMetadata = withContext(Dispatchers.IO) {
+                    ProjectStorage.removeBeatFromProject(projectDir)
+                    ProjectStorage.loadMetadata(projectDir, projectTitle)
+                }
+                metadata = updatedMetadata
+                beatFile = null
+                waveformAmplitudes = IntArray(0)
+                waveformRevision++
+                autoPlayWhenWaveformReady = false
+            }
+        } finally {
+            if (waveformCancellation === cancellation) {
+                waveformCancellation = null
+                isWaveformLoading = false
+            }
         }
-        isWaveformLoading = false
     }
 
     val importBeatLauncher = rememberLauncherForActivityResult(
@@ -166,20 +213,22 @@ fun EditorScreen(
                                 destination.outputStream().use { output -> input.copyTo(output) }
                             } ?: error("Couldn't read the selected beat")
                         }
-                        assigned to ProjectStorage.loadMetadata(projectDir, projectTitle)
+                        Triple(
+                            assigned,
+                            ProjectStorage.loadMetadata(projectDir, projectTitle),
+                            WaveformExtractor.durationMs(assigned),
+                        )
                     }
                 }
 
-                imported.onSuccess { (assigned, updatedMetadata) ->
+                imported.onSuccess { (assigned, updatedMetadata, durationMs) ->
                     metadata = updatedMetadata
-                    beatFile = assigned
-                    waveformRevision++
-                    // Reload explicitly: replacing beat.mp3 does not change its File key.
-                    isBeatReady = beatPlayer.load(assigned)
-                    if (isBeatReady) {
-                        beatPlayer.play()
+                    if (durationMs != null && durationMs >= LONG_BEAT_WARNING_MS) {
+                        pendingLongBeatPreparation = PendingBeatPreparation(assigned, durationMs)
                     } else {
-                        Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
+                        autoPlayWhenWaveformReady = true
+                        beatFile = assigned
+                        waveformRevision++
                     }
                 }.onFailure {
                     if (it is CancellationException) throw it
@@ -356,6 +405,10 @@ fun EditorScreen(
                         }
                     }
                 },
+                onCancelWaveformPreparation = {
+                    cancellationRequested = true
+                    waveformCancellation?.set(true)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -466,6 +519,48 @@ fun EditorScreen(
             onDismiss = { markerToEdit = null },
         )
     }
+
+    pendingLongBeatPreparation?.let { pendingBeat ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { /* Choose Process anyway or Cancel import. */ },
+            title = { Text("Long audio file") },
+            text = {
+                Text(
+                    "This beat is ${formatPlaybackTime(pendingBeat.durationMs.toInt())} long. " +
+                        "Creating its waveform may take a while."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        autoPlayWhenWaveformReady = true
+                        beatFile = pendingBeat.file
+                        waveformRevision++
+                        pendingLongBeatPreparation = null
+                    },
+                ) {
+                    Text("Process anyway")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val updatedMetadata = withContext(Dispatchers.IO) {
+                                ProjectStorage.removeBeatFromProject(projectDir)
+                                ProjectStorage.loadMetadata(projectDir, projectTitle)
+                            }
+                            metadata = updatedMetadata
+                            pendingLongBeatPreparation = null
+                            Toast.makeText(context, "Beat import cancelled", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                ) {
+                    Text("Cancel import")
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -483,6 +578,7 @@ private fun BeatPlayerPanel(
     onAddMarker: (Long) -> Unit,
     onMarkerClick: (WaveformMarker) -> Unit,
     onMarkerMove: (WaveformMarker, Long) -> Unit,
+    onCancelWaveformPreparation: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
@@ -508,6 +604,29 @@ private fun BeatPlayerPanel(
     }
 
     Card(modifier = modifier.height(192.dp)) {
+        if (isWaveformLoading) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(
+                    text = "Preparing waveform…",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "The player will be available when preparation finishes.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Button(
+                    onClick = onCancelWaveformPreparation,
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Text("Cancel import")
+                }
+            }
+            return@Card
+        }
+
         if (!isBeatReady) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(

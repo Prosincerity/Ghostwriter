@@ -7,6 +7,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.concurrent.CancellationException
 
 class WaveformExtractorTest {
 
@@ -52,5 +53,12 @@ class WaveformExtractorTest {
         val corrupt = tempFolder.newFile("corrupt.wav").apply { writeText("not audio") }
 
         assertTrue(WaveformExtractor.extractAmplitudes(corrupt, 100).isEmpty())
+    }
+
+    @Test(expected = CancellationException::class)
+    fun extractAmplitudes_stopsBeforeDecodingWhenCancellationIsRequested() {
+        val source = tempFolder.newFile("cancelled.wav").apply { writeText("audio") }
+
+        WaveformExtractor.extractAmplitudes(source, 100) { true }
     }
 }
