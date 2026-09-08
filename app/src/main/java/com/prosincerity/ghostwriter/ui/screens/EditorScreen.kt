@@ -33,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -60,8 +61,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.media.BeatPlayer
+import com.prosincerity.ghostwriter.ui.components.WaveformView
 import android.net.Uri
 import android.provider.OpenableColumns
 import kotlinx.coroutines.CancellationException
@@ -112,8 +115,31 @@ fun EditorScreen(
     }
     var isImporting by remember(projectTitle) { mutableStateOf(false) }
     var isReassigningBeat by remember(projectTitle) { mutableStateOf(false) }
+    var waveformAmplitudes by remember(projectTitle) { mutableStateOf(IntArray(0)) }
+    var isWaveformLoading by remember(projectTitle) { mutableStateOf(false) }
+    var waveformRevision by remember(projectTitle) { mutableIntStateOf(0) }
+    var markerPositionToAdd by remember { mutableStateOf<Long?>(null) }
+    var markerToEdit by remember { mutableStateOf<WaveformMarker?>(null) }
     LaunchedEffect(beatPlayer) {
         isBeatReady = beatFile?.let(beatPlayer::load) == true
+    }
+
+    // Decoding a full beat can take noticeable time, so it happens once for
+    // each assigned/reassigned beat on IO. ProjectStorage reuses waveform.dat
+    // on subsequent editor opens.
+    LaunchedEffect(beatFile, waveformRevision) {
+        val currentBeat = beatFile
+        if (currentBeat == null) {
+            waveformAmplitudes = IntArray(0)
+            isWaveformLoading = false
+            return@LaunchedEffect
+        }
+
+        isWaveformLoading = true
+        waveformAmplitudes = withContext(Dispatchers.IO) {
+            ProjectStorage.loadOrExtractWaveform(projectDir, currentBeat)
+        }
+        isWaveformLoading = false
     }
 
     val importBeatLauncher = rememberLauncherForActivityResult(
@@ -147,6 +173,7 @@ fun EditorScreen(
                 imported.onSuccess { (assigned, updatedMetadata) ->
                     metadata = updatedMetadata
                     beatFile = assigned
+                    waveformRevision++
                     // Reload explicitly: replacing beat.mp3 does not change its File key.
                     isBeatReady = beatPlayer.load(assigned)
                     if (isBeatReady) {
@@ -301,12 +328,18 @@ fun EditorScreen(
                             }
                             metadata = updatedMetadata
                             beatFile = null
+                            waveformRevision++
                         } finally {
                             isReassigningBeat = false
                         }
                     }
                 },
                 isReassigningBeat = isReassigningBeat,
+                waveformAmplitudes = waveformAmplitudes,
+                isWaveformLoading = isWaveformLoading,
+                markers = metadata.markers,
+                onAddMarker = { positionMs -> markerPositionToAdd = positionMs },
+                onMarkerClick = { marker -> markerToEdit = marker },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -331,6 +364,92 @@ fun EditorScreen(
             )
         }
     }
+
+    markerPositionToAdd?.let { positionMs ->
+        WaveformMarkerDialog(
+            title = "Add marker",
+            initialLabel = "",
+            positionMs = positionMs,
+            onSave = { label ->
+                val updatedMetadata = metadata.copy(
+                    markers = metadata.markers + WaveformMarker(label, positionMs),
+                )
+                coroutineScope.launch {
+                    val saved = withContext(Dispatchers.IO) {
+                        ProjectStorage.saveMetadata(projectDir, updatedMetadata)
+                    }
+                    if (saved) {
+                        metadata = updatedMetadata
+                    }
+                    Toast.makeText(
+                        context,
+                        if (saved) "Marker added" else "Couldn't save marker",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+                markerPositionToAdd = null
+            },
+            onDelete = null,
+            onDismiss = { markerPositionToAdd = null },
+        )
+    }
+
+    markerToEdit?.let { marker ->
+        WaveformMarkerDialog(
+            title = "Edit marker",
+            initialLabel = marker.label,
+            positionMs = marker.positionMs,
+            onSave = { label ->
+                val markerIndex = metadata.markers.indexOf(marker)
+                if (markerIndex < 0) {
+                    markerToEdit = null
+                    return@WaveformMarkerDialog
+                }
+                val updatedMarkers = metadata.markers.toMutableList().apply {
+                    this[markerIndex] = WaveformMarker(label, marker.positionMs)
+                }
+                val updatedMetadata = metadata.copy(markers = updatedMarkers)
+                coroutineScope.launch {
+                    val saved = withContext(Dispatchers.IO) {
+                        ProjectStorage.saveMetadata(projectDir, updatedMetadata)
+                    }
+                    if (saved) {
+                        metadata = updatedMetadata
+                    }
+                    Toast.makeText(
+                        context,
+                        if (saved) "Marker renamed" else "Couldn't save marker",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+                markerToEdit = null
+            },
+            onDelete = {
+                val markerIndex = metadata.markers.indexOf(marker)
+                if (markerIndex < 0) {
+                    markerToEdit = null
+                    return@WaveformMarkerDialog
+                }
+                val updatedMarkers = metadata.markers.toMutableList().apply { removeAt(markerIndex) }
+                val updatedMetadata = metadata.copy(markers = updatedMarkers)
+                coroutineScope.launch {
+                    val saved = withContext(Dispatchers.IO) {
+                        ProjectStorage.saveMetadata(projectDir, updatedMetadata)
+                    }
+                    if (saved) {
+                        metadata = updatedMetadata
+                    }
+                    Toast.makeText(
+                        context,
+                        if (saved) "Marker deleted" else "Couldn't save marker",
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+                markerToEdit = null
+            },
+            onDismiss = { markerToEdit = null },
+        )
+    }
 }
 
 @Composable
@@ -342,35 +461,36 @@ private fun BeatPlayerPanel(
     onImportBeat: () -> Unit,
     onReassignBeat: () -> Unit,
     isReassigningBeat: Boolean,
+    waveformAmplitudes: IntArray,
+    isWaveformLoading: Boolean,
+    markers: List<WaveformMarker>,
+    onAddMarker: (Long) -> Unit,
+    onMarkerClick: (WaveformMarker) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
     var currentPositionMs by remember(beatPlayer) { mutableIntStateOf(0) }
     var durationMs by remember(beatPlayer) { mutableIntStateOf(0) }
-    var isSeeking by remember(beatPlayer) { mutableStateOf(false) }
-    var pendingSeekPositionMs by remember(beatPlayer) { mutableFloatStateOf(0f) }
     var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
     var volumeBeforeMute by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
     var isMuted by remember(beatPlayer) { mutableStateOf(beatPlayer.volume == 0f) }
     var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
 
     // MediaPlayer has no Compose-observable position state. Poll only while
-    // this screen owns a successfully loaded player so the slider and clock
+    // this screen owns a successfully loaded player so the waveform and clock
     // stay in sync with playback.
     LaunchedEffect(beatPlayer, isBeatReady) {
         if (!isBeatReady) return@LaunchedEffect
 
         while (true) {
-            if (!isSeeking) {
-                currentPositionMs = beatPlayer.currentPositionMs
-            }
+            currentPositionMs = beatPlayer.currentPositionMs
             durationMs = beatPlayer.durationMs
             isPlaying = beatPlayer.isPlaying
             delay(250.milliseconds)
         }
     }
 
-    Card(modifier = modifier.height(112.dp)) {
+    Card(modifier = modifier.height(192.dp)) {
         if (!isBeatReady) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
@@ -407,21 +527,33 @@ private fun BeatPlayerPanel(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Slider(
-                value = (if (isSeeking) pendingSeekPositionMs else currentPositionMs.toFloat())
-                    .coerceIn(0f, durationMs.coerceAtLeast(1).toFloat()),
-                onValueChange = { position ->
-                    isSeeking = true
-                    pendingSeekPositionMs = position
+            WaveformView(
+                amplitudes = waveformAmplitudes,
+                durationMs = durationMs.toLong(),
+                currentPositionMs = currentPositionMs.toLong(),
+                markers = markers,
+                onSeekFinished = { positionMs ->
+                    beatPlayer.seekTo(positionMs.toInt())
+                    currentPositionMs = positionMs.toInt()
                 },
-                onValueChangeFinished = {
-                    beatPlayer.seekTo(pendingSeekPositionMs.toInt())
-                    currentPositionMs = pendingSeekPositionMs.toInt()
-                    isSeeking = false
+                onAddMarker = onAddMarker,
+                onMarkerClick = { marker ->
+                    beatPlayer.seekTo(marker.positionMs.toInt())
+                    currentPositionMs = marker.positionMs.toInt()
+                    onMarkerClick(marker)
                 },
-                valueRange = 0f..durationMs.coerceAtLeast(1).toFloat(),
-                modifier = Modifier.height(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
             )
+            if (isWaveformLoading) {
+                Text(
+                    text = "Preparing waveform…",
+                    maxLines = 1,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Text(
                 text = "${formatPlaybackTime(currentPositionMs)}/${formatPlaybackTime(durationMs)}",
                 maxLines = 1,
@@ -529,6 +661,60 @@ private fun BeatPlayerPanel(
             }
         }
     }
+}
+
+@Composable
+private fun WaveformMarkerDialog(
+    title: String,
+    initialLabel: String,
+    positionMs: Long,
+    onSave: (String) -> Unit,
+    onDelete: (() -> Unit)?,
+    onDismiss: () -> Unit,
+) {
+    var label by remember(title, initialLabel, positionMs) { mutableStateOf(initialLabel) }
+    val trimmedLabel = label.trim()
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it },
+                    label = { Text("Marker name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = "Position: ${formatPlaybackTime(positionMs.toInt())}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+                if (onDelete != null) {
+                    TextButton(
+                        onClick = onDelete,
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text("Delete marker")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(trimmedLabel) },
+                enabled = trimmedLabel.isNotEmpty(),
+            ) {
+                Text(if (onDelete == null) "Add" else "Rename")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 internal fun formatPlaybackTime(milliseconds: Int): String {

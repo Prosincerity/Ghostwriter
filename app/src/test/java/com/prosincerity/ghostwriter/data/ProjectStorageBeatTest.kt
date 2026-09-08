@@ -72,6 +72,24 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun assigningABeat_clearsMarkersFromThePreviousTimeline() {
+        val project = tempFolder.newFolder("replace_markers")
+        assertTrue(
+            ProjectStorage.saveMetadata(
+                project,
+                ProjectMetadata(
+                    title = "replace_markers",
+                    markers = listOf(WaveformMarker("Hook", 12_000L)),
+                ),
+            ),
+        )
+
+        ProjectStorage.assignBeatToProject(project, "replacement.mp3") { it.writeText("new beat") }
+
+        assertTrue(ProjectStorage.loadMetadata(project, "replace_markers").markers.isEmpty())
+    }
+
+    @Test
     fun failedImport_preservesExistingBeatAndMetadata() {
         val project = tempFolder.newFolder("failed_import")
         ProjectStorage.assignBeatToProject(project, "original.mp3") { it.writeText("original") }

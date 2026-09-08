@@ -405,6 +405,9 @@ object ProjectStorage {
         val updatedMeta = currentMeta.copy(
             beatFile = destFile.name,
             beatOriginalName = originalName,
+            // Marker positions belong to the old timeline. A replacement beat
+            // has a different duration/arrangement, so it starts unmarked.
+            markers = emptyList(),
         )
         if (!saveMetadata(projectDir, updatedMeta)) {
             throw IOException("Couldn't save the beat's project information")

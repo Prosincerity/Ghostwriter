@@ -1,20 +1,16 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -27,7 +23,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.prosincerity.ghostwriter.data.WaveformMarker
@@ -38,11 +33,10 @@ import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
 import com.prosincerity.ghostwriter.ui.theme.GhostText
 import kotlin.math.ceil
 import kotlin.math.floor
-import kotlin.math.roundToInt
 
 /**
  * Canvas waveform with local zoom/pan state. The parent owns persistence and
- * playback: [onSeekFinished] commits a seek after a tap or playhead drag,
+ * playback: [onSeekFinished] commits a seek after a tap or slider-style drag,
  * while marker callbacks describe user intent without touching project data.
  */
 @Composable
@@ -58,24 +52,20 @@ fun WaveformView(
 ) {
     var viewport by remember(durationMs) { mutableStateOf(WaveformViewport()) }
     var viewportWidthPx by remember { mutableFloatStateOf(0f) }
-    var isScrubbing by remember { mutableStateOf(false) }
-    var pendingSeekMs by remember { mutableLongStateOf(0L) }
-    var playheadHandleWidthPx by remember { mutableFloatStateOf(0f) }
     val textMeasurer = rememberTextMeasurer()
     val markerHitRadiusPx = with(LocalDensity.current) { 24.dp.toPx() }
+    val latestViewport = rememberUpdatedState(viewport)
 
-    val visiblePositionMs = if (isScrubbing) pendingSeekMs else currentPositionMs
-    val playheadX = viewport.positionToX(visiblePositionMs, durationMs, viewportWidthPx)
-    val handleLeftPx = playheadX - playheadHandleWidthPx / 2f
+    val visiblePositionMs = currentPositionMs
 
     fun seekAt(xPx: Float): Long =
-        viewport.xToPositionMs(xPx, durationMs, viewportWidthPx)
+        latestViewport.value.xToPositionMs(xPx, durationMs, viewportWidthPx)
 
     fun markerAt(xPx: Float): WaveformMarker? {
         return markers.minByOrNull { marker ->
-            kotlin.math.abs(viewport.positionToX(marker.positionMs, durationMs, viewportWidthPx) - xPx)
+            kotlin.math.abs(latestViewport.value.positionToX(marker.positionMs, durationMs, viewportWidthPx) - xPx)
         }?.takeIf { marker ->
-            kotlin.math.abs(viewport.positionToX(marker.positionMs, durationMs, viewportWidthPx) - xPx) <= markerHitRadiusPx
+            kotlin.math.abs(latestViewport.value.positionToX(marker.positionMs, durationMs, viewportWidthPx) - xPx) <= markerHitRadiusPx
         }
     }
 
@@ -90,7 +80,7 @@ fun WaveformView(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(durationMs, markers, viewport, viewportWidthPx) {
+                .pointerInput(durationMs, markers, viewportWidthPx) {
                     detectTapGestures(
                         onTap = { offset ->
                             markerAt(offset.x)?.let(onMarkerClick)
@@ -99,11 +89,21 @@ fun WaveformView(
                         onLongPress = { offset -> onAddMarker(seekAt(offset.x)) },
                     )
                 }
-                .pointerInput(viewport, viewportWidthPx) {
+                .pointerInput(viewportWidthPx) {
                     detectTransformGestures { centroid, pan, zoom, _ ->
-                        viewport = viewport
-                            .zoomBy(zoom, centroid.x, viewportWidthPx)
-                            .panBy(pan.x, viewportWidthPx)
+                        val currentViewport = latestViewport.value
+                        if (
+                            currentViewport.zoom == WaveformViewport.MIN_ZOOM &&
+                            kotlin.math.abs(zoom - 1f) < 0.01f
+                        ) {
+                            // At the full-beat view, a one-finger drag keeps
+                            // the old seek-slider feel instead of panning.
+                            onSeekFinished(seekAt(centroid.x))
+                        } else {
+                            viewport = currentViewport
+                                .zoomBy(zoom, centroid.x, viewportWidthPx)
+                                .panBy(pan.x, viewportWidthPx)
+                        }
                     }
                 },
         ) {
@@ -182,29 +182,5 @@ fun WaveformView(
             )
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(32.dp)
-                .offset { IntOffset(handleLeftPx.roundToInt(), 0) }
-                .onSizeChanged { playheadHandleWidthPx = it.width.toFloat() }
-                .pointerInput(durationMs, viewport, viewportWidthPx, handleLeftPx) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            isScrubbing = true
-                            pendingSeekMs = seekAt(handleLeftPx + offset.x)
-                        },
-                        onDragCancel = { isScrubbing = false },
-                        onDragEnd = {
-                            onSeekFinished(pendingSeekMs)
-                            isScrubbing = false
-                        },
-                        onDrag = { change, _ ->
-                            pendingSeekMs = seekAt(handleLeftPx + change.position.x)
-                            change.consume()
-                        },
-                    )
-                },
-        )
     }
 }
