@@ -56,6 +56,36 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun loadCachedWaveform_rejectsMalformedSamples() {
+        val project = tempFolder.newFolder("invalid_cache_samples")
+        for (payload in listOf("-1,2", "32769,2", "text,2", "1", "1,2,3", "1,")) {
+            ProjectStorage.waveformCacheFile(project).writeText("2\n$payload")
+
+            assertNull("Invalid payload: $payload", ProjectStorage.loadCachedWaveform(project, 2))
+        }
+    }
+
+    @Test
+    fun saveCachedWaveform_invalidReplacementPreservesExistingCache() {
+        val project = tempFolder.newFolder("preserve_valid_cache")
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(0, 32_768)))
+        val cacheBefore = ProjectStorage.waveformCacheFile(project).readText()
+        val invalidReplacements = listOf(
+            0 to IntArray(0),
+            -1 to IntArray(0),
+            100_001 to IntArray(0),
+            2 to intArrayOf(1),
+            2 to intArrayOf(-1, 2),
+            2 to intArrayOf(32_769, 2),
+        )
+
+        for ((targetCount, samples) in invalidReplacements) {
+            assertFalse(ProjectStorage.saveCachedWaveform(project, targetCount, samples))
+            assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readText())
+        }
+    }
+
+    @Test
     fun waveformCache_roundTripsOnlyAtItsOriginalResolution() {
         val project = tempFolder.newFolder("waveform_cache")
         val peaks = intArrayOf(0, 12, 3, 32_768)
