@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.data
 
 import android.content.Context
+import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import java.io.File
 import java.io.IOException
 
@@ -27,6 +28,9 @@ import java.io.IOException
  * they actually see and manage themselves.
  */
 object ProjectStorage {
+
+    private const val WAVEFORM_CACHE_FILE_NAME = "waveform.dat"
+    private const val MAX_CACHED_WAVEFORM_SAMPLES = 100_000
 
     fun rootDir(context: Context): File =
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
@@ -192,6 +196,108 @@ object ProjectStorage {
     fun metadataFile(projectDir: File): File =
         File(projectDir, "project.json")
 
+    /** Project-local waveform cache for the currently assigned beat. */
+    fun waveformCacheFile(projectDir: File): File =
+        File(projectDir, WAVEFORM_CACHE_FILE_NAME)
+
+    /**
+     * Returns a cached waveform with exactly [targetSampleCount] samples, or
+     * null when no compatible, readable cache is present. An empty array is a
+     * valid cached result for a beat the platform cannot decode.
+     */
+    fun loadCachedWaveform(projectDir: File, targetSampleCount: Int): IntArray? {
+        if (targetSampleCount <= 0) return null
+        val cacheFile = waveformCacheFile(projectDir)
+        if (!cacheFile.isFile) return null
+
+        return runCatching {
+            val encoded = cacheFile.readText()
+            val headerEnd = encoded.indexOf('\n')
+            if (headerEnd < 0) return null
+
+            val storedTargetCount = encoded.substring(0, headerEnd).toInt()
+            if (storedTargetCount != targetSampleCount || storedTargetCount > MAX_CACHED_WAVEFORM_SAMPLES) {
+                return null
+            }
+
+            val payload = encoded.substring(headerEnd + 1).trim()
+            if (payload.isEmpty()) return IntArray(0)
+
+            val samples = payload.split(',').map { sample ->
+                sample.toInt().takeIf { it in 0..32_768 }
+                    ?: throw IllegalArgumentException("Invalid cached waveform sample")
+            }
+            if (samples.size != targetSampleCount) return null
+            samples.toIntArray()
+        }.getOrNull()
+    }
+
+    @Synchronized
+    internal fun saveCachedWaveform(
+        projectDir: File,
+        targetSampleCount: Int,
+        amplitudes: IntArray,
+    ): Boolean {
+        if (
+            targetSampleCount !in 1..MAX_CACHED_WAVEFORM_SAMPLES ||
+            (amplitudes.isNotEmpty() && amplitudes.size != targetSampleCount) ||
+            amplitudes.any { it !in 0..32_768 }
+        ) return false
+
+        return runCatching {
+            val encoded = buildString {
+                append(targetSampleCount)
+                append('\n')
+                amplitudes.joinTo(this, separator = ",")
+            }
+            writeTextSafely(waveformCacheFile(projectDir), encoded)
+        }.isSuccess
+    }
+
+    /** Deletes the cache so the next request decodes the currently assigned beat again. */
+    @Synchronized
+    internal fun invalidateWaveformCache(projectDir: File): Boolean {
+        val cacheFile = waveformCacheFile(projectDir)
+        return !cacheFile.exists() || cacheFile.delete()
+    }
+
+    /**
+     * Loads a compatible cache when possible; otherwise decodes [beatFile]
+     * and stores the result for the next editor open. Call from Dispatchers.IO.
+     */
+    fun loadOrExtractWaveform(
+        projectDir: File,
+        beatFile: File,
+        targetSampleCount: Int = WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+    ): IntArray = loadOrExtractWaveform(
+        projectDir = projectDir,
+        beatFile = beatFile,
+        targetSampleCount = targetSampleCount,
+        extract = WaveformExtractor::extractAmplitudes,
+    )
+
+    @Synchronized
+    internal fun loadOrExtractWaveform(
+        projectDir: File,
+        beatFile: File,
+        targetSampleCount: Int,
+        extract: (File, Int) -> IntArray,
+    ): IntArray {
+        if (
+            targetSampleCount !in 1..MAX_CACHED_WAVEFORM_SAMPLES ||
+            !beatFile.isFile ||
+            runCatching { beatFile.canonicalFile.parentFile == projectDir.canonicalFile }.getOrDefault(false).not()
+        ) return IntArray(0)
+
+        loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
+
+        val amplitudes = extract(beatFile, targetSampleCount)
+        if (amplitudes.isEmpty() || amplitudes.size == targetSampleCount) {
+            saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+        }
+        return amplitudes
+    }
+
     fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {
         val file = metadataFile(projectDir)
         if (!file.exists()) {
@@ -290,6 +396,8 @@ object ProjectStorage {
             f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS && f != destFile
         }?.forEach { it.delete() }
 
+        invalidateWaveformCache(projectDir)
+
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(
             beatFile = destFile.name,
@@ -310,6 +418,7 @@ object ProjectStorage {
         projectDir.listFiles { f ->
             f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
         }?.forEach { it.delete() }
+        invalidateWaveformCache(projectDir)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(

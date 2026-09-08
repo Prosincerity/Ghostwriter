@@ -13,6 +13,65 @@ import java.io.File
 class ProjectStorageBeatTest {
 
     @Test
+    fun waveformCache_roundTripsOnlyAtItsOriginalResolution() {
+        val project = tempFolder.newFolder("waveform_cache")
+        val peaks = intArrayOf(0, 12, 3, 32_768)
+
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 4, peaks))
+        assertEquals(peaks.toList(), ProjectStorage.loadCachedWaveform(project, 4)?.toList())
+        assertNull(ProjectStorage.loadCachedWaveform(project, 5))
+    }
+
+    @Test
+    fun loadOrExtractWaveform_reusesACachedWaveformBeforeDecodingAgain() {
+        val project = tempFolder.newFolder("cached_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        var extractionCount = 0
+
+        val first = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, targetCount ->
+            extractionCount++
+            IntArray(targetCount) { it + 1 }
+        }
+        val second = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ ->
+            throw AssertionError("A valid cache should avoid a second extraction")
+        }
+
+        assertEquals(listOf(1, 2, 3), first.toList())
+        assertEquals(first.toList(), second.toList())
+        assertEquals(1, extractionCount)
+    }
+
+    @Test
+    fun loadOrExtractWaveform_regeneratesCorruptOrDifferentResolutionCaches() {
+        val project = tempFolder.newFolder("regenerate_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        ProjectStorage.waveformCacheFile(project).writeText("not a waveform")
+
+        val regenerated = ProjectStorage.loadOrExtractWaveform(project, beat, 2) { _, targetCount ->
+            IntArray(targetCount) { 7 }
+        }
+        val differentResolution = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, targetCount ->
+            IntArray(targetCount) { 9 }
+        }
+
+        assertEquals(listOf(7, 7), regenerated.toList())
+        assertEquals(listOf(9, 9, 9), differentResolution.toList())
+    }
+
+    @Test
+    fun assigningOrRemovingABeat_invalidatesTheWaveformCache() {
+        val project = tempFolder.newFolder("invalidate_waveform")
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(1, 2)))
+
+        ProjectStorage.assignBeatToProject(project, "new.mp3") { it.writeText("new beat") }
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(3, 4)))
+        ProjectStorage.removeBeatFromProject(project)
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+    }
+
+    @Test
     fun failedImport_preservesExistingBeatAndMetadata() {
         val project = tempFolder.newFolder("failed_import")
         ProjectStorage.assignBeatToProject(project, "original.mp3") { it.writeText("original") }
