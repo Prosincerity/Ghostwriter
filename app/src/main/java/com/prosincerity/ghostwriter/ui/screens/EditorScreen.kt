@@ -168,9 +168,9 @@ fun EditorScreen(
             if (!isBeatReady) {
                 Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
             }
-        } catch (_: java.util.concurrent.CancellationException) {
-            if (!cancellationRequested) throw java.util.concurrent.CancellationException()
-            if (cancellationRequested && beatFile == currentBeat) {
+        } catch (cancellation: java.util.concurrent.CancellationException) {
+            if (!cancellationRequested) throw cancellation
+            if (beatFile == currentBeat) {
                 val updatedMetadata = withContext(Dispatchers.IO) {
                     ProjectStorage.removeBeatFromProject(projectDir)
                     ProjectStorage.loadMetadata(projectDir, projectTitle)
@@ -603,7 +603,7 @@ private fun BeatPlayerPanel(
         }
     }
 
-    Card(modifier = modifier.height(192.dp)) {
+    Card(modifier = modifier.height(160.dp)) {
         if (isWaveformLoading) {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text(
@@ -683,14 +683,6 @@ private fun BeatPlayerPanel(
                     .fillMaxWidth()
                     .weight(1f),
             )
-            if (isWaveformLoading) {
-                Text(
-                    text = "Preparing waveform…",
-                    maxLines = 1,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
             Text(
                 text = "${formatPlaybackTime(currentPositionMs)}/${formatPlaybackTime(durationMs)}",
                 maxLines = 1,

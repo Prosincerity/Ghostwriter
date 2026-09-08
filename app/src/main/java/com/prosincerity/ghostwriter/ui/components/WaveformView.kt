@@ -35,7 +35,6 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
 import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
-import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
 import com.prosincerity.ghostwriter.ui.theme.GhostText
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -141,7 +140,7 @@ fun WaveformView(
                     val normalizedAmplitude = (amplitudes[sampleIndex] / 32_768f).coerceIn(0f, 1f)
                     val halfHeight = normalizedAmplitude * waveformHeight / 2f
                     drawLine(
-                        color = GhostSecondary,
+                        color = GhostPrimary,
                         start = Offset(x, waveformCenterY - halfHeight),
                         end = Offset(x, waveformCenterY + halfHeight),
                         strokeWidth = 1.dp.toPx(),
