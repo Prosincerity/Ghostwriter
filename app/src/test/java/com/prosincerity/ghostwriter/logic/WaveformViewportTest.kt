@@ -68,6 +68,46 @@ class WaveformViewportTest {
         assertEquals(0L, viewport.xToPositionMs(10f, 1_000, 0f))
     }
 
+    @Test
+    fun zoomBy_zoomingFullyOutAfterPanningRestoresTheWholeTimeline() {
+        val viewport = WaveformViewport(zoom = 4f, scrollOffsetPx = 500f)
+
+        val zoomedOut = viewport.zoomBy(0.25f, 100f, 200f)
+
+        assertEquals(WaveformViewport(), zoomedOut)
+        assertEquals(0L, zoomedOut.xToPositionMs(0f, 1_000, 200f))
+        assertEquals(1_000L, zoomedOut.xToPositionMs(200f, 1_000, 200f))
+    }
+
+    @Test
+    fun clamped_shrinkingViewportKeepsScrollWithinTheNewEnd() {
+        val viewport = WaveformViewport(zoom = 4f, scrollOffsetPx = 600f)
+
+        val resized = viewport.clamped(100f)
+
+        assertEquals(4f, resized.zoom, DELTA)
+        assertEquals(300f, resized.scrollOffsetPx, DELTA)
+        assertEquals(1_000L, resized.xToPositionMs(100f, 1_000, 100f))
+    }
+
+    @Test
+    fun zoomBy_invalidScaleFactorsLeaveValidViewportUnchanged() {
+        val viewport = WaveformViewport(zoom = 4f, scrollOffsetPx = 100f)
+
+        for (scale in listOf(0f, -1f, Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)) {
+            assertEquals("Scale: $scale", viewport, viewport.zoomBy(scale, 50f, 200f))
+        }
+    }
+
+    @Test
+    fun panBy_nonFiniteDeltasLeaveValidViewportUnchanged() {
+        val viewport = WaveformViewport(zoom = 4f, scrollOffsetPx = 100f)
+
+        for (delta in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)) {
+            assertEquals("Delta: $delta", viewport, viewport.panBy(delta, 200f))
+        }
+    }
+
     private companion object {
         const val DELTA = 0.001f
     }
