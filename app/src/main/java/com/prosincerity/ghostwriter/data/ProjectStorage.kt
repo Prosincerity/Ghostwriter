@@ -442,6 +442,7 @@ object ProjectStorage {
         val updatedMeta = currentMeta.copy(
             beatFile = null,
             beatOriginalName = null,
+            markers = emptyList(),
         )
         saveMetadata(projectDir, updatedMeta)
     }
