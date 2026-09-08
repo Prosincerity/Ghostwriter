@@ -1,13 +1,18 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -23,6 +28,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.prosincerity.ghostwriter.data.WaveformMarker
@@ -33,6 +39,7 @@ import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
 import com.prosincerity.ghostwriter.ui.theme.GhostText
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 /**
  * Canvas waveform with local zoom/pan state. The parent owns persistence and
@@ -48,26 +55,28 @@ fun WaveformView(
     onSeekFinished: (Long) -> Unit,
     onAddMarker: (Long) -> Unit,
     onMarkerClick: (WaveformMarker) -> Unit,
+    onMarkerMoveFinished: (WaveformMarker, Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var viewport by remember(durationMs) { mutableStateOf(WaveformViewport()) }
     var viewportWidthPx by remember { mutableFloatStateOf(0f) }
     val textMeasurer = rememberTextMeasurer()
-    val markerHitRadiusPx = with(LocalDensity.current) { 24.dp.toPx() }
+    val density = LocalDensity.current
+    val markerHitRadiusPx = with(density) { 24.dp.toPx() }
+    val markerLabelPaddingPx = with(density) { 4.dp.toPx() }
+    val markerLabelStyle = TextStyle(
+        color = GhostText,
+        fontFamily = FontFamily.Monospace,
+        fontSize = 10.sp,
+    )
     val latestViewport = rememberUpdatedState(viewport)
+    var draggedMarker by remember { mutableStateOf<WaveformMarker?>(null) }
+    var pendingMarkerPositionMs by remember { mutableLongStateOf(0L) }
 
     val visiblePositionMs = currentPositionMs
 
     fun seekAt(xPx: Float): Long =
         latestViewport.value.xToPositionMs(xPx, durationMs, viewportWidthPx)
-
-    fun markerAt(xPx: Float): WaveformMarker? {
-        return markers.minByOrNull { marker ->
-            kotlin.math.abs(latestViewport.value.positionToX(marker.positionMs, durationMs, viewportWidthPx) - xPx)
-        }?.takeIf { marker ->
-            kotlin.math.abs(latestViewport.value.positionToX(marker.positionMs, durationMs, viewportWidthPx) - xPx) <= markerHitRadiusPx
-        }
-    }
 
     Box(
         modifier = modifier
@@ -82,10 +91,7 @@ fun WaveformView(
                 .fillMaxSize()
                 .pointerInput(durationMs, markers, viewportWidthPx) {
                     detectTapGestures(
-                        onTap = { offset ->
-                            markerAt(offset.x)?.let(onMarkerClick)
-                                ?: onSeekFinished(seekAt(offset.x))
-                        },
+                        onTap = { offset -> onSeekFinished(seekAt(offset.x)) },
                         onLongPress = { offset -> onAddMarker(seekAt(offset.x)) },
                     )
                 }
@@ -145,7 +151,8 @@ fun WaveformView(
             }
 
             markers.forEach { marker ->
-                val markerX = drawingViewport.positionToX(marker.positionMs, durationMs, size.width)
+                val displayPositionMs = if (marker == draggedMarker) pendingMarkerPositionMs else marker.positionMs
+                val markerX = drawingViewport.positionToX(displayPositionMs, durationMs, size.width)
                 if (markerX in -48.dp.toPx()..size.width) {
                     drawLine(
                         color = GhostBorder,
@@ -164,11 +171,7 @@ fun WaveformView(
                         textMeasurer = textMeasurer,
                         text = marker.label,
                         topLeft = Offset(markerX + 4.dp.toPx(), 0f),
-                        style = TextStyle(
-                            color = GhostText,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 10.sp,
-                        ),
+                        style = markerLabelStyle,
                     )
                 }
             }
@@ -182,5 +185,64 @@ fun WaveformView(
             )
         }
 
+        // Each marker gets a transparent hit target. This keeps its gestures
+        // separate from the waveform's seek and pan gestures underneath.
+        markers.forEach { marker ->
+            // Keep this target at the marker's pre-drag position. Moving the
+            // target under an active pointer changes its local coordinates and
+            // makes the marker lag or jump.
+            val markerX = viewport.positionToX(marker.positionMs, durationMs, viewportWidthPx)
+            val labelSize = textMeasurer.measure(marker.label, markerLabelStyle).size
+            val overlayLeftPx = markerX - markerHitRadiusPx
+            val overlayWidthPx = maxOf(markerHitRadiusPx * 2f, markerHitRadiusPx + markerLabelPaddingPx + labelSize.width)
+            val overlayWidth = with(density) { overlayWidthPx.toDp() }
+
+            if (markerX in -overlayWidthPx..viewportWidthPx) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(overlayWidth)
+                        .offset { IntOffset(overlayLeftPx.roundToInt(), 0) }
+                        .pointerInput(marker, durationMs, viewportWidthPx) {
+                            detectTapGestures(
+                                onTap = { offset ->
+                                    val isLabelTap = offset.x >= markerHitRadiusPx + markerLabelPaddingPx &&
+                                        offset.x <= markerHitRadiusPx + markerLabelPaddingPx + labelSize.width &&
+                                        offset.y <= labelSize.height
+                                    if (isLabelTap) onMarkerClick(marker)
+                                    else onSeekFinished(marker.positionMs)
+                                },
+                                onLongPress = { onMarkerClick(marker) },
+                            )
+                        }
+                        .pointerInput(marker, durationMs, viewportWidthPx) {
+                            var dragStartPointerX = 0f
+                            var dragStartMarkerX = 0f
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    draggedMarker = marker
+                                    pendingMarkerPositionMs = marker.positionMs
+                                    dragStartPointerX = overlayLeftPx + offset.x
+                                    dragStartMarkerX = latestViewport.value.positionToX(
+                                        marker.positionMs,
+                                        durationMs,
+                                        viewportWidthPx,
+                                    )
+                                },
+                                onDragCancel = { draggedMarker = null },
+                                onDragEnd = {
+                                    onMarkerMoveFinished(marker, pendingMarkerPositionMs)
+                                    draggedMarker = null
+                                },
+                                onDrag = { change, _ ->
+                                    val horizontalDelta = (overlayLeftPx + change.position.x) - dragStartPointerX
+                                    pendingMarkerPositionMs = seekAt(dragStartMarkerX + horizontalDelta)
+                                    change.consume()
+                                },
+                            )
+                        },
+                )
+            }
+        }
     }
 }

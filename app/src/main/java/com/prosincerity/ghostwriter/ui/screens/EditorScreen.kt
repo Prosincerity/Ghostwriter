@@ -340,6 +340,22 @@ fun EditorScreen(
                 markers = metadata.markers,
                 onAddMarker = { positionMs -> markerPositionToAdd = positionMs },
                 onMarkerClick = { marker -> markerToEdit = marker },
+                onMarkerMove = { marker, positionMs ->
+                    val markerIndex = metadata.markers.indexOf(marker)
+                    if (markerIndex >= 0 && marker.positionMs != positionMs) {
+                        val updatedMarkers = metadata.markers.toMutableList().apply {
+                            this[markerIndex] = marker.copy(positionMs = positionMs)
+                        }
+                        val updatedMetadata = metadata.copy(markers = updatedMarkers)
+                        coroutineScope.launch {
+                            val saved = withContext(Dispatchers.IO) {
+                                ProjectStorage.saveMetadata(projectDir, updatedMetadata)
+                            }
+                            if (saved) metadata = updatedMetadata
+                            else Toast.makeText(context, "Couldn't move marker", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -466,6 +482,7 @@ private fun BeatPlayerPanel(
     markers: List<WaveformMarker>,
     onAddMarker: (Long) -> Unit,
     onMarkerClick: (WaveformMarker) -> Unit,
+    onMarkerMove: (WaveformMarker, Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
@@ -542,6 +559,7 @@ private fun BeatPlayerPanel(
                     currentPositionMs = marker.positionMs.toInt()
                     onMarkerClick(marker)
                 },
+                onMarkerMoveFinished = onMarkerMove,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
