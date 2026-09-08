@@ -68,23 +68,6 @@ object WaveformExtractor {
         }
     }
 
-    /**
-     * Reduces one peak per decoded PCM frame into [targetSampleCount] evenly
-     * spaced buckets. Empty input and non-positive targets have no waveform.
-     */
-    internal fun downsampleFramePeaks(framePeaks: IntArray, targetSampleCount: Int): IntArray {
-        if (framePeaks.isEmpty() || targetSampleCount <= 0) return IntArray(0)
-
-        return IntArray(targetSampleCount).also { peaks ->
-            framePeaks.forEachIndexed { frameIndex, amplitude ->
-                val bucket = ((frameIndex.toLong() * targetSampleCount) / framePeaks.size)
-                    .toInt()
-                    .coerceAtMost(targetSampleCount - 1)
-                peaks[bucket] = maxOf(peaks[bucket], amplitude.coerceAtLeast(0))
-            }
-        }
-    }
-
     internal fun bucketIndexForTimestamp(
         timestampUs: Long,
         durationUs: Long,
