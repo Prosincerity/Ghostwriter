@@ -314,7 +314,10 @@ object ProjectStorage {
     fun saveMetadata(projectDir: File, metadata: ProjectMetadata): Boolean =
         runCatching {
             val file = metadataFile(projectDir)
-            val updated = metadata.copy(updatedAt = System.currentTimeMillis())
+            val updated = metadata.copy(
+                updatedAt = System.currentTimeMillis(),
+                version = maxOf(metadata.version, ProjectMetadata.CURRENT_VERSION),
+            )
             writeTextSafely(file, updated.toJsonObject().toString(2))
         }.isSuccess
 
