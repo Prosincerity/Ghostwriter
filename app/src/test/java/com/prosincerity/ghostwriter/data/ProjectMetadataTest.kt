@@ -118,6 +118,44 @@ class ProjectMetadataTest {
     }
 
     @Test
+    fun fromJsonObject_invalidMarkersFieldPreservesOtherMetadata() {
+        for (markersValue in listOf(JSONObject.NULL, "invalid", 42, JSONObject())) {
+            val json = JSONObject()
+                .put("title", "Track")
+                .put("bpm", 92)
+                .put("markers", markersValue)
+
+            val metadata = ProjectMetadata.fromJsonObject(json, "Fallback")
+
+            assertTrue("Markers value: $markersValue", metadata.markers.isEmpty())
+            assertEquals("Track", metadata.title)
+            assertEquals(92, metadata.bpm)
+        }
+    }
+
+    @Test
+    fun fromJsonObject_skipsIncompleteMarkersAndKeepsValidEntriesInOrder() {
+        val json = JSONObject().put("markers", JSONArray().apply {
+            put(JSONObject().put("label", "Start").put("positionMs", 0L))
+            put(JSONObject().put("label", "Missing position"))
+            put(JSONObject().put("label", "Null position").put("positionMs", JSONObject.NULL))
+            put(JSONObject().put("label", "Invalid position").put("positionMs", "invalid"))
+            put(JSONObject().put("positionMs", 100L))
+            put(JSONObject().put("label", JSONObject.NULL).put("positionMs", 100L))
+            put(JSONObject().put("label", "   ").put("positionMs", 100L))
+            put(JSONObject.NULL)
+            put(JSONObject().put("label", "Hook").put("positionMs", 32_000L))
+        })
+
+        val metadata = ProjectMetadata.fromJsonObject(json, "Track")
+
+        assertEquals(
+            listOf(WaveformMarker("Start", 0L), WaveformMarker("Hook", 32_000L)),
+            metadata.markers,
+        )
+    }
+
+    @Test
     fun metadata_serializesMarkersAndIgnoresMalformedMarkerEntries() {
         val metadata = ProjectMetadata(
             title = "Marked Track",
