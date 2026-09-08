@@ -42,6 +42,27 @@ class WaveformExtractorTest {
     }
 
     @Test
+    fun bucketIndexForTimestamp_mapsTimestampsToEvenBuckets() {
+        assertEquals(0, WaveformExtractor.bucketIndexForTimestamp(0L, 1_000L, 4))
+        assertEquals(0, WaveformExtractor.bucketIndexForTimestamp(249L, 1_000L, 4))
+        assertEquals(1, WaveformExtractor.bucketIndexForTimestamp(250L, 1_000L, 4))
+        assertEquals(3, WaveformExtractor.bucketIndexForTimestamp(999L, 1_000L, 4))
+    }
+
+    @Test
+    fun bucketIndexForTimestamp_clampsTimestampsToTheWaveformBounds() {
+        assertEquals(0, WaveformExtractor.bucketIndexForTimestamp(-1L, 1_000L, 4))
+        assertEquals(3, WaveformExtractor.bucketIndexForTimestamp(1_000L, 1_000L, 4))
+        assertEquals(3, WaveformExtractor.bucketIndexForTimestamp(2_000L, 1_000L, 4))
+    }
+
+    @Test
+    fun bucketIndexForTimestamp_rejectsInvalidDimensions() {
+        assertEquals(null, WaveformExtractor.bucketIndexForTimestamp(0L, 0L, 4))
+        assertEquals(null, WaveformExtractor.bucketIndexForTimestamp(0L, 1_000L, 0))
+    }
+
+    @Test
     fun extractAmplitudes_returnsEmptyForMissingFile() {
         val missing = File(tempFolder.root, "missing.wav")
 

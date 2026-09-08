@@ -85,6 +85,18 @@ object WaveformExtractor {
         }
     }
 
+    internal fun bucketIndexForTimestamp(
+        timestampUs: Long,
+        durationUs: Long,
+        bucketCount: Int,
+    ): Int? {
+        if (durationUs <= 0L || bucketCount <= 0) return null
+
+        return ((timestampUs.coerceIn(0L, durationUs) * bucketCount) / durationUs)
+            .toInt()
+            .coerceAtMost(bucketCount - 1)
+    }
+
     private fun decodePeakBuckets(
         file: File,
         targetSampleCount: Int,
@@ -227,9 +239,11 @@ object WaveformExtractor {
                 framePeak = maxOf(framePeak, amplitude)
             }
             val frameTimeUs = bufferInfo.presentationTimeUs + (frameIndex * 1_000_000L / sampleRate)
-            val bucketIndex = ((frameTimeUs.coerceIn(0L, durationUs) * buckets.size) / durationUs)
-                .toInt()
-                .coerceAtMost(buckets.lastIndex)
+            val bucketIndex = bucketIndexForTimestamp(
+                timestampUs = frameTimeUs,
+                durationUs = durationUs,
+                bucketCount = buckets.size,
+            ) ?: return frameIndex
             buckets[bucketIndex] = maxOf(buckets[bucketIndex], framePeak)
             frameIndex++
         }
