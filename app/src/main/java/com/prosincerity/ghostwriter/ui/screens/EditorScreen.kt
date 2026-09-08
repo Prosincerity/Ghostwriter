@@ -131,6 +131,7 @@ fun EditorScreen(
     var waveformCancellation by remember(projectTitle) { mutableStateOf<AtomicBoolean?>(null) }
     var cancellationRequested by remember(projectTitle) { mutableStateOf(false) }
     var autoPlayWhenWaveformReady by remember(projectTitle) { mutableStateOf(false) }
+    var isImportedBeatPreparation by remember(projectTitle) { mutableStateOf(false) }
     var pendingLongBeatPreparation by remember { mutableStateOf<PendingBeatPreparation?>(null) }
     var markerPositionToAdd by remember { mutableStateOf<Long?>(null) }
     var markerToEdit by remember { mutableStateOf<WaveformMarker?>(null) }
@@ -144,9 +145,11 @@ fun EditorScreen(
             waveformAmplitudes = IntArray(0)
             isWaveformLoading = false
             isBeatReady = false
+            isImportedBeatPreparation = false
             return@LaunchedEffect
         }
 
+        val removeBeatOnCancellation = isImportedBeatPreparation
         val cancellation = AtomicBoolean(false)
         waveformCancellation = cancellation
         cancellationRequested = false
@@ -165,12 +168,13 @@ fun EditorScreen(
             isBeatReady = beatPlayer.load(currentBeat)
             if (isBeatReady && autoPlayWhenWaveformReady) beatPlayer.play()
             autoPlayWhenWaveformReady = false
+            isImportedBeatPreparation = false
             if (!isBeatReady) {
                 Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
             }
         } catch (cancellation: java.util.concurrent.CancellationException) {
             if (!cancellationRequested) throw cancellation
-            if (beatFile == currentBeat) {
+            if (beatFile == currentBeat && removeBeatOnCancellation) {
                 val updatedMetadata = withContext(Dispatchers.IO) {
                     ProjectStorage.removeBeatFromProject(projectDir)
                     ProjectStorage.loadMetadata(projectDir, projectTitle)
@@ -180,6 +184,7 @@ fun EditorScreen(
                 waveformAmplitudes = IntArray(0)
                 waveformRevision++
                 autoPlayWhenWaveformReady = false
+                isImportedBeatPreparation = false
             }
         } finally {
             if (waveformCancellation === cancellation) {
@@ -227,6 +232,7 @@ fun EditorScreen(
                         pendingLongBeatPreparation = PendingBeatPreparation(assigned, durationMs)
                     } else {
                         autoPlayWhenWaveformReady = true
+                        isImportedBeatPreparation = true
                         beatFile = assigned
                         waveformRevision++
                     }
@@ -409,6 +415,7 @@ fun EditorScreen(
                     cancellationRequested = true
                     waveformCancellation?.set(true)
                 },
+                canCancelWaveformPreparation = isImportedBeatPreparation,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -534,6 +541,7 @@ fun EditorScreen(
                 TextButton(
                     onClick = {
                         autoPlayWhenWaveformReady = true
+                        isImportedBeatPreparation = true
                         beatFile = pendingBeat.file
                         waveformRevision++
                         pendingLongBeatPreparation = null
@@ -579,6 +587,7 @@ private fun BeatPlayerPanel(
     onMarkerClick: (WaveformMarker) -> Unit,
     onMarkerMove: (WaveformMarker, Long) -> Unit,
     onCancelWaveformPreparation: () -> Unit,
+    canCancelWaveformPreparation: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
@@ -617,11 +626,13 @@ private fun BeatPlayerPanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
                 )
-                Button(
-                    onClick = onCancelWaveformPreparation,
-                    modifier = Modifier.padding(top = 8.dp),
-                ) {
-                    Text("Cancel import")
+                if (canCancelWaveformPreparation) {
+                    Button(
+                        onClick = onCancelWaveformPreparation,
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text("Cancel import")
+                    }
                 }
             }
             return@Card
