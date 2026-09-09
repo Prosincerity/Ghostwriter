@@ -36,6 +36,7 @@ import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
 import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
 import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
+import com.prosincerity.ghostwriter.ui.theme.GhostText
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -182,8 +183,8 @@ fun WaveformView(
 
             val currentPlayheadX = drawingViewport.positionToX(currentPositionMs, durationMs, size.width)
             drawLine(
-                color = GhostPrimary,
-                start = Offset(currentPlayheadX, 0f),
+                color = GhostText,
+                start = Offset(currentPlayheadX, waveformTop),
                 end = Offset(currentPlayheadX, size.height),
                 strokeWidth = 2.dp.toPx(),
             )
