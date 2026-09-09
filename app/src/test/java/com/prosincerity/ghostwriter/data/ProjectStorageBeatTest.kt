@@ -251,7 +251,28 @@ class ProjectStorageBeatTest {
             assertEquals("original", File(project, "beat.mp3").readText())
             assertEquals(metadataBefore, File(project, "project.json").readText())
             assertEquals(setOf("beat.mp3", "project.json"), project.list()!!.toSet())
+            assertTrue(
+                "A failed import must not leave a staged file behind",
+                project.listFiles().orEmpty().none { it.name.startsWith("beat-import-") },
+            )
         }
+    }
+
+    @Test
+    fun assignBeatToProject_sameExtensionReplacesContentsWithoutLeavingStagedFile() {
+        val project = tempFolder.newFolder("same_extension_replacement")
+        ProjectStorage.assignBeatToProject(project, "old.mp3") { it.writeText("old") }
+
+        val assigned = ProjectStorage.assignBeatToProject(project, "new.mp3") {
+            it.writeText("new")
+        }
+
+        assertEquals("beat.mp3", assigned.name)
+        assertEquals("new", assigned.readText())
+        assertEquals(
+            setOf("beat.mp3", "project.json"),
+            project.listFiles().orEmpty().map { it.name }.toSet(),
+        )
     }
 
     @Test
@@ -287,12 +308,31 @@ class ProjectStorageBeatTest {
         File(beatsDir, "drill_c.ogg").writeText("audio3")
         File(beatsDir, "notes.txt").writeText("not audio")
         File(beatsDir, "cover.png").writeText("not audio")
+        File(beatsDir, "not_a_file.mp3").mkdir()
 
         val result = ProjectStorage.listInstrumentals(beatsDir)
         assertEquals(3, result.size)
         assertEquals("boom_a.wav", result[0].name)
         assertEquals("drill_c.ogg", result[1].name)
         assertEquals("trap_b.mp3", result[2].name)
+    }
+
+    @Test
+    fun removeBeatFromProject_onlyDeletesSupportedProjectBeatFiles() {
+        val project = tempFolder.newFolder("selective_beat_removal")
+        File(project, "beat.mp3").writeText("assigned")
+        File(project, "beat.wav").writeText("stale")
+        File(project, "beat.txt").writeText("keep")
+        File(project, "beat-remix.mp3").writeText("keep")
+        File(project, "beat.flac").mkdir()
+
+        ProjectStorage.removeBeatFromProject(project)
+
+        assertFalse(File(project, "beat.mp3").exists())
+        assertFalse(File(project, "beat.wav").exists())
+        assertEquals("keep", File(project, "beat.txt").readText())
+        assertEquals("keep", File(project, "beat-remix.mp3").readText())
+        assertTrue(File(project, "beat.flac").isDirectory)
     }
 
     @Test

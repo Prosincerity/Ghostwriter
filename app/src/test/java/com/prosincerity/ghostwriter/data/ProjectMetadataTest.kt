@@ -93,6 +93,16 @@ class ProjectMetadataTest {
     }
 
     @Test
+    fun toJsonObject_writesJsonNullForEveryOptionalField() {
+        val json = ProjectMetadata(title = "Acapella").toJsonObject()
+
+        for (field in listOf("bpm", "key", "timeSignature", "notes", "beatFile", "beatOriginalName")) {
+            assertTrue("Expected $field to be present", json.has(field))
+            assertTrue("Expected $field to contain JSON null", json.isNull(field))
+        }
+    }
+
+    @Test
     fun loadMetadata_handlesCorruptedJsonGracefully() {
         val projectDir = tempFolder.newFolder("CorruptedTrack")
         val file = File(projectDir, "project.json")

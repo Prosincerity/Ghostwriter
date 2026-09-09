@@ -11,6 +11,7 @@ class SettingsFormatTest {
 
     @Test
     fun formatPlaybackTime_displaysMinutesAndPaddedSeconds() {
+        assertEquals("0:00", formatPlaybackTime(-1))
         assertEquals("0:00", formatPlaybackTime(0))
         assertEquals("0:30", formatPlaybackTime(30_999))
         assertEquals("2:30", formatPlaybackTime(150_000))
