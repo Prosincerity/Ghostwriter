@@ -118,9 +118,9 @@ fun ProjectInfoDialog(
                 onClick = {
                     val updated = metadata.copy(
                         bpm = editBpm.trim().toIntOrNull(),
-                        key = editKey.trim().ifBlank { null },
-                        timeSignature = editTimeSignature.trim().ifBlank { null },
-                        notes = editNotes.trim().ifBlank { null },
+                        key = editKey.trimmedOrNull(),
+                        timeSignature = editTimeSignature.trimmedOrNull(),
+                        notes = editNotes.trimmedOrNull(),
                     )
                     onSave(updated)
                 }
@@ -135,3 +135,5 @@ fun ProjectInfoDialog(
         }
     )
 }
+
+private fun String.trimmedOrNull(): String? = trim().ifBlank { null }

@@ -30,12 +30,12 @@ data class ProjectMetadata(
         return JSONObject().apply {
             put("version", version)
             put("title", title)
-            if (bpm != null) put("bpm", bpm) else put("bpm", JSONObject.NULL)
-            if (key != null) put("key", key) else put("key", JSONObject.NULL)
-            if (timeSignature != null) put("timeSignature", timeSignature) else put("timeSignature", JSONObject.NULL)
-            if (notes != null) put("notes", notes) else put("notes", JSONObject.NULL)
-            if (beatFile != null) put("beatFile", beatFile) else put("beatFile", JSONObject.NULL)
-            if (beatOriginalName != null) put("beatOriginalName", beatOriginalName) else put("beatOriginalName", JSONObject.NULL)
+            put("bpm", bpm ?: JSONObject.NULL)
+            put("key", key ?: JSONObject.NULL)
+            put("timeSignature", timeSignature ?: JSONObject.NULL)
+            put("notes", notes ?: JSONObject.NULL)
+            put("beatFile", beatFile ?: JSONObject.NULL)
+            put("beatOriginalName", beatOriginalName ?: JSONObject.NULL)
             put("markers", JSONArray().apply {
                 markers.forEach { marker ->
                     put(JSONObject().apply {

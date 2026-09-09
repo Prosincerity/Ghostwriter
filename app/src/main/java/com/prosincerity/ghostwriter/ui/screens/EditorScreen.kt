@@ -1,5 +1,8 @@
 package com.prosincerity.ghostwriter.ui.screens
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -52,8 +55,6 @@ import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
 import com.prosincerity.ghostwriter.ui.components.ReassignBeatDialog
 import com.prosincerity.ghostwriter.ui.components.WaveformMarkerDialog
-import android.net.Uri
-import android.provider.OpenableColumns
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlin.time.Duration.Companion.seconds
@@ -169,6 +170,36 @@ fun EditorScreen(
                     ProjectStorage.loadMetadata(projectDir, projectTitle)
                 }
                 Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun persistMarkers(
+        markers: List<WaveformMarker>,
+        successMessage: String?,
+        failureMessage: String,
+    ) {
+        persistMetadataUpdate(
+            updatedMetadata = metadata.copy(markers = markers),
+            successMessage = successMessage,
+            failureMessage = failureMessage,
+        )
+    }
+
+    fun removeBeatFromEditor(onRemoved: () -> Unit = {}) {
+        isReassigningBeat = true
+        val removalRevision = projectMutationRevision.incrementAndGet()
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                val updatedMetadata = removeBeatAndLoadMetadata()
+                if (removalRevision == projectMutationRevision.get()) {
+                    metadata = updatedMetadata
+                    beatFile = null
+                    approvedLongBeatPath = null
+                    onRemoved()
+                }
+            } finally {
+                isReassigningBeat = false
             }
         }
     }
@@ -460,9 +491,8 @@ fun EditorScreen(
                         val updatedMarkers = metadata.markers.toMutableList().apply {
                             this[markerIndex] = marker.copy(positionMs = positionMs)
                         }
-                        val updatedMetadata = metadata.copy(markers = updatedMarkers)
-                        persistMetadataUpdate(
-                            updatedMetadata = updatedMetadata,
+                        persistMarkers(
+                            markers = updatedMarkers,
                             successMessage = null,
                             failureMessage = "Couldn't move marker",
                         )
@@ -507,11 +537,8 @@ fun EditorScreen(
             initialLabel = "",
             positionMs = positionMs,
             onSave = { label ->
-                val updatedMetadata = metadata.copy(
+                persistMarkers(
                     markers = metadata.markers + WaveformMarker(label, positionMs),
-                )
-                persistMetadataUpdate(
-                    updatedMetadata = updatedMetadata,
                     successMessage = "Marker added",
                     failureMessage = "Couldn't save marker",
                 )
@@ -536,9 +563,8 @@ fun EditorScreen(
                 val updatedMarkers = metadata.markers.toMutableList().apply {
                     this[markerIndex] = WaveformMarker(label, marker.positionMs)
                 }
-                val updatedMetadata = metadata.copy(markers = updatedMarkers)
-                persistMetadataUpdate(
-                    updatedMetadata = updatedMetadata,
+                persistMarkers(
+                    markers = updatedMarkers,
                     successMessage = "Marker renamed",
                     failureMessage = "Couldn't save marker",
                 )
@@ -551,9 +577,8 @@ fun EditorScreen(
                     return@WaveformMarkerDialog
                 }
                 val updatedMarkers = metadata.markers.toMutableList().apply { removeAt(markerIndex) }
-                val updatedMetadata = metadata.copy(markers = updatedMarkers)
-                persistMetadataUpdate(
-                    updatedMetadata = updatedMetadata,
+                persistMarkers(
+                    markers = updatedMarkers,
                     successMessage = "Marker deleted",
                     failureMessage = "Couldn't save marker",
                 )
@@ -567,23 +592,9 @@ fun EditorScreen(
         ReassignBeatDialog(
             onConfirm = {
                 showReassignConfirmation = false
-                isReassigningBeat = true
                 beatPlayer.release()
                 isBeatReady = false
-                val removalRevision = projectMutationRevision.incrementAndGet()
-                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    try {
-                        val updatedMetadata = removeBeatAndLoadMetadata()
-                        if (removalRevision == projectMutationRevision.get()) {
-                            metadata = updatedMetadata
-                            beatFile = null
-                            approvedLongBeatPath = null
-                            waveformRevision++
-                        }
-                    } finally {
-                        isReassigningBeat = false
-                    }
-                }
+                removeBeatFromEditor { waveformRevision++ }
             },
             onDismiss = { showReassignConfirmation = false },
         )
@@ -606,20 +617,8 @@ fun EditorScreen(
                 if (!pendingBeat.removeBeatOnCancel) {
                     waveformPreparationCancelled = true
                 } else {
-                    isReassigningBeat = true
-                    val removalRevision = projectMutationRevision.incrementAndGet()
-                    coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                        try {
-                            val updatedMetadata = removeBeatAndLoadMetadata()
-                            if (removalRevision == projectMutationRevision.get()) {
-                                metadata = updatedMetadata
-                                beatFile = null
-                                approvedLongBeatPath = null
-                                Toast.makeText(context, "Beat import cancelled", Toast.LENGTH_SHORT).show()
-                            }
-                        } finally {
-                            isReassigningBeat = false
-                        }
+                    removeBeatFromEditor {
+                        Toast.makeText(context, "Beat import cancelled", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -631,7 +630,7 @@ fun EditorScreen(
 internal fun shouldWarnBeforeWaveformExtraction(durationMs: Long?): Boolean =
     durationMs != null && durationMs >= LONG_BEAT_WARNING_MS
 
-private fun displayNameFor(context: android.content.Context, uri: Uri): String? {
+private fun displayNameFor(context: Context, uri: Uri): String? {
     return context.contentResolver.query(
         uri,
         arrayOf(OpenableColumns.DISPLAY_NAME),

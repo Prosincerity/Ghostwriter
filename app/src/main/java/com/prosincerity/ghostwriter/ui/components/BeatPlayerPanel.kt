@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -95,13 +97,7 @@ internal fun BeatPlayerPanel(
 
     Card(modifier = modifier.height(176.dp)) {
         if (isWaveformLoading) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
+            CenteredPlayerContent {
                 Text(
                     text = "Preparing waveform…",
                     style = MaterialTheme.typography.bodyMedium,
@@ -141,13 +137,7 @@ internal fun BeatPlayerPanel(
         }
 
         if (waveformPreparationFailed) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
+            CenteredPlayerContent {
                 Text(
                     text = "Couldn't create waveform",
                     style = MaterialTheme.typography.bodyMedium,
@@ -169,13 +159,7 @@ internal fun BeatPlayerPanel(
         }
 
         if (!isBeatReady) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
+            CenteredPlayerContent {
                 Text(
                     text = if (isReassigningBeat) "Removing beat…" else "No beat selected",
                     style = MaterialTheme.typography.bodyMedium,
@@ -215,7 +199,9 @@ internal fun BeatPlayerPanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(
+                WaveformZoomButton(
+                    imageVector = Icons.Filled.ZoomOut,
+                    contentDescription = "Zoom out waveform",
                     onClick = {
                         waveformViewport = waveformViewport.zoomBy(
                             scaleFactor = 0.5f,
@@ -225,15 +211,10 @@ internal fun BeatPlayerPanel(
                     },
                     enabled = waveformWidthPx > 0f &&
                         waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ZoomOut,
-                        contentDescription = "Zoom out waveform",
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                IconButton(
+                )
+                WaveformZoomButton(
+                    imageVector = Icons.Filled.ZoomIn,
+                    contentDescription = "Zoom in waveform",
                     onClick = {
                         waveformViewport = waveformViewport.zoomBy(
                             scaleFactor = 2f,
@@ -243,14 +224,7 @@ internal fun BeatPlayerPanel(
                     },
                     enabled = waveformWidthPx > 0f &&
                         waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ZoomIn,
-                        contentDescription = "Zoom in waveform",
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
+                )
             }
             WaveformView(
                 amplitudes = waveformAmplitudes,
@@ -385,5 +359,37 @@ internal fun BeatPlayerPanel(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CenteredPlayerContent(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        content = content,
+    )
+}
+
+@Composable
+private fun WaveformZoomButton(
+    imageVector: ImageVector,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.size(32.dp),
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }

@@ -172,10 +172,23 @@ object ProjectStorage {
 
     /** Replace only after writing succeeds; never delete the last good copy first. */
     private fun writeTextSafely(target: File, content: String) {
-        val staged = File.createTempFile("save-", ".tmp", target.parentFile)
+        replaceFileSafely(
+            target = target,
+            tempFilePrefix = "save-",
+            replacementFailureMessage = "Couldn't replace ${target.name}",
+        ) { staged -> staged.writeText(content) }
+    }
+
+    private fun replaceFileSafely(
+        target: File,
+        tempFilePrefix: String,
+        replacementFailureMessage: String,
+        writeStagedFile: (File) -> Unit,
+    ) {
+        val staged = File.createTempFile(tempFilePrefix, ".tmp", target.parentFile)
         try {
-            staged.writeText(content)
-            if (!staged.renameTo(target)) throw IOException("Couldn't replace ${target.name}")
+            writeStagedFile(staged)
+            if (!staged.renameTo(target)) throw IOException(replacementFailureMessage)
         } finally {
             staged.delete()
         }
@@ -346,9 +359,9 @@ object ProjectStorage {
      * Lists all supported audio beat files in [dir], sorted alphabetically.
      */
     fun listInstrumentals(dir: File): List<File> =
-        dir.listFiles { file ->
-            file.isFile && file.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-        }?.sortedBy { it.name.lowercase() } ?: emptyList()
+        dir.listFiles { file -> file.isSupportedAudioFile() }
+            ?.sortedBy { it.name.lowercase() }
+            ?: emptyList()
 
     /**
      * Resolves the assigned beat file for [projectDir].
@@ -359,14 +372,12 @@ object ProjectStorage {
         val fileName = meta.beatFile
         if (!fileName.isNullOrBlank()) {
             val file = File(projectDir, fileName)
-            if (file.isFile && file.canonicalFile.parentFile == projectDir.canonicalFile &&
-                file.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-            ) return file
+            if (file.isSupportedAudioFile() && file.canonicalFile.parentFile == projectDir.canonicalFile) {
+                return file
+            }
         }
         // Fallback: check if a beat file exists on disk
-        return projectDir.listFiles { f ->
-            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-        }?.firstOrNull()
+        return projectDir.listFiles { file -> file.isProjectBeatFile() }?.firstOrNull()
     }
 
     /**
@@ -398,20 +409,16 @@ object ProjectStorage {
         val destFile = File(projectDir, "beat.$ext")
 
         // A failed stream copy must not truncate or delete the previous beat.
-        val stagedFile = File.createTempFile("beat-import-", ".tmp", projectDir)
-        try {
-            copyAction(stagedFile)
-            if (!stagedFile.renameTo(destFile)) {
-                throw IOException("Couldn't store the selected beat")
-            }
-        } finally {
-            stagedFile.delete()
-        }
+        replaceFileSafely(
+            target = destFile,
+            tempFilePrefix = "beat-import-",
+            replacementFailureMessage = "Couldn't store the selected beat",
+            writeStagedFile = copyAction,
+        )
 
         // Remove the old format only after the new file has been copied.
-        projectDir.listFiles { f ->
-            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS && f != destFile
-        }?.forEach { it.delete() }
+        projectDir.listFiles { file -> file.isProjectBeatFile() && file != destFile }
+            ?.forEach { it.delete() }
 
         invalidateWaveformCache(projectDir)
 
@@ -435,9 +442,7 @@ object ProjectStorage {
      */
     @Synchronized
     fun removeBeatFromProject(projectDir: File) {
-        projectDir.listFiles { f ->
-            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-        }?.forEach { it.delete() }
+        projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
         invalidateWaveformCache(projectDir)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
@@ -463,4 +468,10 @@ object ProjectStorage {
         copyAction(dest)
         return dest
     }
+
+    private fun File.isSupportedAudioFile(): Boolean =
+        isFile && extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+
+    private fun File.isProjectBeatFile(): Boolean =
+        nameWithoutExtension == "beat" && isSupportedAudioFile()
 }
