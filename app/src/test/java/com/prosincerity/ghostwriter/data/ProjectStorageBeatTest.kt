@@ -9,7 +9,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CancellationException
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class ProjectStorageBeatTest {
 
@@ -129,6 +132,38 @@ class ProjectStorageBeatTest {
 
         assertEquals(listOf(7, 7), regenerated.toList())
         assertEquals(listOf(9, 9, 9), differentResolution.toList())
+    }
+
+    @Test
+    fun loadOrExtractWaveform_doesNotBlockLyricsSaveWhileDecoding() {
+        val project = tempFolder.newFolder("non_blocking_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        val extractionStarted = CountDownLatch(1)
+        val releaseExtraction = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+
+        val extraction = executor.submit<IntArray> {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, targetCount ->
+                extractionStarted.countDown()
+                check(releaseExtraction.await(5, TimeUnit.SECONDS))
+                IntArray(targetCount) { it + 1 }
+            }
+        }
+
+        try {
+            assertTrue(extractionStarted.await(5, TimeUnit.SECONDS))
+
+            val save = executor.submit<Boolean> {
+                ProjectStorage.saveManual(project, "non_blocking_waveform", "lyrics", 3)
+            }
+
+            assertTrue(save.get(1, TimeUnit.SECONDS))
+            assertEquals("lyrics", File(project, "non_blocking_waveform.txt").readText())
+        } finally {
+            releaseExtraction.countDown()
+            extraction.get(5, TimeUnit.SECONDS)
+            executor.shutdownNow()
+        }
     }
 
     @Test

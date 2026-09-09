@@ -50,6 +50,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -138,6 +139,9 @@ fun EditorScreen(
     }
     var markerPositionToAdd by remember(projectTitle) { mutableStateOf<Long?>(null) }
     var markerToEdit by remember(projectTitle) { mutableStateOf<WaveformMarker?>(null) }
+    val latestLyrics = rememberUpdatedState(lyrics)
+    val latestKeepCount = rememberUpdatedState(keepCount)
+    val latestWaveformCancellation = rememberUpdatedState(waveformCancellation)
 
     // Decoding a full beat can take noticeable time, so it happens once for
     // each assigned/reassigned beat on IO. Playback waits for this work so the
@@ -279,11 +283,17 @@ fun EditorScreen(
         }
     }
 
-    // Save immediately on leaving the screen, so nothing is lost between
-    // autosave ticks (e.g. navigating to Settings or back to Home).
+    // Cancel decoding before the final save when leaving the screen. The
+    // updated-state holders avoid capturing the values from the first
+    // composition in this long-lived effect.
     DisposableEffect(projectTitle) {
         onDispose {
-            ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount)
+            latestWaveformCancellation.value?.set(true)
+            ProjectStorage.rotateAndSave(
+                projectDir,
+                latestLyrics.value,
+                latestKeepCount.value,
+            )
         }
     }
 

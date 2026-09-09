@@ -281,7 +281,6 @@ object ProjectStorage {
         },
     )
 
-    @Synchronized
     internal fun loadOrExtractWaveform(
         projectDir: File,
         beatFile: File,
@@ -298,6 +297,9 @@ object ProjectStorage {
         throwIfWaveformCancelled(shouldCancel)
         loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
 
+        // Decoding can take tens of seconds on some devices. Do not hold the
+        // ProjectStorage monitor while it runs: lyrics and metadata use that
+        // monitor for short atomic writes and must remain responsive.
         val amplitudes = extract(beatFile, targetSampleCount)
         throwIfWaveformCancelled(shouldCancel)
         if (amplitudes.isEmpty() || amplitudes.size == targetSampleCount) {
