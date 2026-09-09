@@ -138,6 +138,7 @@ fun EditorScreen(
     var pendingLongBeatPreparation by remember(projectTitle) {
         mutableStateOf<PendingBeatPreparation?>(null)
     }
+    var showReassignConfirmation by rememberSaveable(projectTitle) { mutableStateOf(false) }
     var markerPositionToAdd by remember(projectTitle) { mutableStateOf<Long?>(null) }
     var markerToEdit by remember(projectTitle) { mutableStateOf<WaveformMarker?>(null) }
     val latestLyrics = rememberUpdatedState(lyrics)
@@ -391,24 +392,7 @@ fun EditorScreen(
                         )
                     )
                 },
-                onReassignBeat = {
-                    isReassigningBeat = true
-                    beatPlayer.release()
-                    isBeatReady = false
-                    coroutineScope.launch {
-                        try {
-                            val updatedMetadata = withContext(Dispatchers.IO) {
-                                ProjectStorage.removeBeatFromProject(projectDir)
-                                ProjectStorage.loadMetadata(projectDir, projectTitle)
-                            }
-                            metadata = updatedMetadata
-                            beatFile = null
-                            waveformRevision++
-                        } finally {
-                            isReassigningBeat = false
-                        }
-                    }
-                },
+                onReassignBeat = { showReassignConfirmation = true },
                 isReassigningBeat = isReassigningBeat,
                 waveformAmplitudes = waveformAmplitudes,
                 isWaveformLoading = isWaveformLoading,
@@ -546,6 +530,49 @@ fun EditorScreen(
                 markerToEdit = null
             },
             onDismiss = { markerToEdit = null },
+        )
+    }
+
+    if (showReassignConfirmation) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showReassignConfirmation = false },
+            title = { Text("Reassign beat?") },
+            text = {
+                Text(
+                    "This permanently deletes the current beat file, its waveform cache, " +
+                        "and all markers from this project. Your lyrics will not be deleted.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showReassignConfirmation = false
+                        isReassigningBeat = true
+                        beatPlayer.release()
+                        isBeatReady = false
+                        coroutineScope.launch {
+                            try {
+                                val updatedMetadata = withContext(Dispatchers.IO) {
+                                    ProjectStorage.removeBeatFromProject(projectDir)
+                                    ProjectStorage.loadMetadata(projectDir, projectTitle)
+                                }
+                                metadata = updatedMetadata
+                                beatFile = null
+                                waveformRevision++
+                            } finally {
+                                isReassigningBeat = false
+                            }
+                        }
+                    },
+                ) {
+                    Text("Reassign")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReassignConfirmation = false }) {
+                    Text("Cancel")
+                }
+            },
         )
     }
 
