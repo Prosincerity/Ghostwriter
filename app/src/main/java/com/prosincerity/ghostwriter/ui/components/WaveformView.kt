@@ -41,9 +41,10 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
- * Canvas waveform with local zoom/pan state. The parent owns persistence and
- * playback: [onSeekFinished] commits a seek after a tap or slider-style drag,
- * while marker callbacks describe user intent without touching project data.
+ * Canvas waveform with parent-owned viewport state. The parent owns persistence
+ * and playback: [onSeekFinished] commits a seek after a tap or slider-style
+ * drag, while marker callbacks describe user intent without touching project
+ * data.
  */
 @Composable
 fun WaveformView(
@@ -55,9 +56,10 @@ fun WaveformView(
     onAddMarker: (Long) -> Unit,
     onMarkerClick: (WaveformMarker) -> Unit,
     onMarkerMoveFinished: (WaveformMarker, Long) -> Unit,
+    viewport: WaveformViewport,
+    onViewportChange: (WaveformViewport) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var viewport by remember(durationMs) { mutableStateOf(WaveformViewport()) }
     var viewportWidthPx by remember { mutableFloatStateOf(0f) }
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -82,7 +84,7 @@ fun WaveformView(
             .clipToBounds()
             .onSizeChanged { size ->
                 viewportWidthPx = size.width.toFloat()
-                viewport = viewport.clamped(viewportWidthPx)
+                onViewportChange(viewport.clamped(viewportWidthPx))
             },
     ) {
         Canvas(
@@ -105,9 +107,11 @@ fun WaveformView(
                             // the old seek-slider feel instead of panning.
                             onSeekFinished(seekAt(centroid.x))
                         } else {
-                            viewport = currentViewport
-                                .zoomBy(zoom, centroid.x, viewportWidthPx)
-                                .panBy(pan.x, viewportWidthPx)
+                            onViewportChange(
+                                currentViewport
+                                    .zoomBy(zoom, centroid.x, viewportWidthPx)
+                                    .panBy(pan.x, viewportWidthPx),
+                            )
                         }
                     }
                 },
@@ -243,5 +247,6 @@ fun WaveformView(
                 )
             }
         }
+
     }
 }

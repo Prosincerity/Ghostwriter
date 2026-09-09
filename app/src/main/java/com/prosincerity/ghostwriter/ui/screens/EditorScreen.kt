@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,6 +58,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -66,6 +69,7 @@ import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
+import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.media.BeatPlayer
 import com.prosincerity.ghostwriter.ui.components.WaveformView
 import android.net.Uri
@@ -648,6 +652,8 @@ private fun BeatPlayerPanel(
     var volumeBeforeMute by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
     var isMuted by remember(beatPlayer) { mutableStateOf(beatPlayer.volume == 0f) }
     var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
+    var waveformViewport by remember(durationMs) { mutableStateOf(WaveformViewport()) }
+    var waveformWidthPx by remember { mutableFloatStateOf(0f) }
 
     // MediaPlayer has no Compose-observable position state. Poll only while
     // this screen owns a successfully loaded player so the waveform and clock
@@ -663,7 +669,7 @@ private fun BeatPlayerPanel(
         }
     }
 
-    Card(modifier = modifier.height(160.dp)) {
+    Card(modifier = modifier.height(176.dp)) {
         if (isWaveformLoading) {
             Column(
                 modifier = Modifier
@@ -745,13 +751,55 @@ private fun BeatPlayerPanel(
                 .fillMaxSize()
                 .padding(horizontal = 12.dp, vertical = 4.dp),
         ) {
-            Text(
-                text = beatDisplayName,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = beatDisplayName,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(
+                    onClick = {
+                        waveformViewport = waveformViewport.zoomBy(
+                            scaleFactor = 0.5f,
+                            focalXpx = waveformWidthPx / 2f,
+                            viewportWidthPx = waveformWidthPx,
+                        )
+                    },
+                    enabled = waveformWidthPx > 0f &&
+                        waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ZoomOut,
+                        contentDescription = "Zoom out waveform",
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        waveformViewport = waveformViewport.zoomBy(
+                            scaleFactor = 2f,
+                            focalXpx = waveformWidthPx / 2f,
+                            viewportWidthPx = waveformWidthPx,
+                        )
+                    },
+                    enabled = waveformWidthPx > 0f &&
+                        waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ZoomIn,
+                        contentDescription = "Zoom in waveform",
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
             WaveformView(
                 amplitudes = waveformAmplitudes,
                 durationMs = durationMs.toLong(),
@@ -771,8 +819,11 @@ private fun BeatPlayerPanel(
                     onMarkerClick(marker)
                 },
                 onMarkerMoveFinished = onMarkerMove,
+                viewport = waveformViewport,
+                onViewportChange = { waveformViewport = it },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onSizeChanged { waveformWidthPx = it.width.toFloat() }
                     .weight(1f),
             )
             Text(
