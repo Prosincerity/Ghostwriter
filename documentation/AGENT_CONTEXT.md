@@ -4,9 +4,9 @@
 
 **Ghostwriter** is a free, open-source Android app for writing rap lyrics,
 built solo. Its tagline is **Songwriting Environment**. The repository is
-MIT licensed and public at `github.com/Prosincerity/Ghostwriter`. It currently
-runs as a barebones notepad and is being grown, feature by feature, into a
-full songwriting environment.
+MIT licensed and public at `github.com/Prosincerity/Ghostwriter`. Its core
+songwriting editor, project persistence, offline beat player, and interactive
+waveform timeline are implemented; it continues to grow feature by feature.
 
 ## 2. Non-negotiable philosophy — read this before suggesting anything
 
@@ -71,18 +71,30 @@ Ghostwriter/
 │       │       ├── MainActivity.kt         ← navigation host (see §6)
 │       │       ├── data/
 │       │       │   ├── Settings.kt         ← SharedPreferences wrapper
-│       │       │   └── ProjectStorage.kt   ← file I/O, autosaves, metadata & beat storage
+│       │       │   ├── ProjectMetadata.kt  ← metadata schema and waveform markers
+│       │       │   └── ProjectStorage.kt   ← file I/O, autosaves, metadata, beat & waveform cache
+│       │       ├── logic/
+│       │       │   ├── WaveformExtractor.kt ← AOSP audio decoding and peak extraction
+│       │       │   └── WaveformViewport.kt  ← pure zoom, pan, and seek math
+│       │       ├── media/
+│       │       │   └── BeatPlayer.kt        ← AOSP MediaPlayer wrapper
 │       │       └── ui/
+│       │           ├── components/
+│       │           │   ├── BeatDialogs.kt
+│       │           │   ├── BeatPlayerPanel.kt
+│       │           │   ├── PlaybackTime.kt
+│       │           │   └── WaveformView.kt  ← Canvas timeline and gestures
 │       │           ├── screens/
 │       │           │   ├── HomeScreen.kt
 │       │           │   ├── EditorScreen.kt
+│       │           │   ├── ProjectInfoDialog.kt
 │       │           │   └── SettingsScreen.kt
 │       │           └── theme/
 │       │               ├── Color.kt        ← dark "terminal" palette
 │       │               ├── Theme.kt
 │       │               └── Type.kt         ← monospace typography
-│       ├── test/java/com/prosincerity/ghostwriter/  ← unit tests (ProjectStorageTest, SettingsFormatTest)
-│       └── androidTest/java/com/prosincerity/ghostwriter/
+│       ├── test/java/com/prosincerity/ghostwriter/  ← JVM logic, storage, metadata & player tests
+│       └── androidTest/java/com/prosincerity/ghostwriter/ ← Compose/device tests
 └── gradle/libs.versions.toml
 ```
 
@@ -98,6 +110,7 @@ reference remains, it is a stale identifier that must be migrated.
 - Autosave + rolling backups + settings — done.
 - Project metadata (`project.json`) + in-editor Project Info dialog — done.
 - Offline beat player + project-local beat import — done.
+- Interactive waveform, zoom/pan, markers, caching, and processing safety — done.
 
 Walking through what each file does:
 
@@ -126,6 +139,7 @@ Walking through what each file does:
       <title>.txt          ← manual save snapshot
       project.json         ← project metadata (BPM, key, beat file, timestamps)
       beat.<ext>           ← assigned instrumental audio file for this project
+      waveform.dat         ← validated 1,000-peak cache for the assigned beat
   ```
   This is the app's own external-files directory — no runtime storage
   permission needed, private to the app, wiped on uninstall, works
@@ -147,6 +161,8 @@ Walking through what each file does:
     is copied into the project directory as `beat.<ext>`, and its original name
     is stored in `project.json`. This makes the project self-contained and
     portable even if the source file is moved or deleted.
+    Replacing or removing a beat invalidates `waveform.dat` and clears markers
+    because both belong to the previous beat's timeline.
   - **Global instrumentals directory:** A browsable global library at a
     user-accessible path such as `Music/Ghostwriter/Instrumentals/` remains
     planned. Do not treat it as implemented yet.
@@ -157,18 +173,22 @@ Walking through what each file does:
   - Schema captures musical and organizational details:
     ```json
     {
-      "version": 1,
+      "version": 2,
       "title": "Song Title",
       "bpm": 92,
       "key": "C# Minor",
       "timeSignature": "4/4",
       "beatFile": "beat.mp3",
       "beatOriginalName": "dark_boombap_92bpm.mp3",
+      "markers": [
+        { "label": "Hook", "positionMs": 15200 }
+      ],
       "createdAt": 1756980000000,
       "updatedAt": 1756985000000,
       "notes": ""
     }
     ```
+  - Version 1 projects remain readable and default to an empty marker list.
 
   **Known limitation, intentional for now:** this directory isn't easily
   user-browsable via a stock file manager because of Android's scoped
@@ -208,7 +228,7 @@ Walking through what each file does:
   - Powered by the native AOSP `android.media.MediaPlayer` API (no heavy
     libraries like ExoPlayer).
   - Controls: Play/Pause/Resume, Play from start, Loop toggle (enabled by
-    default for continuous verse writing), seek scrubber, and volume.
+    default for continuous verse writing), interactive waveform, and volume.
   - When no beat is assigned, an Import beat button opens Android's Storage
     Access Framework picker for supported audio files, then copies the selected
     file into the project directory and begins playback.
@@ -219,6 +239,30 @@ Walking through what each file does:
     copy is in progress, and load failures are reported.
   - Lifecycle: Audio playback runs in background while writing and is cleanly
     released on screen disposal.
+  - Waveform preparation runs on `Dispatchers.IO`, leaving the UI responsive.
+    The player remains unavailable until preparation finishes; navigation and
+    save actions are guarded during processing to avoid stale editor work or
+    lifecycle crashes. Users can cancel or retry preparation.
+  - Audio files at least five minutes long show an explicit warning that
+    waveform processing can take a long time before decoding begins.
+
+- **`logic/WaveformExtractor.kt`** — Uses AOSP `MediaExtractor` and
+  `MediaCodec` to decode PCM and perform a single-pass O(N) peak-envelope
+  reduction into 1,000 evenly distributed amplitude buckets. It supports
+  cooperative cancellation and returns an empty result for invalid or
+  unsupported audio. Extraction does not hold the storage lock.
+
+- **`logic/WaveformViewport.kt`** — Pure, unit-tested timeline math for
+  position/pixel conversion, viewport resize, zoom clamping from 1x to 64x,
+  focal-point-preserving zoom, and bounded horizontal panning.
+
+- **`ui/components/WaveformView.kt` and `BeatPlayerPanel.kt`** — A Compose
+  `Canvas` draws a vertically centered amplitude waveform, a high-contrast
+  playhead, and secondary-accent markers. The timeline supports tap/drag seek,
+  pinch zoom, panning, and dedicated zoom controls in the beat-player header.
+  Long-press adds a marker; markers can be moved, renamed, deleted, or tapped
+  to seek. Dialog and loading/error states live in focused components rather
+  than the editor screen.
 
   **Known simplification:** if the user changes the autosave interval while
   a wait is already in progress, the in-progress wait finishes on the OLD
@@ -234,7 +278,7 @@ Walking through what each file does:
   pattern rather than switching to `ExposedDropdownMenuBox`, to avoid
   reintroducing that version-drift risk.
 
-- **`ui/theme/`** — Dark palette (`Color.kt`): `#121212` background,
+- **`ui/theme/`** — OLED-black palette (`Color.kt`): `#000000` background,
   `#1E1E1E` elevated surfaces, `#F2F2F2` text, `#FF4500` primary controls,
   `#8B5CF6` secondary actions, and `#2A2A2A` outlines/dividers. `Type.kt`
   sets the editor's body text to `FontFamily.Monospace` deliberately — this
@@ -251,11 +295,19 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Test files** (`ProjectStorageTest.kt`, `ProjectStorageBeatTest.kt`,
-  `ProjectMetadataTest.kt`, `BeatPlayerTest.kt`, `SettingsFormatTest.kt`) —
-  Unit tests cover storage creation, deletion, autosave rotation, manual saves,
-  project metadata, beat storage helpers, player state, and settings interval
-  formatting. Run locally via JUnit.
+- **Tests** — 99 JVM tests cover storage, atomic replacement, waveform cache
+  validation/cancellation, extraction math, viewport math, metadata and marker
+  compatibility, player state, warning thresholds, and formatting. Seven
+  Android instrumented tests cover key Compose dialogs and beat-player states.
+  Run `./gradlew test lint` locally; build the device suite with
+  `./gradlew assembleDebugAndroidTest`.
+
+  **Active manual verification:** The maintainer tests from Android Studio on
+  an emulator and performs physical-device testing on an AOSP-based Pixel 8.
+  Testing APKs are also distributed to test users for broader real-device
+  feedback. Compose gestures, Android document-picker behavior, playback,
+  lifecycle transitions, and long-file performance still require these manual
+  checks in addition to automated tests.
 
 ## 6. Deliberate architectural decisions — please don't silently reverse these
 
@@ -276,6 +328,10 @@ just "fix" it without flagging it first:
 9. Self-contained project storage (assigned beat files copied into the project directory
    and metadata saved in `project.json`), paired with a global beats directory
    (`Music/Ghostwriter/Instrumentals/`) for browsing and selecting beats.
+10. AOSP `MediaExtractor` + `MediaCodec` and Compose `Canvas`/Foundation
+    gestures instead of a third-party waveform or media library. This keeps
+    waveform generation offline, avoids native binary/licensing and 16 KB page
+    compatibility risks, and adds no dependency bloat.
 
 ## 7. Known technical debt (not yet addressed, tracked, but not urgent)
 
@@ -294,8 +350,28 @@ just "fix" it without flagging it first:
   `Saver` for the sealed class or a switch to Navigation-Compose (which
   handles this for free).
 - Player volume, loop preference, and position remain session-only.
+- First-time waveform extraction remains proportional to decoded audio length
+  and can take tens of seconds on some devices. It has cancellation, retry,
+  caching, and a five-minute warning, but no percentage progress indicator.
+- Marker deletion has no undo history. Reassigning a beat does have a warning
+  because it deletes the beat file, waveform cache, and all markers.
 
-### Maintenance review (2026-09-07)
+### Waveform feature review (2026-09-09)
+
+- Replaced the seek slider with a DAW-style waveform, 1x–64x zoom, pan,
+  tap/drag seeking, dedicated zoom controls, and persistent editable markers.
+- Added project-local waveform caching, five-minute long-audio warnings,
+  cancel/retry paths, staged beat replacement, and responsive processing that
+  does not hold the storage lock.
+- Guarded navigation and saving during preparation and added safe cancellation
+  across editor disposal, import, retry, and beat removal.
+- Adopted a pure-black OLED background, secondary-accent markers, and a
+  distinct high-contrast playhead.
+- Refactored player/dialog/storage responsibilities and removed obsolete code.
+- `./gradlew test lint assembleDebugAndroidTest` passes: 99 JVM tests execute
+  locally and seven Android instrumented tests compile for emulator/device use.
+
+### Maintenance review (2026-09-07, historical checkpoint)
 
 - Extracted `ui/screens/ProjectInfoDialog.kt` from the editor for readability.
 - Consolidated staged text writes and optional JSON-string parsing; removed
@@ -305,8 +381,9 @@ just "fix" it without flagging it first:
   misleading save-success messages, player release ordering, and NaN volume.
 - Kept the global instrumentals helpers, beat-removal helper, and Home Import
   placeholder for planned features.
-- `./gradlew test lint` passed with 58 JVM tests. Emulator checks remain needed
-  for the picker, playback, and screen lifecycle changes.
+- At this checkpoint, `./gradlew test lint` passed with 58 JVM tests. The later
+  waveform review above supersedes this count and records emulator/device
+  verification requirements.
 
 ## 8. Full feature roadmap (from FEATURES.md — keep this file updated as you work)
 
@@ -326,7 +403,10 @@ default.
 - [x] **Offline beat / media player** — in-editor background audio player
       for instrumentals while songwriting. Built strictly using Android
       framework's built-in AOSP `MediaPlayer` (no heavy external libraries).
-      Controls for play/pause, loop toggle, seek bar, and volume.
+      Controls for play/pause, loop toggle, interactive waveform, and volume.
+- [x] **Interactive waveform timeline** — decoded amplitude display with
+      tap/drag seek, zoom/pan, a live playhead, persistent named markers,
+      project-local caching, cancellation/retry, and long-audio warnings.
 - [ ] **Instrumentals library & project beat management** — direct import into
       a project is complete, but the browsable global folder (e.g.
       `Music/Ghostwriter/Instrumentals/` or another user-accessible directory)

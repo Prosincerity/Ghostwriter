@@ -110,14 +110,6 @@ class BeatPlayer {
     }
 
     /**
-     * Sets looping to [loop] and applies the change to the active player.
-     */
-    fun setLooping(loop: Boolean) {
-        isLooping = loop
-        player?.isLooping = loop
-    }
-
-    /**
      * Sets playback volume. Values outside the valid [0f, 1f] range are
      * clamped before being applied to both channels of the active player.
      */

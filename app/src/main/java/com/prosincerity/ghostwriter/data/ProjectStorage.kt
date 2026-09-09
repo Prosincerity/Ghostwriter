@@ -1,8 +1,10 @@
 package com.prosincerity.ghostwriter.data
 
 import android.content.Context
+import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.CancellationException
 
 /**
  * Handles the on-disk layout for lyric projects.
@@ -27,6 +29,9 @@ import java.io.IOException
  * they actually see and manage themselves.
  */
 object ProjectStorage {
+
+    private const val WAVEFORM_CACHE_FILE_NAME = "waveform.dat"
+    private const val MAX_CACHED_WAVEFORM_SAMPLES = 100_000
 
     fun rootDir(context: Context): File =
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
@@ -167,10 +172,23 @@ object ProjectStorage {
 
     /** Replace only after writing succeeds; never delete the last good copy first. */
     private fun writeTextSafely(target: File, content: String) {
-        val staged = File.createTempFile("save-", ".tmp", target.parentFile)
+        replaceFileSafely(
+            target = target,
+            tempFilePrefix = "save-",
+            replacementFailureMessage = "Couldn't replace ${target.name}",
+        ) { staged -> staged.writeText(content) }
+    }
+
+    private fun replaceFileSafely(
+        target: File,
+        tempFilePrefix: String,
+        replacementFailureMessage: String,
+        writeStagedFile: (File) -> Unit,
+    ) {
+        val staged = File.createTempFile(tempFilePrefix, ".tmp", target.parentFile)
         try {
-            staged.writeText(content)
-            if (!staged.renameTo(target)) throw IOException("Couldn't replace ${target.name}")
+            writeStagedFile(staged)
+            if (!staged.renameTo(target)) throw IOException(replacementFailureMessage)
         } finally {
             staged.delete()
         }
@@ -192,6 +210,121 @@ object ProjectStorage {
     fun metadataFile(projectDir: File): File =
         File(projectDir, "project.json")
 
+    /** Project-local waveform cache for the currently assigned beat. */
+    fun waveformCacheFile(projectDir: File): File =
+        File(projectDir, WAVEFORM_CACHE_FILE_NAME)
+
+    /**
+     * Returns a cached waveform with exactly [targetSampleCount] samples, or
+     * null when no compatible, readable cache is present. Empty extraction
+     * results are failures and are never treated as a valid cache.
+     */
+    fun loadCachedWaveform(projectDir: File, targetSampleCount: Int): IntArray? {
+        if (targetSampleCount <= 0) return null
+        val cacheFile = waveformCacheFile(projectDir)
+        if (!cacheFile.isFile) return null
+
+        return runCatching {
+            val encoded = cacheFile.readText()
+            val headerEnd = encoded.indexOf('\n')
+            if (headerEnd < 0) return null
+
+            val storedTargetCount = encoded.substring(0, headerEnd).toInt()
+            if (storedTargetCount != targetSampleCount || storedTargetCount > MAX_CACHED_WAVEFORM_SAMPLES) {
+                return null
+            }
+
+            val payload = encoded.substring(headerEnd + 1).trim()
+            if (payload.isEmpty()) return null
+
+            val samples = payload.split(',').map { sample ->
+                sample.toInt().takeIf { it in 0..32_768 }
+                    ?: throw IllegalArgumentException("Invalid cached waveform sample")
+            }
+            if (samples.size != targetSampleCount) return null
+            samples.toIntArray()
+        }.getOrNull()
+    }
+
+    @Synchronized
+    internal fun saveCachedWaveform(
+        projectDir: File,
+        targetSampleCount: Int,
+        amplitudes: IntArray,
+    ): Boolean {
+        if (
+            targetSampleCount !in 1..MAX_CACHED_WAVEFORM_SAMPLES ||
+            amplitudes.size != targetSampleCount ||
+            amplitudes.any { it !in 0..32_768 }
+        ) return false
+
+        return runCatching {
+            val encoded = buildString {
+                append(targetSampleCount)
+                append('\n')
+                amplitudes.joinTo(this, separator = ",")
+            }
+            writeTextSafely(waveformCacheFile(projectDir), encoded)
+        }.isSuccess
+    }
+
+    /** Deletes the cache so the next request decodes the currently assigned beat again. */
+    @Synchronized
+    internal fun invalidateWaveformCache(projectDir: File): Boolean {
+        val cacheFile = waveformCacheFile(projectDir)
+        return !cacheFile.exists() || cacheFile.delete()
+    }
+
+    /**
+     * Loads a compatible cache when possible; otherwise decodes [beatFile]
+     * and stores the result for the next editor open. Call from Dispatchers.IO.
+     */
+    fun loadOrExtractWaveform(
+        projectDir: File,
+        beatFile: File,
+        targetSampleCount: Int = WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+        shouldCancel: () -> Boolean = { false },
+    ): IntArray = loadOrExtractWaveform(
+        projectDir = projectDir,
+        beatFile = beatFile,
+        targetSampleCount = targetSampleCount,
+        shouldCancel = shouldCancel,
+        extract = { file, sampleCount ->
+            WaveformExtractor.extractAmplitudes(file, sampleCount, shouldCancel)
+        },
+    )
+
+    internal fun loadOrExtractWaveform(
+        projectDir: File,
+        beatFile: File,
+        targetSampleCount: Int,
+        shouldCancel: () -> Boolean = { false },
+        extract: (File, Int) -> IntArray,
+    ): IntArray {
+        if (
+            targetSampleCount !in 1..MAX_CACHED_WAVEFORM_SAMPLES ||
+            !beatFile.isFile ||
+            runCatching { beatFile.canonicalFile.parentFile == projectDir.canonicalFile }.getOrDefault(false).not()
+        ) return IntArray(0)
+
+        throwIfWaveformCancelled(shouldCancel)
+        loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
+
+        // Decoding can take tens of seconds on some devices. Do not hold the
+        // ProjectStorage monitor while it runs: lyrics and metadata use that
+        // monitor for short atomic writes and must remain responsive.
+        val amplitudes = extract(beatFile, targetSampleCount)
+        throwIfWaveformCancelled(shouldCancel)
+        if (amplitudes.size == targetSampleCount) {
+            saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+        }
+        return amplitudes
+    }
+
+    private fun throwIfWaveformCancelled(shouldCancel: () -> Boolean) {
+        if (shouldCancel()) throw CancellationException("Waveform extraction cancelled")
+    }
+
     fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {
         val file = metadataFile(projectDir)
         if (!file.exists()) {
@@ -208,7 +341,10 @@ object ProjectStorage {
     fun saveMetadata(projectDir: File, metadata: ProjectMetadata): Boolean =
         runCatching {
             val file = metadataFile(projectDir)
-            val updated = metadata.copy(updatedAt = System.currentTimeMillis())
+            val updated = metadata.copy(
+                updatedAt = System.currentTimeMillis(),
+                version = maxOf(metadata.version, ProjectMetadata.CURRENT_VERSION),
+            )
             writeTextSafely(file, updated.toJsonObject().toString(2))
         }.isSuccess
 
@@ -223,9 +359,9 @@ object ProjectStorage {
      * Lists all supported audio beat files in [dir], sorted alphabetically.
      */
     fun listInstrumentals(dir: File): List<File> =
-        dir.listFiles { file ->
-            file.isFile && file.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-        }?.sortedBy { it.name.lowercase() } ?: emptyList()
+        dir.listFiles { file -> file.isSupportedAudioFile() }
+            ?.sortedBy { it.name.lowercase() }
+            ?: emptyList()
 
     /**
      * Resolves the assigned beat file for [projectDir].
@@ -236,14 +372,12 @@ object ProjectStorage {
         val fileName = meta.beatFile
         if (!fileName.isNullOrBlank()) {
             val file = File(projectDir, fileName)
-            if (file.isFile && file.canonicalFile.parentFile == projectDir.canonicalFile &&
-                file.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-            ) return file
+            if (file.isSupportedAudioFile() && file.canonicalFile.parentFile == projectDir.canonicalFile) {
+                return file
+            }
         }
         // Fallback: check if a beat file exists on disk
-        return projectDir.listFiles { f ->
-            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-        }?.firstOrNull()
+        return projectDir.listFiles { file -> file.isProjectBeatFile() }?.firstOrNull()
     }
 
     /**
@@ -275,25 +409,26 @@ object ProjectStorage {
         val destFile = File(projectDir, "beat.$ext")
 
         // A failed stream copy must not truncate or delete the previous beat.
-        val stagedFile = File.createTempFile("beat-import-", ".tmp", projectDir)
-        try {
-            copyAction(stagedFile)
-            if (!stagedFile.renameTo(destFile)) {
-                throw IOException("Couldn't store the selected beat")
-            }
-        } finally {
-            stagedFile.delete()
-        }
+        replaceFileSafely(
+            target = destFile,
+            tempFilePrefix = "beat-import-",
+            replacementFailureMessage = "Couldn't store the selected beat",
+            writeStagedFile = copyAction,
+        )
 
         // Remove the old format only after the new file has been copied.
-        projectDir.listFiles { f ->
-            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS && f != destFile
-        }?.forEach { it.delete() }
+        projectDir.listFiles { file -> file.isProjectBeatFile() && file != destFile }
+            ?.forEach { it.delete() }
+
+        invalidateWaveformCache(projectDir)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(
             beatFile = destFile.name,
             beatOriginalName = originalName,
+            // Marker positions belong to the old timeline. A replacement beat
+            // has a different duration/arrangement, so it starts unmarked.
+            markers = emptyList(),
         )
         if (!saveMetadata(projectDir, updatedMeta)) {
             throw IOException("Couldn't save the beat's project information")
@@ -307,14 +442,14 @@ object ProjectStorage {
      */
     @Synchronized
     fun removeBeatFromProject(projectDir: File) {
-        projectDir.listFiles { f ->
-            f.isFile && f.nameWithoutExtension == "beat" && f.extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
-        }?.forEach { it.delete() }
+        projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
+        invalidateWaveformCache(projectDir)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(
             beatFile = null,
             beatOriginalName = null,
+            markers = emptyList(),
         )
         saveMetadata(projectDir, updatedMeta)
     }
@@ -333,4 +468,10 @@ object ProjectStorage {
         copyAction(dest)
         return dest
     }
+
+    private fun File.isSupportedAudioFile(): Boolean =
+        isFile && extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+
+    private fun File.isProjectBeatFile(): Boolean =
+        nameWithoutExtension == "beat" && isSupportedAudioFile()
 }
