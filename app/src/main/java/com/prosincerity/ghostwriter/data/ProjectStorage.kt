@@ -203,8 +203,8 @@ object ProjectStorage {
 
     /**
      * Returns a cached waveform with exactly [targetSampleCount] samples, or
-     * null when no compatible, readable cache is present. An empty array is a
-     * valid cached result for a beat the platform cannot decode.
+     * null when no compatible, readable cache is present. Empty extraction
+     * results are failures and are never treated as a valid cache.
      */
     fun loadCachedWaveform(projectDir: File, targetSampleCount: Int): IntArray? {
         if (targetSampleCount <= 0) return null
@@ -222,7 +222,7 @@ object ProjectStorage {
             }
 
             val payload = encoded.substring(headerEnd + 1).trim()
-            if (payload.isEmpty()) return IntArray(0)
+            if (payload.isEmpty()) return null
 
             val samples = payload.split(',').map { sample ->
                 sample.toInt().takeIf { it in 0..32_768 }
@@ -241,7 +241,7 @@ object ProjectStorage {
     ): Boolean {
         if (
             targetSampleCount !in 1..MAX_CACHED_WAVEFORM_SAMPLES ||
-            (amplitudes.isNotEmpty() && amplitudes.size != targetSampleCount) ||
+            amplitudes.size != targetSampleCount ||
             amplitudes.any { it !in 0..32_768 }
         ) return false
 
@@ -302,7 +302,7 @@ object ProjectStorage {
         // monitor for short atomic writes and must remain responsive.
         val amplitudes = extract(beatFile, targetSampleCount)
         throwIfWaveformCancelled(shouldCancel)
-        if (amplitudes.isEmpty() || amplitudes.size == targetSampleCount) {
+        if (amplitudes.size == targetSampleCount) {
             saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
         }
         return amplitudes

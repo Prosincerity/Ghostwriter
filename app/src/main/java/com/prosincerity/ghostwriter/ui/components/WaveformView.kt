@@ -83,8 +83,11 @@ fun WaveformView(
         modifier = modifier
             .clipToBounds()
             .onSizeChanged { size ->
-                viewportWidthPx = size.width.toFloat()
-                onViewportChange(viewport.clamped(viewportWidthPx))
+                val newWidthPx = size.width.toFloat()
+                onViewportChange(
+                    latestViewport.value.resized(viewportWidthPx, newWidthPx),
+                )
+                viewportWidthPx = newWidthPx
             },
     ) {
         Canvas(

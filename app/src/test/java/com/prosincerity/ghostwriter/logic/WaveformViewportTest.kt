@@ -91,6 +91,26 @@ class WaveformViewportTest {
     }
 
     @Test
+    fun resized_preservesTheTimelinePositionAtTheViewportCenter() {
+        val viewport = WaveformViewport(zoom = 4f, scrollOffsetPx = 600f)
+        val centerPositionBefore = viewport.xToPositionMs(200f, 1_000, 400f)
+
+        val resized = viewport.resized(previousWidthPx = 400f, newWidthPx = 800f)
+
+        assertEquals(centerPositionBefore, resized.xToPositionMs(400f, 1_000, 800f))
+    }
+
+    @Test
+    fun resized_withNoPreviousWidthUsesAValidClampedViewport() {
+        val viewport = WaveformViewport(zoom = 4f, scrollOffsetPx = 600f)
+
+        assertEquals(
+            WaveformViewport(zoom = 4f, scrollOffsetPx = 300f),
+            viewport.resized(previousWidthPx = 0f, newWidthPx = 100f),
+        )
+    }
+
+    @Test
     fun zoomBy_invalidScaleFactorsLeaveValidViewportUnchanged() {
         val viewport = WaveformViewport(zoom = 4f, scrollOffsetPx = 100f)
 

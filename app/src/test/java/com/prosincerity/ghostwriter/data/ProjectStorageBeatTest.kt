@@ -77,6 +77,7 @@ class ProjectStorageBeatTest {
             0 to IntArray(0),
             -1 to IntArray(0),
             100_001 to IntArray(0),
+            2 to IntArray(0),
             2 to intArrayOf(1),
             2 to intArrayOf(-1, 2),
             2 to intArrayOf(32_769, 2),
@@ -132,6 +133,25 @@ class ProjectStorageBeatTest {
 
         assertEquals(listOf(7, 7), regenerated.toList())
         assertEquals(listOf(9, 9, 9), differentResolution.toList())
+    }
+
+    @Test
+    fun loadOrExtractWaveform_doesNotCacheFailedEmptyExtraction() {
+        val project = tempFolder.newFolder("failed_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        var extractionCount = 0
+
+        repeat(2) {
+            assertTrue(
+                ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ ->
+                    extractionCount++
+                    IntArray(0)
+                }.isEmpty(),
+            )
+        }
+
+        assertEquals(2, extractionCount)
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
     }
 
     @Test

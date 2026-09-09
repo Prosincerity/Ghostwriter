@@ -28,6 +28,17 @@ data class WaveformViewport(
     fun maxScrollPx(viewportWidthPx: Float): Float =
         (contentWidthPx(viewportWidthPx) - viewportWidthPx.coerceAtLeast(0f)).coerceAtLeast(0f)
 
+    /** Preserves the visible timeline center when the drawing surface changes width. */
+    fun resized(previousWidthPx: Float, newWidthPx: Float): WaveformViewport {
+        if (previousWidthPx <= 0f || newWidthPx <= 0f) return clamped(newWidthPx)
+
+        val oldViewport = clamped(previousWidthPx)
+        val centerFraction = (oldViewport.scrollOffsetPx + previousWidthPx / 2f) /
+            oldViewport.contentWidthPx(previousWidthPx)
+        val newScrollOffset = centerFraction * oldViewport.contentWidthPx(newWidthPx) - newWidthPx / 2f
+        return oldViewport.copy(scrollOffsetPx = newScrollOffset).clamped(newWidthPx)
+    }
+
     /** Maps a playback position to its x coordinate in the visible viewport. */
     fun positionToX(positionMs: Long, durationMs: Long, viewportWidthPx: Float): Float {
         if (durationMs <= 0L || viewportWidthPx <= 0f) return 0f
