@@ -74,8 +74,6 @@ fun WaveformView(
     var draggedMarker by remember { mutableStateOf<WaveformMarker?>(null) }
     var pendingMarkerPositionMs by remember { mutableLongStateOf(0L) }
 
-    val visiblePositionMs = currentPositionMs
-
     fun seekAt(xPx: Float): Long =
         latestViewport.value.xToPositionMs(xPx, durationMs, viewportWidthPx)
 
@@ -182,7 +180,7 @@ fun WaveformView(
                 }
             }
 
-            val currentPlayheadX = drawingViewport.positionToX(visiblePositionMs, durationMs, size.width)
+            val currentPlayheadX = drawingViewport.positionToX(currentPositionMs, durationMs, size.width)
             drawLine(
                 color = GhostPrimary,
                 start = Offset(currentPlayheadX, 0f),

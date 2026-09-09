@@ -1,8 +1,8 @@
 package com.prosincerity.ghostwriter.ui
 
 import com.prosincerity.ghostwriter.data.Settings
+import com.prosincerity.ghostwriter.ui.components.formatPlaybackTime
 import com.prosincerity.ghostwriter.ui.screens.formatInterval
-import com.prosincerity.ghostwriter.ui.screens.formatPlaybackTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
