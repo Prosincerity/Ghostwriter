@@ -84,7 +84,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
-private const val LONG_BEAT_WARNING_MS = 10 * 60 * 1_000L
+private const val LONG_BEAT_WARNING_MS = 5 * 60 * 1_000L
 
 private data class PendingBeatPreparation(
     val file: File,
@@ -587,7 +587,7 @@ fun EditorScreen(
             text = {
                 Text(
                     "This beat is ${formatPlaybackTime(pendingBeat.durationMs)} long. " +
-                        "Creating its waveform may take a while."
+                        "Processing its waveform can take a long time."
                 )
             },
             confirmButton = {
