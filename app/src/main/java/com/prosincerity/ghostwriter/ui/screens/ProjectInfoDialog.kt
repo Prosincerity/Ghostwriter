@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,11 +38,15 @@ fun ProjectInfoDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.imePadding(),
         title = { Text("Project Information") },
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    // Keep the action buttons outside this scrollable area so
+                    // they remain reachable above the on-screen keyboard.
+                    .heightIn(max = 320.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
@@ -112,9 +118,9 @@ fun ProjectInfoDialog(
                 onClick = {
                     val updated = metadata.copy(
                         bpm = editBpm.trim().toIntOrNull(),
-                        key = editKey.trim().ifBlank { null },
-                        timeSignature = editTimeSignature.trim().ifBlank { null },
-                        notes = editNotes.trim().ifBlank { null },
+                        key = editKey.trimmedOrNull(),
+                        timeSignature = editTimeSignature.trimmedOrNull(),
+                        notes = editNotes.trimmedOrNull(),
                     )
                     onSave(updated)
                 }
@@ -129,3 +135,5 @@ fun ProjectInfoDialog(
         }
     )
 }
+
+private fun String.trimmedOrNull(): String? = trim().ifBlank { null }

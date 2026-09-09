@@ -58,6 +58,12 @@ private fun GhostwriterApp() {
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var projects by remember { mutableStateOf(ProjectStorage.listProjects(context)) }
 
+    suspend fun refreshProjects() {
+        projects = withContext(Dispatchers.IO) {
+            ProjectStorage.listProjects(context)
+        }
+    }
+
     when (val current = screen) {
         is Screen.Home -> HomeScreen(
             existingProjects = projects,
@@ -74,11 +80,21 @@ private fun GhostwriterApp() {
                         ProjectStorage.deleteProject(context, title)
                     }
                     if (deleted) {
-                        projects = withContext(Dispatchers.IO) {
-                            ProjectStorage.listProjects(context)
-                        }
+                        refreshProjects()
                     } else {
                         Toast.makeText(context, "Couldn't delete $title", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onRenameProject = { currentTitle, renamedTitle ->
+                coroutineScope.launch {
+                    val renamed = withContext(Dispatchers.IO) {
+                        ProjectStorage.renameProject(context, currentTitle, renamedTitle)
+                    }
+                    if (renamed != null) {
+                        refreshProjects()
+                    } else {
+                        Toast.makeText(context, "Couldn't rename $currentTitle", Toast.LENGTH_SHORT).show()
                     }
                 }
             },

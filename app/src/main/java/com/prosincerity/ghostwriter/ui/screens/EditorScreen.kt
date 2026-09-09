@@ -1,54 +1,40 @@
 package com.prosincerity.ghostwriter.ui.screens
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Loop
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -59,18 +45,36 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
+import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
+import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.BeatPlayer
-import android.net.Uri
-import android.provider.OpenableColumns
+import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
+import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
+import com.prosincerity.ghostwriter.ui.components.ReassignBeatDialog
+import com.prosincerity.ghostwriter.ui.components.WaveformMarkerDialog
 import kotlinx.coroutines.CancellationException
-import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineStart
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+
+private const val LONG_BEAT_WARNING_MS = 5 * 60 * 1_000L
+
+private data class PendingBeatPreparation(
+    val file: File,
+    val durationMs: Long,
+    val removeBeatOnCancel: Boolean,
+)
 
 /**
  * The Phase 1 notepad, now with a title bar (back + settings) and a
@@ -112,8 +116,186 @@ fun EditorScreen(
     }
     var isImporting by remember(projectTitle) { mutableStateOf(false) }
     var isReassigningBeat by remember(projectTitle) { mutableStateOf(false) }
-    LaunchedEffect(beatPlayer) {
-        isBeatReady = beatFile?.let(beatPlayer::load) == true
+    var waveformAmplitudes by remember(projectTitle) { mutableStateOf(IntArray(0)) }
+    var isWaveformLoading by remember(projectTitle) { mutableStateOf(false) }
+    var waveformRevision by remember(projectTitle) { mutableIntStateOf(0) }
+    var waveformCancellation by remember(projectTitle) { mutableStateOf<AtomicBoolean?>(null) }
+    var cancellationRequested by remember(projectTitle) { mutableStateOf(false) }
+    var waveformPreparationCancelled by remember(projectTitle) { mutableStateOf(false) }
+    var waveformPreparationFailed by remember(projectTitle) { mutableStateOf(false) }
+    var autoPlayWhenWaveformReady by remember(projectTitle) { mutableStateOf(false) }
+    var isImportedBeatPreparation by remember(projectTitle) { mutableStateOf(false) }
+    var approvedLongBeatPath by remember(projectTitle) { mutableStateOf<String?>(null) }
+    var pendingLongBeatPreparation by remember(projectTitle) {
+        mutableStateOf<PendingBeatPreparation?>(null)
+    }
+    var showReassignConfirmation by rememberSaveable(projectTitle) { mutableStateOf(false) }
+    var markerPositionToAdd by remember(projectTitle) { mutableStateOf<Long?>(null) }
+    var markerToEdit by remember(projectTitle) { mutableStateOf<WaveformMarker?>(null) }
+    val latestLyrics = rememberUpdatedState(lyrics)
+    val latestKeepCount = rememberUpdatedState(keepCount)
+    val latestWaveformCancellation = rememberUpdatedState(waveformCancellation)
+    val projectMutationMutex = remember(projectTitle) { Mutex() }
+    val projectMutationRevision = remember(projectTitle) { AtomicLong(0L) }
+
+    suspend fun removeBeatAndLoadMetadata(): ProjectMetadata =
+        projectMutationMutex.withLock {
+            withContext(Dispatchers.IO) {
+                ProjectStorage.removeBeatFromProject(projectDir)
+                ProjectStorage.loadMetadata(projectDir, projectTitle)
+            }
+        }
+
+    fun persistMetadataUpdate(
+        updatedMetadata: ProjectMetadata,
+        successMessage: String?,
+        failureMessage: String,
+    ) {
+        // Update Compose state immediately so a following marker operation is
+        // based on this change rather than an older metadata snapshot.
+        metadata = updatedMetadata
+        val revision = projectMutationRevision.incrementAndGet()
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            val saved = projectMutationMutex.withLock {
+                withContext(Dispatchers.IO) {
+                    ProjectStorage.saveMetadata(projectDir, updatedMetadata)
+                }
+            }
+            if (saved == true && revision == projectMutationRevision.get()) {
+                successMessage?.let { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            } else if (saved == false && revision == projectMutationRevision.get()) {
+                metadata = withContext(Dispatchers.IO) {
+                    ProjectStorage.loadMetadata(projectDir, projectTitle)
+                }
+                Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun persistMarkers(
+        markers: List<WaveformMarker>,
+        successMessage: String?,
+        failureMessage: String,
+    ) {
+        persistMetadataUpdate(
+            updatedMetadata = metadata.copy(markers = markers),
+            successMessage = successMessage,
+            failureMessage = failureMessage,
+        )
+    }
+
+    fun removeBeatFromEditor(onRemoved: () -> Unit = {}) {
+        isReassigningBeat = true
+        val removalRevision = projectMutationRevision.incrementAndGet()
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                val updatedMetadata = removeBeatAndLoadMetadata()
+                if (removalRevision == projectMutationRevision.get()) {
+                    metadata = updatedMetadata
+                    beatFile = null
+                    approvedLongBeatPath = null
+                    onRemoved()
+                }
+            } finally {
+                isReassigningBeat = false
+            }
+        }
+    }
+
+    // Decoding a full beat can take noticeable time, so it happens once for
+    // each assigned/reassigned beat on IO. Playback waits for this work so the
+    // player never appears before waveform.dat has been written.
+    LaunchedEffect(beatFile, waveformRevision) {
+        val currentBeat = beatFile
+        if (currentBeat == null) {
+            waveformAmplitudes = IntArray(0)
+            isWaveformLoading = false
+            isBeatReady = false
+            autoPlayWhenWaveformReady = false
+            isImportedBeatPreparation = false
+            waveformPreparationCancelled = false
+            waveformPreparationFailed = false
+            pendingLongBeatPreparation = null
+            return@LaunchedEffect
+        }
+
+        val removeBeatOnCancellation = isImportedBeatPreparation
+        val cancellation = AtomicBoolean(false)
+        waveformCancellation = cancellation
+        cancellationRequested = false
+        waveformPreparationCancelled = false
+        waveformPreparationFailed = false
+        isWaveformLoading = true
+        isBeatReady = false
+        try {
+            val cachedWaveform = withContext(Dispatchers.IO) {
+                ProjectStorage.loadCachedWaveform(
+                    projectDir,
+                    WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+                )
+            }
+            if (cachedWaveform == null && approvedLongBeatPath != currentBeat.absolutePath) {
+                val durationMs = withContext(Dispatchers.IO) {
+                    WaveformExtractor.durationMs(currentBeat)
+                }
+                if (shouldWarnBeforeWaveformExtraction(durationMs)) {
+                    pendingLongBeatPreparation = PendingBeatPreparation(
+                        file = currentBeat,
+                        durationMs = durationMs!!,
+                        removeBeatOnCancel = isImportedBeatPreparation,
+                    )
+                    return@LaunchedEffect
+                }
+            }
+
+            waveformAmplitudes = cachedWaveform ?: withContext(Dispatchers.IO) {
+                ProjectStorage.loadOrExtractWaveform(
+                    projectDir = projectDir,
+                    beatFile = currentBeat,
+                    shouldCancel = cancellation::get,
+                )
+            }
+            if (cancellation.get()) throw java.util.concurrent.CancellationException()
+            if (waveformAmplitudes.isEmpty()) {
+                waveformPreparationFailed = true
+                autoPlayWhenWaveformReady = false
+                isImportedBeatPreparation = false
+                return@LaunchedEffect
+            }
+
+            isBeatReady = beatPlayer.load(currentBeat)
+            if (isBeatReady && autoPlayWhenWaveformReady) beatPlayer.play()
+            autoPlayWhenWaveformReady = false
+            isImportedBeatPreparation = false
+            if (!isBeatReady) {
+                Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
+            }
+        } catch (cancellation: java.util.concurrent.CancellationException) {
+            if (!cancellationRequested) throw cancellation
+            if (beatFile == currentBeat) {
+                if (removeBeatOnCancellation) {
+                    val removalRevision = projectMutationRevision.incrementAndGet()
+                    val updatedMetadata = removeBeatAndLoadMetadata()
+                    if (removalRevision == projectMutationRevision.get()) {
+                        metadata = updatedMetadata
+                        beatFile = null
+                        waveformRevision++
+                        isImportedBeatPreparation = false
+                    }
+                } else {
+                    waveformPreparationCancelled = true
+                }
+                waveformAmplitudes = IntArray(0)
+                autoPlayWhenWaveformReady = false
+            }
+        } finally {
+            if (waveformCancellation === cancellation) {
+                waveformCancellation = null
+                isWaveformLoading = false
+            }
+        }
     }
 
     val importBeatLauncher = rememberLauncherForActivityResult(
@@ -121,39 +303,43 @@ fun EditorScreen(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
 
-        coroutineScope.launch {
-            isImporting = true
+        isImporting = true
+        val importRevision = projectMutationRevision.incrementAndGet()
+        coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                val imported = withContext(Dispatchers.IO) {
-                    runCatching {
-                        val originalName = displayNameFor(context, uri) ?: "beat.mp3"
-                        val extension = originalName.substringAfterLast('.', "").lowercase()
-                        require(extension in ProjectStorage.SUPPORTED_AUDIO_EXTENSIONS) {
-                            "Choose an MP3, WAV, OGG, FLAC, M4A, or AAC file"
-                        }
+                val imported = projectMutationMutex.withLock {
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            val originalName = displayNameFor(context, uri) ?: "beat.mp3"
+                            val extension = originalName.substringAfterLast('.', "").lowercase()
+                            require(extension in ProjectStorage.SUPPORTED_AUDIO_EXTENSIONS) {
+                                "Choose an MP3, WAV, OGG, FLAC, M4A, or AAC file"
+                            }
 
-                        val assigned = ProjectStorage.assignBeatToProject(
-                            projectDir = projectDir,
-                            originalName = originalName,
-                        ) { destination ->
-                            context.contentResolver.openInputStream(uri)?.use { input ->
-                                destination.outputStream().use { output -> input.copyTo(output) }
-                            } ?: error("Couldn't read the selected beat")
+                            val assigned = ProjectStorage.assignBeatToProject(
+                                projectDir = projectDir,
+                                originalName = originalName,
+                            ) { destination ->
+                                context.contentResolver.openInputStream(uri)?.use { input ->
+                                    destination.outputStream().use { output -> input.copyTo(output) }
+                                } ?: error("Couldn't read the selected beat")
+                            }
+                            Pair(
+                                assigned,
+                                ProjectStorage.loadMetadata(projectDir, projectTitle),
+                            )
                         }
-                        assigned to ProjectStorage.loadMetadata(projectDir, projectTitle)
                     }
                 }
+                if (importRevision != projectMutationRevision.get()) return@launch
 
                 imported.onSuccess { (assigned, updatedMetadata) ->
                     metadata = updatedMetadata
+                    approvedLongBeatPath = null
+                    autoPlayWhenWaveformReady = true
+                    isImportedBeatPreparation = true
                     beatFile = assigned
-                    // Reload explicitly: replacing beat.mp3 does not change its File key.
-                    isBeatReady = beatPlayer.load(assigned)
-                    if (isBeatReady) {
-                        beatPlayer.play()
-                    } else {
-                        Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
-                    }
+                    waveformRevision++
                 }.onFailure {
                     if (it is CancellationException) throw it
                     Toast.makeText(
@@ -188,11 +374,17 @@ fun EditorScreen(
         }
     }
 
-    // Save immediately on leaving the screen, so nothing is lost between
-    // autosave ticks (e.g. navigating to Settings or back to Home).
+    // Cancel decoding before the final save when leaving the screen. The
+    // updated-state holders avoid capturing the values from the first
+    // composition in this long-lived effect.
     DisposableEffect(projectTitle) {
         onDispose {
-            ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount)
+            latestWaveformCancellation.value?.set(true)
+            ProjectStorage.rotateAndSave(
+                projectDir,
+                latestLyrics.value,
+                latestKeepCount.value,
+            )
         }
     }
 
@@ -201,17 +393,11 @@ fun EditorScreen(
             metadata = metadata,
             onDismiss = { showInfoDialog = false },
             onSave = { updatedMeta ->
-                coroutineScope.launch {
-                    val saved = withContext(Dispatchers.IO) {
-                        ProjectStorage.saveMetadata(projectDir, updatedMeta)
-                    }
-                    if (saved) metadata = updatedMeta
-                    Toast.makeText(
-                        context,
-                        if (saved) "Project info saved" else "Couldn't save project info",
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                }
+                persistMetadataUpdate(
+                    updatedMetadata = updatedMeta,
+                    successMessage = "Project info saved",
+                    failureMessage = "Couldn't save project info",
+                )
                 showInfoDialog = false
             },
         )
@@ -233,7 +419,10 @@ fun EditorScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showInfoDialog = true }) {
+                    IconButton(
+                        onClick = { showInfoDialog = true },
+                        enabled = !isImporting && !isReassigningBeat && !isWaveformLoading,
+                    ) {
                         Icon(Icons.Filled.Info, contentDescription = "Project Info")
                     }
                     IconButton(onClick = {
@@ -289,24 +478,34 @@ fun EditorScreen(
                         )
                     )
                 },
-                onReassignBeat = {
-                    isReassigningBeat = true
-                    beatPlayer.release()
-                    isBeatReady = false
-                    coroutineScope.launch {
-                        try {
-                            val updatedMetadata = withContext(Dispatchers.IO) {
-                                ProjectStorage.removeBeatFromProject(projectDir)
-                                ProjectStorage.loadMetadata(projectDir, projectTitle)
-                            }
-                            metadata = updatedMetadata
-                            beatFile = null
-                        } finally {
-                            isReassigningBeat = false
+                onReassignBeat = { showReassignConfirmation = true },
+                isReassigningBeat = isReassigningBeat,
+                waveformAmplitudes = waveformAmplitudes,
+                isWaveformLoading = isWaveformLoading,
+                markers = metadata.markers,
+                onAddMarker = { positionMs -> markerPositionToAdd = positionMs },
+                onMarkerClick = { marker -> markerToEdit = marker },
+                onMarkerMove = { marker, positionMs ->
+                    val markerIndex = metadata.markers.indexOfFirst { it === marker }
+                    if (markerIndex >= 0 && marker.positionMs != positionMs) {
+                        val updatedMarkers = metadata.markers.toMutableList().apply {
+                            this[markerIndex] = marker.copy(positionMs = positionMs)
                         }
+                        persistMarkers(
+                            markers = updatedMarkers,
+                            successMessage = null,
+                            failureMessage = "Couldn't move marker",
+                        )
                     }
                 },
-                isReassigningBeat = isReassigningBeat,
+                onCancelWaveformPreparation = {
+                    cancellationRequested = true
+                    waveformCancellation?.set(true)
+                },
+                cancelRemovesImportedBeat = isImportedBeatPreparation,
+                waveformPreparationCancelled = waveformPreparationCancelled,
+                waveformPreparationFailed = waveformPreparationFailed,
+                onRetryWaveformPreparation = { waveformRevision++ },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 12.dp),
@@ -331,214 +530,107 @@ fun EditorScreen(
             )
         }
     }
-}
 
-@Composable
-private fun BeatPlayerPanel(
-    beatPlayer: BeatPlayer,
-    isBeatReady: Boolean,
-    isImporting: Boolean,
-    beatDisplayName: String,
-    onImportBeat: () -> Unit,
-    onReassignBeat: () -> Unit,
-    isReassigningBeat: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
-    var currentPositionMs by remember(beatPlayer) { mutableIntStateOf(0) }
-    var durationMs by remember(beatPlayer) { mutableIntStateOf(0) }
-    var isSeeking by remember(beatPlayer) { mutableStateOf(false) }
-    var pendingSeekPositionMs by remember(beatPlayer) { mutableFloatStateOf(0f) }
-    var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
-    var volumeBeforeMute by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
-    var isMuted by remember(beatPlayer) { mutableStateOf(beatPlayer.volume == 0f) }
-    var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
-
-    // MediaPlayer has no Compose-observable position state. Poll only while
-    // this screen owns a successfully loaded player so the slider and clock
-    // stay in sync with playback.
-    LaunchedEffect(beatPlayer, isBeatReady) {
-        if (!isBeatReady) return@LaunchedEffect
-
-        while (true) {
-            if (!isSeeking) {
-                currentPositionMs = beatPlayer.currentPositionMs
-            }
-            durationMs = beatPlayer.durationMs
-            isPlaying = beatPlayer.isPlaying
-            delay(250.milliseconds)
-        }
-    }
-
-    Card(modifier = modifier.height(112.dp)) {
-        if (!isBeatReady) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text(
-                    text = if (isReassigningBeat) "Removing beat…" else "No beat selected",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+    markerPositionToAdd?.let { positionMs ->
+        WaveformMarkerDialog(
+            title = "Add marker",
+            initialLabel = "",
+            positionMs = positionMs,
+            onSave = { label ->
+                persistMarkers(
+                    markers = metadata.markers + WaveformMarker(label, positionMs),
+                    successMessage = "Marker added",
+                    failureMessage = "Couldn't save marker",
                 )
-                Button(
-                    onClick = onImportBeat,
-                    enabled = !isImporting && !isReassigningBeat,
-                    modifier = Modifier.padding(top = 4.dp),
-                ) {
-                    Text(
-                        when {
-                            isReassigningBeat -> "Removing…"
-                            isImporting -> "Importing…"
-                            else -> "Import beat"
-                        }
-                    )
-                }
-            }
-            return@Card
-        }
+                markerPositionToAdd = null
+            },
+            onDelete = null,
+            onDismiss = { markerPositionToAdd = null },
+        )
+    }
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-        ) {
-            Text(
-                text = beatDisplayName,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Slider(
-                value = (if (isSeeking) pendingSeekPositionMs else currentPositionMs.toFloat())
-                    .coerceIn(0f, durationMs.coerceAtLeast(1).toFloat()),
-                onValueChange = { position ->
-                    isSeeking = true
-                    pendingSeekPositionMs = position
-                },
-                onValueChangeFinished = {
-                    beatPlayer.seekTo(pendingSeekPositionMs.toInt())
-                    currentPositionMs = pendingSeekPositionMs.toInt()
-                    isSeeking = false
-                },
-                valueRange = 0f..durationMs.coerceAtLeast(1).toFloat(),
-                modifier = Modifier.height(20.dp),
-            )
-            Text(
-                text = "${formatPlaybackTime(currentPositionMs)}/${formatPlaybackTime(durationMs)}",
-                maxLines = 1,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    markerToEdit?.let { marker ->
+        WaveformMarkerDialog(
+            title = "Edit marker",
+            initialLabel = marker.label,
+            positionMs = marker.positionMs,
+            onSave = { label ->
+                val markerIndex = metadata.markers.indexOfFirst { it === marker }
+                if (markerIndex < 0) {
+                    markerToEdit = null
+                    return@WaveformMarkerDialog
+                }
+                val updatedMarkers = metadata.markers.toMutableList().apply {
+                    this[markerIndex] = WaveformMarker(label, marker.positionMs)
+                }
+                persistMarkers(
+                    markers = updatedMarkers,
+                    successMessage = "Marker renamed",
+                    failureMessage = "Couldn't save marker",
+                )
+                markerToEdit = null
+            },
+            onDelete = {
+                val markerIndex = metadata.markers.indexOfFirst { it === marker }
+                if (markerIndex < 0) {
+                    markerToEdit = null
+                    return@WaveformMarkerDialog
+                }
+                val updatedMarkers = metadata.markers.toMutableList().apply { removeAt(markerIndex) }
+                persistMarkers(
+                    markers = updatedMarkers,
+                    successMessage = "Marker deleted",
+                    failureMessage = "Couldn't save marker",
+                )
+                markerToEdit = null
+            },
+            onDismiss = { markerToEdit = null },
+        )
+    }
 
-            Box(modifier = Modifier.fillMaxWidth()) {
-                TextButton(
-                    onClick = onReassignBeat,
-                    enabled = !isReassigningBeat,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                ) {
-                    Text("Reassign", style = MaterialTheme.typography.labelSmall)
-                }
-                Row(
-                    modifier = Modifier.align(Alignment.Center),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = {
-                            beatPlayer.seekTo(0)
-                            beatPlayer.play()
-                            currentPositionMs = 0
-                            isPlaying = beatPlayer.isPlaying
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipPrevious,
-                            contentDescription = "Play from start",
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            beatPlayer.togglePlayPause()
-                            isPlaying = beatPlayer.isPlaying
-                        },
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            isLooping = beatPlayer.toggleLoop()
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Loop,
-                            contentDescription = if (isLooping) "Disable loop" else "Enable loop",
-                            tint = if (isLooping) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
+    if (showReassignConfirmation) {
+        ReassignBeatDialog(
+            onConfirm = {
+                showReassignConfirmation = false
+                beatPlayer.release()
+                isBeatReady = false
+                removeBeatFromEditor { waveformRevision++ }
+            },
+            onDismiss = { showReassignConfirmation = false },
+        )
+    }
+
+    pendingLongBeatPreparation?.let { pendingBeat ->
+        LongBeatWarningDialog(
+            durationMs = pendingBeat.durationMs,
+            cancelRemovesImportedBeat = pendingBeat.removeBeatOnCancel,
+            onProcess = {
+                approvedLongBeatPath = pendingBeat.file.absolutePath
+                autoPlayWhenWaveformReady = true
+                isImportedBeatPreparation = pendingBeat.removeBeatOnCancel
+                beatFile = pendingBeat.file
+                waveformRevision++
+                pendingLongBeatPreparation = null
+            },
+            onCancel = {
+                pendingLongBeatPreparation = null
+                if (!pendingBeat.removeBeatOnCancel) {
+                    waveformPreparationCancelled = true
+                } else {
+                    removeBeatFromEditor {
+                        Toast.makeText(context, "Beat import cancelled", Toast.LENGTH_SHORT).show()
                     }
                 }
-                Row(
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = {
-                            if (isMuted) {
-                                beatPlayer.setVolume(volumeBeforeMute.takeIf { it > 0f } ?: 1f)
-                                volume = beatPlayer.volume
-                                isMuted = false
-                            } else {
-                                if (volume > 0f) volumeBeforeMute = volume
-                                beatPlayer.setVolume(0f)
-                                volume = 0f
-                                isMuted = true
-                            }
-                        },
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        Icon(
-                            imageVector = if (isMuted) {
-                                Icons.AutoMirrored.Filled.VolumeOff
-                            } else {
-                                Icons.AutoMirrored.Filled.VolumeUp
-                            },
-                            contentDescription = if (isMuted) "Unmute" else "Mute",
-                        )
-                    }
-                    Slider(
-                        value = volume,
-                        onValueChange = { newVolume ->
-                            beatPlayer.setVolume(newVolume)
-                            volume = beatPlayer.volume
-                            if (volume > 0f) volumeBeforeMute = volume
-                            isMuted = volume == 0f
-                        },
-                        valueRange = 0f..1f,
-                        modifier = Modifier
-                            .height(16.dp)
-                            .width(56.dp),
-                    )
-                }
-            }
-        }
+            },
+        )
     }
 }
 
-internal fun formatPlaybackTime(milliseconds: Int): String {
-    val totalSeconds = (milliseconds.coerceAtLeast(0) / 1_000)
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "$minutes:${seconds.toString().padStart(2, '0')}"
-}
 
-private fun displayNameFor(context: android.content.Context, uri: Uri): String? {
+internal fun shouldWarnBeforeWaveformExtraction(durationMs: Long?): Boolean =
+    durationMs != null && durationMs >= LONG_BEAT_WARNING_MS
+
+private fun displayNameFor(context: Context, uri: Uri): String? {
     return context.contentResolver.query(
         uri,
         arrayOf(OpenableColumns.DISPLAY_NAME),

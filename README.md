@@ -6,7 +6,9 @@ Ghostwriter is a free, open-source, no-bloat, no-AI Android app for writing rap 
 
 ## Status
 
-🚧 **Early development.** Currently a barebones, modern-UI notepad. Feature roadmap below.
+🚧 **Early development.** The core songwriting editor, project persistence,
+offline beat playback, and interactive waveform timeline are implemented.
+Feature roadmap below.
 
 ## Philosophy
 
@@ -35,12 +37,15 @@ Comprehensive project documentation lives in the [`documentation/`](documentatio
 See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature roadmap.
 
 **Phase 1 — MVP (completed):**
-- Barebones plain-text notepad, modern dark UI, local file persistence.
+- Barebones plain-text notepad, modern dark UI, local file persistence, and
+  project renaming.
 
 **Phase 2 — Songwriting environment (in progress):**
 - Autosave & rolling backup ring (`autosave1.txt`..`autosaveN.txt`) (completed)
 - In-editor project info dialog & project metadata (`project.json` for musical key, BPM, timestamps) (completed)
 - In-editor offline beat / media player with project-local beat import (completed; built-in AOSP `MediaPlayer`)
+- DAW-style waveform with tap/drag seeking, pinch and button zoom, horizontal
+  panning, a live playhead, and persistent named markers (completed)
 - Instrumentals library & project beat management (global beats library still planned; imported project beats are self-contained)
 - Syllable counter column (left, per line, IDE-style)
 - Bar counter (right, greyed-out separator: `|` or `/`)
@@ -55,6 +60,13 @@ See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature road
 1. Open this folder in Android Studio (Meerkat or newer).
 2. Let Gradle sync.
 3. Run on an emulator or device (min SDK / target SDK as set in `app/build.gradle.kts`).
+
+## Testing
+
+- JVM tests and lint run through Gradle (`./gradlew test lint`).
+- Compose instrumented tests run from Android Studio on an Android emulator.
+- Active physical-device testing uses an AOSP-based Pixel 8. Testing APKs are
+  also sent to test users for additional real-device feedback.
 
 ## Development
 

@@ -9,8 +9,231 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CancellationException
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class ProjectStorageBeatTest {
+
+    @Test
+    fun loadOrExtractWaveform_cancelledBeforeExtractionDoesNotCreateCache() {
+        val project = tempFolder.newFolder("cancel_before_extraction")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        var extractionCalled = false
+
+        val result = runCatching {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 3, shouldCancel = { true }) { _, _ ->
+                extractionCalled = true
+                intArrayOf(1, 2, 3)
+            }
+        }
+
+        assertTrue(result.exceptionOrNull() is CancellationException)
+        assertFalse(extractionCalled)
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+        assertEquals("beat", beat.readText())
+    }
+
+    @Test
+    fun loadOrExtractWaveform_cancelledDuringExtractionPreservesPreviousCache() {
+        val project = tempFolder.newFolder("cancel_during_extraction")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(7, 8)))
+        val cacheBefore = ProjectStorage.waveformCacheFile(project).readText()
+        var cancelled = false
+        var extractionCalled = false
+
+        val result = runCatching {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 3, shouldCancel = { cancelled }) { _, _ ->
+                extractionCalled = true
+                cancelled = true
+                intArrayOf(1, 2, 3)
+            }
+        }
+
+        assertTrue(extractionCalled)
+        assertTrue(result.exceptionOrNull() is CancellationException)
+        assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readText())
+        assertEquals("beat", beat.readText())
+    }
+
+    @Test
+    fun loadCachedWaveform_rejectsMalformedSamples() {
+        val project = tempFolder.newFolder("invalid_cache_samples")
+        for (payload in listOf("-1,2", "32769,2", "text,2", "1", "1,2,3", "1,")) {
+            ProjectStorage.waveformCacheFile(project).writeText("2\n$payload")
+
+            assertNull("Invalid payload: $payload", ProjectStorage.loadCachedWaveform(project, 2))
+        }
+    }
+
+    @Test
+    fun saveCachedWaveform_invalidReplacementPreservesExistingCache() {
+        val project = tempFolder.newFolder("preserve_valid_cache")
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(0, 32_768)))
+        val cacheBefore = ProjectStorage.waveformCacheFile(project).readText()
+        val invalidReplacements = listOf(
+            0 to IntArray(0),
+            -1 to IntArray(0),
+            100_001 to IntArray(0),
+            2 to IntArray(0),
+            2 to intArrayOf(1),
+            2 to intArrayOf(-1, 2),
+            2 to intArrayOf(32_769, 2),
+        )
+
+        for ((targetCount, samples) in invalidReplacements) {
+            assertFalse(ProjectStorage.saveCachedWaveform(project, targetCount, samples))
+            assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readText())
+        }
+    }
+
+    @Test
+    fun waveformCache_roundTripsOnlyAtItsOriginalResolution() {
+        val project = tempFolder.newFolder("waveform_cache")
+        val peaks = intArrayOf(0, 12, 3, 32_768)
+
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 4, peaks))
+        assertEquals(peaks.toList(), ProjectStorage.loadCachedWaveform(project, 4)?.toList())
+        assertNull(ProjectStorage.loadCachedWaveform(project, 5))
+    }
+
+    @Test
+    fun loadOrExtractWaveform_reusesACachedWaveformBeforeDecodingAgain() {
+        val project = tempFolder.newFolder("cached_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        var extractionCount = 0
+
+        val first = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, targetCount ->
+            extractionCount++
+            IntArray(targetCount) { it + 1 }
+        }
+        val second = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ ->
+            throw AssertionError("A valid cache should avoid a second extraction")
+        }
+
+        assertEquals(listOf(1, 2, 3), first.toList())
+        assertEquals(first.toList(), second.toList())
+        assertEquals(1, extractionCount)
+    }
+
+    @Test
+    fun loadOrExtractWaveform_regeneratesCorruptOrDifferentResolutionCaches() {
+        val project = tempFolder.newFolder("regenerate_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        ProjectStorage.waveformCacheFile(project).writeText("not a waveform")
+
+        val regenerated = ProjectStorage.loadOrExtractWaveform(project, beat, 2) { _, targetCount ->
+            IntArray(targetCount) { 7 }
+        }
+        val differentResolution = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, targetCount ->
+            IntArray(targetCount) { 9 }
+        }
+
+        assertEquals(listOf(7, 7), regenerated.toList())
+        assertEquals(listOf(9, 9, 9), differentResolution.toList())
+    }
+
+    @Test
+    fun loadOrExtractWaveform_doesNotCacheFailedEmptyExtraction() {
+        val project = tempFolder.newFolder("failed_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        var extractionCount = 0
+
+        repeat(2) {
+            assertTrue(
+                ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ ->
+                    extractionCount++
+                    IntArray(0)
+                }.isEmpty(),
+            )
+        }
+
+        assertEquals(2, extractionCount)
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+    }
+
+    @Test
+    fun loadOrExtractWaveform_doesNotBlockLyricsSaveWhileDecoding() {
+        val project = tempFolder.newFolder("non_blocking_waveform")
+        val beat = File(project, "beat.mp3").apply { writeText("beat") }
+        val extractionStarted = CountDownLatch(1)
+        val releaseExtraction = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+
+        val extraction = executor.submit<IntArray> {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, targetCount ->
+                extractionStarted.countDown()
+                check(releaseExtraction.await(5, TimeUnit.SECONDS))
+                IntArray(targetCount) { it + 1 }
+            }
+        }
+
+        try {
+            assertTrue(extractionStarted.await(5, TimeUnit.SECONDS))
+
+            val save = executor.submit<Boolean> {
+                ProjectStorage.saveManual(project, "non_blocking_waveform", "lyrics", 3)
+            }
+
+            assertTrue(save.get(1, TimeUnit.SECONDS))
+            assertEquals("lyrics", File(project, "non_blocking_waveform.txt").readText())
+        } finally {
+            releaseExtraction.countDown()
+            extraction.get(5, TimeUnit.SECONDS)
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun assigningOrRemovingABeat_invalidatesTheWaveformCache() {
+        val project = tempFolder.newFolder("invalidate_waveform")
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(1, 2)))
+
+        ProjectStorage.assignBeatToProject(project, "new.mp3") { it.writeText("new beat") }
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(3, 4)))
+        ProjectStorage.removeBeatFromProject(project)
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+    }
+
+    @Test
+    fun assigningABeat_clearsMarkersFromThePreviousTimeline() {
+        val project = tempFolder.newFolder("replace_markers")
+        assertTrue(
+            ProjectStorage.saveMetadata(
+                project,
+                ProjectMetadata(
+                    title = "replace_markers",
+                    markers = listOf(WaveformMarker("Hook", 12_000L)),
+                ),
+            ),
+        )
+
+        ProjectStorage.assignBeatToProject(project, "replacement.mp3") { it.writeText("new beat") }
+
+        assertTrue(ProjectStorage.loadMetadata(project, "replace_markers").markers.isEmpty())
+    }
+
+    @Test
+    fun removingABeat_clearsMarkersFromItsTimeline() {
+        val project = tempFolder.newFolder("remove_beat_markers")
+        ProjectStorage.assignBeatToProject(project, "beat.mp3") { it.writeText("beat") }
+        assertTrue(
+            ProjectStorage.saveMetadata(
+                project,
+                ProjectStorage.loadMetadata(project, "remove_beat_markers").copy(
+                    markers = listOf(WaveformMarker("Hook", 12_000L)),
+                ),
+            ),
+        )
+
+        ProjectStorage.removeBeatFromProject(project)
+
+        assertTrue(ProjectStorage.loadMetadata(project, "remove_beat_markers").markers.isEmpty())
+    }
 
     @Test
     fun failedImport_preservesExistingBeatAndMetadata() {
@@ -28,7 +251,28 @@ class ProjectStorageBeatTest {
             assertEquals("original", File(project, "beat.mp3").readText())
             assertEquals(metadataBefore, File(project, "project.json").readText())
             assertEquals(setOf("beat.mp3", "project.json"), project.list()!!.toSet())
+            assertTrue(
+                "A failed import must not leave a staged file behind",
+                project.listFiles().orEmpty().none { it.name.startsWith("beat-import-") },
+            )
         }
+    }
+
+    @Test
+    fun assignBeatToProject_sameExtensionReplacesContentsWithoutLeavingStagedFile() {
+        val project = tempFolder.newFolder("same_extension_replacement")
+        ProjectStorage.assignBeatToProject(project, "old.mp3") { it.writeText("old") }
+
+        val assigned = ProjectStorage.assignBeatToProject(project, "new.mp3") {
+            it.writeText("new")
+        }
+
+        assertEquals("beat.mp3", assigned.name)
+        assertEquals("new", assigned.readText())
+        assertEquals(
+            setOf("beat.mp3", "project.json"),
+            project.listFiles().orEmpty().map { it.name }.toSet(),
+        )
     }
 
     @Test
@@ -64,12 +308,31 @@ class ProjectStorageBeatTest {
         File(beatsDir, "drill_c.ogg").writeText("audio3")
         File(beatsDir, "notes.txt").writeText("not audio")
         File(beatsDir, "cover.png").writeText("not audio")
+        File(beatsDir, "not_a_file.mp3").mkdir()
 
         val result = ProjectStorage.listInstrumentals(beatsDir)
         assertEquals(3, result.size)
         assertEquals("boom_a.wav", result[0].name)
         assertEquals("drill_c.ogg", result[1].name)
         assertEquals("trap_b.mp3", result[2].name)
+    }
+
+    @Test
+    fun removeBeatFromProject_onlyDeletesSupportedProjectBeatFiles() {
+        val project = tempFolder.newFolder("selective_beat_removal")
+        File(project, "beat.mp3").writeText("assigned")
+        File(project, "beat.wav").writeText("stale")
+        File(project, "beat.txt").writeText("keep")
+        File(project, "beat-remix.mp3").writeText("keep")
+        File(project, "beat.flac").mkdir()
+
+        ProjectStorage.removeBeatFromProject(project)
+
+        assertFalse(File(project, "beat.mp3").exists())
+        assertFalse(File(project, "beat.wav").exists())
+        assertEquals("keep", File(project, "beat.txt").readText())
+        assertEquals("keep", File(project, "beat-remix.mp3").readText())
+        assertTrue(File(project, "beat.flac").isDirectory)
     }
 
     @Test

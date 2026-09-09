@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +16,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,10 +58,13 @@ fun HomeScreen(
     onCreateProject: (String) -> Unit,
     onOpenProject: (String) -> Unit,
     onDeleteProject: (String) -> Unit,
+    onRenameProject: (currentTitle: String, renamedTitle: String) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     var showTitleDialog by remember { mutableStateOf(false) }
+    var projectMenuFor by remember { mutableStateOf<String?>(null) }
     var projectToDelete by remember { mutableStateOf<String?>(null) }
+    var projectToRename by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -117,11 +124,32 @@ fun HomeScreen(
                         ListItem(
                             headlineContent = { Text(title) },
                             trailingContent = {
-                                IconButton(onClick = { projectToDelete = title }) {
-                                    Icon(
-                                        Icons.Filled.Delete,
-                                        contentDescription = "Delete $title",
-                                    )
+                                Box {
+                                    IconButton(onClick = { projectMenuFor = title }) {
+                                        Icon(
+                                            Icons.Filled.MoreVert,
+                                            contentDescription = "Project options for $title",
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = projectMenuFor == title,
+                                        onDismissRequest = { projectMenuFor = null },
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Rename") },
+                                            onClick = {
+                                                projectMenuFor = null
+                                                projectToRename = title
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Delete") },
+                                            onClick = {
+                                                projectMenuFor = null
+                                                projectToDelete = title
+                                            },
+                                        )
+                                    }
                                 }
                             },
                             modifier = Modifier
@@ -142,6 +170,18 @@ fun HomeScreen(
                 onCreateProject(title)
             },
             onDismiss = { showTitleDialog = false },
+        )
+    }
+
+    projectToRename?.let { title ->
+        RenameProjectDialog(
+            projectTitle = title,
+            existingProjects = existingProjects,
+            onConfirm = { renamedTitle ->
+                projectToRename = null
+                onRenameProject(title, renamedTitle)
+            },
+            onDismiss = { projectToRename = null },
         )
     }
 
@@ -171,6 +211,47 @@ fun HomeScreen(
             },
         )
     }
+}
+
+@Composable
+private fun RenameProjectDialog(
+    projectTitle: String,
+    existingProjects: List<String>,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember(projectTitle) { mutableStateOf(projectTitle) }
+    val candidate = ProjectStorage.sanitizeTitle(text)
+    val alreadyExists = existingProjects.any { existingTitle ->
+        existingTitle != projectTitle && existingTitle.equals(candidate, ignoreCase = true)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rename track") },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                singleLine = true,
+                supportingText = if (alreadyExists) {
+                    { Text("A project with this name already exists") }
+                } else null,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { if (!alreadyExists) onConfirm(candidate) },
+                ),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(candidate) }, enabled = !alreadyExists) {
+                Text("Rename")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 @Composable

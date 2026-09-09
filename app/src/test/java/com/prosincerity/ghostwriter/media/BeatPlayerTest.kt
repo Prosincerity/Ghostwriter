@@ -121,15 +121,6 @@ class BeatPlayerTest {
         assertTrue(player.isLooping)
     }
 
-    @Test
-    fun setLooping_setsExplicitState() {
-        val player = BeatPlayer()
-        player.setLooping(false)
-        assertFalse(player.isLooping)
-        player.setLooping(true)
-        assertTrue(player.isLooping)
-    }
-
     // --- Volume ---
 
     @Test

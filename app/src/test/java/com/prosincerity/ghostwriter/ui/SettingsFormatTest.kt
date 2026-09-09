@@ -1,8 +1,8 @@
 package com.prosincerity.ghostwriter.ui
 
 import com.prosincerity.ghostwriter.data.Settings
+import com.prosincerity.ghostwriter.ui.components.formatPlaybackTime
 import com.prosincerity.ghostwriter.ui.screens.formatInterval
-import com.prosincerity.ghostwriter.ui.screens.formatPlaybackTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -11,9 +11,11 @@ class SettingsFormatTest {
 
     @Test
     fun formatPlaybackTime_displaysMinutesAndPaddedSeconds() {
+        assertEquals("0:00", formatPlaybackTime(-1))
         assertEquals("0:00", formatPlaybackTime(0))
         assertEquals("0:30", formatPlaybackTime(30_999))
         assertEquals("2:30", formatPlaybackTime(150_000))
+        assertEquals("60000:00", formatPlaybackTime(3_600_000_000L))
     }
 
     @Test
