@@ -35,7 +35,7 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
 import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
-import com.prosincerity.ghostwriter.ui.theme.GhostText
+import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -64,7 +64,7 @@ fun WaveformView(
     val markerHitRadiusPx = with(density) { 24.dp.toPx() }
     val markerLabelPaddingPx = with(density) { 4.dp.toPx() }
     val markerLabelStyle = TextStyle(
-        color = GhostText,
+        color = GhostSecondary,
         fontFamily = FontFamily.Monospace,
         fontSize = 10.sp,
     )
@@ -154,13 +154,13 @@ fun WaveformView(
                 val markerX = drawingViewport.positionToX(displayPositionMs, durationMs, size.width)
                 if (markerX in -48.dp.toPx()..size.width) {
                     drawLine(
-                        color = GhostBorder,
+                        color = GhostSecondary,
                         start = Offset(markerX, 0f),
                         end = Offset(markerX, size.height),
                         strokeWidth = 1.dp.toPx(),
                     )
                     drawLine(
-                        color = GhostBorder,
+                        color = GhostSecondary,
                         start = Offset(markerX, markerAreaHeight - 2.dp.toPx()),
                         end = Offset(markerX + 8.dp.toPx(), markerAreaHeight - 2.dp.toPx()),
                         strokeWidth = 3.dp.toPx(),
