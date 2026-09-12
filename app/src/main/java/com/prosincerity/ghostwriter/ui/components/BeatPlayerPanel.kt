@@ -120,7 +120,7 @@ internal fun BeatPlayerPanel(
         }
 
         if (waveformPreparationCancelled) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            CenteredPlayerContent {
                 Text(
                     text = "Waveform preparation canceled",
                     style = MaterialTheme.typography.bodyMedium,

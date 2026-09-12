@@ -125,6 +125,41 @@ class BeatComponentsTest {
     }
 
     @Test
+    fun beatPlayerCancelledState_centersRetryContent() {
+        composeRule.setContent {
+            GhostwriterTheme {
+                BeatPlayerPanel(
+                    beatPlayer = BeatPlayer(),
+                    isBeatReady = false,
+                    isImporting = false,
+                    beatDisplayName = "",
+                    onImportBeat = {},
+                    onReassignBeat = {},
+                    isReassigningBeat = false,
+                    waveformAmplitudes = intArrayOf(),
+                    isWaveformLoading = false,
+                    markers = emptyList(),
+                    onAddMarker = {},
+                    onMarkerClick = {},
+                    onMarkerMove = { _, _ -> },
+                    onCancelWaveformPreparation = {},
+                    cancelRemovesImportedBeat = false,
+                    waveformPreparationCancelled = true,
+                    waveformPreparationFailed = false,
+                    onRetryWaveformPreparation = {},
+                )
+            }
+        }
+
+        val messageBounds = composeRule.onNodeWithText("Waveform preparation canceled")
+            .fetchSemanticsNode().boundsInRoot
+        val retryBounds = composeRule.onNodeWithText("Retry")
+            .fetchSemanticsNode().boundsInRoot
+
+        assertEquals(messageBounds.center.x, retryBounds.center.x, 1f)
+    }
+
+    @Test
     fun beatPlayerFailureState_offersRetryAndBeatRemoval() {
         var retried = false
         var removed = false
