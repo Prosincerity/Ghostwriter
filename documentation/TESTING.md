@@ -48,7 +48,7 @@ This task runs the debug local tests and connected debug instrumented tests,
 then combines both coverage data sets. Open the resulting report at:
 
 ```text
-app/build/reports/code_coverage_html_report/index.html
+app/build/reports/code_coverage_html_report/global/index.html
 ```
 
 Unified report aggregation is currently an experimental Android Gradle Plugin
@@ -96,9 +96,9 @@ app/build/reports/coverage/androidTest/debug/connected/index.html
    collection enabled.
 5. In the Project tool window, switch from the **Android** view to the
    **Project** view and open
-   `app/build/reports/code_coverage_html_report/index.html`. If Android Studio
-   does not preview it, use **Open In > Browser** or open that file directly in
-   a web browser.
+   `app/build/reports/code_coverage_html_report/global/index.html`. If Android
+   Studio does not preview it, use **Open In > Browser** or open that file
+   directly in a web browser.
 
 The unified report lets you drill down from packages to classes and source
 lines. Green lines were executed, red lines were missed, and yellow lines were
@@ -121,6 +121,14 @@ adb devices
 The emulator should appear with the state `device`. If the coverage task fails,
 fix the failing test or device connection first; Gradle will not create a
 complete unified report after a failed test run.
+
+On newer JDKs, Gradle may also print a warning that
+`com.google.protobuf.UnsafeUtil` called a terminally deprecated
+`sun.misc.Unsafe` method. This originates in protobuf used by the Android/Gradle
+toolchain, not Ghostwriter's application code. It does not invalidate a report
+when the build finishes successfully. Prefer updating Android Studio and the
+Android Gradle Plugin when an upstream fix becomes available instead of adding
+or forcing a protobuf application dependency solely to hide the warning.
 
 All generated test and coverage pages are under `app/build/`. They are ignored
 by Git, can be regenerated at any time, and are removed by `./gradlew clean`.
