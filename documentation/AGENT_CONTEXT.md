@@ -82,6 +82,7 @@ Ghostwriter/
 │       │           ├── components/
 │       │           │   ├── BeatDialogs.kt
 │       │           │   ├── BeatPlayerPanel.kt
+│       │           │   ├── LyricsNotepad.kt  ← state-hoisted lyrics editing surface
 │       │           │   ├── PlaybackTime.kt
 │       │           │   └── WaveformView.kt  ← Canvas timeline and gestures
 │       │           ├── screens/
@@ -216,7 +217,10 @@ Walking through what each file does:
   its actual casing.
 
 - **`ui/screens/EditorScreen.kt`** — The actual text editor. Full-screen
-  `TextField`, monospace, dark theme. Text state uses `rememberSaveable` (not
+  editor with a monospace, dark-theme `LyricsNotepad`. The notepad UI is kept
+  in `ui/components/LyricsNotepad.kt` so optional left/right gutters can be
+  added without mixing their layout into screen-level persistence and beat
+  player behavior. Text state uses `rememberSaveable` (not
   plain `remember`) so it survives recomposition without a disk round-trip.
   A `LaunchedEffect` loop calls `delay(intervalSeconds * 1000L)` then
   re-reads settings and calls `rotateAndSave`. A `DisposableEffect`'s
@@ -305,8 +309,9 @@ Walking through what each file does:
 
 - **Tests** — 99 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
-  compatibility, player state, warning thresholds, and formatting. Eleven
-  Android instrumented tests cover key Compose dialogs and beat-player states.
+  compatibility, player state, warning thresholds, and formatting. Thirteen
+  Android instrumented tests cover key Compose screens, dialogs, player states,
+  and the lyrics editing surface.
   Run `./gradlew test lint` locally; build the device suite with
   `./gradlew assembleDebugAndroidTest`.
 

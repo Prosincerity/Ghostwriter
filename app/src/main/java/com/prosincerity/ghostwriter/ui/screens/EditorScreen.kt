@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
@@ -23,8 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -38,10 +35,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
@@ -53,6 +48,7 @@ import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.BeatPlayer
 import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
+import com.prosincerity.ghostwriter.ui.components.LyricsNotepad
 import com.prosincerity.ghostwriter.ui.components.ReassignBeatDialog
 import com.prosincerity.ghostwriter.ui.components.WaveformMarkerDialog
 import kotlinx.coroutines.CancellationException
@@ -511,22 +507,13 @@ fun EditorScreen(
                     .padding(top = 12.dp),
             )
 
-            TextField(
-                value = lyrics,
-                onValueChange = { lyrics = it },
+            LyricsNotepad(
+                lyrics = lyrics,
+                onLyricsChange = { lyrics = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(top = 8.dp),
-                placeholder = { Text("Start writing...") },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
             )
         }
     }
