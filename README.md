@@ -65,6 +65,9 @@ See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature road
 
 - JVM tests and lint run through Gradle (`./gradlew test lint`).
 - Compose instrumented tests run from Android Studio on an Android emulator.
+- JaCoCo can generate local, instrumented, or unified HTML coverage reports.
+  See [`documentation/TESTING.md`](documentation/TESTING.md) for the commands,
+  Android Studio workflow, output paths, and ADB troubleshooting.
 - Active physical-device testing uses an AOSP-based Pixel 8. Testing APKs are
   also sent to test users for additional real-device feedback.
 

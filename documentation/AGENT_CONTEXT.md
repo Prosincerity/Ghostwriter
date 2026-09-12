@@ -314,6 +314,10 @@ Walking through what each file does:
   and the lyrics editing surface.
   Run `./gradlew test lint` locally; build the device suite with
   `./gradlew assembleDebugAndroidTest`.
+  Debug local and instrumented tests have JaCoCo coverage enabled. Run
+  `./gradlew :app:createCoverageReport` with an emulator or device connected to
+  generate the unified HTML report. See [`TESTING.md`](TESTING.md) for all
+  coverage tasks, output paths, and the Android Studio workflow.
 
   **Active manual verification:** The maintainer tests from Android Studio on
   an emulator and performs physical-device testing on an AOSP-based Pixel 8.
