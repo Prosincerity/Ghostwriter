@@ -157,15 +157,17 @@ fun EditorScreen(
                     ProjectStorage.saveMetadata(projectDir, updatedMetadata)
                 }
             }
-            if (saved == true && revision == projectMutationRevision.get()) {
-                successMessage?.let { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main.immediate) {
+                if (saved == true && revision == projectMutationRevision.get()) {
+                    successMessage?.let { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    }
+                } else if (saved == false && revision == projectMutationRevision.get()) {
+                    metadata = withContext(Dispatchers.IO) {
+                        ProjectStorage.loadMetadata(projectDir, projectTitle)
+                    }
+                    Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
                 }
-            } else if (saved == false && revision == projectMutationRevision.get()) {
-                metadata = withContext(Dispatchers.IO) {
-                    ProjectStorage.loadMetadata(projectDir, projectTitle)
-                }
-                Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
             }
         }
     }
