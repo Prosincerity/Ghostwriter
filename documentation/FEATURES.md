@@ -15,6 +15,7 @@ This document is the single source of truth for where Ghostwriter is headed. Kee
 - [x] Create / delete lyric documents
 - [x] Rename lyric documents
 - [x] Basic local persistence (survives app restart)
+- [x] About screen with project, source, license, and dictionary-data attribution links
 
 ## Phase 2 — Songwriting environment
 

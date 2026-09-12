@@ -85,6 +85,7 @@ Ghostwriter/
 │       │           │   ├── PlaybackTime.kt
 │       │           │   └── WaveformView.kt  ← Canvas timeline and gestures
 │       │           ├── screens/
+│       │           │   ├── AboutScreen.kt
 │       │           │   ├── HomeScreen.kt
 │       │           │   ├── EditorScreen.kt
 │       │           │   ├── ProjectInfoDialog.kt
@@ -111,14 +112,15 @@ reference remains, it is a stale identifier that must be migrated.
 - Project metadata (`project.json`) + in-editor Project Info dialog — done.
 - Offline beat player + project-local beat import — done.
 - Interactive waveform, zoom/pan, markers, caching, and processing safety — done.
+- About screen with open-source and dictionary-data attribution — done.
 
 Walking through what each file does:
 
 - **`MainActivity.kt`** — Hosts a tiny hand-rolled navigation system: a
-  private `sealed class Screen` with `Home`, `Editor(projectTitle)`, and
-  `SettingsFrom(projectTitle)` variants, switched on with a `when` inside a
+  private `sealed class Screen` with `Home`, `Editor(projectTitle)`, `Settings`,
+  and `About` variants, switched on with a `when` inside a
   `GhostwriterApp()` composable. This is deliberately NOT using the
-  Navigation-Compose library — three screens didn't justify the dependency.
+  Navigation-Compose library — the current screen count doesn't justify the dependency.
   If the screen count grows significantly, that's the natural point to
   reconsider.
 
@@ -270,13 +272,19 @@ Walking through what each file does:
   bug, just not instant.
 
 - **`ui/screens/SettingsScreen.kt`** — Two dropdowns (autosave interval,
-  backup count) backed by `Settings.kt`. Deliberately implemented with a
+  backup count) backed by `Settings.kt`, plus an entry to the About screen.
+  Deliberately implemented with a
   plain `Box` + `DropdownMenu`/`DropdownMenuItem` rather than Material 3's
   `ExposedDropdownMenuBox` — that API's shape (specifically `menuAnchor()`)
   has changed across library versions, while the basic `DropdownMenu` API
   has stayed stable. If you need more dropdowns later, keep using this same
   pattern rather than switching to `ExposedDropdownMenuBox`, to avoid
   reintroducing that version-drift risk.
+
+- **`ui/screens/AboutScreen.kt`** — Offline project information, installed app
+  version, MIT source/license links, and attribution for dictionary datasets
+  prepared from Kaikki.org/Wiktionary data. External links are opened only on
+  user action and fail gracefully when no browser is installed.
 
 - **`ui/theme/`** — OLED-black palette (`Color.kt`): `#000000` background,
   `#1E1E1E` elevated surfaces, `#F2F2F2` text, `#FF4500` primary controls,
@@ -297,7 +305,7 @@ Walking through what each file does:
 
 - **Tests** — 99 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
-  compatibility, player state, warning thresholds, and formatting. Seven
+  compatibility, player state, warning thresholds, and formatting. Eleven
   Android instrumented tests cover key Compose dialogs and beat-player states.
   Run `./gradlew test lint` locally; build the device suite with
   `./gradlew assembleDebugAndroidTest`.

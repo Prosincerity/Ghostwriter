@@ -1,5 +1,7 @@
 package com.prosincerity.ghostwriter
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -13,6 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.ui.screens.AboutScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
 import com.prosincerity.ghostwriter.ui.screens.HomeScreen
 import com.prosincerity.ghostwriter.ui.screens.SettingsScreen
@@ -22,8 +25,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Navigation between the three screens is a tiny hand-rolled sealed
- * class rather than the Navigation-Compose library — three screens
+ * Navigation between the app's screens is a tiny hand-rolled sealed
+ * class rather than the Navigation-Compose library — the current screen count
  * doesn't justify that dependency yet. Swap it in later if the screen
  * count grows.
  *
@@ -37,6 +40,7 @@ private sealed class Screen {
     data object Home : Screen()
     data class Editor(val projectTitle: String) : Screen()
     data class Settings(val returnTo: Screen) : Screen()
+    data class About(val returnTo: Settings) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -57,6 +61,11 @@ private fun GhostwriterApp() {
     val coroutineScope = rememberCoroutineScope()
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var projects by remember { mutableStateOf(ProjectStorage.listProjects(context)) }
+    val versionName = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull().orEmpty().ifBlank { "Unknown" }
+    }
 
     suspend fun refreshProjects() {
         projects = withContext(Dispatchers.IO) {
@@ -112,6 +121,19 @@ private fun GhostwriterApp() {
 
         is Screen.Settings -> SettingsScreen(
             onBack = { screen = current.returnTo },
+            onOpenAbout = { screen = Screen.About(returnTo = current) },
+        )
+
+        is Screen.About -> AboutScreen(
+            versionName = versionName,
+            onBack = { screen = current.returnTo },
+            onOpenLink = { url ->
+                runCatching {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }.onFailure {
+                    Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+                }
+            },
         )
     }
 }
