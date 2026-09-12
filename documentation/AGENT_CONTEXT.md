@@ -307,12 +307,12 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Tests** — 99 JVM tests cover storage, atomic replacement, waveform cache
+- **Tests** — 102 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
-  compatibility, player state, warning thresholds, and formatting. Eighteen
+  compatibility, player state, warning thresholds, and formatting. Twenty-one
   Android instrumented tests cover key Compose screens, dialogs, player states,
-  the lyrics editing surface, Home and Editor behavior, persistence, and
-  activity-level navigation.
+  waveform decoding, the lyrics editing surface, Home and Editor behavior,
+  persistence, and activity-level navigation.
   Run `./gradlew test lint` locally; build the device suite with
   `./gradlew assembleDebugAndroidTest`.
   Debug local and instrumented tests have JaCoCo coverage enabled. Run

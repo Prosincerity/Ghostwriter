@@ -23,6 +23,29 @@ object WaveformExtractor {
     const val DEFAULT_TARGET_SAMPLE_COUNT = 1_000
 
     private const val DEQUEUE_TIMEOUT_US = 10_000L
+    private const val MAX_CONSECUTIVE_DEQUEUE_STALLS = 500
+
+    internal class DecoderProgressGuard(
+        private val maxConsecutiveStalls: Int = MAX_CONSECUTIVE_DEQUEUE_STALLS,
+    ) {
+        private var consecutiveStalls = 0
+
+        init {
+            require(maxConsecutiveStalls > 0)
+        }
+
+        fun record(madeProgress: Boolean) {
+            if (madeProgress) {
+                consecutiveStalls = 0
+                return
+            }
+
+            consecutiveStalls++
+            check(consecutiveStalls < maxConsecutiveStalls) {
+                "Audio decoder stopped making progress"
+            }
+        }
+    }
 
     /**
      * Returns the duration of the first audio track, or null if it cannot be
@@ -110,12 +133,15 @@ object WaveformExtractor {
             var inputEnded = false
             var outputEnded = false
             var decodedFrameCount = 0L
+            val progressGuard = DecoderProgressGuard()
 
             while (!outputEnded) {
                 checkCancelled(shouldCancel)
+                var madeProgress = false
                 if (!inputEnded) {
                     val inputIndex = activeCodec.dequeueInputBuffer(DEQUEUE_TIMEOUT_US)
                     if (inputIndex >= 0) {
+                        madeProgress = true
                         val inputBuffer = activeCodec.getInputBuffer(inputIndex)
                             ?: throw IllegalStateException("Decoder provided no input buffer")
                         inputBuffer.clear()
@@ -143,9 +169,13 @@ object WaveformExtractor {
                 }
 
                 when (val outputIndex = activeCodec.dequeueOutputBuffer(bufferInfo, DEQUEUE_TIMEOUT_US)) {
-                    MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> outputFormat = activeCodec.outputFormat
+                    MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                        outputFormat = activeCodec.outputFormat
+                        madeProgress = true
+                    }
                     MediaCodec.INFO_TRY_AGAIN_LATER -> Unit
                     else -> if (outputIndex >= 0) {
+                        madeProgress = true
                         try {
                             activeCodec.getOutputBuffer(outputIndex)?.let { outputBuffer ->
                                 decodedFrameCount += appendFramePeaksToBuckets(
@@ -163,6 +193,7 @@ object WaveformExtractor {
                         }
                     }
                 }
+                progressGuard.record(madeProgress)
             }
 
             return if (decodedFrameCount > 0L) buckets else IntArray(0)

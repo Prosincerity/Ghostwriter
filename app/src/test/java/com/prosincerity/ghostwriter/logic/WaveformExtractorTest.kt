@@ -2,6 +2,7 @@ package com.prosincerity.ghostwriter.logic
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -42,6 +43,14 @@ class WaveformExtractorTest {
     }
 
     @Test
+    fun extractAmplitudes_rejectsNonPositiveTargetSampleCounts() {
+        val source = tempFolder.newFile("source.wav")
+
+        assertTrue(WaveformExtractor.extractAmplitudes(source, 0).isEmpty())
+        assertTrue(WaveformExtractor.extractAmplitudes(source, -1).isEmpty())
+    }
+
+    @Test
     fun extractAmplitudes_returnsEmptyForCorruptFileWithoutThrowing() {
         val corrupt = tempFolder.newFile("corrupt.wav").apply { writeText("not audio") }
 
@@ -53,5 +62,27 @@ class WaveformExtractorTest {
         val source = tempFolder.newFile("cancelled.wav").apply { writeText("audio") }
 
         WaveformExtractor.extractAmplitudes(source, 100) { true }
+    }
+
+    @Test
+    fun decoderProgressGuard_resetsItsStallCountAfterProgress() {
+        val guard = WaveformExtractor.DecoderProgressGuard(maxConsecutiveStalls = 2)
+
+        guard.record(madeProgress = false)
+        guard.record(madeProgress = true)
+        guard.record(madeProgress = false)
+    }
+
+    @Test
+    fun decoderProgressGuard_rejectsAStalledDecoder() {
+        val guard = WaveformExtractor.DecoderProgressGuard(maxConsecutiveStalls = 2)
+
+        guard.record(madeProgress = false)
+        try {
+            guard.record(madeProgress = false)
+            fail("Expected a stalled decoder to be rejected")
+        } catch (expected: IllegalStateException) {
+            assertEquals("Audio decoder stopped making progress", expected.message)
+        }
     }
 }
