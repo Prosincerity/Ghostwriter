@@ -19,8 +19,12 @@ This document is the single source of truth for where Ghostwriter is headed. Kee
 
 ## Phase 2 — Songwriting environment
 
-- [ ] **Syllable counter column** — left-hand gutter, one number per line, IDE-style
-- [ ] **Bar counter** — right-hand side, bars separated by a greyed-out `|` or `/` (user-configurable)
+- [ ] **Editor gutters** — extend `LyricsNotepad` with optional IDE-style
+  columns while keeping persistence in `EditorScreen` unchanged:
+  - Left gutter: show the syllable count for the current lyric line.
+  - Right gutter: number bars, with one bar counted for every two lyric lines.
+  - Settings: independent **Syllable counter** and **Bar counter** toggles;
+    disabling either setting removes its corresponding gutter.
 - [ ] **Hyphenation** — auto-hyphenate every word, customizable separator character (e.g. `-` or space), toggle on/off
 - [ ] **Rhyme detection** — syllable-by-syllable analysis within a bar; syllables that rhyme with another syllable get a unique, consistent color per rhyme group
 - [x] **Autosave** — continuous autosave with a configurable interval, plus a rolling ring of `autosave1.txt`..`autosaveN.txt` backups (N configurable)
@@ -33,7 +37,9 @@ This document is the single source of truth for where Ghostwriter is headed. Kee
 - [ ] **Import / export** — plain text at minimum; consider `.docx`/`.pdf` export later
 - [ ] **Dictionary** — word lookup while writing
 - [ ] **Rhyme dictionary** — look up rhymes on demand when stuck
-- [ ] **Testable code blocks** — waveform extraction/storage and viewport math now have JVM coverage, and key dialogs/player states have Compose instrumented coverage. Continue the same pure-logic-first approach for syllable counting, rhyme detection, and hyphenation.
+- [ ] **Testable code blocks** — keep syllable counting, bar counting, rhyme
+  detection, and hyphenation as pure logic with JVM tests; cover gutter
+  visibility and alignment with Compose tests.
 
 ## Non-goals
 
