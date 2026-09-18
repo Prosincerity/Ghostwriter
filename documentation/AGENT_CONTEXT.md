@@ -314,10 +314,10 @@ Walking through what each file does:
 
 - **Tests** — 102 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
-  compatibility, player state, warning thresholds, and formatting. Twenty-four
-  Android instrumented tests cover key Compose screens, dialogs, player states,
-  waveform decoding, the lyrics editing surface, Home and Editor behavior,
-  persistence, and activity-level navigation.
+  compatibility, player state, warning thresholds, and formatting. Twenty-eight
+  Android instrumented tests cover key Compose screens, dialogs, real AOSP
+  player loading and controls, waveform decoding, the lyrics editing surface,
+  Home and Editor behavior, persistence, and activity-level navigation.
   Run `./gradlew test lint` locally; build the device suite with
   `./gradlew assembleDebugAndroidTest`.
   Debug local and instrumented tests have JaCoCo coverage enabled. Run

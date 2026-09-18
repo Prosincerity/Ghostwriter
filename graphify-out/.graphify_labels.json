@@ -1,11 +1,10 @@
 {
   "0": "BeatPlayer",
   "1": "ProjectStorage",
-  "2": "Settings",
-  "3": "ProjectMetadata",
+  "2": "BeatPlayerInstrumentedTest",
+  "3": "ProjectStorageBeatTest",
   "4": "ProjectStorageTest",
   "5": "WaveformViewport",
-  "6": "ProjectStorageBeatTest",
   "7": "GhostwriterTheme",
   "8": "WaveformExtractor",
   "9": "MainActivity.kt",

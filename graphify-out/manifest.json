@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "documentation/AGENT_CONTEXT.md": {
-    "mtime": 1789754842.6383178,
-    "seen": 1789754847.3135006,
-    "ast_hash": "878ad4e3f842a52f998676bc3c4a42ea",
+    "mtime": 1789755545.1624858,
+    "seen": 1789755565.8057141,
+    "ast_hash": "06aff56f01dd1f1f22b13e2e180f9763",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
@@ -441,6 +441,12 @@
     "mtime": 1789219020.211743,
     "seen": 1789219089.7877042,
     "ast_hash": "cda25cdfe69c401f253571a42d2f6d4b",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt": {
+    "mtime": 1789755533.5846314,
+    "seen": 1789755565.805644,
+    "ast_hash": "c5c326ede753822be563f84e6eeaffac",
     "semantic_hash": ""
   }
 }
