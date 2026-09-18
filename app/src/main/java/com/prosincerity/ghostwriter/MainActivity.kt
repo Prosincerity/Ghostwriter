@@ -1,7 +1,7 @@
 package com.prosincerity.ghostwriter
 
+import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.ui.screens.AboutScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
@@ -44,19 +45,27 @@ private sealed class Screen {
 }
 
 class MainActivity : ComponentActivity() {
+    internal var externalIntentLauncher: (Intent) -> Unit = ::startActivity
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             GhostwriterTheme {
-                GhostwriterApp()
+                GhostwriterApp(
+                    onOpenExternalLink = { context, url ->
+                        openExternalLink(context, url, externalIntentLauncher)
+                    },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun GhostwriterApp() {
+private fun GhostwriterApp(
+    onOpenExternalLink: (Context, String) -> Boolean,
+) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
@@ -91,7 +100,9 @@ private fun GhostwriterApp() {
                     if (deleted) {
                         refreshProjects()
                     } else {
-                        Toast.makeText(context, "Couldn't delete $title", Toast.LENGTH_SHORT).show()
+                        withContext(Dispatchers.Main.immediate) {
+                            Toast.makeText(context, "Couldn't delete $title", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             },
@@ -103,7 +114,9 @@ private fun GhostwriterApp() {
                     if (renamed != null) {
                         refreshProjects()
                     } else {
-                        Toast.makeText(context, "Couldn't rename $currentTitle", Toast.LENGTH_SHORT).show()
+                        withContext(Dispatchers.Main.immediate) {
+                            Toast.makeText(context, "Couldn't rename $currentTitle", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             },
@@ -127,13 +140,21 @@ private fun GhostwriterApp() {
         is Screen.About -> AboutScreen(
             versionName = versionName,
             onBack = { screen = current.returnTo },
-            onOpenLink = { url ->
-                runCatching {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                }.onFailure {
-                    Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
-                }
-            },
+            onOpenLink = { url -> onOpenExternalLink(context, url) },
         )
     }
 }
+
+internal fun openExternalLink(
+    context: Context,
+    url: String,
+    launchIntent: (Intent) -> Unit = context::startActivity,
+): Boolean = runCatching {
+    launchIntent(Intent(Intent.ACTION_VIEW, url.toUri()))
+}.fold(
+    onSuccess = { true },
+    onFailure = {
+        Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show()
+        false
+    },
+)

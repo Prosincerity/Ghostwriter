@@ -1,16 +1,16 @@
 # Graph Report - Gh0stwrit3r  (2026-09-18)
 
 ## Corpus Check
-- 59 files · ~53,104 words
+- 59 files · ~53,412 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 450 nodes · 744 edges · 32 communities (18 shown, 10 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 70 edges (avg confidence: 0.85)
+- 460 nodes · 769 edges · 31 communities (18 shown, 9 thin omitted)
+- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 71 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `590b7abb`
+- Built from commit: `c7362ab2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -18,10 +18,9 @@
 - BeatPlayer
 - ProjectStorage
 - BeatPlayerInstrumentedTest
-- ProjectMetadata
+- ProjectStorageBeatTest
 - ProjectStorageTest
 - WaveformViewport
-- ProjectStorageBeatTest
 - GhostwriterTheme
 - WaveformExtractor
 - MainActivity.kt
@@ -46,7 +45,7 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `BeatPlayer` - 42 edges
-2. `ProjectStorage` - 36 edges
+2. `ProjectStorage` - 37 edges
 3. `GhostwriterTheme()` - 29 edges
 4. `WaveformViewport` - 26 edges
 5. `ProjectStorageTest` - 25 edges
@@ -71,7 +70,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (32 total, 10 thin omitted)
+## Communities (31 total, 9 thin omitted)
 
 ### Community 0 - "BeatPlayer"
 Cohesion: 0.11
@@ -81,9 +80,9 @@ Nodes (3): BeatPlayer, BeatPlayerTest, MediaPlayer
 Cohesion: 0.14
 Nodes (3): Context, IntArray, ProjectStorage
 
-### Community 3 - "ProjectMetadata"
-Cohesion: 0.12
-Nodes (7): ProjectInfoDialogTest, ProjectMetadata, WaveformMarker, ProjectInfoDialog(), trimmedOrNull(), ProjectMetadataTest, JSONObject
+### Community 3 - "ProjectStorageBeatTest"
+Cohesion: 0.06
+Nodes (8): ProjectInfoDialogTest, ProjectMetadata, WaveformMarker, ProjectInfoDialog(), trimmedOrNull(), ProjectMetadataTest, ProjectStorageBeatTest, JSONObject
 
 ### Community 5 - "WaveformViewport"
 Cohesion: 0.13
@@ -98,8 +97,8 @@ Cohesion: 0.21
 Nodes (6): DecoderProgressGuard, IntArray, WaveformExtractor, ByteBuffer, MediaCodec, MediaFormat
 
 ### Community 9 - "MainActivity.kt"
-Cohesion: 0.12
-Nodes (18): AboutScreenTest, About, Editor, GhostwriterApp(), Home, MainActivity, Screen, Settings (+10 more)
+Cohesion: 0.11
+Nodes (20): AboutScreenTest, About, Editor, GhostwriterApp(), Home, Context, MainActivity, openExternalLink() (+12 more)
 
 ### Community 11 - "gradlew"
 Cohesion: 0.83
@@ -147,18 +146,18 @@ Nodes (3): EditorScreenTest, IntArray, MutableState
 
 ## Knowledge Gaps
 - **76 isolated node(s):** `Home`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)`, `Step 1 - Ensure graphify is installed` (+71 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 165 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 164 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ProjectMetadata` connect `ProjectMetadata` to `ProjectStorage`, `EditorScreen.kt`?**
-  _High betweenness centrality (0.130) - this node is a cross-community bridge._
+- **Why does `ProjectMetadata` connect `ProjectStorageBeatTest` to `ProjectStorage`, `EditorScreen.kt`?**
+  _High betweenness centrality (0.131) - this node is a cross-community bridge._
+- **Why does `ProjectStorage` connect `ProjectStorage` to `MainActivity.kt`, `EditorScreen.kt`, `MainActivityTest`, `EditorScreenTest`?**
+  _High betweenness centrality (0.125) - this node is a cross-community bridge._
 - **Why does `BeatPlayer` connect `BeatPlayer` to `BeatPlayerInstrumentedTest`, `EditorScreen.kt`, `GhostwriterTheme`?**
   _High betweenness centrality (0.123) - this node is a cross-community bridge._
-- **Why does `ProjectStorage` connect `ProjectStorage` to `MainActivity.kt`, `EditorScreen.kt`, `EditorScreenTest`?**
-  _High betweenness centrality (0.099) - this node is a cross-community bridge._
 - **Are the 19 inferred relationships involving `BeatPlayer` (e.g. with `.freshPlayer_currentPositionIsZero()` and `.freshPlayer_defaultsLoopingToTrue()`) actually correct?**
   _`BeatPlayer` has 19 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 13 inferred relationships involving `WaveformViewport` (e.g. with `.clamped_shrinkingViewportKeepsScrollWithinTheNewEnd()` and `.panBy_clampsAtTheStartAndEndOfTheTimeline()`) actually correct?**
