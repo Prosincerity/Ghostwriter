@@ -314,7 +314,7 @@ Walking through what each file does:
 
 - **Tests** — 102 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
-  compatibility, player state, warning thresholds, and formatting. Twenty-eight
+  compatibility, player state, warning thresholds, and formatting. Thirty-two
   Android instrumented tests cover key Compose screens, dialogs, real AOSP
   player loading and controls, waveform decoding, the lyrics editing surface,
   Home and Editor behavior, persistence, and activity-level navigation.
