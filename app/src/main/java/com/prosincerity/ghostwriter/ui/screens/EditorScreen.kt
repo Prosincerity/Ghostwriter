@@ -429,12 +429,14 @@ fun EditorScreen(
                             val saved = withContext(Dispatchers.IO) {
                                 ProjectStorage.saveManual(projectDir, projectTitle, contentToSave, keepCount)
                             }
-                            Toast.makeText(
-                                context,
-                                if (saved) "Saved ${ProjectStorage.sanitizeTitle(projectTitle)}.txt"
-                                else "Couldn't save lyrics",
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                            withContext(Dispatchers.Main.immediate) {
+                                Toast.makeText(
+                                    context,
+                                    if (saved) "Saved ${ProjectStorage.sanitizeTitle(projectTitle)}.txt"
+                                    else "Couldn't save lyrics",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
                     }) {
                         Icon(

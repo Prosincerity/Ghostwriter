@@ -24,6 +24,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
@@ -80,6 +86,7 @@ fun WaveformView(
 
     Box(
         modifier = modifier
+            .testTag("Waveform")
             .clipToBounds()
             .onSizeChanged { size ->
                 val newWidthPx = size.width.toFloat()
@@ -205,6 +212,24 @@ fun WaveformView(
             if (markerX in -overlayWidthPx..viewportWidthPx) {
                 Box(
                     modifier = Modifier
+                        .testTag("Waveform marker ${marker.label}")
+                        .semantics {
+                            onClick(label = "Edit marker") {
+                                onMarkerClick(marker)
+                                true
+                            }
+                            progressBarRangeInfo = ProgressBarRangeInfo(
+                                current = marker.positionMs.toFloat(),
+                                range = 0f..durationMs.coerceAtLeast(0L).toFloat(),
+                            )
+                            setProgress { requestedPosition ->
+                                onMarkerMoveFinished(
+                                    marker,
+                                    requestedPosition.toLong().coerceIn(0L, durationMs),
+                                )
+                                true
+                            }
+                        }
                         .fillMaxHeight()
                         .width(overlayWidth)
                         .offset { IntOffset(overlayLeftPx.roundToInt(), 0) }
