@@ -45,4 +45,4 @@ This document is the single source of truth for where Ghostwriter is headed. Kee
 
 - AI-generated or AI-assisted lyric writing
 - Social features, accounts, or analytics beyond what's needed for optional cloud sync
-- Ads, telemetry, or monetization that compromises the "free and open source" promise
+- Ads, telemetry, or monetization that compromises the software-freedom and open-source promise

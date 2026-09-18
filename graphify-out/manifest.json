@@ -228,33 +228,33 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1789216395.774737,
-    "seen": 1789216422.8658514,
-    "ast_hash": "db564d5f168672ea68bd415baf95a3d2",
+    "mtime": 1789754812.798693,
+    "seen": 1789754847.3134983,
+    "ast_hash": "ee851a8c20f99c7c60ea307faa826528",
     "semantic_hash": ""
   },
   "documentation/AGENT_CONTEXT.md": {
-    "mtime": 1789219648.8128407,
-    "seen": 1789219655.7983549,
-    "ast_hash": "6290a97070c8bef1cca7f6d05b309590",
+    "mtime": 1789754842.6383178,
+    "seen": 1789754847.3135006,
+    "ast_hash": "878ad4e3f842a52f998676bc3c4a42ea",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
-    "mtime": 1789213589.5790155,
-    "seen": 1789213632.7742918,
-    "ast_hash": "68edcf16af4098146f2038a10bc45284",
+    "mtime": 1789754813.3036866,
+    "seen": 1789754847.3135028,
+    "ast_hash": "bf19b6d3d1ca14b219f6fda1d9d2d6e1",
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1789216407.386591,
-    "seen": 1789216422.865859,
-    "ast_hash": "d57847f197013087cfc1a6dc3a68f0b9",
+    "mtime": 1789220082.603387,
+    "seen": 1789754847.313505,
+    "ast_hash": "a77ad5273fbf8acd1ed98b0ae4658fa8",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
-    "mtime": 1788796548.6682158,
-    "seen": 1788971755.1421778,
-    "ast_hash": "18db76d001154adf3faec7206750e213",
+    "mtime": 1789220217.1806953,
+    "seen": 1789754847.3135076,
+    "ast_hash": "ff4d2d1ca613f2a8ec518f73b1ee42f7",
     "semantic_hash": ""
   },
   "app/src/main/ic_launcher-playstore.png": {
@@ -390,15 +390,15 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/AboutScreenTest.kt": {
-    "mtime": 1789213549.0475252,
-    "seen": 1789213632.7742174,
-    "ast_hash": "6d78e70ebd713cf37fda3f0689344609",
+    "mtime": 1789754813.81268,
+    "seen": 1789754847.3134382,
+    "ast_hash": "8415c99e3068ddb8f265a9156ff29da5",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/AboutScreen.kt": {
-    "mtime": 1789213548.7785285,
-    "seen": 1789213632.7742417,
-    "ast_hash": "7efc0174fceea51cf45d6fd894d5001d",
+    "mtime": 1789754813.5566833,
+    "seen": 1789754847.313462,
+    "ast_hash": "7486fb72ecd336445a34798462fd3cae",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {

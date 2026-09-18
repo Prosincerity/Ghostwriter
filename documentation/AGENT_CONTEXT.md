@@ -2,9 +2,10 @@
 
 ## 1. What this project is
 
-**Ghostwriter** is a free, open-source Android app for writing rap lyrics,
+**Ghostwriter** is a libre, open-source Android app for writing rap lyrics,
 built solo. Its tagline is **Songwriting Environment**. The repository is
-MIT licensed and public at `github.com/Prosincerity/Ghostwriter`. Its core
+licensed under GNU GPL v3.0 only and public at
+`github.com/Prosincerity/Ghostwriter`. Its core
 songwriting editor, project persistence, offline beat player, and interactive
 waveform timeline are implemented; it continues to grow feature by feature.
 
@@ -55,7 +56,7 @@ you have to "modernize" or "improve" things in ways that conflict with them:
 ```
 Ghostwriter/
 ├── README.md
-├── LICENSE                  ← MIT
+├── LICENSE                  ← GNU GPL v3.0 only
 ├── .gitignore
 ├── documentation/           ← all project documentation lives here
 │   ├── README.md            ← documentation index & guide
@@ -290,9 +291,9 @@ Walking through what each file does:
   reintroducing that version-drift risk.
 
 - **`ui/screens/AboutScreen.kt`** — Offline project information, installed app
-  version, MIT source/license links, and attribution for dictionary datasets
-  prepared from Kaikki.org/Wiktionary data. External links are opened only on
-  user action and fail gracefully when no browser is installed.
+  version, GNU GPL v3.0 source/license links, and attribution for dictionary
+  datasets prepared from Kaikki.org/Wiktionary data. External links are opened
+  only on user action and fail gracefully when no browser is installed.
 
 - **`ui/theme/`** — OLED-black palette (`Color.kt`): `#000000` background,
   `#1E1E1E` elevated surfaces, `#F2F2F2` text, `#FF4500` primary controls,

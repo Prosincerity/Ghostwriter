@@ -32,7 +32,7 @@ class AboutScreenTest {
         }
 
         composeRule.onNodeWithText("Version 1.2.3").assertExists()
-        composeRule.onNodeWithText("MIT License").assertExists()
+        composeRule.onNodeWithText("GNU GPL v3.0").assertExists()
         composeRule.onNodeWithText("Dictionary attribution").assertExists()
         composeRule.onNodeWithText("CC BY-SA 4.0").assertExists()
         composeRule.onNodeWithText("Dictionary source files").performClick()
