@@ -70,7 +70,7 @@ fun AboutScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "A free, open-source, no-bloat, no-AI Android app for writing rap lyrics.",
+                "A libre, open-source, no-bloat, no-AI Android app for writing rap lyrics.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
@@ -83,11 +83,11 @@ fun AboutScreen(
             AboutSectionTitle("Open source")
             Text(
                 "Copyright © 2026 Ghostwriter contributors. Ghostwriter is released under " +
-                    "the MIT License.",
+                    "the GNU General Public License v3.0 only.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             AboutLink("Source code", GHOSTWRITER_REPOSITORY_URL, onOpenLink)
-            AboutLink("MIT License", GHOSTWRITER_LICENSE_URL, onOpenLink)
+            AboutLink("GNU GPL v3.0", GHOSTWRITER_LICENSE_URL, onOpenLink)
 
             AboutSectionTitle("Dictionary attribution")
             Text(

@@ -2,7 +2,7 @@
 
 **Songwriting Environment**
 
-Ghostwriter is a free, open-source, no-bloat, no-AI Android app for writing rap lyrics — built to eventually feel like an IDE for bars.
+Ghostwriter is a libre, open-source, no-bloat, no-AI Android app for writing rap lyrics — built to eventually feel like an IDE for bars.
 
 ## Status
 
@@ -12,7 +12,7 @@ Feature roadmap below.
 
 ## Philosophy
 
-- Free and open source, forever.
+- Libre and open source.
 - No AI-generated lyrics, no AI "assist" features, no bloat.
 - Fast, offline-first, distraction-free writing.
 - Built to grow from a plain notepad into a full songwriting environment without changing that philosophy.
@@ -64,4 +64,4 @@ philosophy in mind for every contribution.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). You are free to use, modify, and redistribute this code.
+GNU General Public License v3.0 only (`GPL-3.0-only`) — see [LICENSE](LICENSE).
