@@ -50,7 +50,6 @@ import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
 import com.prosincerity.ghostwriter.ui.components.LyricsNotepad
 import com.prosincerity.ghostwriter.ui.components.ReassignBeatDialog
-import com.prosincerity.ghostwriter.ui.components.WaveformMarkerDialog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlin.time.Duration.Companion.seconds
@@ -522,62 +521,16 @@ fun EditorScreen(
         }
     }
 
-    markerPositionToAdd?.let { positionMs ->
-        WaveformMarkerDialog(
-            title = "Add marker",
-            initialLabel = "",
-            positionMs = positionMs,
-            onSave = { label ->
-                persistMarkers(
-                    markers = metadata.markers + WaveformMarker(label, positionMs),
-                    successMessage = "Marker added",
-                    failureMessage = "Couldn't save marker",
-                )
-                markerPositionToAdd = null
-            },
-            onDelete = null,
-            onDismiss = { markerPositionToAdd = null },
-        )
-    }
-
-    markerToEdit?.let { marker ->
-        WaveformMarkerDialog(
-            title = "Edit marker",
-            initialLabel = marker.label,
-            positionMs = marker.positionMs,
-            onSave = { label ->
-                val markerIndex = metadata.markers.indexOfFirst { it === marker }
-                if (markerIndex < 0) {
-                    markerToEdit = null
-                    return@WaveformMarkerDialog
-                }
-                val updatedMarkers = metadata.markers.toMutableList().apply {
-                    this[markerIndex] = WaveformMarker(label, marker.positionMs)
-                }
-                persistMarkers(
-                    markers = updatedMarkers,
-                    successMessage = "Marker renamed",
-                    failureMessage = "Couldn't save marker",
-                )
-                markerToEdit = null
-            },
-            onDelete = {
-                val markerIndex = metadata.markers.indexOfFirst { it === marker }
-                if (markerIndex < 0) {
-                    markerToEdit = null
-                    return@WaveformMarkerDialog
-                }
-                val updatedMarkers = metadata.markers.toMutableList().apply { removeAt(markerIndex) }
-                persistMarkers(
-                    markers = updatedMarkers,
-                    successMessage = "Marker deleted",
-                    failureMessage = "Couldn't save marker",
-                )
-                markerToEdit = null
-            },
-            onDismiss = { markerToEdit = null },
-        )
-    }
+    EditorMarkerDialogs(
+        markers = metadata.markers,
+        positionToAdd = markerPositionToAdd,
+        markerToEdit = markerToEdit,
+        onMarkersChange = { markers, successMessage, failureMessage ->
+            persistMarkers(markers, successMessage, failureMessage)
+        },
+        onAddDismiss = { markerPositionToAdd = null },
+        onEditDismiss = { markerToEdit = null },
+    )
 
     if (showReassignConfirmation) {
         ReassignBeatDialog(

@@ -73,7 +73,9 @@ Ghostwriter/
 │       │       ├── data/
 │       │       │   ├── Settings.kt         ← SharedPreferences wrapper
 │       │       │   ├── ProjectMetadata.kt  ← metadata schema and waveform markers
-│       │       │   └── ProjectStorage.kt   ← file I/O, autosaves, metadata, beat & waveform cache
+│       │       │   ├── ProjectStorage.kt   ← project layout, autosaves, metadata, beat assignment
+│       │       │   ├── StagedFileWriter.kt ← temporary-file replacement for project writes
+│       │       │   └── WaveformCache.kt    ← waveform cache format and validation
 │       │       ├── logic/
 │       │       │   ├── WaveformExtractor.kt ← AOSP audio decoding and peak extraction
 │       │       │   └── WaveformViewport.kt  ← pure zoom, pan, and seek math
@@ -90,6 +92,7 @@ Ghostwriter/
 │       │           │   ├── AboutScreen.kt
 │       │           │   ├── HomeScreen.kt
 │       │           │   ├── EditorScreen.kt
+│       │           │   ├── EditorMarkerDialogs.kt
 │       │           │   ├── ProjectInfoDialog.kt
 │       │           │   └── SettingsScreen.kt
 │       │           └── theme/
@@ -157,6 +160,9 @@ Walking through what each file does:
   file before replacement. Storage mutations are synchronized to prevent
   overlapping operations from interleaving; manual and metadata saves return
   success flags used by the editor's feedback.
+  `StagedFileWriter` handles temporary-file replacement. `WaveformCache` owns
+  cache serialization and validation; `ProjectStorage` coordinates cache
+  invalidation with beat changes while extraction runs outside the storage lock.
 
   **Beat & Instrumental Storage Architecture:**
   - **Current project beat import:** When a project has no assigned beat, the

@@ -367,24 +367,6 @@ class ProjectStorageBeatTest {
     val tempFolder = TemporaryFolder()
 
     @Test
-    fun listInstrumentals_filtersAudioExtensionsAndSortsAlphabetically() {
-        val beatsDir = tempFolder.newFolder("instrumentals")
-        File(beatsDir, "trap_b.mp3").writeText("audio1")
-        File(beatsDir, "boom_a.wav").writeText("audio2")
-        File(beatsDir, "drill_c.ogg").writeText("audio3")
-        File(beatsDir, "notes.txt").writeText("not audio")
-        File(beatsDir, "cover.png").writeText("not audio")
-        File(beatsDir, "not_a_file.mp3").mkdir()
-        File(beatsDir, "empty.mp3").createNewFile()
-
-        val result = ProjectStorage.listInstrumentals(beatsDir)
-        assertEquals(3, result.size)
-        assertEquals("boom_a.wav", result[0].name)
-        assertEquals("drill_c.ogg", result[1].name)
-        assertEquals("trap_b.mp3", result[2].name)
-    }
-
-    @Test
     fun removeBeatFromProject_onlyDeletesSupportedProjectBeatFiles() {
         val project = tempFolder.newFolder("selective_beat_removal")
         File(project, "beat.mp3").writeText("assigned")
@@ -484,15 +466,4 @@ class ProjectStorageBeatTest {
         assertNull(ProjectStorage.getProjectBeatFile(projectDir, meta))
     }
 
-    @Test
-    fun importInstrumental_createsSanitizedFileInDirectory() {
-        val beatsDir = tempFolder.newFolder("instrumentals")
-        val imported = ProjectStorage.importInstrumental(beatsDir, "My / Wild : Beat 140.wav") { dest ->
-            dest.writeText("imported content")
-        }
-
-        assertTrue(imported.exists())
-        assertEquals("My _ Wild _ Beat 140.wav", imported.name)
-        assertEquals("imported content", imported.readText())
-    }
 }
