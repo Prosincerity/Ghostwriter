@@ -84,6 +84,7 @@ Ghostwriter/
 │       │       └── ui/
 │       │           ├── components/
 │       │           │   ├── BeatDialogs.kt
+│       │           │   ├── BeatPlaybackControls.kt
 │       │           │   ├── BeatPlayerPanel.kt
 │       │           │   ├── LyricsNotepad.kt  ← state-hoisted lyrics editing surface
 │       │           │   ├── PlaybackTime.kt
@@ -277,7 +278,8 @@ Walking through what each file does:
   pinch zoom, panning, and dedicated zoom controls in the beat-player header.
   Long-press adds a marker; markers can be moved, renamed, deleted, or tapped
   to seek. Dialog and loading/error states live in focused components rather
-  than the editor screen.
+  than the editor screen. `BeatPlaybackControls.kt` owns the transport, loop,
+  and volume controls shown when the beat is ready.
 
   **Known simplification:** if the user changes the autosave interval while
   a wait is already in progress, the in-progress wait finishes on the OLD
