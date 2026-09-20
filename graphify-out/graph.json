@@ -4342,14 +4342,14 @@
       "source_location": "L12"
     },
     {
-      "id": "documentation_agent_context_3_tech_stack_as_of_last_verified_state",
-      "label": "3. Tech stack (as of last verified state)",
+      "id": "documentation_agent_context_3_tech_stack_from_the_checked_in_build_configuration",
+      "label": "3. Tech stack (from the checked-in build configuration)",
       "_origin": "ast",
       "community": 18,
       "community_name": "Ghostwriter",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "3. tech stack (as of last verified state)",
+      "norm_label": "3. tech stack (from the checked-in build configuration)",
       "source_file": "documentation/AGENT_CONTEXT.md",
       "source_location": "L38"
     },
@@ -4363,7 +4363,7 @@
       "node_kind": "heading",
       "norm_label": "4. repository structure (current)",
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L54"
+      "source_location": "L55"
     },
     {
       "id": "documentation_agent_context_5_what_s_actually_built_right_now",
@@ -4375,7 +4375,7 @@
       "node_kind": "heading",
       "norm_label": "5. what's actually built right now",
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L114"
+      "source_location": "L116"
     },
     {
       "id": "documentation_agent_context_6_deliberate_architectural_decisions_please_don_t_silently_reverse_these",
@@ -4387,7 +4387,7 @@
       "node_kind": "heading",
       "norm_label": "6. deliberate architectural decisions \u2014 please don't silently reverse these",
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L346"
+      "source_location": "L348"
     },
     {
       "id": "documentation_agent_context_7_known_technical_debt_not_yet_addressed_tracked_but_not_urgent",
@@ -4399,7 +4399,7 @@
       "node_kind": "heading",
       "norm_label": "7. known technical debt (not yet addressed, tracked, but not urgent)",
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L370"
+      "source_location": "L372"
     },
     {
       "id": "documentation_agent_context_project_handoff_ghostwriter",
@@ -4711,7 +4711,7 @@
       "node_kind": "heading",
       "norm_label": "building",
       "source_file": "README.md",
-      "source_location": "L44"
+      "source_location": "L42"
     },
     {
       "id": "readme_contributing",
@@ -4723,7 +4723,7 @@
       "node_kind": "heading",
       "norm_label": "contributing",
       "source_file": "README.md",
-      "source_location": "L60"
+      "source_location": "L58"
     },
     {
       "id": "readme_documentation",
@@ -4759,7 +4759,7 @@
       "node_kind": "heading",
       "norm_label": "license",
       "source_file": "README.md",
-      "source_location": "L65"
+      "source_location": "L63"
     },
     {
       "id": "readme_philosophy",
@@ -4819,7 +4819,7 @@
       "node_kind": "heading",
       "norm_label": "testing",
       "source_file": "README.md",
-      "source_location": "L50"
+      "source_location": "L48"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_settings",
@@ -11387,7 +11387,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L114",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -11420,7 +11420,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L346",
+      "source_location": "L348",
       "weight": 1.0
     },
     {
@@ -11431,12 +11431,12 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L370",
+      "source_location": "L372",
       "weight": 1.0
     },
     {
       "source": "documentation_agent_context_project_handoff_ghostwriter",
-      "target": "documentation_agent_context_3_tech_stack_as_of_last_verified_state",
+      "target": "documentation_agent_context_3_tech_stack_from_the_checked_in_build_configuration",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -11453,7 +11453,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L54",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -11739,7 +11739,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L44",
+      "source_location": "L42",
       "weight": 1.0
     },
     {
@@ -11750,7 +11750,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L50",
+      "source_location": "L48",
       "weight": 1.0
     },
     {
@@ -11761,7 +11761,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L60",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -11772,7 +11772,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L65",
+      "source_location": "L63",
       "weight": 1.0
     },
     {
@@ -14544,7 +14544,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L336",
+      "source_location": "L338",
       "weight": 1.0
     },
     {
@@ -14555,7 +14555,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L394",
+      "source_location": "L396",
       "weight": 1.0
     },
     {
@@ -15751,5 +15751,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "8578b587cd30ccb8175a503ead5919d53bd71598"
+  "built_at_commit": "bebbaebf72ccee9c323e4eea18fef850d6585938"
 }
