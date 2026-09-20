@@ -151,9 +151,9 @@ Walking through what each file does:
   `rotateAndSave()` shifts every file up one index (dropping anything past
   the configured keep-count) then writes the current text into
   `autosave1.txt`; unchanged content does not rotate the ring, but reducing the
-  backup count still prunes old snapshots. `loadLatest()` prefers an up-to-date
-  manual save, otherwise reads the newest readable autosave, with the manual
-  save as a last recovery fallback. Text and metadata writes stage a temporary
+  backup count still prunes old snapshots. Backup rotation preserves snapshot
+  timestamps so `loadLatest()` can select the newer of a readable manual save
+  and the newest readable autosave. Text and metadata writes stage a temporary
   file before replacement. Storage mutations are synchronized to prevent
   overlapping operations from interleaving; manual and metadata saves return
   success flags used by the editor's feedback.
@@ -312,7 +312,7 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Tests** — 107 JVM tests cover storage, atomic replacement, waveform cache
+- **Tests** — 110 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
   compatibility, player state, warning thresholds, and formatting. Thirty-six
   Android instrumented tests cover key Compose screens, dialogs, real AOSP

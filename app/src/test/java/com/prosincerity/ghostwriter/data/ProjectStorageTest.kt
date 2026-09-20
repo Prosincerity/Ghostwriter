@@ -51,6 +51,40 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun loadLatest_missingNewestAutosaveUsesNewerBackupInsteadOfOldManualSave() {
+        val project = tempFolder.newFolder("missing_newest")
+        File(project, "missing_newest.txt").apply {
+            writeText("old manual save")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "autosave2.txt").apply {
+            writeText("newer autosave")
+            assertTrue(setLastModified(2_000L))
+        }
+
+        assertEquals("newer autosave", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun loadLatest_unreadableNewestAutosaveUsesNewerManualSaveInsteadOfOldBackup() {
+        val project = tempFolder.newFolder("unreadable_newest")
+        File(project, "autosave2.txt").apply {
+            writeText("old autosave")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "unreadable_newest.txt").apply {
+            writeText("newer manual save")
+            assertTrue(setLastModified(2_000L))
+        }
+        File(project, "autosave1.txt").apply {
+            assertTrue(mkdir())
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertEquals("newer manual save", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
     fun saveFailures_areReportedToCaller() {
         val missing = File(tempFolder.root, "missing")
         assertFalse(ProjectStorage.saveManual(missing, "song", "lyrics", 3))
@@ -232,6 +266,18 @@ class ProjectStorageTest {
         assertEquals("Take 3", File(projectDir, "autosave1.txt").readText())
         assertEquals("Take 2", File(projectDir, "autosave2.txt").readText())
         assertEquals("Take 1", File(projectDir, "autosave3.txt").readText())
+    }
+
+    @Test
+    fun rotateAndSave_preservesTheTimestampOfOlderSnapshots() {
+        val project = tempFolder.newFolder("backup_timestamps")
+        val first = File(project, "autosave1.txt")
+        first.writeText("older lyrics")
+        assertTrue(first.setLastModified(1_000L))
+
+        ProjectStorage.rotateAndSave(project, "newer lyrics", keepCount = 3)
+
+        assertEquals(1_000L, File(project, "autosave2.txt").lastModified())
     }
 
     @Test
