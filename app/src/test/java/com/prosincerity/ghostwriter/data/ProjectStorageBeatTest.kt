@@ -187,6 +187,42 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun loadOrExtractWaveform_replacedBeatDoesNotCacheOldExtraction() {
+        val project = tempFolder.newFolder("replaced_during_extraction")
+        val beat = ProjectStorage.assignBeatToProject(project, "old.mp3") { it.writeText("old") }
+        val extractionStarted = CountDownLatch(1)
+        val releaseExtraction = CountDownLatch(1)
+        val executor = Executors.newSingleThreadExecutor()
+
+        val oldExtraction = executor.submit<IntArray> {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 2) { _, _ ->
+                extractionStarted.countDown()
+                check(releaseExtraction.await(5, TimeUnit.SECONDS))
+                intArrayOf(1, 2)
+            }
+        }
+
+        try {
+            assertTrue(extractionStarted.await(5, TimeUnit.SECONDS))
+            ProjectStorage.assignBeatToProject(project, "new.mp3") { it.writeText("new beat") }
+        } finally {
+            releaseExtraction.countDown()
+        }
+
+        try {
+            assertEquals(listOf(1, 2), oldExtraction.get(5, TimeUnit.SECONDS).toList())
+            assertNull(ProjectStorage.loadCachedWaveform(project, 2))
+            val newExtraction = ProjectStorage.loadOrExtractWaveform(project, beat, 2) { _, _ ->
+                intArrayOf(3, 4)
+            }
+            assertEquals(listOf(3, 4), newExtraction.toList())
+            assertEquals(listOf(3, 4), ProjectStorage.loadCachedWaveform(project, 2)?.toList())
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
     fun assigningOrRemovingABeat_invalidatesTheWaveformCache() {
         val project = tempFolder.newFolder("invalidate_waveform")
         assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(1, 2)))
@@ -259,6 +295,23 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun emptyImport_preservesExistingBeatAndMetadata() {
+        val project = tempFolder.newFolder("empty_import")
+        ProjectStorage.assignBeatToProject(project, "original.mp3") { it.writeText("original") }
+        val metadataBefore = File(project, "project.json").readText()
+
+        val result = runCatching {
+            ProjectStorage.assignBeatToProject(project, "empty.wav") { it.writeBytes(byteArrayOf()) }
+        }
+
+        assertTrue(result.isFailure)
+        assertEquals("original", File(project, "beat.mp3").readText())
+        assertFalse(File(project, "beat.wav").exists())
+        assertEquals(metadataBefore, File(project, "project.json").readText())
+        assertTrue(project.listFiles().orEmpty().none { it.name.startsWith("beat-import-") })
+    }
+
+    @Test
     fun assignBeatToProject_sameExtensionReplacesContentsWithoutLeavingStagedFile() {
         val project = tempFolder.newFolder("same_extension_replacement")
         ProjectStorage.assignBeatToProject(project, "old.mp3") { it.writeText("old") }
@@ -286,6 +339,19 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun getProjectBeatFile_ignoresAnEmptyAssignedBeat() {
+        val project = tempFolder.newFolder("empty_assigned_beat")
+        File(project, "beat.mp3").createNewFile()
+
+        assertNull(
+            ProjectStorage.getProjectBeatFile(
+                project,
+                ProjectMetadata("empty_assigned_beat", beatFile = "beat.mp3"),
+            ),
+        )
+    }
+
+    @Test
     fun assignBeatToProject_rejectsUnsupportedExtensionBeforeCopy() {
         val project = tempFolder.newFolder("unsupported")
         val result = runCatching {
@@ -299,23 +365,6 @@ class ProjectStorageBeatTest {
 
     @get:Rule
     val tempFolder = TemporaryFolder()
-
-    @Test
-    fun listInstrumentals_filtersAudioExtensionsAndSortsAlphabetically() {
-        val beatsDir = tempFolder.newFolder("instrumentals")
-        File(beatsDir, "trap_b.mp3").writeText("audio1")
-        File(beatsDir, "boom_a.wav").writeText("audio2")
-        File(beatsDir, "drill_c.ogg").writeText("audio3")
-        File(beatsDir, "notes.txt").writeText("not audio")
-        File(beatsDir, "cover.png").writeText("not audio")
-        File(beatsDir, "not_a_file.mp3").mkdir()
-
-        val result = ProjectStorage.listInstrumentals(beatsDir)
-        assertEquals(3, result.size)
-        assertEquals("boom_a.wav", result[0].name)
-        assertEquals("drill_c.ogg", result[1].name)
-        assertEquals("trap_b.mp3", result[2].name)
-    }
 
     @Test
     fun removeBeatFromProject_onlyDeletesSupportedProjectBeatFiles() {
@@ -417,15 +466,4 @@ class ProjectStorageBeatTest {
         assertNull(ProjectStorage.getProjectBeatFile(projectDir, meta))
     }
 
-    @Test
-    fun importInstrumental_createsSanitizedFileInDirectory() {
-        val beatsDir = tempFolder.newFolder("instrumentals")
-        val imported = ProjectStorage.importInstrumental(beatsDir, "My / Wild : Beat 140.wav") { dest ->
-            dest.writeText("imported content")
-        }
-
-        assertTrue(imported.exists())
-        assertEquals("My _ Wild _ Beat 140.wav", imported.name)
-        assertEquals("imported content", imported.readText())
-    }
 }

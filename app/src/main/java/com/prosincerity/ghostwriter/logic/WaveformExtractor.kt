@@ -23,6 +23,29 @@ object WaveformExtractor {
     const val DEFAULT_TARGET_SAMPLE_COUNT = 1_000
 
     private const val DEQUEUE_TIMEOUT_US = 10_000L
+    private const val MAX_CONSECUTIVE_DEQUEUE_STALLS = 500
+
+    internal class DecoderProgressGuard(
+        private val maxConsecutiveStalls: Int = MAX_CONSECUTIVE_DEQUEUE_STALLS,
+    ) {
+        private var consecutiveStalls = 0
+
+        init {
+            require(maxConsecutiveStalls > 0)
+        }
+
+        fun record(madeProgress: Boolean) {
+            if (madeProgress) {
+                consecutiveStalls = 0
+                return
+            }
+
+            consecutiveStalls++
+            check(consecutiveStalls < maxConsecutiveStalls) {
+                "Audio decoder stopped making progress"
+            }
+        }
+    }
 
     /**
      * Returns the duration of the first audio track, or null if it cannot be
@@ -32,12 +55,12 @@ object WaveformExtractor {
         if (!file.isFile) return null
         val extractor = MediaExtractor()
         return try {
-                extractor.setDataSource(file.absolutePath)
-                val trackIndex = extractor.findAudioTrack() ?: return null
-                val durationUs = extractor.getTrackFormat(trackIndex)
-                    .longOrNull(MediaFormat.KEY_DURATION)
-                    ?: return null
-                (durationUs / 1_000L).takeIf { it > 0L }
+            extractor.setDataSource(file.absolutePath)
+            val trackIndex = extractor.findAudioTrack() ?: return null
+            val durationUs = extractor.getTrackFormat(trackIndex)
+                .longOrNull(MediaFormat.KEY_DURATION)
+                ?: return null
+            (durationUs / 1_000L).takeIf { it > 0L }
         } catch (_: Exception) {
             null
         } finally {
@@ -75,10 +98,17 @@ object WaveformExtractor {
     ): Int? {
         if (durationUs <= 0L || bucketCount <= 0) return null
 
-        return ((timestampUs.coerceIn(0L, durationUs) * bucketCount) / durationUs)
-            .toInt()
-            .coerceAtMost(bucketCount - 1)
+        val clampedTimestampUs = timestampUs.coerceIn(0L, durationUs)
+        val bucketIndex = try {
+            Math.multiplyExact(clampedTimestampUs, bucketCount.toLong()) / durationUs
+        } catch (_: ArithmeticException) {
+            ((clampedTimestampUs.toDouble() / durationUs) * bucketCount).toLong()
+        }
+        return bucketIndex.coerceIn(0L, bucketCount.toLong() - 1L).toInt()
     }
+
+    internal fun pcm8Amplitude(sample: Byte): Int =
+        abs((sample.toInt() and 0xFF) - 128) * 256
 
     private fun decodePeakBuckets(
         file: File,
@@ -110,12 +140,15 @@ object WaveformExtractor {
             var inputEnded = false
             var outputEnded = false
             var decodedFrameCount = 0L
+            val progressGuard = DecoderProgressGuard()
 
             while (!outputEnded) {
                 checkCancelled(shouldCancel)
+                var madeProgress = false
                 if (!inputEnded) {
                     val inputIndex = activeCodec.dequeueInputBuffer(DEQUEUE_TIMEOUT_US)
                     if (inputIndex >= 0) {
+                        madeProgress = true
                         val inputBuffer = activeCodec.getInputBuffer(inputIndex)
                             ?: throw IllegalStateException("Decoder provided no input buffer")
                         inputBuffer.clear()
@@ -143,9 +176,13 @@ object WaveformExtractor {
                 }
 
                 when (val outputIndex = activeCodec.dequeueOutputBuffer(bufferInfo, DEQUEUE_TIMEOUT_US)) {
-                    MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> outputFormat = activeCodec.outputFormat
+                    MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
+                        outputFormat = activeCodec.outputFormat
+                        madeProgress = true
+                    }
                     MediaCodec.INFO_TRY_AGAIN_LATER -> Unit
                     else -> if (outputIndex >= 0) {
+                        madeProgress = true
                         try {
                             activeCodec.getOutputBuffer(outputIndex)?.let { outputBuffer ->
                                 decodedFrameCount += appendFramePeaksToBuckets(
@@ -163,6 +200,7 @@ object WaveformExtractor {
                         }
                     }
                 }
+                progressGuard.record(madeProgress)
             }
 
             return if (decodedFrameCount > 0L) buckets else IntArray(0)
@@ -197,12 +235,12 @@ object WaveformExtractor {
         val bytesPerFrame = bytesPerSample * channelCount
         if (bytesPerFrame <= 0) return 0L
 
+        val start = bufferInfo.offset.coerceIn(0, buffer.capacity())
+        val end = (bufferInfo.offset.toLong() + bufferInfo.size)
+            .coerceIn(start.toLong(), buffer.capacity().toLong())
+            .toInt()
         val readable = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN).apply {
             clear()
-            val start = bufferInfo.offset.coerceIn(0, capacity())
-            val end = (bufferInfo.offset.toLong() + bufferInfo.size)
-                .coerceIn(start.toLong(), capacity().toLong())
-                .toInt()
             position(start)
             limit(end)
         }
@@ -212,14 +250,7 @@ object WaveformExtractor {
             if (frameIndex % 256L == 0L) checkCancelled(shouldCancel)
             var framePeak = 0
             repeat(channelCount) {
-                val amplitude = when (pcmEncoding) {
-                    AudioFormat.ENCODING_PCM_8BIT -> abs((readable.get().toInt() and 0xFF) - 128) * 257
-                    AudioFormat.ENCODING_PCM_FLOAT -> {
-                        (abs(readable.float).coerceAtMost(1f) * 32_767f).toInt()
-                    }
-                    else -> abs(readable.short.toInt())
-                }
-                framePeak = maxOf(framePeak, amplitude)
+                framePeak = maxOf(framePeak, pcmAmplitude(readable, pcmEncoding))
             }
             val frameTimeUs = bufferInfo.presentationTimeUs + (frameIndex * 1_000_000L / sampleRate)
             val bucketIndex = bucketIndexForTimestamp(
@@ -231,6 +262,13 @@ object WaveformExtractor {
             frameIndex++
         }
         return frameIndex
+    }
+
+    internal fun pcmAmplitude(buffer: ByteBuffer, encoding: Int): Int = when (encoding) {
+        AudioFormat.ENCODING_PCM_8BIT -> pcm8Amplitude(buffer.get())
+        AudioFormat.ENCODING_PCM_FLOAT ->
+            (abs(buffer.float).coerceAtMost(1f) * 32_767f).toInt()
+        else -> abs(buffer.short.toInt())
     }
 
     private fun MediaExtractor.findAudioTrack(): Int? =

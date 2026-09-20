@@ -9,6 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import kotlin.text.Charsets.UTF_8
 
 class ProjectStorageTest {
 
@@ -47,6 +48,40 @@ class ProjectStorageTest {
         }
         File(project, "autosave1.txt").mkdir()
         assertEquals("recover me", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun loadLatest_missingNewestAutosaveUsesNewerBackupInsteadOfOldManualSave() {
+        val project = tempFolder.newFolder("missing_newest")
+        File(project, "missing_newest.txt").apply {
+            writeText("old manual save")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "autosave2.txt").apply {
+            writeText("newer autosave")
+            assertTrue(setLastModified(2_000L))
+        }
+
+        assertEquals("newer autosave", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun loadLatest_unreadableNewestAutosaveUsesNewerManualSaveInsteadOfOldBackup() {
+        val project = tempFolder.newFolder("unreadable_newest")
+        File(project, "autosave2.txt").apply {
+            writeText("old autosave")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "unreadable_newest.txt").apply {
+            writeText("newer manual save")
+            assertTrue(setLastModified(2_000L))
+        }
+        File(project, "autosave1.txt").apply {
+            assertTrue(mkdir())
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertEquals("newer manual save", ProjectStorage.loadLatest(project))
     }
 
     @Test
@@ -94,6 +129,23 @@ class ProjectStorageTest {
     fun sanitizeTitle_emptyOrBlank_returnsUntitled() {
         assertEquals("untitled", ProjectStorage.sanitizeTitle(""))
         assertEquals("untitled", ProjectStorage.sanitizeTitle("   "))
+    }
+
+    @Test
+    fun sanitizeTitle_limitsUtf8LengthSoTheManualSaveNameFitsTheFilesystem() {
+        for (title in listOf("a".repeat(300), "🎵".repeat(100))) {
+            val sanitized = ProjectStorage.sanitizeTitle(title)
+
+            assertTrue(
+                "Sanitized title must leave room for the .txt extension: $sanitized",
+                sanitized.toByteArray(UTF_8).size <= 251,
+            )
+            assertFalse(sanitized.last().isHighSurrogate())
+
+            val project = File(tempFolder.root, sanitized)
+            assertTrue(project.mkdir())
+            assertTrue(ProjectStorage.saveManual(project, title, "lyrics", keepCount = 3))
+        }
     }
 
     // --- project deletion tests ---
@@ -162,6 +214,19 @@ class ProjectStorageTest {
         assertEquals("existing lyrics", File(existing, "existing.txt").readText())
     }
 
+    @Test
+    fun renameProjectDirectory_preservesAnExistingManualSaveWithTheNewName() {
+        val source = tempFolder.newFolder("old_title")
+        File(source, "old_title.txt").writeText("current lyrics")
+        File(source, "new_title.txt").writeText("other saved lyrics")
+
+        assertNull(ProjectStorage.renameProjectDirectory(source, "new_title"))
+        assertTrue(source.isDirectory)
+        assertEquals("current lyrics", File(source, "old_title.txt").readText())
+        assertEquals("other saved lyrics", File(source, "new_title.txt").readText())
+        assertFalse(File(tempFolder.root, "new_title").exists())
+    }
+
     // --- rotateAndSave tests ---
 
     @Test
@@ -201,6 +266,18 @@ class ProjectStorageTest {
         assertEquals("Take 3", File(projectDir, "autosave1.txt").readText())
         assertEquals("Take 2", File(projectDir, "autosave2.txt").readText())
         assertEquals("Take 1", File(projectDir, "autosave3.txt").readText())
+    }
+
+    @Test
+    fun rotateAndSave_preservesTheTimestampOfOlderSnapshots() {
+        val project = tempFolder.newFolder("backup_timestamps")
+        val first = File(project, "autosave1.txt")
+        first.writeText("older lyrics")
+        assertTrue(first.setLastModified(1_000L))
+
+        ProjectStorage.rotateAndSave(project, "newer lyrics", keepCount = 3)
+
+        assertEquals(1_000L, File(project, "autosave2.txt").lastModified())
     }
 
     @Test
