@@ -106,74 +106,22 @@ object ProjectStorage {
     }
 
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
-    fun loadLatest(projectDir: File): String {
-        val manualFile = File(projectDir, "${projectDir.name}.txt")
-        var newestReadableAutosave: Pair<File, String>? = null
-        for (i in 1..5) {
-            val file = File(projectDir, "autosave$i.txt")
-            if (file.isFile) {
-                val text = runCatching { file.readText() }.getOrNull()
-                if (text != null) {
-                    newestReadableAutosave = file to text
-                    break
-                }
-            }
-        }
-        val manualText = manualFile.takeIf { it.isFile }
-            ?.let { runCatching { it.readText() }.getOrNull() }
-        return when {
-            manualText != null &&
-                (newestReadableAutosave == null ||
-                    manualFile.lastModified() >= newestReadableAutosave.first.lastModified()) -> manualText
-            newestReadableAutosave != null -> newestReadableAutosave.second
-            else -> manualText ?: ""
-        }
-    }
+    fun loadLatest(projectDir: File): String = ProjectLyricsStorage.loadLatest(projectDir)
 
-    /**
-     * Manually saves [content] as "<title>.txt" inside [projectDir].
-     * Also synchronizes the autosave backup ring so the backup ring stays up to date.
-     */
+    /** Saves a title-based manual snapshot and updates the autosave ring. */
     @Synchronized
     fun saveManual(projectDir: File, title: String, content: String, keepCount: Int): Boolean =
-        runCatching {
-            val fileName = "${sanitizeTitle(title)}.txt"
-            val target = File(projectDir, fileName)
-            StagedFileWriter.writeText(target, content)
+        ProjectLyricsStorage.saveManual(
+            projectDir,
+            "${sanitizeTitle(title)}.txt",
+            content,
+            keepCount,
+        )
 
-            rotateAndSave(projectDir, content, keepCount)
-        }.isSuccess
-
-    /**
-     * Rotates the backup ring and writes [content] as the new autosave1.txt.
-     * No-ops if [content] already matches what's saved, so an idle editor
-     * doesn't keep burning through backup slots.
-     */
+    /** Rotates the backup ring only when the lyrics have changed. */
     @Synchronized
-    fun rotateAndSave(projectDir: File, content: String, keepCount: Int) {
-        runCatching {
-            require(keepCount in Settings.COUNT_OPTIONS)
-            // Settings changes apply even when the lyrics haven't changed.
-            for (i in (keepCount + 1)..10) {
-                val oldBackup = File(projectDir, "autosave$i.txt")
-                if (oldBackup.exists()) oldBackup.delete()
-            }
-            val newest = File(projectDir, "autosave1.txt")
-            if (newest.exists() && newest.readText() == content) return
-
-            for (i in keepCount downTo 2) {
-                val src = File(projectDir, "autosave${i - 1}.txt")
-                val dst = File(projectDir, "autosave$i.txt")
-                if (src.exists()) {
-                    src.copyTo(dst, overwrite = true)
-                    // Recovery compares snapshots by age when autosave1 is lost.
-                    dst.setLastModified(src.lastModified())
-                }
-            }
-
-            StagedFileWriter.writeText(newest, content)
-        }
-    }
+    fun rotateAndSave(projectDir: File, content: String, keepCount: Int) =
+        ProjectLyricsStorage.rotateAndSave(projectDir, content, keepCount)
 
     fun sanitizeTitle(title: String): String {
         val cleaned = title.trim()
