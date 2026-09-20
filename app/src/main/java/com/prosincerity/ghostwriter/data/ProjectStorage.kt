@@ -33,6 +33,8 @@ object ProjectStorage {
     private const val WAVEFORM_CACHE_FILE_NAME = "waveform.dat"
     private const val MAX_CACHED_WAVEFORM_SAMPLES = 100_000
     private const val MAX_PROJECT_TITLE_UTF8_BYTES = 251
+    // Checked under the storage monitor before committing a decoded waveform.
+    private var beatMutationRevision = 0L
 
     fun rootDir(context: Context): File =
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
@@ -85,6 +87,7 @@ object ProjectStorage {
         val originalManualSave = File(projectDir, "${projectDir.name}.txt")
         val renamedManualSave = File(projectDir, "$renamedTitle.txt")
         val manualSaveWasRenamed = originalManualSave.isFile
+        if (manualSaveWasRenamed && renamedManualSave.exists()) return null
         if (manualSaveWasRenamed && !originalManualSave.renameTo(renamedManualSave)) return null
 
         if (!projectDir.renameTo(renamedProjectDir)) {
@@ -328,6 +331,7 @@ object ProjectStorage {
             runCatching { beatFile.canonicalFile.parentFile == projectDir.canonicalFile }.getOrDefault(false).not()
         ) return IntArray(0)
 
+        val beatRevisionAtStart = synchronized(this) { beatMutationRevision }
         throwIfWaveformCancelled(shouldCancel)
         loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
 
@@ -337,7 +341,11 @@ object ProjectStorage {
         val amplitudes = extract(beatFile, targetSampleCount)
         throwIfWaveformCancelled(shouldCancel)
         if (amplitudes.size == targetSampleCount) {
-            saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+            synchronized(this) {
+                if (beatMutationRevision == beatRevisionAtStart) {
+                    saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+                }
+            }
         }
         return amplitudes
     }
@@ -440,6 +448,7 @@ object ProjectStorage {
                 throw IOException("The selected beat is empty")
             }
         }
+        beatMutationRevision++
 
         // Remove the old format only after the new file has been copied.
         projectDir.listFiles { file -> file.isProjectBeatFile() && file != destFile }
@@ -468,6 +477,7 @@ object ProjectStorage {
     @Synchronized
     fun removeBeatFromProject(projectDir: File) {
         projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
+        beatMutationRevision++
         invalidateWaveformCache(projectDir)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
