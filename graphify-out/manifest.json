@@ -30,9 +30,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt": {
-    "mtime": 1789758250.3954763,
-    "seen": 1789758310.939232,
-    "ast_hash": "60b1e69e6a76eaebfe25c0d440ee3e7c",
+    "mtime": 1789921043.271315,
+    "seen": 1789921052.665242,
+    "ast_hash": "c26c0dd465d1aab298cea3ed47f26991",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt": {
@@ -42,9 +42,9 @@
     "semantic_hash": "bb36f324d672065e71d61d3dead80ea3"
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt": {
-    "mtime": 1789758250.673473,
-    "seen": 1789758310.939237,
-    "ast_hash": "ab943d57a13f0c4a2985000e299708f8",
+    "mtime": 1789758343.8443017,
+    "seen": 1789921052.6652515,
+    "ast_hash": "45d013b84d80ee4f0fd5e23032fa4567",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformViewport.kt": {
@@ -114,15 +114,15 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageBeatTest.kt": {
-    "mtime": 1789758205.6960385,
-    "seen": 1789758310.939259,
-    "ast_hash": "9f8c5431a01db8b893a90dbb980cb100",
+    "mtime": 1789920967.707265,
+    "seen": 1789921052.6652908,
+    "ast_hash": "d830e220abba8d1a0737b55e995dda59",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageTest.kt": {
-    "mtime": 1789758205.4210417,
-    "seen": 1789758310.9392617,
-    "ast_hash": "6a6cbc14bebcff7f746ba361c69ce159",
+    "mtime": 1789920967.4402683,
+    "seen": 1789921052.6652942,
+    "ast_hash": "353f1c0e9fe3ab0b322b89586e21a838",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "documentation/AGENT_CONTEXT.md": {
-    "mtime": 1789758271.8092072,
-    "seen": 1789758310.9392884,
-    "ast_hash": "7e067164e8162ec2eabf462f0fbf4bbb",
+    "mtime": 1789921043.5263119,
+    "seen": 1789921052.6653514,
+    "ast_hash": "37919ecb2b61760923c97a8a8d7d976f",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {

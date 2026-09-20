@@ -187,6 +187,42 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun loadOrExtractWaveform_replacedBeatDoesNotCacheOldExtraction() {
+        val project = tempFolder.newFolder("replaced_during_extraction")
+        val beat = ProjectStorage.assignBeatToProject(project, "old.mp3") { it.writeText("old") }
+        val extractionStarted = CountDownLatch(1)
+        val releaseExtraction = CountDownLatch(1)
+        val executor = Executors.newSingleThreadExecutor()
+
+        val oldExtraction = executor.submit<IntArray> {
+            ProjectStorage.loadOrExtractWaveform(project, beat, 2) { _, _ ->
+                extractionStarted.countDown()
+                check(releaseExtraction.await(5, TimeUnit.SECONDS))
+                intArrayOf(1, 2)
+            }
+        }
+
+        try {
+            assertTrue(extractionStarted.await(5, TimeUnit.SECONDS))
+            ProjectStorage.assignBeatToProject(project, "new.mp3") { it.writeText("new beat") }
+        } finally {
+            releaseExtraction.countDown()
+        }
+
+        try {
+            assertEquals(listOf(1, 2), oldExtraction.get(5, TimeUnit.SECONDS).toList())
+            assertNull(ProjectStorage.loadCachedWaveform(project, 2))
+            val newExtraction = ProjectStorage.loadOrExtractWaveform(project, beat, 2) { _, _ ->
+                intArrayOf(3, 4)
+            }
+            assertEquals(listOf(3, 4), newExtraction.toList())
+            assertEquals(listOf(3, 4), ProjectStorage.loadCachedWaveform(project, 2)?.toList())
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
     fun assigningOrRemovingABeat_invalidatesTheWaveformCache() {
         val project = tempFolder.newFolder("invalidate_waveform")
         assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(1, 2)))

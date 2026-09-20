@@ -180,6 +180,19 @@ class ProjectStorageTest {
         assertEquals("existing lyrics", File(existing, "existing.txt").readText())
     }
 
+    @Test
+    fun renameProjectDirectory_preservesAnExistingManualSaveWithTheNewName() {
+        val source = tempFolder.newFolder("old_title")
+        File(source, "old_title.txt").writeText("current lyrics")
+        File(source, "new_title.txt").writeText("other saved lyrics")
+
+        assertNull(ProjectStorage.renameProjectDirectory(source, "new_title"))
+        assertTrue(source.isDirectory)
+        assertEquals("current lyrics", File(source, "old_title.txt").readText())
+        assertEquals("other saved lyrics", File(source, "new_title.txt").readText())
+        assertFalse(File(tempFolder.root, "new_title").exists())
+    }
+
     // --- rotateAndSave tests ---
 
     @Test
