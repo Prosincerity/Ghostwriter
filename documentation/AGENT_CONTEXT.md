@@ -2,9 +2,10 @@
 
 ## 1. What this project is
 
-**Ghostwriter** is a free, open-source Android app for writing rap lyrics,
+**Ghostwriter** is a libre, open-source Android app for writing rap lyrics,
 built solo. Its tagline is **Songwriting Environment**. The repository is
-MIT licensed and public at `github.com/Prosincerity/Ghostwriter`. Its core
+licensed under GNU GPL v3.0 only and public at
+`github.com/Prosincerity/Ghostwriter`. Its core
 songwriting editor, project persistence, offline beat player, and interactive
 waveform timeline are implemented; it continues to grow feature by feature.
 
@@ -19,7 +20,7 @@ you have to "modernize" or "improve" things in ways that conflict with them:
 - **No added bloat.** Every dependency and every feature must earn its place
   for someone writing rap lyrics. Prefer the Android framework's built-in
   tools (e.g. `SharedPreferences`) over pulling in a library (e.g. DataStore)
-  when the built-in tool is sufic.
+  when the built-in tool is sufficient.
 - **AOSP-only, no Google Play Services.** The owner tests on an AOSP-based
   Android Virtual Device with no Google services layer. Never introduce a
   dependency on Google Play Services, Firebase, Google Maps, Google Sign-In,
@@ -34,10 +35,11 @@ you have to "modernize" or "improve" things in ways that conflict with them:
   feature work. The owner works inside Android Studio and uses assisted coding
   with Google Antigravity and OpenAI Codex.
 
-## 3. Tech stack (as of last verified state)
+## 3. Tech stack (from the checked-in build configuration)
 
-- Kotlin (2.2.10 at last check)
-- Jetpack Compose + Material 3 (Compose BOM 2026.02.01 at last check)
+- Kotlin 2.2.10 (from `gradle/libs.versions.toml`)
+- Jetpack Compose + Material 3 (Compose BOM 2026.02.01, from
+  `gradle/libs.versions.toml`)
 - Android Gradle Plugin 9.4.0, Gradle 9.6 (wizard-generated, don't hand-edit
   version numbers without reason — they drift fast and the wizard/Android
   Studio keeps them in sync correctly)
@@ -55,12 +57,13 @@ you have to "modernize" or "improve" things in ways that conflict with them:
 ```
 Ghostwriter/
 ├── README.md
-├── LICENSE                  ← MIT
+├── LICENSE                  ← GNU GPL v3.0 only
 ├── .gitignore
 ├── documentation/           ← all project documentation lives here
 │   ├── README.md            ← documentation index & guide
 │   ├── FEATURES.md          ← the full phased feature roadmap, keep updated
 │   ├── SETUP_NOTES.md       ← project creation and Android Studio setup
+│   ├── TESTING.md           ← test commands and coverage workflow
 │   └── AGENT_CONTEXT.md     ← agent handoff, architecture guide & decisions
 ├── app/
 │   ├── build.gradle.kts
@@ -72,7 +75,10 @@ Ghostwriter/
 │       │       ├── data/
 │       │       │   ├── Settings.kt         ← SharedPreferences wrapper
 │       │       │   ├── ProjectMetadata.kt  ← metadata schema and waveform markers
-│       │       │   └── ProjectStorage.kt   ← file I/O, autosaves, metadata, beat & waveform cache
+│       │       │   ├── ProjectLyricsStorage.kt ← manual saves and autosave backups
+│       │       │   ├── ProjectStorage.kt   ← project layout, autosaves, metadata, beat assignment
+│       │       │   ├── StagedFileWriter.kt ← temporary-file replacement for project writes
+│       │       │   └── WaveformCache.kt    ← waveform cache format and validation
 │       │       ├── logic/
 │       │       │   ├── WaveformExtractor.kt ← AOSP audio decoding and peak extraction
 │       │       │   └── WaveformViewport.kt  ← pure zoom, pan, and seek math
@@ -81,12 +87,16 @@ Ghostwriter/
 │       │       └── ui/
 │       │           ├── components/
 │       │           │   ├── BeatDialogs.kt
+│       │           │   ├── BeatPlaybackControls.kt
 │       │           │   ├── BeatPlayerPanel.kt
+│       │           │   ├── LyricsNotepad.kt  ← state-hoisted lyrics editing surface
 │       │           │   ├── PlaybackTime.kt
 │       │           │   └── WaveformView.kt  ← Canvas timeline and gestures
 │       │           ├── screens/
+│       │           │   ├── AboutScreen.kt
 │       │           │   ├── HomeScreen.kt
 │       │           │   ├── EditorScreen.kt
+│       │           │   ├── EditorMarkerDialogs.kt
 │       │           │   ├── ProjectInfoDialog.kt
 │       │           │   └── SettingsScreen.kt
 │       │           └── theme/
@@ -111,22 +121,23 @@ reference remains, it is a stale identifier that must be migrated.
 - Project metadata (`project.json`) + in-editor Project Info dialog — done.
 - Offline beat player + project-local beat import — done.
 - Interactive waveform, zoom/pan, markers, caching, and processing safety — done.
+- About screen with open-source and dictionary-data attribution — done.
 
 Walking through what each file does:
 
 - **`MainActivity.kt`** — Hosts a tiny hand-rolled navigation system: a
-  private `sealed class Screen` with `Home`, `Editor(projectTitle)`, and
-  `SettingsFrom(projectTitle)` variants, switched on with a `when` inside a
+  private `sealed class Screen` with `Home`, `Editor(projectTitle)`, `Settings`,
+  and `About` variants, switched on with a `when` inside a
   `GhostwriterApp()` composable. This is deliberately NOT using the
-  Navigation-Compose library — three screens didn't justify the dependency.
+  Navigation-Compose library — the current screen count doesn't justify the dependency.
   If the screen count grows significantly, that's the natural point to
   reconsider.
 
 - **`data/Settings.kt`** — Wraps `SharedPreferences` (not DataStore, by
-  design — see philosophy). Stores two settings: autosave interval in
-  seconds (options: 10/30/60/120/300) and autosave backup count (options:
-  3/4/5). Simple get/set functions, no observers/flows — screens re-read on
-  their own recomposition.
+  design). It currently stores the autosave interval (10/30/60/120/300
+  seconds) and backup count (3/4/5). Planned editor gutters will add separate
+  boolean settings for the syllable counter and bar counter. Keep these in
+  `SharedPreferences`; no observer or flow layer is needed.
 
 - **`data/ProjectStorage.kt`** — Owns the on-disk layout. Each "project"
   (song) lives at:
@@ -147,12 +158,17 @@ Walking through what each file does:
   `rotateAndSave()` shifts every file up one index (dropping anything past
   the configured keep-count) then writes the current text into
   `autosave1.txt`; unchanged content does not rotate the ring, but reducing the
-  backup count still prunes old snapshots. `loadLatest()` prefers an up-to-date
-  manual save, otherwise reads the newest readable autosave, with the manual
-  save as a last recovery fallback. Text and metadata writes stage a temporary
+  backup count still prunes old snapshots. Backup rotation preserves snapshot
+  timestamps so `loadLatest()` can select the newer of a readable manual save
+  and the newest readable autosave. Text and metadata writes stage a temporary
   file before replacement. Storage mutations are synchronized to prevent
   overlapping operations from interleaving; manual and metadata saves return
   success flags used by the editor's feedback.
+  `ProjectLyricsStorage` handles manual lyric snapshots and backup rotation;
+  its public entry points remain synchronized through `ProjectStorage`.
+  `StagedFileWriter` handles temporary-file replacement. `WaveformCache` owns
+  cache serialization and validation; `ProjectStorage` coordinates cache
+  invalidation with beat changes while extraction runs outside the storage lock.
 
   **Beat & Instrumental Storage Architecture:**
   - **Current project beat import:** When a project has no assigned beat, the
@@ -214,7 +230,12 @@ Walking through what each file does:
   its actual casing.
 
 - **`ui/screens/EditorScreen.kt`** — The actual text editor. Full-screen
-  `TextField`, monospace, dark theme. Text state uses `rememberSaveable` (not
+  editor with a monospace, dark-theme `LyricsNotepad`. The notepad UI is kept
+  in `ui/components/LyricsNotepad.kt` so gutters can be added without mixing
+  layout into screen-level persistence and beat-player behavior. The planned
+  left gutter shows the current line's syllable count; the right gutter counts
+  one bar per two lyric lines. Each gutter has an independent Settings toggle
+  and must disappear when disabled. Text state uses `rememberSaveable` (not
   plain `remember`) so it survives recomposition without a disk round-trip.
   A `LaunchedEffect` loop calls `delay(intervalSeconds * 1000L)` then
   re-reads settings and calls `rotateAndSave`. A `DisposableEffect`'s
@@ -262,21 +283,30 @@ Walking through what each file does:
   pinch zoom, panning, and dedicated zoom controls in the beat-player header.
   Long-press adds a marker; markers can be moved, renamed, deleted, or tapped
   to seek. Dialog and loading/error states live in focused components rather
-  than the editor screen.
+  than the editor screen. `BeatPlaybackControls.kt` owns the transport, loop,
+  and volume controls shown when the beat is ready.
 
   **Known simplification:** if the user changes the autosave interval while
   a wait is already in progress, the in-progress wait finishes on the OLD
   interval; the new interval applies starting the following cycle. Not a
   bug, just not instant.
 
-- **`ui/screens/SettingsScreen.kt`** — Two dropdowns (autosave interval,
-  backup count) backed by `Settings.kt`. Deliberately implemented with a
+- **`ui/screens/SettingsScreen.kt`** — Two dropdowns (autosave interval and
+  backup count) backed by `Settings.kt`, plus an About entry. The planned
+  gutter work adds independent **Syllable counter** and **Bar counter**
+  toggles here.
+  Deliberately implemented with a
   plain `Box` + `DropdownMenu`/`DropdownMenuItem` rather than Material 3's
   `ExposedDropdownMenuBox` — that API's shape (specifically `menuAnchor()`)
   has changed across library versions, while the basic `DropdownMenu` API
   has stayed stable. If you need more dropdowns later, keep using this same
   pattern rather than switching to `ExposedDropdownMenuBox`, to avoid
   reintroducing that version-drift risk.
+
+- **`ui/screens/AboutScreen.kt`** — Offline project information, installed app
+  version, GNU GPL v3.0 source/license links, and attribution for dictionary
+  datasets prepared from Kaikki.org/Wiktionary data. External links are opened
+  only on user action and fail gracefully when no browser is installed.
 
 - **`ui/theme/`** — OLED-black palette (`Color.kt`): `#000000` background,
   `#1E1E1E` elevated surfaces, `#F2F2F2` text, `#FF4500` primary controls,
@@ -295,12 +325,18 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Tests** — 99 JVM tests cover storage, atomic replacement, waveform cache
+- **Tests** — 114 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
-  compatibility, player state, warning thresholds, and formatting. Seven
-  Android instrumented tests cover key Compose dialogs and beat-player states.
+  compatibility, player state, warning thresholds, and formatting. Thirty-eight
+  Android instrumented tests cover key Compose screens, dialogs, real AOSP
+  player loading and controls, waveform decoding, the lyrics editing surface,
+  Home and Editor behavior, persistence, and activity-level navigation.
   Run `./gradlew test lint` locally; build the device suite with
   `./gradlew assembleDebugAndroidTest`.
+  Debug local and instrumented tests have JaCoCo coverage enabled. Run
+  `./gradlew :app:createCoverageReport` with an emulator or device connected to
+  generate the unified HTML report. See [`TESTING.md`](TESTING.md) for all
+  coverage tasks, output paths, and the Android Studio workflow.
 
   **Active manual verification:** The maintainer tests from Android Studio on
   an emulator and performs physical-device testing on an AOSP-based Pixel 8.
@@ -325,9 +361,9 @@ just "fix" it without flagging it first:
    for audio playback, maintaining zero added library bloat and native offline AOSP compatibility.
 8. `org.json` (built into Android framework) instead of external serialization libraries
    (Gson, Moshi, kotlinx.serialization) for `project.json` metadata.
-9. Self-contained project storage (assigned beat files copied into the project directory
-   and metadata saved in `project.json`), paired with a global beats directory
-   (`Music/Ghostwriter/Instrumentals/`) for browsing and selecting beats.
+9. Self-contained project storage: assigned beats live in their project
+   directory with `project.json`; the global instrumentals browser remains
+   planned.
 10. AOSP `MediaExtractor` + `MediaCodec` and Compose `Canvas`/Foundation
     gestures instead of a third-party waveform or media library. This keeps
     waveform generation offline, avoids native binary/licensing and 16 KB page
@@ -352,122 +388,10 @@ just "fix" it without flagging it first:
 - Player volume, loop preference, and position remain session-only.
 - First-time waveform extraction remains proportional to decoded audio length
   and can take tens of seconds on some devices. It has cancellation, retry,
-  caching, and a five-minute warning, but no percentage progress indicator.
+  caching, a decoder-stall guard, and a five-minute warning, but no percentage
+  progress indicator.
 - Marker deletion has no undo history. Reassigning a beat does have a warning
   because it deletes the beat file, waveform cache, and all markers.
 
-### Waveform feature review (2026-09-09)
-
-- Replaced the seek slider with a DAW-style waveform, 1x–64x zoom, pan,
-  tap/drag seeking, dedicated zoom controls, and persistent editable markers.
-- Added project-local waveform caching, five-minute long-audio warnings,
-  cancel/retry paths, staged beat replacement, and responsive processing that
-  does not hold the storage lock.
-- Guarded navigation and saving during preparation and added safe cancellation
-  across editor disposal, import, retry, and beat removal.
-- Adopted a pure-black OLED background, secondary-accent markers, and a
-  distinct high-contrast playhead.
-- Refactored player/dialog/storage responsibilities and removed obsolete code.
-- `./gradlew test lint assembleDebugAndroidTest` passes: 99 JVM tests execute
-  locally and seven Android instrumented tests compile for emulator/device use.
-
-### Maintenance review (2026-09-07, historical checkpoint)
-
-- Extracted `ui/screens/ProjectInfoDialog.kt` from the editor for readability.
-- Consolidated staged text writes and optional JSON-string parsing; removed
-  unused imports and corrected the player state comment.
-- Fixed unchanged-content backup pruning, manual-save recovery fallback,
-  same-path beat reloads, failed-copy preservation, duplicate-name resolution,
-  misleading save-success messages, player release ordering, and NaN volume.
-- Kept the global instrumentals helpers, beat-removal helper, and Home Import
-  placeholder for planned features.
-- At this checkpoint, `./gradlew test lint` passed with 58 JVM tests. The later
-  waveform review above supersedes this count and records emulator/device
-  verification requirements.
-
-## 8. Full feature roadmap (from FEATURES.md — keep this file updated as you work)
-
-**Guiding rules:** no AI functionality, no added bloat, works offline by
-default.
-
-**Phase 1 — Barebones notepad (MVP)** — ✅ done
-- Single full-screen text editor
-- Modern, dark-friendly Material 3 UI
-- Create/open lyric documents
-- Rename lyric documents
-- Basic local persistence
-
-**Phase 2 — Songwriting environment** — in progress
-- [x] Autosave — continuous autosave, configurable interval, rolling backup
-      ring (`autosave1.txt`..`autosaveN.txt`, N configurable)
-- [x] **Offline beat / media player** — in-editor background audio player
-      for instrumentals while songwriting. Built strictly using Android
-      framework's built-in AOSP `MediaPlayer` (no heavy external libraries).
-      Controls for play/pause, loop toggle, interactive waveform, and volume.
-- [x] **Interactive waveform timeline** — decoded amplitude display with
-      tap/drag seek, zoom/pan, a live playhead, persistent named markers,
-      project-local caching, cancellation/retry, and long-audio warnings.
-- [ ] **Instrumentals library & project beat management** — direct import into
-      a project is complete, but the browsable global folder (e.g.
-      `Music/Ghostwriter/Instrumentals/` or another user-accessible directory)
-      remains to be built. Assigned beats are copied into the project directory
-      so projects stay self-contained.
-- [x] **Project metadata (`project.json`)** — in-editor Project Info dialog and
-      JSON file in each project directory storing musical key, BPM, time signature,
-      notes, assigned beat references, and timestamps, using Android's built-in
-      `org.json` (no third-party JSON libraries).
-- [ ] Cloud sync (optional, user-provided backend/account — must stay
-      AOSP-friendly: WebDAV/Nextcloud/S3-compatible, explicitly NOT Firebase)
-- [ ] **Syllable counter column** — left-hand gutter, one number per line,
-      IDE-style (this is the natural next feature — see §9)
-- [ ] **Bar counter** — right-hand side, bars separated by a greyed-out `|`
-      or `/` (user-configurable character)
-- [ ] **Hyphenation** — auto-hyphenate every word, customizable separator
-      character (e.g. `-` or space), toggle on/off
-- [ ] **Rhyme detection** — syllable-by-syllable analysis within a bar;
-      syllables that rhyme with another syllable get a unique, consistent
-      color per rhyme group
-- [ ] **Import/export** — plain text at minimum, using the Storage Access
-      Framework (see §5's note on `ProjectStorage`); consider `.docx`/`.pdf`
-      export later
-- [ ] **Dictionary** — word lookup while writing
-- [ ] **Rhyme dictionary** — look up rhymes on demand when stuck
-- [ ] **Testable code blocks** — core text-processing logic (syllable
-      counting, rhyme detection, hyphenation) built as pure, unit-testable
-      modules using current Android testing tools (JUnit, Compose UI
-      testing)
-
-**Non-goals** (do not implement, even if asked to "improve" the app):
-- AI-generated or AI-assisted lyric writing, in any form
-- Social features, accounts, or analytics beyond what optional cloud sync
-  strictly needs
-- Ads, telemetry, or any monetization that compromises "free and open
-  source, forever"
-
-## 9. Suggested next task, if you want a starting point
-
-The syllable counter gutter is next in line and is a clean, self-contained
-task: given the current line's text, compute an approximate syllable count
-(a rule-based English heuristic — vowel-group counting with common
-exceptions — is the standard non-AI approach here; do not reach for an LLM
-call or an online API for this) and render it as a number in a fixed-width
-column to the left of each line in the editor, using the same monospace
-font already set up in `Type.kt`. This logic should live in a pure,
-testable function (e.g. `SyllableCounter.kt` under a new `logic/` package)
-completely separate from the Compose UI, so it can get real unit tests per
-the Phase 2 roadmap item on testable code blocks.
-
-That said — confirm with the project owner before starting a specific
-feature; they may want a different one first.
-
-## 10. Before you start making changes
-
-1. Read the documentation files in `documentation/`:
-   `documentation/README.md`, `documentation/FEATURES.md`,
-   `documentation/SETUP_NOTES.md`, and `documentation/AGENT_CONTEXT.md`.
-2. Read every file listed in §4 — the project is small enough to read in
-   full before editing anything.
-3. Check which branch you're on (`dev` for active work; don't commit
-   directly to `main`).
-4. If you want to add any new dependency, however small, ask first — see
-   the "no bloat" rule in §2.
+The authoritative future-work list is [FEATURES.md](FEATURES.md). Workflow
+instructions for coding agents live in the repository's `AGENTS.md`.

@@ -2,7 +2,7 @@
 
 **Songwriting Environment**
 
-Ghostwriter is a free, open-source, no-bloat, no-AI Android app for writing rap lyrics — built to eventually feel like an IDE for bars.
+Ghostwriter is a libre, open-source, no-bloat, no-AI Android app for writing rap lyrics — built to eventually feel like an IDE for bars.
 
 ## Status
 
@@ -12,7 +12,7 @@ Feature roadmap below.
 
 ## Philosophy
 
-- Free and open source, forever.
+- Libre and open source.
 - No AI-generated lyrics, no AI "assist" features, no bloat.
 - Fast, offline-first, distraction-free writing.
 - Built to grow from a plain notepad into a full songwriting environment without changing that philosophy.
@@ -26,38 +26,22 @@ Feature roadmap below.
 
 ## Documentation
 
-Comprehensive project documentation lives in the [`documentation/`](documentation/) folder:
+Project documentation lives in [`documentation/`](documentation/):
 
-- **[Feature Roadmap](documentation/FEATURES.md)** — Phased feature list and progress tracking
-- **[Agent Context & Architecture](documentation/AGENT_CONTEXT.md)** — Core design principles, storage layouts, media player specs, and decisions
-- **[Setup Notes](documentation/SETUP_NOTES.md)** — Bootstrapping and setup history
+- [Feature roadmap](documentation/FEATURES.md)
+- [Architecture and agent context](documentation/AGENT_CONTEXT.md)
+- [Testing and coverage](documentation/TESTING.md)
+- [Build setup](documentation/SETUP_NOTES.md)
 
 ## Roadmap
 
-See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature roadmap.
-
-**Phase 1 — MVP (completed):**
-- Barebones plain-text notepad, modern dark UI, local file persistence, and
-  project renaming.
-
-**Phase 2 — Songwriting environment (in progress):**
-- Autosave & rolling backup ring (`autosave1.txt`..`autosaveN.txt`) (completed)
-- In-editor project info dialog & project metadata (`project.json` for musical key, BPM, timestamps) (completed)
-- In-editor offline beat / media player with project-local beat import (completed; built-in AOSP `MediaPlayer`)
-- DAW-style waveform with tap/drag seeking, pinch and button zoom, horizontal
-  panning, a live playhead, and persistent named markers (completed)
-- Instrumentals library & project beat management (global beats library still planned; imported project beats are self-contained)
-- Syllable counter column (left, per line, IDE-style)
-- Bar counter (right, greyed-out separator: `|` or `/`)
-- Customizable hyphenation
-- Syllable-level rhyme detection with per-rhyme-group coloring
-- Import / export lyrics
-- Dictionary + rhyme dictionary
-- Tested code, following current Android testing best practices
+Phase 1 is complete and Phase 2 is in progress. See the
+[feature roadmap](documentation/FEATURES.md) for the authoritative status and
+remaining work.
 
 ## Building
 
-1. Open this folder in Android Studio (Meerkat or newer).
+1. Open this folder in a version of Android Studio compatible with the checked-in Android Gradle Plugin.
 2. Let Gradle sync.
 3. Run on an emulator or device (min SDK / target SDK as set in `app/build.gradle.kts`).
 
@@ -65,17 +49,17 @@ See [FEATURES.md](documentation/FEATURES.md) for the full, detailed feature road
 
 - JVM tests and lint run through Gradle (`./gradlew test lint`).
 - Compose instrumented tests run from Android Studio on an Android emulator.
+- JaCoCo can generate local, instrumented, or unified HTML coverage reports.
+  See [`documentation/TESTING.md`](documentation/TESTING.md) for the commands,
+  Android Studio workflow, output paths, and ADB troubleshooting.
 - Active physical-device testing uses an AOSP-based Pixel 8. Testing APKs are
   also sent to test users for additional real-device feedback.
 
-## Development
-
-Built solo with assisted coding tools: originally scaffolded and developed through Phase 2 autosave using Anthropic Claude, then actively developed with Google Antigravity and OpenAI Codex. (Note: the app itself strictly contains no AI features or bloat — see philosophy).
-
 ## Contributing
 
-Issues and PRs welcome once the initial scaffolding is in place. Please keep the "no AI, no bloat" philosophy in mind for any feature contribution.
+Issues and pull requests are welcome. Please keep the no-AI, no-bloat
+philosophy in mind for every contribution.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). You are free to use, modify, and redistribute this code.
+GNU General Public License v3.0 only (`GPL-3.0-only`) — see [LICENSE](LICENSE).

@@ -1,14 +1,14 @@
 {
   "0": "BeatPlayer",
   "1": "ProjectStorage",
-  "2": "MainActivity.kt",
+  "2": "BeatPlayerInstrumentedTest",
   "3": "ProjectMetadata",
   "4": "ProjectStorageTest",
   "5": "WaveformViewport",
   "6": "ProjectStorageBeatTest",
-  "7": "EditorScreen.kt",
+  "7": "GhostwriterTheme",
   "8": "WaveformExtractor",
-  "9": "Settings",
+  "9": "MainActivity.kt",
   "10": "WaveformExtractorTest",
   "11": "gradlew",
   "12": "ExampleInstrumentedTest",
@@ -18,7 +18,8 @@
   "16": "settings.gradle.kts",
   "17": "What You Must Do When Invoked",
   "18": "Ghostwriter",
-  "19": "Project handoff: Ghostwriter",
+  "19": "EditorScreen.kt",
+  "20": "MainActivityTest",
   "21": "graphify reference: extra exports and benchmark",
   "22": "Ghostwriter agent instructions",
   "23": "graphify reference: query, path, explain",
@@ -27,5 +28,9 @@
   "26": "graphify reference: incremental update and cluster-only",
   "27": "graphify reference: GitHub clone and cross-repo merge",
   "28": "graphify reference: transcribe video and audio",
-  "29": "extraction-spec.md"
+  "29": "extraction-spec.md",
+  "31": "EditorScreenTest",
+  "32": ".writeText",
+  "33": "WaveformCache",
+  "35": "ProjectLyricsStorage"
 }

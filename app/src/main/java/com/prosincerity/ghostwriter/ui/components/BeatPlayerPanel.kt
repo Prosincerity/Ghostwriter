@@ -1,24 +1,15 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Loop
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Button
@@ -26,7 +17,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,10 +64,6 @@ internal fun BeatPlayerPanel(
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
     var currentPositionMs by remember(beatPlayer) { mutableIntStateOf(0) }
     var durationMs by remember(beatPlayer) { mutableIntStateOf(0) }
-    var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
-    var volumeBeforeMute by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
-    var isMuted by remember(beatPlayer) { mutableStateOf(beatPlayer.volume == 0f) }
-    var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
     var waveformViewport by remember(durationMs) { mutableStateOf(WaveformViewport()) }
     var waveformWidthPx by remember { mutableFloatStateOf(0f) }
 
@@ -120,7 +106,7 @@ internal fun BeatPlayerPanel(
         }
 
         if (waveformPreparationCancelled) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            CenteredPlayerContent {
                 Text(
                     text = "Waveform preparation canceled",
                     style = MaterialTheme.typography.bodyMedium,
@@ -260,104 +246,22 @@ internal fun BeatPlayerPanel(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Box(modifier = Modifier.fillMaxWidth()) {
-                TextButton(
-                    onClick = onReassignBeat,
-                    enabled = !isReassigningBeat,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                ) {
-                    Text("Reassign", style = MaterialTheme.typography.labelSmall)
-                }
-                Row(
-                    modifier = Modifier.align(Alignment.Center),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = {
-                            beatPlayer.seekTo(0)
-                            beatPlayer.play()
-                            currentPositionMs = 0
-                            isPlaying = beatPlayer.isPlaying
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.SkipPrevious,
-                            contentDescription = "Play from start",
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            beatPlayer.togglePlayPause()
-                            isPlaying = beatPlayer.isPlaying
-                        },
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            isLooping = beatPlayer.toggleLoop()
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Loop,
-                            contentDescription = if (isLooping) "Disable loop" else "Enable loop",
-                            tint = if (isLooping) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
-                    }
-                }
-                Row(
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = {
-                            if (isMuted) {
-                                beatPlayer.setVolume(volumeBeforeMute.takeIf { it > 0f } ?: 1f)
-                                volume = beatPlayer.volume
-                                isMuted = false
-                            } else {
-                                if (volume > 0f) volumeBeforeMute = volume
-                                beatPlayer.setVolume(0f)
-                                volume = 0f
-                                isMuted = true
-                            }
-                        },
-                        modifier = Modifier.size(32.dp),
-                    ) {
-                        Icon(
-                            imageVector = if (isMuted) {
-                                Icons.AutoMirrored.Filled.VolumeOff
-                            } else {
-                                Icons.AutoMirrored.Filled.VolumeUp
-                            },
-                            contentDescription = if (isMuted) "Unmute" else "Mute",
-                        )
-                    }
-                    Slider(
-                        value = volume,
-                        onValueChange = { newVolume ->
-                            beatPlayer.setVolume(newVolume)
-                            volume = beatPlayer.volume
-                            if (volume > 0f) volumeBeforeMute = volume
-                            isMuted = volume == 0f
-                        },
-                        valueRange = 0f..1f,
-                        modifier = Modifier
-                            .height(16.dp)
-                            .width(56.dp),
-                    )
-                }
-            }
+            BeatPlaybackControls(
+                beatPlayer = beatPlayer,
+                isPlaying = isPlaying,
+                onPlayFromStart = {
+                    beatPlayer.seekTo(0)
+                    beatPlayer.play()
+                    currentPositionMs = 0
+                    isPlaying = beatPlayer.isPlaying
+                },
+                onTogglePlayback = {
+                    beatPlayer.togglePlayPause()
+                    isPlaying = beatPlayer.isPlaying
+                },
+                onReassignBeat = onReassignBeat,
+                isReassigningBeat = isReassigningBeat,
+            )
         }
     }
 }

@@ -35,6 +35,8 @@ class BeatPlayer {
     var volume: Float = 1f
         private set
 
+    private var lastAudibleVolume = 1f
+
     /**
      * Current playback position in milliseconds.
      * Returns 0 when not prepared.
@@ -116,7 +118,13 @@ class BeatPlayer {
     fun setVolume(volume: Float) {
         if (volume.isNaN()) return
         this.volume = volume.coerceIn(0f, 1f)
+        if (this.volume > 0f) lastAudibleVolume = this.volume
         player?.setVolume(this.volume, this.volume)
+    }
+
+    /** Mutes or restores the last audible level, even if the controls are recreated. */
+    fun toggleMute() {
+        setVolume(if (volume == 0f) lastAudibleVolume else 0f)
     }
 
     /**

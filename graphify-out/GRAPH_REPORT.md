@@ -1,36 +1,37 @@
-# Graph Report - Gh0stwrit3r  (2026-09-09)
+# Graph Report - Gh0stwrit3r  (2026-09-20)
 
 ## Corpus Check
-- 49 files · ~50,288 words
+- 65 files · ~54,304 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 375 nodes · 579 edges · 29 communities (18 shown, 7 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 56 edges (avg confidence: 0.85)
+- 498 nodes · 833 edges · 34 communities (18 shown, 12 thin omitted)
+- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 91 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `154044b5`
+- Built from commit: `bebbaebf`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - BeatPlayer
 - ProjectStorage
-- MainActivity.kt
+- BeatPlayerInstrumentedTest
 - ProjectMetadata
 - ProjectStorageTest
 - WaveformViewport
 - ProjectStorageBeatTest
-- EditorScreen.kt
+- GhostwriterTheme
 - WaveformExtractor
-- Settings
+- MainActivity.kt
 - WaveformExtractorTest
 - gradlew
 - ExampleInstrumentedTest
 - What You Must Do When Invoked
 - Ghostwriter
-- Project handoff: Ghostwriter
+- EditorScreen.kt
+- MainActivityTest
 - graphify reference: extra exports and benchmark
 - Ghostwriter agent instructions
 - graphify reference: query, path, explain
@@ -40,67 +41,67 @@
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
 - extraction-spec.md
+- EditorScreenTest
+- .writeText
+- WaveformCache
+- ProjectLyricsStorage
 
 ## God Nodes (most connected - your core abstractions)
-1. `BeatPlayer` - 36 edges
-2. `ProjectStorage` - 35 edges
-3. `WaveformViewport` - 26 edges
-4. `ProjectStorageTest` - 25 edges
-5. `ProjectStorageBeatTest` - 24 edges
-6. `ProjectMetadata` - 21 edges
-7. `BeatPlayerTest` - 20 edges
-8. `BeatPlayerPanel()` - 14 edges
-9. `WaveformViewportTest` - 14 edges
-10. `WaveformMarker` - 13 edges
+1. `BeatPlayer` - 48 edges
+2. `ProjectStorage` - 33 edges
+3. `GhostwriterTheme()` - 31 edges
+4. `ProjectStorageTest` - 30 edges
+5. `WaveformViewport` - 26 edges
+6. `ProjectStorageBeatTest` - 25 edges
+7. `ProjectMetadata` - 23 edges
+8. `BeatPlayerTest` - 22 edges
+9. `BeatPlayerPanel()` - 19 edges
+10. `WaveformExtractor` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `LongBeatWarningDialog()` --calls--> `formatPlaybackTime()`  [INFERRED]
-  app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt
 - `WaveformMarkerDialog()` --calls--> `formatPlaybackTime()`  [INFERRED]
   app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt
 - `BeatPlayerPanel()` --calls--> `formatPlaybackTime()`  [INFERRED]
   app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlayerPanel.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt
 - `BeatPlayerPanel()` --calls--> `WaveformView()`  [INFERRED]
   app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlayerPanel.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt
+- `EditorScreen()` --calls--> `EditorMarkerDialogs()`  [INFERRED]
+  app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt
 - `EditorScreen()` --calls--> `ProjectInfoDialog()`  [INFERRED]
   app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/screens/ProjectInfoDialog.kt
 
 ## Import Cycles
 - None detected.
 
-## Communities (29 total, 7 thin omitted)
+## Communities (34 total, 12 thin omitted)
 
 ### Community 0 - "BeatPlayer"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (3): BeatPlayer, BeatPlayerTest, MediaPlayer
 
 ### Community 1 - "ProjectStorage"
 Cohesion: 0.14
 Nodes (3): Context, IntArray, ProjectStorage
 
-### Community 2 - "MainActivity.kt"
-Cohesion: 0.19
-Nodes (13): Editor, GhostwriterApp(), Home, MainActivity, Screen, Settings, HomeScreen(), NewProjectDialog() (+5 more)
-
 ### Community 3 - "ProjectMetadata"
-Cohesion: 0.12
-Nodes (7): ProjectInfoDialogTest, ProjectMetadata, WaveformMarker, ProjectInfoDialog(), trimmedOrNull(), ProjectMetadataTest, JSONObject
+Cohesion: 0.09
+Nodes (11): ProjectInfoDialogTest, ProjectMetadata, WaveformMarker, WaveformMarkerDialog(), EditorMarkerDialogs(), parsePositiveBpm(), ProjectInfoDialog(), trimmedOrNull() (+3 more)
 
 ### Community 5 - "WaveformViewport"
 Cohesion: 0.13
 Nodes (5): WaveformViewport, IntArray, Modifier, WaveformView(), WaveformViewportTest
 
-### Community 7 - "EditorScreen.kt"
+### Community 7 - "GhostwriterTheme"
 Cohesion: 0.12
-Nodes (18): BeatComponentsTest, LongBeatWarningDialog(), ReassignBeatDialog(), WaveformMarkerDialog(), BeatPlayerPanel(), CenteredPlayerContent(), IntArray, Modifier (+10 more)
+Nodes (11): BeatComponentsTest, LyricsNotepadTest, HomeScreenTest, BeatPlaybackControls(), BeatPlayerPanel(), CenteredPlayerContent(), IntArray, Modifier (+3 more)
 
 ### Community 8 - "WaveformExtractor"
-Cohesion: 0.26
-Nodes (5): IntArray, WaveformExtractor, ByteBuffer, MediaCodec, MediaFormat
+Cohesion: 0.13
+Nodes (7): WaveformExtractorInstrumentedTest, DecoderProgressGuard, IntArray, WaveformExtractor, ByteBuffer, MediaCodec, MediaFormat
 
-### Community 9 - "Settings"
-Cohesion: 0.21
-Nodes (5): Context, Settings, formatPlaybackTime(), formatInterval(), SettingsFormatTest
+### Community 9 - "MainActivity.kt"
+Cohesion: 0.11
+Nodes (20): AboutScreenTest, About, Editor, GhostwriterApp(), Home, Context, MainActivity, openExternalLink() (+12 more)
 
 ### Community 11 - "gradlew"
 Cohesion: 0.83
@@ -111,12 +112,12 @@ Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
 ### Community 18 - "Ghostwriter"
-Cohesion: 0.09
-Nodes (20): Feature Roadmap, Guiding rules, Non-goals, Phase 1 — Barebones notepad (MVP), Phase 2 — Songwriting environment, Documentation Index, Ghostwriter — Documentation, How to combine the two (+12 more)
+Cohesion: 0.05
+Nodes (37): 1. What this project is, 2. Non-negotiable philosophy — read this before suggesting anything, 3. Tech stack (from the checked-in build configuration), 4. Repository structure (current), 5. What's actually built right now, 6. Deliberate architectural decisions — please don't silently reverse these, 7. Known technical debt (not yet addressed, tracked, but not urgent), Project handoff: Ghostwriter (+29 more)
 
-### Community 19 - "Project handoff: Ghostwriter"
-Cohesion: 0.15
-Nodes (13): 10. Before you start making changes, 1. What this project is, 2. Non-negotiable philosophy — read this before suggesting anything, 3. Tech stack (as of last verified state), 4. Repository structure (current), 5. What's actually built right now, 6. Deliberate architectural decisions — please don't silently reverse these, 7. Known technical debt (not yet addressed, tracked, but not urgent) (+5 more)
+### Community 19 - "EditorScreen.kt"
+Cohesion: 0.10
+Nodes (16): Context, Settings, LongBeatWarningDialog(), ReassignBeatDialog(), Modifier, LyricsNotepad(), formatPlaybackTime(), displayNameFor() (+8 more)
 
 ### Community 21 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.22
@@ -142,25 +143,29 @@ Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify refer
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
+### Community 31 - "EditorScreenTest"
+Cohesion: 0.29
+Nodes (3): EditorScreenTest, IntArray, MutableState
+
 ## Knowledge Gaps
-- **73 isolated node(s):** `Home`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)`, `Step 1 - Ensure graphify is installed` (+68 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 154 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **76 isolated node(s):** `Home`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)`, `Step 1 - Ensure graphify is installed` (+71 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 165 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `ProjectMetadata` connect `ProjectMetadata` to `ProjectStorage`, `EditorScreen.kt`?**
-  _High betweenness centrality (0.147) - this node is a cross-community bridge._
-- **Why does `BeatPlayer` connect `BeatPlayer` to `EditorScreen.kt`?**
-  _High betweenness centrality (0.107) - this node is a cross-community bridge._
-- **Why does `ProjectStorage` connect `ProjectStorage` to `WaveformExtractor`, `MainActivity.kt`, `EditorScreen.kt`?**
-  _High betweenness centrality (0.102) - this node is a cross-community bridge._
-- **Are the 19 inferred relationships involving `BeatPlayer` (e.g. with `.freshPlayer_currentPositionIsZero()` and `.freshPlayer_defaultsLoopingToTrue()`) actually correct?**
-  _`BeatPlayer` has 19 INFERRED edges - model-reasoned connections that need verification._
+  _High betweenness centrality (0.134) - this node is a cross-community bridge._
+- **Why does `BeatPlayer` connect `BeatPlayer` to `BeatPlayerInstrumentedTest`, `EditorScreen.kt`, `GhostwriterTheme`?**
+  _High betweenness centrality (0.134) - this node is a cross-community bridge._
+- **Why does `ProjectStorage` connect `ProjectStorage` to `MainActivity.kt`, `EditorScreen.kt`, `MainActivityTest`, `EditorScreenTest`?**
+  _High betweenness centrality (0.110) - this node is a cross-community bridge._
+- **Are the 21 inferred relationships involving `BeatPlayer` (e.g. with `.freshPlayer_currentPositionIsZero()` and `.freshPlayer_defaultsLoopingToTrue()`) actually correct?**
+  _`BeatPlayer` has 21 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 13 inferred relationships involving `WaveformViewport` (e.g. with `.clamped_shrinkingViewportKeepsScrollWithinTheNewEnd()` and `.panBy_clampsAtTheStartAndEndOfTheTimeline()`) actually correct?**
   _`WaveformViewport` has 13 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Home`, `Usage`, `What graphify is for` to the rest of the system?**
-  _73 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _76 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `BeatPlayer` be split into smaller, more focused modules?**
-  _Cohesion score 0.11088709677419355 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10252100840336134 - nodes in this community are weakly interconnected._

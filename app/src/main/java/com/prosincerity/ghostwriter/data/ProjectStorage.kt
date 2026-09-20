@@ -30,8 +30,9 @@ import java.util.concurrent.CancellationException
  */
 object ProjectStorage {
 
-    private const val WAVEFORM_CACHE_FILE_NAME = "waveform.dat"
-    private const val MAX_CACHED_WAVEFORM_SAMPLES = 100_000
+    private const val MAX_PROJECT_TITLE_UTF8_BYTES = 251
+    // Checked under the storage monitor before committing a decoded waveform.
+    private var beatMutationRevision = 0L
 
     fun rootDir(context: Context): File =
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
@@ -84,6 +85,7 @@ object ProjectStorage {
         val originalManualSave = File(projectDir, "${projectDir.name}.txt")
         val renamedManualSave = File(projectDir, "$renamedTitle.txt")
         val manualSaveWasRenamed = originalManualSave.isFile
+        if (manualSaveWasRenamed && renamedManualSave.exists()) return null
         if (manualSaveWasRenamed && !originalManualSave.renameTo(renamedManualSave)) return null
 
         if (!projectDir.renameTo(renamedProjectDir)) {
@@ -103,102 +105,49 @@ object ProjectStorage {
         return renamedProjectDir
     }
 
-    /**
-     * Most recent saved content for a project. Checks <title>.txt first if present
-     * and up-to-date, then checks autosave1.txt, and falls back to older backups
-     * if autosave1 is missing or unreadable.
-     */
-    fun loadLatest(projectDir: File): String {
-        val manualFile = File(projectDir, "${projectDir.name}.txt")
-        val autosaveFile = File(projectDir, "autosave1.txt")
+    /** Most recent readable manual save or autosave, falling back through the backup ring. */
+    fun loadLatest(projectDir: File): String = ProjectLyricsStorage.loadLatest(projectDir)
 
-        if (manualFile.exists() && (!autosaveFile.exists() || manualFile.lastModified() >= autosaveFile.lastModified())) {
-            val text = runCatching { manualFile.readText() }.getOrNull()
-            if (text != null) return text
-        }
-
-        for (i in 1..5) {
-            val file = File(projectDir, "autosave$i.txt")
-            if (file.exists()) {
-                val text = runCatching { file.readText() }.getOrNull()
-                if (text != null) return text
-            }
-        }
-        // An older manual save is still preferable to losing all text when
-        // every autosave is unreadable.
-        return runCatching { manualFile.readText() }.getOrDefault("")
-    }
-
-    /**
-     * Manually saves [content] as "<title>.txt" inside [projectDir].
-     * Also synchronizes the autosave backup ring so the backup ring stays up to date.
-     */
+    /** Saves a title-based manual snapshot and updates the autosave ring. */
     @Synchronized
     fun saveManual(projectDir: File, title: String, content: String, keepCount: Int): Boolean =
-        runCatching {
-            val fileName = "${sanitizeTitle(title)}.txt"
-            val target = File(projectDir, fileName)
-            writeTextSafely(target, content)
+        ProjectLyricsStorage.saveManual(
+            projectDir,
+            "${sanitizeTitle(title)}.txt",
+            content,
+            keepCount,
+        )
 
-            rotateAndSave(projectDir, content, keepCount)
-        }.isSuccess
-
-    /**
-     * Rotates the backup ring and writes [content] as the new autosave1.txt.
-     * No-ops if [content] already matches what's saved, so an idle editor
-     * doesn't keep burning through backup slots.
-     */
+    /** Rotates the backup ring only when the lyrics have changed. */
     @Synchronized
-    fun rotateAndSave(projectDir: File, content: String, keepCount: Int) {
-        runCatching {
-            require(keepCount in Settings.COUNT_OPTIONS)
-            // Settings changes apply even when the lyrics haven't changed.
-            for (i in (keepCount + 1)..10) {
-                val oldBackup = File(projectDir, "autosave$i.txt")
-                if (oldBackup.exists()) oldBackup.delete()
-            }
-            val newest = File(projectDir, "autosave1.txt")
-            if (newest.exists() && newest.readText() == content) return
-
-            for (i in keepCount downTo 2) {
-                val src = File(projectDir, "autosave${i - 1}.txt")
-                val dst = File(projectDir, "autosave$i.txt")
-                if (src.exists()) src.copyTo(dst, overwrite = true)
-            }
-
-            writeTextSafely(newest, content)
-        }
-    }
-
-    /** Replace only after writing succeeds; never delete the last good copy first. */
-    private fun writeTextSafely(target: File, content: String) {
-        replaceFileSafely(
-            target = target,
-            tempFilePrefix = "save-",
-            replacementFailureMessage = "Couldn't replace ${target.name}",
-        ) { staged -> staged.writeText(content) }
-    }
-
-    private fun replaceFileSafely(
-        target: File,
-        tempFilePrefix: String,
-        replacementFailureMessage: String,
-        writeStagedFile: (File) -> Unit,
-    ) {
-        val staged = File.createTempFile(tempFilePrefix, ".tmp", target.parentFile)
-        try {
-            writeStagedFile(staged)
-            if (!staged.renameTo(target)) throw IOException(replacementFailureMessage)
-        } finally {
-            staged.delete()
-        }
-    }
+    fun rotateAndSave(projectDir: File, content: String, keepCount: Int) =
+        ProjectLyricsStorage.rotateAndSave(projectDir, content, keepCount)
 
     fun sanitizeTitle(title: String): String {
         val cleaned = title.trim()
             .replace(Regex("""[\\/:*?"<>|\x00-\x1F]"""), "_")
             .trim { it == '.' || it == ' ' }
-        return cleaned.ifBlank { "untitled" }
+        val truncated = cleaned.truncateToUtf8Bytes(MAX_PROJECT_TITLE_UTF8_BYTES)
+            .trimEnd { it == '.' || it == ' ' }
+        return truncated.ifBlank { "untitled" }
+    }
+
+    private fun String.truncateToUtf8Bytes(maxBytes: Int): String {
+        var byteCount = 0
+        var endIndex = 0
+        while (endIndex < length) {
+            val codePoint = codePointAt(endIndex)
+            val codePointBytes = when {
+                codePoint <= 0x7F -> 1
+                codePoint <= 0x7FF -> 2
+                codePoint <= 0xFFFF -> 3
+                else -> 4
+            }
+            if (byteCount + codePointBytes > maxBytes) break
+            byteCount += codePointBytes
+            endIndex += Character.charCount(codePoint)
+        }
+        return substring(0, endIndex)
     }
 
     /** Match the folder name used on disk, including an existing name's casing. */
@@ -212,68 +161,27 @@ object ProjectStorage {
 
     /** Project-local waveform cache for the currently assigned beat. */
     fun waveformCacheFile(projectDir: File): File =
-        File(projectDir, WAVEFORM_CACHE_FILE_NAME)
+        WaveformCache.file(projectDir)
 
     /**
      * Returns a cached waveform with exactly [targetSampleCount] samples, or
      * null when no compatible, readable cache is present. Empty extraction
      * results are failures and are never treated as a valid cache.
      */
-    fun loadCachedWaveform(projectDir: File, targetSampleCount: Int): IntArray? {
-        if (targetSampleCount <= 0) return null
-        val cacheFile = waveformCacheFile(projectDir)
-        if (!cacheFile.isFile) return null
-
-        return runCatching {
-            val encoded = cacheFile.readText()
-            val headerEnd = encoded.indexOf('\n')
-            if (headerEnd < 0) return null
-
-            val storedTargetCount = encoded.substring(0, headerEnd).toInt()
-            if (storedTargetCount != targetSampleCount || storedTargetCount > MAX_CACHED_WAVEFORM_SAMPLES) {
-                return null
-            }
-
-            val payload = encoded.substring(headerEnd + 1).trim()
-            if (payload.isEmpty()) return null
-
-            val samples = payload.split(',').map { sample ->
-                sample.toInt().takeIf { it in 0..32_768 }
-                    ?: throw IllegalArgumentException("Invalid cached waveform sample")
-            }
-            if (samples.size != targetSampleCount) return null
-            samples.toIntArray()
-        }.getOrNull()
-    }
+    fun loadCachedWaveform(projectDir: File, targetSampleCount: Int): IntArray? =
+        WaveformCache.load(projectDir, targetSampleCount)
 
     @Synchronized
     internal fun saveCachedWaveform(
         projectDir: File,
         targetSampleCount: Int,
         amplitudes: IntArray,
-    ): Boolean {
-        if (
-            targetSampleCount !in 1..MAX_CACHED_WAVEFORM_SAMPLES ||
-            amplitudes.size != targetSampleCount ||
-            amplitudes.any { it !in 0..32_768 }
-        ) return false
-
-        return runCatching {
-            val encoded = buildString {
-                append(targetSampleCount)
-                append('\n')
-                amplitudes.joinTo(this, separator = ",")
-            }
-            writeTextSafely(waveformCacheFile(projectDir), encoded)
-        }.isSuccess
-    }
+    ): Boolean = WaveformCache.save(projectDir, targetSampleCount, amplitudes)
 
     /** Deletes the cache so the next request decodes the currently assigned beat again. */
     @Synchronized
-    internal fun invalidateWaveformCache(projectDir: File): Boolean {
-        val cacheFile = waveformCacheFile(projectDir)
-        return !cacheFile.exists() || cacheFile.delete()
-    }
+    internal fun invalidateWaveformCache(projectDir: File): Boolean =
+        WaveformCache.invalidate(projectDir)
 
     /**
      * Loads a compatible cache when possible; otherwise decodes [beatFile]
@@ -301,12 +209,15 @@ object ProjectStorage {
         shouldCancel: () -> Boolean = { false },
         extract: (File, Int) -> IntArray,
     ): IntArray {
-        if (
-            targetSampleCount !in 1..MAX_CACHED_WAVEFORM_SAMPLES ||
-            !beatFile.isFile ||
-            runCatching { beatFile.canonicalFile.parentFile == projectDir.canonicalFile }.getOrDefault(false).not()
-        ) return IntArray(0)
+        if (targetSampleCount !in 1..WaveformCache.MAX_SAMPLES || !beatFile.isFile) {
+            return IntArray(0)
+        }
+        val belongsToProject = runCatching {
+            beatFile.canonicalFile.parentFile == projectDir.canonicalFile
+        }.getOrDefault(false)
+        if (!belongsToProject) return IntArray(0)
 
+        val beatRevisionAtStart = synchronized(this) { beatMutationRevision }
         throwIfWaveformCancelled(shouldCancel)
         loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
 
@@ -316,7 +227,11 @@ object ProjectStorage {
         val amplitudes = extract(beatFile, targetSampleCount)
         throwIfWaveformCancelled(shouldCancel)
         if (amplitudes.size == targetSampleCount) {
-            saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+            synchronized(this) {
+                if (beatMutationRevision == beatRevisionAtStart) {
+                    saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+                }
+            }
         }
         return amplitudes
     }
@@ -326,15 +241,9 @@ object ProjectStorage {
     }
 
     fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {
-        val file = metadataFile(projectDir)
-        if (!file.exists()) {
-            return ProjectMetadata(title = fallbackTitle)
-        }
-        return runCatching {
-            ProjectMetadata.fromJsonString(file.readText(), fallbackTitle)
-        }.getOrElse {
-            ProjectMetadata(title = fallbackTitle)
-        }
+        val contents = runCatching { metadataFile(projectDir).readText() }.getOrNull()
+            ?: return ProjectMetadata(title = fallbackTitle)
+        return ProjectMetadata.fromJsonString(contents, fallbackTitle)
     }
 
     @Synchronized
@@ -345,23 +254,12 @@ object ProjectStorage {
                 updatedAt = System.currentTimeMillis(),
                 version = maxOf(metadata.version, ProjectMetadata.CURRENT_VERSION),
             )
-            writeTextSafely(file, updated.toJsonObject().toString(2))
+            StagedFileWriter.writeText(file, updated.toJsonObject().toString(2))
         }.isSuccess
 
-    // --- Beat & Instrumental storage helpers ---
+    // --- Project beat storage helpers ---
 
     val SUPPORTED_AUDIO_EXTENSIONS: Set<String> = setOf("mp3", "wav", "ogg", "flac", "m4a", "aac")
-
-    fun instrumentalsDir(context: Context): File =
-        File(context.getExternalFilesDir(null), "instrumentals").apply { mkdirs() }
-
-    /**
-     * Lists all supported audio beat files in [dir], sorted alphabetically.
-     */
-    fun listInstrumentals(dir: File): List<File> =
-        dir.listFiles { file -> file.isSupportedAudioFile() }
-            ?.sortedBy { it.name.lowercase() }
-            ?: emptyList()
 
     /**
      * Resolves the assigned beat file for [projectDir].
@@ -409,12 +307,17 @@ object ProjectStorage {
         val destFile = File(projectDir, "beat.$ext")
 
         // A failed stream copy must not truncate or delete the previous beat.
-        replaceFileSafely(
+        StagedFileWriter.replace(
             target = destFile,
             tempFilePrefix = "beat-import-",
             replacementFailureMessage = "Couldn't store the selected beat",
-            writeStagedFile = copyAction,
-        )
+        ) { stagedFile ->
+            copyAction(stagedFile)
+            if (!stagedFile.isFile || stagedFile.length() == 0L) {
+                throw IOException("The selected beat is empty")
+            }
+        }
+        beatMutationRevision++
 
         // Remove the old format only after the new file has been copied.
         projectDir.listFiles { file -> file.isProjectBeatFile() && file != destFile }
@@ -443,6 +346,7 @@ object ProjectStorage {
     @Synchronized
     fun removeBeatFromProject(projectDir: File) {
         projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
+        beatMutationRevision++
         invalidateWaveformCache(projectDir)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
@@ -454,23 +358,8 @@ object ProjectStorage {
         saveMetadata(projectDir, updatedMeta)
     }
 
-    /**
-     * Imports an audio file into [instrumentalsDir] via [copyAction].
-     */
-    fun importInstrumental(
-        instrumentalsDir: File,
-        fileName: String,
-        copyAction: (destination: File) -> Unit,
-    ): File {
-        val baseName = sanitizeTitle(fileName.substringBeforeLast('.'))
-        val ext = if (fileName.contains('.')) fileName.substringAfterLast('.').lowercase() else "mp3"
-        val dest = File(instrumentalsDir, "$baseName.$ext")
-        copyAction(dest)
-        return dest
-    }
-
     private fun File.isSupportedAudioFile(): Boolean =
-        isFile && extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+        isFile && length() > 0L && extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
 
     private fun File.isProjectBeatFile(): Boolean =
         nameWithoutExtension == "beat" && isSupportedAudioFile()

@@ -36,15 +36,18 @@ import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 
 /**
- * Two settings for now: autosave interval and how many rolling backups
- * to keep. Uses a plain Box + DropdownMenu rather than Material3's
+ * Autosave settings plus navigation to project information. Uses a plain
+ * Box + DropdownMenu rather than Material3's
  * ExposedDropdownMenuBox — that API has changed shape across library
  * versions, while basic DropdownMenu has stayed stable, so this is the
  * safer bet against version drift.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onOpenAbout: () -> Unit,
+) {
     BackHandler(onBack = onBack)
 
     val context = LocalContext.current
@@ -94,6 +97,15 @@ fun SettingsScreen(onBack: () -> Unit) {
                     AppSettings.setAutosaveCount(context, it)
                 },
             )
+
+            Spacer(Modifier.height(24.dp))
+
+            OutlinedButton(
+                onClick = onOpenAbout,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("About Ghostwriter")
+            }
         }
     }
 }

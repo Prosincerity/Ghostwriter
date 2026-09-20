@@ -14,10 +14,10 @@ data class WaveformViewport(
 ) {
 
     /** Returns a viewport with its zoom and scroll offset constrained to valid bounds. */
-    fun clamped(viewportWidthPx: Float): WaveformViewport = copy(
-        zoom = zoom.coerceIn(MIN_ZOOM, MAX_ZOOM),
-    ).let { viewport ->
-        viewport.copy(scrollOffsetPx = viewport.scrollOffsetPx.coerceIn(0f, viewport.maxScrollPx(viewportWidthPx)))
+    fun clamped(viewportWidthPx: Float): WaveformViewport {
+        val boundedZoom = copy(zoom = zoom.coerceIn(MIN_ZOOM, MAX_ZOOM))
+        val boundedOffset = scrollOffsetPx.coerceIn(0f, boundedZoom.maxScrollPx(viewportWidthPx))
+        return boundedZoom.copy(scrollOffsetPx = boundedOffset)
     }
 
     /** Pixel width of the full waveform after horizontal zoom. */
@@ -50,9 +50,10 @@ data class WaveformViewport(
     fun xToPositionMs(xPx: Float, durationMs: Long, viewportWidthPx: Float): Long {
         if (durationMs <= 0L || viewportWidthPx <= 0f) return 0L
         val viewport = clamped(viewportWidthPx)
+        val contentWidth = viewport.contentWidthPx(viewportWidthPx)
         val contentPosition = (xPx + viewport.scrollOffsetPx)
-            .coerceIn(0f, viewport.contentWidthPx(viewportWidthPx))
-        return ((contentPosition / viewport.contentWidthPx(viewportWidthPx)) * durationMs)
+            .coerceIn(0f, contentWidth)
+        return ((contentPosition / contentWidth) * durationMs)
             .toLong()
             .coerceIn(0L, durationMs)
     }

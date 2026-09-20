@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
@@ -23,8 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -38,10 +35,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
@@ -53,8 +48,8 @@ import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.BeatPlayer
 import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
+import com.prosincerity.ghostwriter.ui.components.LyricsNotepad
 import com.prosincerity.ghostwriter.ui.components.ReassignBeatDialog
-import com.prosincerity.ghostwriter.ui.components.WaveformMarkerDialog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlin.time.Duration.Companion.seconds
@@ -161,15 +156,19 @@ fun EditorScreen(
                     ProjectStorage.saveMetadata(projectDir, updatedMetadata)
                 }
             }
-            if (saved == true && revision == projectMutationRevision.get()) {
-                successMessage?.let { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            // Compose test scopes can resume off the UI thread after IO.
+            withContext(Dispatchers.Main.immediate) {
+                if (revision != projectMutationRevision.get()) return@withContext
+                if (saved) {
+                    successMessage?.let { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    metadata = withContext(Dispatchers.IO) {
+                        ProjectStorage.loadMetadata(projectDir, projectTitle)
+                    }
+                    Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
                 }
-            } else if (saved == false && revision == projectMutationRevision.get()) {
-                metadata = withContext(Dispatchers.IO) {
-                    ProjectStorage.loadMetadata(projectDir, projectTitle)
-                }
-                Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -240,10 +239,10 @@ fun EditorScreen(
                 val durationMs = withContext(Dispatchers.IO) {
                     WaveformExtractor.durationMs(currentBeat)
                 }
-                if (shouldWarnBeforeWaveformExtraction(durationMs)) {
+                if (durationMs != null && shouldWarnBeforeWaveformExtraction(durationMs)) {
                     pendingLongBeatPreparation = PendingBeatPreparation(
                         file = currentBeat,
-                        durationMs = durationMs!!,
+                        durationMs = durationMs,
                         removeBeatOnCancel = isImportedBeatPreparation,
                     )
                     return@LaunchedEffect
@@ -257,7 +256,7 @@ fun EditorScreen(
                     shouldCancel = cancellation::get,
                 )
             }
-            if (cancellation.get()) throw java.util.concurrent.CancellationException()
+            if (cancellation.get()) throw CancellationException()
             if (waveformAmplitudes.isEmpty()) {
                 waveformPreparationFailed = true
                 autoPlayWhenWaveformReady = false
@@ -272,7 +271,7 @@ fun EditorScreen(
             if (!isBeatReady) {
                 Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
             }
-        } catch (cancellation: java.util.concurrent.CancellationException) {
+        } catch (cancellation: CancellationException) {
             if (!cancellationRequested) throw cancellation
             if (beatFile == currentBeat) {
                 if (removeBeatOnCancellation) {
@@ -431,12 +430,14 @@ fun EditorScreen(
                             val saved = withContext(Dispatchers.IO) {
                                 ProjectStorage.saveManual(projectDir, projectTitle, contentToSave, keepCount)
                             }
-                            Toast.makeText(
-                                context,
-                                if (saved) "Saved ${ProjectStorage.sanitizeTitle(projectTitle)}.txt"
-                                else "Couldn't save lyrics",
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                            withContext(Dispatchers.Main.immediate) {
+                                Toast.makeText(
+                                    context,
+                                    if (saved) "Saved ${ProjectStorage.sanitizeTitle(projectTitle)}.txt"
+                                    else "Couldn't save lyrics",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         }
                     }) {
                         Icon(
@@ -511,82 +512,27 @@ fun EditorScreen(
                     .padding(top = 12.dp),
             )
 
-            TextField(
-                value = lyrics,
-                onValueChange = { lyrics = it },
+            LyricsNotepad(
+                lyrics = lyrics,
+                onLyricsChange = { lyrics = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(top = 8.dp),
-                placeholder = { Text("Start writing...") },
-                textStyle = MaterialTheme.typography.bodyLarge,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                ),
             )
         }
     }
 
-    markerPositionToAdd?.let { positionMs ->
-        WaveformMarkerDialog(
-            title = "Add marker",
-            initialLabel = "",
-            positionMs = positionMs,
-            onSave = { label ->
-                persistMarkers(
-                    markers = metadata.markers + WaveformMarker(label, positionMs),
-                    successMessage = "Marker added",
-                    failureMessage = "Couldn't save marker",
-                )
-                markerPositionToAdd = null
-            },
-            onDelete = null,
-            onDismiss = { markerPositionToAdd = null },
-        )
-    }
-
-    markerToEdit?.let { marker ->
-        WaveformMarkerDialog(
-            title = "Edit marker",
-            initialLabel = marker.label,
-            positionMs = marker.positionMs,
-            onSave = { label ->
-                val markerIndex = metadata.markers.indexOfFirst { it === marker }
-                if (markerIndex < 0) {
-                    markerToEdit = null
-                    return@WaveformMarkerDialog
-                }
-                val updatedMarkers = metadata.markers.toMutableList().apply {
-                    this[markerIndex] = WaveformMarker(label, marker.positionMs)
-                }
-                persistMarkers(
-                    markers = updatedMarkers,
-                    successMessage = "Marker renamed",
-                    failureMessage = "Couldn't save marker",
-                )
-                markerToEdit = null
-            },
-            onDelete = {
-                val markerIndex = metadata.markers.indexOfFirst { it === marker }
-                if (markerIndex < 0) {
-                    markerToEdit = null
-                    return@WaveformMarkerDialog
-                }
-                val updatedMarkers = metadata.markers.toMutableList().apply { removeAt(markerIndex) }
-                persistMarkers(
-                    markers = updatedMarkers,
-                    successMessage = "Marker deleted",
-                    failureMessage = "Couldn't save marker",
-                )
-                markerToEdit = null
-            },
-            onDismiss = { markerToEdit = null },
-        )
-    }
+    EditorMarkerDialogs(
+        markers = metadata.markers,
+        positionToAdd = markerPositionToAdd,
+        markerToEdit = markerToEdit,
+        onMarkersChange = { markers, successMessage, failureMessage ->
+            persistMarkers(markers, successMessage, failureMessage)
+        },
+        onAddDismiss = { markerPositionToAdd = null },
+        onEditDismiss = { markerToEdit = null },
+    )
 
     if (showReassignConfirmation) {
         ReassignBeatDialog(
