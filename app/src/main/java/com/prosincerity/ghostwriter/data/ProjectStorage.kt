@@ -107,30 +107,29 @@ object ProjectStorage {
         return renamedProjectDir
     }
 
-    /**
-     * Most recent saved content for a project. Checks <title>.txt first if present
-     * and up-to-date, then checks autosave1.txt, and falls back to older backups
-     * if autosave1 is missing or unreadable.
-     */
+    /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         val manualFile = File(projectDir, "${projectDir.name}.txt")
-        val autosaveFile = File(projectDir, "autosave1.txt")
-
-        if (manualFile.exists() && (!autosaveFile.exists() || manualFile.lastModified() >= autosaveFile.lastModified())) {
-            val text = runCatching { manualFile.readText() }.getOrNull()
-            if (text != null) return text
-        }
-
+        var newestReadableAutosave: Pair<File, String>? = null
         for (i in 1..5) {
             val file = File(projectDir, "autosave$i.txt")
-            if (file.exists()) {
+            if (file.isFile) {
                 val text = runCatching { file.readText() }.getOrNull()
-                if (text != null) return text
+                if (text != null) {
+                    newestReadableAutosave = file to text
+                    break
+                }
             }
         }
-        // An older manual save is still preferable to losing all text when
-        // every autosave is unreadable.
-        return runCatching { manualFile.readText() }.getOrDefault("")
+        val manualText = manualFile.takeIf { it.isFile }
+            ?.let { runCatching { it.readText() }.getOrNull() }
+        return when {
+            manualText != null &&
+                (newestReadableAutosave == null ||
+                    manualFile.lastModified() >= newestReadableAutosave.first.lastModified()) -> manualText
+            newestReadableAutosave != null -> newestReadableAutosave.second
+            else -> manualText ?: ""
+        }
     }
 
     /**
@@ -167,7 +166,11 @@ object ProjectStorage {
             for (i in keepCount downTo 2) {
                 val src = File(projectDir, "autosave${i - 1}.txt")
                 val dst = File(projectDir, "autosave$i.txt")
-                if (src.exists()) src.copyTo(dst, overwrite = true)
+                if (src.exists()) {
+                    src.copyTo(dst, overwrite = true)
+                    // Recovery compares snapshots by age when autosave1 is lost.
+                    dst.setLastModified(src.lastModified())
+                }
             }
 
             writeTextSafely(newest, content)
