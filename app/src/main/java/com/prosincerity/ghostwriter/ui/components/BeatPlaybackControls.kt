@@ -42,7 +42,7 @@ internal fun BeatPlaybackControls(
 ) {
     var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
     var volumeBeforeMute by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
-    var isMuted by remember(beatPlayer) { mutableStateOf(beatPlayer.volume == 0f) }
+    val isMuted = volume == 0f
     var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -93,12 +93,10 @@ internal fun BeatPlaybackControls(
                     if (isMuted) {
                         beatPlayer.setVolume(volumeBeforeMute.takeIf { it > 0f } ?: 1f)
                         volume = beatPlayer.volume
-                        isMuted = false
                     } else {
                         if (volume > 0f) volumeBeforeMute = volume
                         beatPlayer.setVolume(0f)
                         volume = 0f
-                        isMuted = true
                     }
                 },
                 modifier = Modifier.size(32.dp),
@@ -118,7 +116,6 @@ internal fun BeatPlaybackControls(
                     beatPlayer.setVolume(newVolume)
                     volume = beatPlayer.volume
                     if (volume > 0f) volumeBeforeMute = volume
-                    isMuted = volume == 0f
                 },
                 valueRange = 0f..1f,
                 modifier = Modifier

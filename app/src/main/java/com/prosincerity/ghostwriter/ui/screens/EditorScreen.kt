@@ -156,12 +156,14 @@ fun EditorScreen(
                     ProjectStorage.saveMetadata(projectDir, updatedMetadata)
                 }
             }
+            // Compose test scopes can resume off the UI thread after IO.
             withContext(Dispatchers.Main.immediate) {
-                if (saved == true && revision == projectMutationRevision.get()) {
+                if (revision != projectMutationRevision.get()) return@withContext
+                if (saved) {
                     successMessage?.let { message ->
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     }
-                } else if (saved == false && revision == projectMutationRevision.get()) {
+                } else {
                     metadata = withContext(Dispatchers.IO) {
                         ProjectStorage.loadMetadata(projectDir, projectTitle)
                     }
@@ -237,10 +239,10 @@ fun EditorScreen(
                 val durationMs = withContext(Dispatchers.IO) {
                     WaveformExtractor.durationMs(currentBeat)
                 }
-                if (shouldWarnBeforeWaveformExtraction(durationMs)) {
+                if (durationMs != null && shouldWarnBeforeWaveformExtraction(durationMs)) {
                     pendingLongBeatPreparation = PendingBeatPreparation(
                         file = currentBeat,
-                        durationMs = durationMs!!,
+                        durationMs = durationMs,
                         removeBeatOnCancel = isImportedBeatPreparation,
                     )
                     return@LaunchedEffect
@@ -254,7 +256,7 @@ fun EditorScreen(
                     shouldCancel = cancellation::get,
                 )
             }
-            if (cancellation.get()) throw java.util.concurrent.CancellationException()
+            if (cancellation.get()) throw CancellationException()
             if (waveformAmplitudes.isEmpty()) {
                 waveformPreparationFailed = true
                 autoPlayWhenWaveformReady = false
@@ -269,7 +271,7 @@ fun EditorScreen(
             if (!isBeatReady) {
                 Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
             }
-        } catch (cancellation: java.util.concurrent.CancellationException) {
+        } catch (cancellation: CancellationException) {
             if (!cancellationRequested) throw cancellation
             if (beatFile == currentBeat) {
                 if (removeBeatOnCancellation) {
