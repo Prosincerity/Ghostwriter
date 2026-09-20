@@ -107,6 +107,9 @@ object WaveformExtractor {
         return bucketIndex.coerceIn(0L, bucketCount.toLong() - 1L).toInt()
     }
 
+    internal fun pcm8Amplitude(sample: Byte): Int =
+        abs((sample.toInt() and 0xFF) - 128) * 256
+
     private fun decodePeakBuckets(
         file: File,
         targetSampleCount: Int,
@@ -248,7 +251,7 @@ object WaveformExtractor {
             var framePeak = 0
             repeat(channelCount) {
                 val amplitude = when (pcmEncoding) {
-                    AudioFormat.ENCODING_PCM_8BIT -> abs((readable.get().toInt() and 0xFF) - 128) * 257
+                    AudioFormat.ENCODING_PCM_8BIT -> pcm8Amplitude(readable.get())
                     AudioFormat.ENCODING_PCM_FLOAT -> {
                         (abs(readable.float).coerceAtMost(1f) * 32_767f).toInt()
                     }

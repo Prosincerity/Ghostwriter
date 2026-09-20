@@ -48,6 +48,13 @@ class WaveformExtractorTest {
     }
 
     @Test
+    fun pcm8Amplitude_staysWithinTheCachedWaveformRange() {
+        assertEquals(32_768, WaveformExtractor.pcm8Amplitude(0x00))
+        assertEquals(0, WaveformExtractor.pcm8Amplitude(0x80.toByte()))
+        assertEquals(32_512, WaveformExtractor.pcm8Amplitude(0xFF.toByte()))
+    }
+
+    @Test
     fun extractAmplitudes_returnsEmptyForMissingFile() {
         val missing = File(tempFolder.root, "missing.wav")
 
