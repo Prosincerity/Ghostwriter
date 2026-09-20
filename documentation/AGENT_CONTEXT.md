@@ -73,6 +73,7 @@ Ghostwriter/
 │       │       ├── data/
 │       │       │   ├── Settings.kt         ← SharedPreferences wrapper
 │       │       │   ├── ProjectMetadata.kt  ← metadata schema and waveform markers
+│       │       │   ├── ProjectLyricsStorage.kt ← manual saves and autosave backups
 │       │       │   ├── ProjectStorage.kt   ← project layout, autosaves, metadata, beat assignment
 │       │       │   ├── StagedFileWriter.kt ← temporary-file replacement for project writes
 │       │       │   └── WaveformCache.kt    ← waveform cache format and validation
@@ -161,6 +162,8 @@ Walking through what each file does:
   file before replacement. Storage mutations are synchronized to prevent
   overlapping operations from interleaving; manual and metadata saves return
   success flags used by the editor's feedback.
+  `ProjectLyricsStorage` handles manual lyric snapshots and backup rotation;
+  its public entry points remain synchronized through `ProjectStorage`.
   `StagedFileWriter` handles temporary-file replacement. `WaveformCache` owns
   cache serialization and validation; `ProjectStorage` coordinates cache
   invalidation with beat changes while extraction runs outside the storage lock.
@@ -320,7 +323,7 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Tests** — 113 JVM tests cover storage, atomic replacement, waveform cache
+- **Tests** — 111 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
   compatibility, player state, warning thresholds, and formatting. Thirty-seven
   Android instrumented tests cover key Compose screens, dialogs, real AOSP

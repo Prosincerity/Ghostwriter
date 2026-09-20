@@ -75,24 +75,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "settings",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt",
       "source_location": "L12"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_pendingbeatpreparation",
-      "label": "PendingBeatPreparation",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "pendingbeatpreparation",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
-      "source_location": "L68"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_ui_settingsformattest_settingsformattest",
@@ -101,37 +88,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "settingsformattest",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt",
       "source_location": "L10"
-    },
-    {
-      "id": "app_src_test_java_com_prosincerity_ghostwriter_ui_waveformwarningtest_waveformwarningtest",
-      "label": "WaveformWarningTest",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "waveformwarningtest",
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
-      "source_location": "L8"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest",
-      "label": "WaveformExtractorInstrumentedTest",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "waveformextractorinstrumentedtest",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L17"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest_beatplayerinstrumentedtest",
@@ -225,6 +186,32 @@
       "source_location": "L8"
     },
     {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_pendingbeatpreparation",
+      "label": "PendingBeatPreparation",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "pendingbeatpreparation",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
+      "source_location": "L68"
+    },
+    {
+      "id": "app_src_test_java_com_prosincerity_ghostwriter_ui_waveformwarningtest_waveformwarningtest",
+      "label": "WaveformWarningTest",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "waveformwarningtest",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
+      "source_location": "L8"
+    },
+    {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_screens_editorscreentest_editorscreentest",
       "label": "EditorScreenTest",
       "_callable": true,
@@ -261,6 +248,32 @@
       "file_type": "code",
       "norm_label": "waveformcache",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/WaveformCache.kt",
+      "source_location": "L6"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest",
+      "label": "WaveformExtractorInstrumentedTest",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "WaveformExtractorInstrumentedTest",
+      "file_type": "code",
+      "norm_label": "waveformextractorinstrumentedtest",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L17"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage",
+      "label": "ProjectLyricsStorage",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "ProjectLyricsStorage",
+      "file_type": "code",
+      "norm_label": "projectlyricsstorage",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
       "source_location": "L6"
     },
     {
@@ -817,7 +830,7 @@
       "file_type": "code",
       "norm_label": ".assignbeattoproject()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L342"
+      "source_location": "L290"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_deleteproject",
@@ -853,7 +866,7 @@
       "file_type": "code",
       "norm_label": ".getprojectbeatfile()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L324"
+      "source_location": "L272"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_invalidatewaveformcache",
@@ -865,7 +878,7 @@
       "file_type": "code",
       "norm_label": ".invalidatewaveformcache()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L234"
+      "source_location": "L182"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_isprojectbeatfile",
@@ -877,7 +890,7 @@
       "file_type": "code",
       "norm_label": ".isprojectbeatfile()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L420"
+      "source_location": "L368"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_issupportedaudiofile",
@@ -889,7 +902,7 @@
       "file_type": "code",
       "norm_label": ".issupportedaudiofile()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L417"
+      "source_location": "L365"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_listprojects",
@@ -913,7 +926,7 @@
       "file_type": "code",
       "norm_label": ".loadcachedwaveform()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L223"
+      "source_location": "L171"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_loadlatest",
@@ -937,7 +950,7 @@
       "file_type": "code",
       "norm_label": ".loadmetadata()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L293"
+      "source_location": "L241"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_loadorextractwaveform",
@@ -949,7 +962,7 @@
       "file_type": "code",
       "norm_label": ".loadorextractwaveform()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L242"
+      "source_location": "L190"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_metadatafile",
@@ -961,7 +974,7 @@
       "file_type": "code",
       "norm_label": ".metadatafile()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L211"
+      "source_location": "L159"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_projectdir",
@@ -985,7 +998,7 @@
       "file_type": "code",
       "norm_label": ".removebeatfromproject()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L402"
+      "source_location": "L350"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_renameproject",
@@ -1021,7 +1034,7 @@
       "file_type": "code",
       "norm_label": ".resolveprojecttitle()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L206"
+      "source_location": "L154"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_rootdir",
@@ -1045,7 +1058,7 @@
       "file_type": "code",
       "norm_label": ".rotateandsave()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L152"
+      "source_location": "L122"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_sanitizetitle",
@@ -1057,7 +1070,7 @@
       "file_type": "code",
       "norm_label": ".sanitizetitle()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L178"
+      "source_location": "L126"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_savecachedwaveform",
@@ -1069,7 +1082,7 @@
       "file_type": "code",
       "norm_label": ".savecachedwaveform()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L226"
+      "source_location": "L174"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_savemanual",
@@ -1081,7 +1094,7 @@
       "file_type": "code",
       "norm_label": ".savemanual()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L137"
+      "source_location": "L112"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_savemetadata",
@@ -1093,7 +1106,7 @@
       "file_type": "code",
       "norm_label": ".savemetadata()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L305"
+      "source_location": "L253"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_throwifwaveformcancelled",
@@ -1105,7 +1118,7 @@
       "file_type": "code",
       "norm_label": ".throwifwaveformcancelled()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L289"
+      "source_location": "L237"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_truncatetoutf8bytes",
@@ -1117,7 +1130,7 @@
       "file_type": "code",
       "norm_label": ".truncatetoutf8bytes()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L187"
+      "source_location": "L135"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_waveformcachefile",
@@ -1129,7 +1142,7 @@
       "file_type": "code",
       "norm_label": ".waveformcachefile()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L215"
+      "source_location": "L163"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_clampstimestampstothewaveformbounds",
@@ -1281,7 +1294,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".getautosavecount()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt",
@@ -1293,7 +1306,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".getautosaveintervalseconds()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt",
@@ -1305,7 +1318,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".prefs()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt",
@@ -1317,7 +1330,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".setautosavecount()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt",
@@ -1329,59 +1342,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".setautosaveintervalseconds()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt",
       "source_location": "L32"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_longbeatwarningdialog",
-      "label": "LongBeatWarningDialog()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "longbeatwarningdialog()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
-      "source_location": "L42"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_reassignbeatdialog",
-      "label": "ReassignBeatDialog()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "reassignbeatdialog()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
-      "source_location": "L19"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_waveformmarkerdialog",
-      "label": "WaveformMarkerDialog()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "waveformmarkerdialog()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
-      "source_location": "L69"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_lyricsnotepad_lyricsnotepad",
-      "label": "LyricsNotepad()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "lyricsnotepad()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepad.kt",
-      "source_location": "L20"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_playbacktime_formatplaybacktime",
@@ -1389,59 +1354,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "formatplaybacktime()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt",
       "source_location": "L3"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs_editormarkerdialogs",
-      "label": "EditorMarkerDialogs()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "editormarkerdialogs()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
-      "source_location": "L8"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_displaynamefor",
-      "label": "displayNameFor()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "displaynamefor()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
-      "source_location": "L577"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_editorscreen",
-      "label": "EditorScreen()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "editorscreen()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
-      "source_location": "L82"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_shouldwarnbeforewaveformextraction",
-      "label": "shouldWarnBeforeWaveformExtraction()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "shouldwarnbeforewaveformextraction()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
-      "source_location": "L574"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_settingsscreen_formatinterval",
@@ -1449,7 +1366,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "formatinterval()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt",
@@ -1461,7 +1378,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".formatinterval_exactminutes()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt",
@@ -1473,7 +1390,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".formatinterval_secondsunderoneminute()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt",
@@ -1485,7 +1402,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".formatplaybacktime_displaysminutesandpaddedseconds()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt",
@@ -1497,95 +1414,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": ".settingsconstants_arevalid()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt",
       "source_location": "L34"
-    },
-    {
-      "id": "app_src_test_java_com_prosincerity_ghostwriter_ui_waveformwarningtest_waveformwarningtest_warningstartsatfiveminutes",
-      "label": ".warningStartsAtFiveMinutes()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": ".warningstartsatfiveminutes()",
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
-      "source_location": "L10"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_cancellationafterdecodersetup_ispropagatedandreleasesresources",
-      "label": ".cancellationAfterDecoderSetup_isPropagatedAndReleasesResources()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".cancellationafterdecodersetup_ispropagatedandreleasesresources()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L51"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_corruptaudio_returnsnodurationorwaveform",
-      "label": ".corruptAudio_returnsNoDurationOrWaveform()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".corruptaudio_returnsnodurationorwaveform()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L41"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_createpcm16wav",
-      "label": ".createPcm16Wav()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".createpcm16wav()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L67"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_deletegeneratedaudio",
-      "label": ".deleteGeneratedAudio()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".deletegeneratedaudio()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L22"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_generatedfile",
-      "label": ".generatedFile()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".generatedfile()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L97"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_pcmwav_reportsdurationandproducesboundedpeakbuckets",
-      "label": ".pcmWav_reportsDurationAndProducesBoundedPeakBuckets()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".pcmwav_reportsdurationandproducesboundedpeakbuckets()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L28"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest_beatplayerinstrumentedtest_createpcm16wav",
@@ -1864,6 +1697,30 @@
       "source_location": "L29"
     },
     {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_waveformmarkerdialog",
+      "label": "WaveformMarkerDialog()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "ProjectMetadata",
+      "file_type": "code",
+      "norm_label": "waveformmarkerdialog()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
+      "source_location": "L69"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs_editormarkerdialogs",
+      "label": "EditorMarkerDialogs()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "ProjectMetadata",
+      "file_type": "code",
+      "norm_label": "editormarkerdialogs()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
+      "source_location": "L8"
+    },
+    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_projectinfodialog_parsepositivebpm",
       "label": "parsePositiveBpm()",
       "_callable": true,
@@ -2089,6 +1946,90 @@
       "file_type": "code",
       "norm_label": ".bpmparsing_acceptspositivevaluesandrejectsinvalidones()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/ProjectInfoBpmTest.kt",
+      "source_location": "L10"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_longbeatwarningdialog",
+      "label": "LongBeatWarningDialog()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "longbeatwarningdialog()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
+      "source_location": "L42"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_reassignbeatdialog",
+      "label": "ReassignBeatDialog()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "reassignbeatdialog()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
+      "source_location": "L19"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_lyricsnotepad_lyricsnotepad",
+      "label": "LyricsNotepad()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "lyricsnotepad()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepad.kt",
+      "source_location": "L20"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_displaynamefor",
+      "label": "displayNameFor()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "displaynamefor()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
+      "source_location": "L577"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_editorscreen",
+      "label": "EditorScreen()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "editorscreen()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
+      "source_location": "L82"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_shouldwarnbeforewaveformextraction",
+      "label": "shouldWarnBeforeWaveformExtraction()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "shouldwarnbeforewaveformextraction()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
+      "source_location": "L574"
+    },
+    {
+      "id": "app_src_test_java_com_prosincerity_ghostwriter_ui_waveformwarningtest_waveformwarningtest_warningstartsatfiveminutes",
+      "label": ".warningStartsAtFiveMinutes()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": ".warningstartsatfiveminutes()",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
       "source_location": "L10"
     },
     {
@@ -2438,6 +2379,114 @@
       "norm_label": ".save()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/WaveformCache.kt",
       "source_location": "L37"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_cancellationafterdecodersetup_ispropagatedandreleasesresources",
+      "label": ".cancellationAfterDecoderSetup_isPropagatedAndReleasesResources()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "WaveformExtractorInstrumentedTest",
+      "file_type": "code",
+      "norm_label": ".cancellationafterdecodersetup_ispropagatedandreleasesresources()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L51"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_corruptaudio_returnsnodurationorwaveform",
+      "label": ".corruptAudio_returnsNoDurationOrWaveform()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "WaveformExtractorInstrumentedTest",
+      "file_type": "code",
+      "norm_label": ".corruptaudio_returnsnodurationorwaveform()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L41"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_createpcm16wav",
+      "label": ".createPcm16Wav()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "WaveformExtractorInstrumentedTest",
+      "file_type": "code",
+      "norm_label": ".createpcm16wav()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L67"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_deletegeneratedaudio",
+      "label": ".deleteGeneratedAudio()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "WaveformExtractorInstrumentedTest",
+      "file_type": "code",
+      "norm_label": ".deletegeneratedaudio()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L22"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_generatedfile",
+      "label": ".generatedFile()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "WaveformExtractorInstrumentedTest",
+      "file_type": "code",
+      "norm_label": ".generatedfile()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L97"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_pcmwav_reportsdurationandproducesboundedpeakbuckets",
+      "label": ".pcmWav_reportsDurationAndProducesBoundedPeakBuckets()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 34,
+      "community_name": "WaveformExtractorInstrumentedTest",
+      "file_type": "code",
+      "norm_label": ".pcmwav_reportsdurationandproducesboundedpeakbuckets()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L28"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_loadlatest",
+      "label": ".loadLatest()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "ProjectLyricsStorage",
+      "file_type": "code",
+      "norm_label": ".loadlatest()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L8"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_rotateandsave",
+      "label": ".rotateAndSave()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "ProjectLyricsStorage",
+      "file_type": "code",
+      "norm_label": ".rotateandsave()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L39"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_savemanual",
+      "label": ".saveManual()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "ProjectLyricsStorage",
+      "file_type": "code",
+      "norm_label": ".savemanual()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L32"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_data_projectstoragetest_projectstoragetest_deleteprojectdirectory_removesallprojectcontents",
@@ -4252,7 +4301,7 @@
       "node_kind": "heading",
       "norm_label": "5. what's actually built right now",
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L113"
+      "source_location": "L114"
     },
     {
       "id": "documentation_agent_context_6_deliberate_architectural_decisions_please_don_t_silently_reverse_these",
@@ -4264,7 +4313,7 @@
       "node_kind": "heading",
       "norm_label": "6. deliberate architectural decisions \u2014 please don't silently reverse these",
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L343"
+      "source_location": "L346"
     },
     {
       "id": "documentation_agent_context_7_known_technical_debt_not_yet_addressed_tracked_but_not_urgent",
@@ -4276,7 +4325,7 @@
       "node_kind": "heading",
       "norm_label": "7. known technical debt (not yet addressed, tracked, but not urgent)",
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L367"
+      "source_location": "L370"
     },
     {
       "id": "documentation_agent_context_project_handoff_ghostwriter",
@@ -4703,7 +4752,7 @@
       "label": "Settings.kt",
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "settings.kt",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt",
@@ -4714,42 +4763,9 @@
       "label": "Context",
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "context",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs",
-      "label": "BeatDialogs.kt",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "beatdialogs.kt",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_lyricsnotepad",
-      "label": "LyricsNotepad.kt",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "lyricsnotepad.kt",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepad.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_lyricsnotepad_kt_modifier",
-      "label": "Modifier",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "modifier",
       "source_file": "",
       "source_location": ""
     },
@@ -4758,54 +4774,10 @@
       "label": "PlaybackTime.kt",
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "playbacktime.kt",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs",
-      "label": "EditorMarkerDialogs.kt",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "editormarkerdialogs.kt",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen",
-      "label": "EditorScreen.kt",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "editorscreen.kt",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_kt_context",
-      "label": "Context",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "context",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_theme_color",
-      "label": "Color.kt",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "color.kt",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt",
       "source_location": "L1"
     },
     {
@@ -4813,66 +4785,11 @@
       "label": "SettingsFormatTest.kt",
       "_origin": "ast",
       "community": 19,
-      "community_name": "EditorScreen.kt",
+      "community_name": "Settings",
       "file_type": "code",
       "norm_label": "settingsformattest.kt",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt",
       "source_location": "L1"
-    },
-    {
-      "id": "app_src_test_java_com_prosincerity_ghostwriter_ui_waveformwarningtest",
-      "label": "WaveformWarningTest.kt",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "waveformwarningtest.kt",
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "uri",
-      "label": "Uri",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "uri",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest",
-      "label": "WaveformExtractorInstrumentedTest.kt",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "waveformextractorinstrumentedtest.kt",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest",
-      "label": "BeatPlayerInstrumentedTest.kt",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "beatplayerinstrumentedtest.kt",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "bytebuffer",
-      "label": "ByteBuffer",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "bytebuffer",
-      "source_file": "",
-      "source_location": ""
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_mainactivitytest",
@@ -5400,6 +5317,17 @@
       "source_location": "L1"
     },
     {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs",
+      "label": "EditorMarkerDialogs.kt",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "ProjectMetadata",
+      "file_type": "code",
+      "norm_label": "editormarkerdialogs.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
+      "source_location": "L1"
+    },
+    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_projectinfodialog",
       "label": "ProjectInfoDialog.kt",
       "_origin": "ast",
@@ -5440,6 +5368,94 @@
       "community_name": "ProjectMetadata",
       "file_type": "code",
       "norm_label": "jsonobject",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs",
+      "label": "BeatDialogs.kt",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "beatdialogs.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_lyricsnotepad",
+      "label": "LyricsNotepad.kt",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "lyricsnotepad.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepad.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_lyricsnotepad_kt_modifier",
+      "label": "Modifier",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "modifier",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen",
+      "label": "EditorScreen.kt",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "editorscreen.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_kt_context",
+      "label": "Context",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "context",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_theme_color",
+      "label": "Color.kt",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "color.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_src_test_java_com_prosincerity_ghostwriter_ui_waveformwarningtest",
+      "label": "WaveformWarningTest.kt",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "waveformwarningtest.kt",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "uri",
+      "label": "Uri",
+      "_origin": "ast",
+      "community": 30,
+      "community_name": "EditorScreen.kt",
+      "file_type": "code",
+      "norm_label": "uri",
       "source_file": "",
       "source_location": ""
     },
@@ -5508,6 +5524,17 @@
       "norm_label": "intarray",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage",
+      "label": "ProjectLyricsStorage.kt",
+      "_origin": "ast",
+      "community": 35,
+      "community_name": "ProjectLyricsStorage",
+      "file_type": "code",
+      "norm_label": "projectlyricsstorage.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L1"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_data_projectstoragetest",
@@ -5675,6 +5702,28 @@
       "source_location": ""
     },
     {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest",
+      "label": "WaveformExtractorInstrumentedTest.kt",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "waveformextractorinstrumentedtest.kt",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest",
+      "label": "BeatPlayerInstrumentedTest.kt",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "beatplayerinstrumentedtest.kt",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt",
+      "source_location": "L1"
+    },
+    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor",
       "label": "WaveformExtractor.kt",
       "_origin": "ast",
@@ -5693,6 +5742,17 @@
       "community_name": "WaveformExtractor",
       "file_type": "code",
       "norm_label": "intarray",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "bytebuffer",
+      "label": "ByteBuffer",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "bytebuffer",
       "source_file": "",
       "source_location": ""
     },
@@ -6793,6 +6853,18 @@
       "weight": 1.0
     },
     {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_savemanual",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_rotateandsave",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
       "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectmetadata_projectmetadata_fromjsonobject",
       "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectmetadata_projectmetadata_optionalstring",
       "relation": "calls",
@@ -6885,7 +6957,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L379",
+      "source_location": "L327",
       "weight": 1.0
     },
     {
@@ -6897,7 +6969,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L382",
+      "source_location": "L330",
       "weight": 1.0
     },
     {
@@ -6909,7 +6981,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L384",
+      "source_location": "L332",
       "weight": 1.0
     },
     {
@@ -6957,7 +7029,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L325",
+      "source_location": "L273",
       "weight": 1.0
     },
     {
@@ -6969,7 +7041,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L329",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -6981,7 +7053,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L334",
+      "source_location": "L282",
       "weight": 1.0
     },
     {
@@ -6993,7 +7065,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L421",
+      "source_location": "L369",
       "weight": 1.0
     },
     {
@@ -7017,7 +7089,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L294",
+      "source_location": "L242",
       "weight": 1.0
     },
     {
@@ -7029,7 +7101,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L296",
+      "source_location": "L244",
       "weight": 1.0
     },
     {
@@ -7041,7 +7113,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L268",
+      "source_location": "L216",
       "weight": 1.0
     },
     {
@@ -7053,7 +7125,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L271",
+      "source_location": "L219",
       "weight": 1.0
     },
     {
@@ -7065,7 +7137,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L272",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -7077,7 +7149,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L282",
+      "source_location": "L230",
       "weight": 1.0
     },
     {
@@ -7113,7 +7185,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L404",
+      "source_location": "L352",
       "weight": 1.0
     },
     {
@@ -7125,7 +7197,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L406",
+      "source_location": "L354",
       "weight": 1.0
     },
     {
@@ -7137,7 +7209,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L408",
+      "source_location": "L356",
       "weight": 1.0
     },
     {
@@ -7149,7 +7221,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L414",
+      "source_location": "L362",
       "weight": 1.0
     },
     {
@@ -7221,7 +7293,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L207",
+      "source_location": "L155",
       "weight": 1.0
     },
     {
@@ -7233,7 +7305,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L182",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -7245,19 +7317,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L140",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_savemanual",
-      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_rotateandsave",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "call",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L144",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -7269,7 +7329,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L308",
+      "source_location": "L256",
       "weight": 1.0
     },
     {
@@ -9383,7 +9443,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L324",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -9443,7 +9503,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L226",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -9455,7 +9515,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L305",
+      "source_location": "L253",
       "weight": 1.0
     },
     {
@@ -9755,7 +9815,7 @@
       "confidence_score": 1.0,
       "context": "return_type",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L223",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -9933,6 +9993,17 @@
       "confidence_score": 1.0,
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/ProjectInfoDialogTest.kt",
       "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L6",
       "weight": 1.0
     },
     {
@@ -11109,7 +11180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L113",
+      "source_location": "L114",
       "weight": 1.0
     },
     {
@@ -11142,7 +11213,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L343",
+      "source_location": "L346",
       "weight": 1.0
     },
     {
@@ -11153,7 +11224,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L367",
+      "source_location": "L370",
       "weight": 1.0
     },
     {
@@ -12180,6 +12251,39 @@
       "weight": 1.0
     },
     {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_savemanual",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_rotateandsave",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectlyricsstorage_projectlyricsstorage_loadlatest",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
       "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectmetadata_projectmetadata",
       "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectmetadata_projectmetadata_tojsonobject",
       "relation": "method",
@@ -12220,7 +12324,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L137",
+      "source_location": "L112",
       "weight": 1.0
     },
     {
@@ -12231,7 +12335,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L152",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -12242,7 +12346,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L178",
+      "source_location": "L126",
       "weight": 1.0
     },
     {
@@ -12253,7 +12357,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L187",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -12264,7 +12368,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L206",
+      "source_location": "L154",
       "weight": 1.0
     },
     {
@@ -12275,7 +12379,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L211",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -12286,7 +12390,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L215",
+      "source_location": "L163",
       "weight": 1.0
     },
     {
@@ -12297,7 +12401,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L223",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -12308,7 +12412,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L226",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -12319,7 +12423,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L234",
+      "source_location": "L182",
       "weight": 1.0
     },
     {
@@ -12330,7 +12434,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L257",
+      "source_location": "L205",
       "weight": 1.0
     },
     {
@@ -12341,7 +12445,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L289",
+      "source_location": "L237",
       "weight": 1.0
     },
     {
@@ -12352,7 +12456,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L293",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -12363,7 +12467,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L305",
+      "source_location": "L253",
       "weight": 1.0
     },
     {
@@ -12374,7 +12478,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L324",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -12385,7 +12489,40 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L355",
+      "source_location": "L303",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_removebeatfromproject",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
+      "source_location": "L350",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_issupportedaudiofile",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
+      "source_location": "L365",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_isprojectbeatfile",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
+      "source_location": "L368",
       "weight": 1.0
     },
     {
@@ -12408,39 +12545,6 @@
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
       "source_location": "L40",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage",
-      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_removebeatfromproject",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L402",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage",
-      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_issupportedaudiofile",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L417",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage",
-      "target": "app_src_main_java_com_prosincerity_ghostwriter_data_projectstorage_projectstorage_isprojectbeatfile",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt",
-      "source_location": "L420",
       "weight": 1.0
     },
     {
@@ -14145,7 +14249,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L333",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -14156,7 +14260,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "documentation/AGENT_CONTEXT.md",
-      "source_location": "L391",
+      "source_location": "L394",
       "weight": 1.0
     },
     {
@@ -15316,5 +15420,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "0ee4782a86c4f3a4eba97c1299630d1af8459f17"
+  "built_at_commit": "7b55d6b4838e32a3aa35db67bf12f733233d12c3"
 }
