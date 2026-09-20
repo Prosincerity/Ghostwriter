@@ -508,7 +508,7 @@ object ProjectStorage {
     }
 
     private fun File.isSupportedAudioFile(): Boolean =
-        isFile && extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
+        isFile && length() > 0L && extension.lowercase() in SUPPORTED_AUDIO_EXTENSIONS
 
     private fun File.isProjectBeatFile(): Boolean =
         nameWithoutExtension == "beat" && isSupportedAudioFile()
