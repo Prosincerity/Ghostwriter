@@ -312,9 +312,9 @@ Walking through what each file does:
   `configChanges` unless you're also adding a proper `Saver` for the
   navigation sealed class.
 
-- **Tests** — 112 JVM tests cover storage, atomic replacement, waveform cache
+- **Tests** — 113 JVM tests cover storage, atomic replacement, waveform cache
   validation/cancellation, extraction math, viewport math, metadata and marker
-  compatibility, player state, warning thresholds, and formatting. Thirty-six
+  compatibility, player state, warning thresholds, and formatting. Thirty-seven
   Android instrumented tests cover key Compose screens, dialogs, real AOSP
   player loading and controls, waveform decoding, the lyrics editing surface,
   Home and Editor behavior, persistence, and activity-level navigation.

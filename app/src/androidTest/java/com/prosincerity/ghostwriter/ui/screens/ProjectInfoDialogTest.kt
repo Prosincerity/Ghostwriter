@@ -1,10 +1,13 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
@@ -56,5 +59,31 @@ class ProjectInfoDialogTest {
             assertEquals(original.createdAt, result.createdAt)
             assertTrue(result.markers.isEmpty())
         }
+    }
+
+    @Test
+    fun save_rejectsZeroAndOverflowBpmInsteadOfClearingTheExistingValue() {
+        var saved: ProjectMetadata? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                ProjectInfoDialog(
+                    metadata = ProjectMetadata(title = "Track", bpm = 80),
+                    onDismiss = {},
+                    onSave = { saved = it },
+                )
+            }
+        }
+
+        val bpmField = composeRule.onNodeWithText("BPM (optional)")
+        for (invalidBpm in listOf("0", "99999999999999999999")) {
+            bpmField.performTextReplacement(invalidBpm)
+            composeRule.onNodeWithText("Enter a positive BPM").assertExists()
+            composeRule.onNodeWithText("Save").assertIsNotEnabled()
+            composeRule.runOnIdle { assertNull(saved) }
+        }
+
+        bpmField.performTextReplacement("90")
+        composeRule.onNodeWithText("Save").assertIsEnabled().performClick()
+        composeRule.runOnIdle { assertEquals(90, saved?.bpm) }
     }
 }
