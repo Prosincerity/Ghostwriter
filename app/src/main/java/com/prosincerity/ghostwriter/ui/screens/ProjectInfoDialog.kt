@@ -35,6 +35,8 @@ fun ProjectInfoDialog(
     var editKey by remember(metadata) { mutableStateOf(metadata.key ?: "") }
     var editTimeSignature by remember(metadata) { mutableStateOf(metadata.timeSignature ?: "") }
     var editNotes by remember(metadata) { mutableStateOf(metadata.notes ?: "") }
+    val parsedBpm = parsePositiveBpm(editBpm)
+    val invalidBpm = editBpm.isNotBlank() && parsedBpm == null
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -73,6 +75,10 @@ fun ProjectInfoDialog(
                     },
                     label = { Text("BPM (optional)") },
                     placeholder = { Text("e.g. 90") },
+                    isError = invalidBpm,
+                    supportingText = if (invalidBpm) {
+                        { Text("Enter a positive BPM") }
+                    } else null,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -117,13 +123,14 @@ fun ProjectInfoDialog(
             TextButton(
                 onClick = {
                     val updated = metadata.copy(
-                        bpm = editBpm.trim().toIntOrNull(),
+                        bpm = parsedBpm,
                         key = editKey.trimmedOrNull(),
                         timeSignature = editTimeSignature.trimmedOrNull(),
                         notes = editNotes.trimmedOrNull(),
                     )
                     onSave(updated)
-                }
+                },
+                enabled = !invalidBpm,
             ) {
                 Text("Save")
             }
@@ -137,3 +144,6 @@ fun ProjectInfoDialog(
 }
 
 private fun String.trimmedOrNull(): String? = trim().ifBlank { null }
+
+internal fun parsePositiveBpm(input: String): Int? =
+    input.toIntOrNull()?.takeIf { it > 0 }

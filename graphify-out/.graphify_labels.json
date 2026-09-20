@@ -5,7 +5,7 @@
   "3": "ProjectStorageBeatTest",
   "4": "ProjectStorageTest",
   "5": "WaveformViewport",
-  "6": "Settings",
+  "6": "ProjectInfoDialog",
   "7": "GhostwriterTheme",
   "8": "WaveformExtractor",
   "9": "MainActivity.kt",
@@ -29,5 +29,6 @@
   "27": "graphify reference: GitHub clone and cross-repo merge",
   "28": "graphify reference: transcribe video and audio",
   "29": "extraction-spec.md",
+  "30": "WaveformExtractorInstrumentedTest",
   "31": "EditorScreenTest"
 }

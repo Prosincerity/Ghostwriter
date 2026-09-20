@@ -78,9 +78,9 @@
     "semantic_hash": "d57be269b5e6783bd8650406446a7199"
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/ProjectInfoDialog.kt": {
-    "mtime": 1789211420.7431269,
-    "seen": 1789212798.1952643,
-    "ast_hash": "7e35f4171dff52cda031272ef1f65c81",
+    "mtime": 1789922245.894196,
+    "seen": 1789922255.219844,
+    "ast_hash": "e9bc60be5cf84d0b5111b22374cc52bb",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "documentation/AGENT_CONTEXT.md": {
-    "mtime": 1789922005.4172192,
-    "seen": 1789922036.5770237,
-    "ast_hash": "beb429df2f8fc86d8d19c3e593b36b04",
+    "mtime": 1789922246.7091858,
+    "seen": 1789922255.2199614,
+    "ast_hash": "cb2e03988931233cc390288073bd0b15",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
@@ -384,9 +384,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/ProjectInfoDialogTest.kt": {
-    "mtime": 1789211420.737663,
-    "seen": 1789212798.1952267,
-    "ast_hash": "2e2282415dc89bd97e3a6da187030cee",
+    "mtime": 1789922167.942176,
+    "seen": 1789922215.9852192,
+    "ast_hash": "262a03100788c0cf6012d2d2aba9a013",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/AboutScreenTest.kt": {
@@ -447,6 +447,12 @@
     "mtime": 1789755533.5846314,
     "seen": 1789755565.805644,
     "ast_hash": "c5c326ede753822be563f84e6eeaffac",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/ui/ProjectInfoBpmTest.kt": {
+    "mtime": 1789922246.297191,
+    "seen": 1789922255.2198775,
+    "ast_hash": "7a4856600216091e418275436445c521",
     "semantic_hash": ""
   }
 }
