@@ -1,16 +1,16 @@
 # Graph Report - Gh0stwrit3r  (2026-09-20)
 
 ## Corpus Check
-- 65 files · ~54,181 words
+- 65 files · ~54,224 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 492 nodes · 818 edges · 34 communities (19 shown, 11 thin omitted)
+- 494 nodes · 823 edges · 34 communities (18 shown, 12 thin omitted)
 - Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 88 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `86a83482`
+- Built from commit: `bcae6cb1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -56,7 +56,7 @@
 7. `ProjectMetadata` - 23 edges
 8. `BeatPlayerTest` - 20 edges
 9. `BeatPlayerPanel()` - 19 edges
-10. `EditorScreen()` - 16 edges
+10. `WaveformExtractor` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `BeatPlayerPanel()` --calls--> `BeatPlaybackControls()`  [INFERRED]
@@ -73,7 +73,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (34 total, 11 thin omitted)
+## Communities (34 total, 12 thin omitted)
 
 ### Community 0 - "BeatPlayer"
 Cohesion: 0.10
@@ -82,10 +82,6 @@ Nodes (4): BeatPlayer, BeatPlaybackControls(), BeatPlayerTest, MediaPlayer
 ### Community 1 - "ProjectStorage"
 Cohesion: 0.14
 Nodes (3): Context, IntArray, ProjectStorage
-
-### Community 2 - "BeatPlayerInstrumentedTest"
-Cohesion: 0.17
-Nodes (3): WaveformExtractorInstrumentedTest, BeatPlayerInstrumentedTest, ByteBuffer
 
 ### Community 3 - "ProjectMetadata"
 Cohesion: 0.10
@@ -100,8 +96,8 @@ Cohesion: 0.13
 Nodes (10): BeatComponentsTest, LyricsNotepadTest, HomeScreenTest, BeatPlayerPanel(), CenteredPlayerContent(), IntArray, Modifier, WaveformZoomButton() (+2 more)
 
 ### Community 8 - "WaveformExtractor"
-Cohesion: 0.25
-Nodes (5): DecoderProgressGuard, IntArray, WaveformExtractor, MediaCodec, MediaFormat
+Cohesion: 0.13
+Nodes (7): WaveformExtractorInstrumentedTest, DecoderProgressGuard, IntArray, WaveformExtractor, ByteBuffer, MediaCodec, MediaFormat
 
 ### Community 9 - "MainActivity.kt"
 Cohesion: 0.11
@@ -154,17 +150,17 @@ Nodes (3): EditorScreenTest, IntArray, MutableState
 ## Knowledge Gaps
 - **76 isolated node(s):** `Home`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)`, `Step 1 - Ensure graphify is installed` (+71 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 165 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `BeatPlayer` connect `BeatPlayer` to `BeatPlayerInstrumentedTest`, `EditorScreen.kt`, `GhostwriterTheme`?**
-  _High betweenness centrality (0.142) - this node is a cross-community bridge._
 - **Why does `ProjectMetadata` connect `ProjectMetadata` to `ProjectStorage`, `EditorScreen.kt`?**
-  _High betweenness centrality (0.137) - this node is a cross-community bridge._
+  _High betweenness centrality (0.135) - this node is a cross-community bridge._
+- **Why does `BeatPlayer` connect `BeatPlayer` to `BeatPlayerInstrumentedTest`, `EditorScreen.kt`, `GhostwriterTheme`?**
+  _High betweenness centrality (0.126) - this node is a cross-community bridge._
 - **Why does `ProjectStorage` connect `ProjectStorage` to `MainActivity.kt`, `EditorScreen.kt`, `MainActivityTest`, `EditorScreenTest`?**
-  _High betweenness centrality (0.108) - this node is a cross-community bridge._
+  _High betweenness centrality (0.111) - this node is a cross-community bridge._
 - **Are the 19 inferred relationships involving `BeatPlayer` (e.g. with `.freshPlayer_currentPositionIsZero()` and `.freshPlayer_defaultsLoopingToTrue()`) actually correct?**
   _`BeatPlayer` has 19 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 13 inferred relationships involving `WaveformViewport` (e.g. with `.clamped_shrinkingViewportKeepsScrollWithinTheNewEnd()` and `.panBy_clampsAtTheStartAndEndOfTheTimeline()`) actually correct?**

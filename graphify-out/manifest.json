@@ -42,9 +42,9 @@
     "semantic_hash": "bb36f324d672065e71d61d3dead80ea3"
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt": {
-    "mtime": 1789921630.9649267,
-    "seen": 1789921650.0591862,
-    "ast_hash": "43fcf42840c56feacbdfb82ba677a355",
+    "mtime": 1789924749.3217237,
+    "seen": 1789924803.7952828,
+    "ast_hash": "975988fec546b4234b2751ffa66561c4",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformViewport.kt": {
@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt": {
-    "mtime": 1789921614.2781365,
-    "seen": 1789921650.059233,
-    "ast_hash": "62439e8c2633eee147eb5ae9c977ae23",
+    "mtime": 1789924761.9225652,
+    "seen": 1789924803.7953107,
+    "ast_hash": "72cf0ae48961a87a2c8c39e67220189d",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformViewportTest.kt": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "documentation/AGENT_CONTEXT.md": {
-    "mtime": 1789923451.7970357,
-    "seen": 1789923474.087288,
-    "ast_hash": "62065904ad7976ec3d3af0681e4de185",
+    "mtime": 1789924798.6621034,
+    "seen": 1789924803.795335,
+    "ast_hash": "2a6a07a50b30ce25a1888594bbb29e9c",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {

@@ -53,7 +53,7 @@
       "file_type": "code",
       "norm_label": "waveformextractortest",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L12"
+      "source_location": "L15"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_exampleinstrumentedtest_exampleinstrumentedtest",
@@ -119,19 +119,6 @@
       "norm_label": "waveformwarningtest",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
       "source_location": "L8"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest",
-      "label": "WaveformExtractorInstrumentedTest",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "waveformextractorinstrumentedtest",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L17"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest_beatplayerinstrumentedtest",
@@ -366,6 +353,19 @@
       "norm_label": "homescreentest",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt",
       "source_location": "L19"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest",
+      "label": "WaveformExtractorInstrumentedTest",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "waveformextractorinstrumentedtest",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L17"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_decoderprogressguard",
@@ -1154,7 +1154,7 @@
       "file_type": "code",
       "norm_label": ".bucketindexfortimestamp_clampstimestampstothewaveformbounds()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L25"
+      "source_location": "L28"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_doesnotoverflowforextremecontainermetadata",
@@ -1166,7 +1166,7 @@
       "file_type": "code",
       "norm_label": ".bucketindexfortimestamp_doesnotoverflowforextremecontainermetadata()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L32"
+      "source_location": "L35"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_mapstimestampstoevenbuckets",
@@ -1178,7 +1178,7 @@
       "file_type": "code",
       "norm_label": ".bucketindexfortimestamp_mapstimestampstoevenbuckets()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L17"
+      "source_location": "L20"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_rejectsinvaliddimensions",
@@ -1190,7 +1190,7 @@
       "file_type": "code",
       "norm_label": ".bucketindexfortimestamp_rejectsinvaliddimensions()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L44"
+      "source_location": "L47"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_decoderprogressguard_rejectsastalleddecoder",
@@ -1202,7 +1202,7 @@
       "file_type": "code",
       "norm_label": ".decoderprogressguard_rejectsastalleddecoder()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L95"
+      "source_location": "L122"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_decoderprogressguard_resetsitsstallcountafterprogress",
@@ -1214,7 +1214,7 @@
       "file_type": "code",
       "norm_label": ".decoderprogressguard_resetsitsstallcountafterprogress()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L86"
+      "source_location": "L113"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_rejectsnonpositivetargetsamplecounts",
@@ -1226,7 +1226,7 @@
       "file_type": "code",
       "norm_label": ".extractamplitudes_rejectsnonpositivetargetsamplecounts()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L64"
+      "source_location": "L91"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_returnsemptyforcorruptfilewithoutthrowing",
@@ -1238,7 +1238,7 @@
       "file_type": "code",
       "norm_label": ".extractamplitudes_returnsemptyforcorruptfilewithoutthrowing()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L72"
+      "source_location": "L99"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_returnsemptyformissingfile",
@@ -1250,7 +1250,7 @@
       "file_type": "code",
       "norm_label": ".extractamplitudes_returnsemptyformissingfile()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L57"
+      "source_location": "L84"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_stopsbeforedecodingwhencancellationisrequested",
@@ -1262,7 +1262,7 @@
       "file_type": "code",
       "norm_label": ".extractamplitudes_stopsbeforedecodingwhencancellationisrequested()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L79"
+      "source_location": "L106"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_pcm8amplitude_stayswithinthecachedwaveformrange",
@@ -1274,7 +1274,19 @@
       "file_type": "code",
       "norm_label": ".pcm8amplitude_stayswithinthecachedwaveformrange()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L50"
+      "source_location": "L53"
+    },
+    {
+      "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_pcmamplitude_decodessupportedsampleformats",
+      "label": ".pcmAmplitude_decodesSupportedSampleFormats()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 10,
+      "community_name": "WaveformExtractorTest",
+      "file_type": "code",
+      "norm_label": ".pcmamplitude_decodessupportedsampleformats()",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L60"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_exampleinstrumentedtest_exampleinstrumentedtest_useappcontext",
@@ -1527,78 +1539,6 @@
       "norm_label": ".warningstartsatfiveminutes()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/ui/WaveformWarningTest.kt",
       "source_location": "L10"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_cancellationafterdecodersetup_ispropagatedandreleasesresources",
-      "label": ".cancellationAfterDecoderSetup_isPropagatedAndReleasesResources()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".cancellationafterdecodersetup_ispropagatedandreleasesresources()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L51"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_corruptaudio_returnsnodurationorwaveform",
-      "label": ".corruptAudio_returnsNoDurationOrWaveform()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".corruptaudio_returnsnodurationorwaveform()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L41"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_createpcm16wav",
-      "label": ".createPcm16Wav()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".createpcm16wav()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L67"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_deletegeneratedaudio",
-      "label": ".deleteGeneratedAudio()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".deletegeneratedaudio()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L22"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_generatedfile",
-      "label": ".generatedFile()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".generatedfile()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L97"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_pcmwav_reportsdurationandproducesboundedpeakbuckets",
-      "label": ".pcmWav_reportsDurationAndProducesBoundedPeakBuckets()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": ".pcmwav_reportsdurationandproducesboundedpeakbuckets()",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L28"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest_beatplayerinstrumentedtest_createpcm16wav",
@@ -3437,6 +3377,78 @@
       "source_location": "L47"
     },
     {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_cancellationafterdecodersetup_ispropagatedandreleasesresources",
+      "label": ".cancellationAfterDecoderSetup_isPropagatedAndReleasesResources()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": ".cancellationafterdecodersetup_ispropagatedandreleasesresources()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L51"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_corruptaudio_returnsnodurationorwaveform",
+      "label": ".corruptAudio_returnsNoDurationOrWaveform()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": ".corruptaudio_returnsnodurationorwaveform()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L41"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_createpcm16wav",
+      "label": ".createPcm16Wav()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": ".createpcm16wav()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L67"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_deletegeneratedaudio",
+      "label": ".deleteGeneratedAudio()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": ".deletegeneratedaudio()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L22"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_generatedfile",
+      "label": ".generatedFile()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": ".generatedfile()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L97"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest_waveformextractorinstrumentedtest_pcmwav_reportsdurationandproducesboundedpeakbuckets",
+      "label": ".pcmWav_reportsDurationAndProducesBoundedPeakBuckets()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": ".pcmwav_reportsdurationandproducesboundedpeakbuckets()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L28"
+    },
+    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_decoderprogressguard_record",
       "label": ".record()",
       "_callable": true,
@@ -3567,6 +3579,18 @@
       "norm_label": ".pcm8amplitude()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
       "source_location": "L110"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_pcmamplitude",
+      "label": ".pcmAmplitude()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": ".pcmamplitude()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
+      "source_location": "L267"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_mainactivitytest_mainactivitytest_openexternallink_whenlauncherfails_returnsfalse",
@@ -3824,17 +3848,6 @@
       "norm_label": "intarray",
       "source_file": "",
       "source_location": ""
-    },
-    {
-      "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest",
-      "label": "WaveformExtractorTest.kt",
-      "_origin": "ast",
-      "community": 10,
-      "community_name": "WaveformExtractorTest",
-      "file_type": "code",
-      "norm_label": "waveformextractortest.kt",
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L1"
     },
     {
       "id": "gradlew",
@@ -4915,39 +4928,6 @@
       "source_location": ""
     },
     {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest",
-      "label": "WaveformExtractorInstrumentedTest.kt",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "waveformextractorinstrumentedtest.kt",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest",
-      "label": "BeatPlayerInstrumentedTest.kt",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "beatplayerinstrumentedtest.kt",
-      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "bytebuffer",
-      "label": "ByteBuffer",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "BeatPlayerInstrumentedTest",
-      "file_type": "code",
-      "norm_label": "bytebuffer",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_mainactivitytest",
       "label": "MainActivityTest.kt",
       "_origin": "ast",
@@ -5759,6 +5739,28 @@
       "source_location": ""
     },
     {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_logic_waveformextractorinstrumentedtest",
+      "label": "WaveformExtractorInstrumentedTest.kt",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "waveformextractorinstrumentedtest.kt",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_media_beatplayerinstrumentedtest",
+      "label": "BeatPlayerInstrumentedTest.kt",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "beatplayerinstrumentedtest.kt",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt",
+      "source_location": "L1"
+    },
+    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor",
       "label": "WaveformExtractor.kt",
       "_origin": "ast",
@@ -5777,6 +5779,28 @@
       "community_name": "WaveformExtractor",
       "file_type": "code",
       "norm_label": "intarray",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest",
+      "label": "WaveformExtractorTest.kt",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "waveformextractortest.kt",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "bytebuffer",
+      "label": "ByteBuffer",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "WaveformExtractor",
+      "file_type": "code",
+      "norm_label": "bytebuffer",
       "source_file": "",
       "source_location": ""
     },
@@ -7502,14 +7526,14 @@
     },
     {
       "source": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_appendframepeakstobuckets",
-      "target": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_pcm8amplitude",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_pcmamplitude",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
-      "source_location": "L254",
+      "source_location": "L253",
       "weight": 1.0
     },
     {
@@ -7521,7 +7545,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
-      "source_location": "L263",
+      "source_location": "L256",
       "weight": 1.0
     },
     {
@@ -7666,6 +7690,18 @@
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
       "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_pcmamplitude",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_pcm8amplitude",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
+      "source_location": "L268",
       "weight": 1.0
     },
     {
@@ -9405,6 +9441,21 @@
       "weight": 1.0
     },
     {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest",
+      "target": "bytebuffer",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "metadata": {
+        "target_fqn": "java.nio.ByteBuffer"
+      },
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
       "source": "app_src_main_java_com_prosincerity_ghostwriter_data_projectmetadata",
       "target": "jsonobject",
       "relation": "imports",
@@ -9684,6 +9735,18 @@
       "context": "parameter_type",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
       "source_location": "L214",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_pcmamplitude",
+      "target": "bytebuffer",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
+      "source_location": "L267",
       "weight": 1.0
     },
     {
@@ -10602,7 +10665,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L12",
+      "source_location": "L15",
       "weight": 1.0
     },
     {
@@ -12851,6 +12914,17 @@
     },
     {
       "source": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_pcmamplitude",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt",
+      "source_location": "L267",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor",
       "target": "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformextractor_waveformextractor_findaudiotrack",
       "relation": "method",
       "_origin": "ast",
@@ -13786,101 +13860,13 @@
     },
     {
       "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_mapstimestampstoevenbuckets",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L17",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_clampstimestampstothewaveformbounds",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L25",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_doesnotoverflowforextremecontainermetadata",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L32",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_rejectsinvaliddimensions",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L44",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_pcm8amplitude_stayswithinthecachedwaveformrange",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L50",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_returnsemptyformissingfile",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L57",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_rejectsnonpositivetargetsamplecounts",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L64",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
-      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_returnsemptyforcorruptfilewithoutthrowing",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L72",
-      "weight": 1.0
-    },
-    {
-      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
       "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_stopsbeforedecodingwhencancellationisrequested",
       "relation": "method",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L79",
+      "source_location": "L106",
       "weight": 1.0
     },
     {
@@ -13891,7 +13877,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L86",
+      "source_location": "L113",
       "weight": 1.0
     },
     {
@@ -13902,7 +13888,106 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L95",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_mapstimestampstoevenbuckets",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_clampstimestampstothewaveformbounds",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_doesnotoverflowforextremecontainermetadata",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_bucketindexfortimestamp_rejectsinvaliddimensions",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L47",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_pcm8amplitude_stayswithinthecachedwaveformrange",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_pcmamplitude_decodessupportedsampleformats",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_returnsemptyformissingfile",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L84",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_rejectsnonpositivetargetsamplecounts",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L91",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_logic_waveformextractortest_waveformextractortest_extractamplitudes_returnsemptyforcorruptfilewithoutthrowing",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
+      "source_location": "L99",
       "weight": 1.0
     },
     {
@@ -15101,7 +15186,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L74",
+      "source_location": "L101",
       "weight": 1.0
     },
     {
@@ -15113,7 +15198,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt",
-      "source_location": "L81",
+      "source_location": "L108",
       "weight": 1.0
     },
     {
@@ -15502,5 +15587,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "86a83482157565cc52d6f641a9235f55049921eb"
+  "built_at_commit": "bcae6cb1df0530427abd3bf5fbf2cc839f850e7b"
 }
