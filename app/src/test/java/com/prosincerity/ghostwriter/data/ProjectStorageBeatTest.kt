@@ -259,6 +259,23 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun emptyImport_preservesExistingBeatAndMetadata() {
+        val project = tempFolder.newFolder("empty_import")
+        ProjectStorage.assignBeatToProject(project, "original.mp3") { it.writeText("original") }
+        val metadataBefore = File(project, "project.json").readText()
+
+        val result = runCatching {
+            ProjectStorage.assignBeatToProject(project, "empty.wav") { it.writeBytes(byteArrayOf()) }
+        }
+
+        assertTrue(result.isFailure)
+        assertEquals("original", File(project, "beat.mp3").readText())
+        assertFalse(File(project, "beat.wav").exists())
+        assertEquals(metadataBefore, File(project, "project.json").readText())
+        assertTrue(project.listFiles().orEmpty().none { it.name.startsWith("beat-import-") })
+    }
+
+    @Test
     fun assignBeatToProject_sameExtensionReplacesContentsWithoutLeavingStagedFile() {
         val project = tempFolder.newFolder("same_extension_replacement")
         ProjectStorage.assignBeatToProject(project, "old.mp3") { it.writeText("old") }

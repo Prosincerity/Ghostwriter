@@ -32,6 +32,7 @@ object ProjectStorage {
 
     private const val WAVEFORM_CACHE_FILE_NAME = "waveform.dat"
     private const val MAX_CACHED_WAVEFORM_SAMPLES = 100_000
+    private const val MAX_PROJECT_TITLE_UTF8_BYTES = 251
 
     fun rootDir(context: Context): File =
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
@@ -198,7 +199,27 @@ object ProjectStorage {
         val cleaned = title.trim()
             .replace(Regex("""[\\/:*?"<>|\x00-\x1F]"""), "_")
             .trim { it == '.' || it == ' ' }
-        return cleaned.ifBlank { "untitled" }
+        val truncated = cleaned.truncateToUtf8Bytes(MAX_PROJECT_TITLE_UTF8_BYTES)
+            .trimEnd { it == '.' || it == ' ' }
+        return truncated.ifBlank { "untitled" }
+    }
+
+    private fun String.truncateToUtf8Bytes(maxBytes: Int): String {
+        var byteCount = 0
+        var endIndex = 0
+        while (endIndex < length) {
+            val codePoint = codePointAt(endIndex)
+            val codePointBytes = when {
+                codePoint <= 0x7F -> 1
+                codePoint <= 0x7FF -> 2
+                codePoint <= 0xFFFF -> 3
+                else -> 4
+            }
+            if (byteCount + codePointBytes > maxBytes) break
+            byteCount += codePointBytes
+            endIndex += Character.charCount(codePoint)
+        }
+        return substring(0, endIndex)
     }
 
     /** Match the folder name used on disk, including an existing name's casing. */
@@ -413,8 +434,12 @@ object ProjectStorage {
             target = destFile,
             tempFilePrefix = "beat-import-",
             replacementFailureMessage = "Couldn't store the selected beat",
-            writeStagedFile = copyAction,
-        )
+        ) { stagedFile ->
+            copyAction(stagedFile)
+            if (!stagedFile.isFile || stagedFile.length() == 0L) {
+                throw IOException("The selected beat is empty")
+            }
+        }
 
         // Remove the old format only after the new file has been copied.
         projectDir.listFiles { file -> file.isProjectBeatFile() && file != destFile }

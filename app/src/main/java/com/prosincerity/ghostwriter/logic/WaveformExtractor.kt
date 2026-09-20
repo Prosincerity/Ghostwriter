@@ -98,9 +98,13 @@ object WaveformExtractor {
     ): Int? {
         if (durationUs <= 0L || bucketCount <= 0) return null
 
-        return ((timestampUs.coerceIn(0L, durationUs) * bucketCount) / durationUs)
-            .toInt()
-            .coerceAtMost(bucketCount - 1)
+        val clampedTimestampUs = timestampUs.coerceIn(0L, durationUs)
+        val bucketIndex = try {
+            Math.multiplyExact(clampedTimestampUs, bucketCount.toLong()) / durationUs
+        } catch (_: ArithmeticException) {
+            ((clampedTimestampUs.toDouble() / durationUs) * bucketCount).toLong()
+        }
+        return bucketIndex.coerceIn(0L, bucketCount.toLong() - 1L).toInt()
     }
 
     private fun decodePeakBuckets(
