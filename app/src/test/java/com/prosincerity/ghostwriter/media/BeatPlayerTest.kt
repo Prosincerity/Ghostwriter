@@ -147,6 +147,28 @@ class BeatPlayerTest {
         assertEquals(1f, player.volume)
     }
 
+    @Test
+    fun toggleMute_restoresLastAudibleVolumeAfterPlayerRelease() {
+        val player = BeatPlayer()
+        player.setVolume(0.35f)
+        player.toggleMute()
+        assertEquals(0f, player.volume)
+
+        player.release()
+        player.toggleMute()
+        assertEquals(0.35f, player.volume)
+    }
+
+    @Test
+    fun toggleMute_restoresLastAudibleVolumeAfterSliderIsSetToZero() {
+        val player = BeatPlayer()
+        player.setVolume(0.35f)
+        player.setVolume(0f)
+
+        player.toggleMute()
+        assertEquals(0.35f, player.volume)
+    }
+
     // --- load() with a missing file ---
 
     @Test
