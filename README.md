@@ -35,9 +35,7 @@ Project documentation lives in [`documentation/`](documentation/):
 
 ## Roadmap
 
-Phase 1 is complete and Phase 2 is in progress. The next editor work includes
-optional IDE-style gutters: a syllable counter on the left and a bar counter
-on the right, each controlled by its own setting. See the
+Phase 1 is complete and Phase 2 is in progress. See the
 [feature roadmap](documentation/FEATURES.md) for the authoritative status and
 remaining work.
 

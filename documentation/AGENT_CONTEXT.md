@@ -35,10 +35,11 @@ you have to "modernize" or "improve" things in ways that conflict with them:
   feature work. The owner works inside Android Studio and uses assisted coding
   with Google Antigravity and OpenAI Codex.
 
-## 3. Tech stack (as of last verified state)
+## 3. Tech stack (from the checked-in build configuration)
 
-- Kotlin (2.2.10 at last check)
-- Jetpack Compose + Material 3 (Compose BOM 2026.02.01 at last check)
+- Kotlin 2.2.10 (from `gradle/libs.versions.toml`)
+- Jetpack Compose + Material 3 (Compose BOM 2026.02.01, from
+  `gradle/libs.versions.toml`)
 - Android Gradle Plugin 9.4.0, Gradle 9.6 (wizard-generated, don't hand-edit
   version numbers without reason — they drift fast and the wizard/Android
   Studio keeps them in sync correctly)
@@ -62,6 +63,7 @@ Ghostwriter/
 │   ├── README.md            ← documentation index & guide
 │   ├── FEATURES.md          ← the full phased feature roadmap, keep updated
 │   ├── SETUP_NOTES.md       ← project creation and Android Studio setup
+│   ├── TESTING.md           ← test commands and coverage workflow
 │   └── AGENT_CONTEXT.md     ← agent handoff, architecture guide & decisions
 ├── app/
 │   ├── build.gradle.kts
