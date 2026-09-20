@@ -55,12 +55,12 @@ object WaveformExtractor {
         if (!file.isFile) return null
         val extractor = MediaExtractor()
         return try {
-                extractor.setDataSource(file.absolutePath)
-                val trackIndex = extractor.findAudioTrack() ?: return null
-                val durationUs = extractor.getTrackFormat(trackIndex)
-                    .longOrNull(MediaFormat.KEY_DURATION)
-                    ?: return null
-                (durationUs / 1_000L).takeIf { it > 0L }
+            extractor.setDataSource(file.absolutePath)
+            val trackIndex = extractor.findAudioTrack() ?: return null
+            val durationUs = extractor.getTrackFormat(trackIndex)
+                .longOrNull(MediaFormat.KEY_DURATION)
+                ?: return null
+            (durationUs / 1_000L).takeIf { it > 0L }
         } catch (_: Exception) {
             null
         } finally {
@@ -235,12 +235,12 @@ object WaveformExtractor {
         val bytesPerFrame = bytesPerSample * channelCount
         if (bytesPerFrame <= 0) return 0L
 
+        val start = bufferInfo.offset.coerceIn(0, buffer.capacity())
+        val end = (bufferInfo.offset.toLong() + bufferInfo.size)
+            .coerceIn(start.toLong(), buffer.capacity().toLong())
+            .toInt()
         val readable = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN).apply {
             clear()
-            val start = bufferInfo.offset.coerceIn(0, capacity())
-            val end = (bufferInfo.offset.toLong() + bufferInfo.size)
-                .coerceIn(start.toLong(), capacity().toLong())
-                .toInt()
             position(start)
             limit(end)
         }
@@ -250,14 +250,7 @@ object WaveformExtractor {
             if (frameIndex % 256L == 0L) checkCancelled(shouldCancel)
             var framePeak = 0
             repeat(channelCount) {
-                val amplitude = when (pcmEncoding) {
-                    AudioFormat.ENCODING_PCM_8BIT -> pcm8Amplitude(readable.get())
-                    AudioFormat.ENCODING_PCM_FLOAT -> {
-                        (abs(readable.float).coerceAtMost(1f) * 32_767f).toInt()
-                    }
-                    else -> abs(readable.short.toInt())
-                }
-                framePeak = maxOf(framePeak, amplitude)
+                framePeak = maxOf(framePeak, pcmAmplitude(readable, pcmEncoding))
             }
             val frameTimeUs = bufferInfo.presentationTimeUs + (frameIndex * 1_000_000L / sampleRate)
             val bucketIndex = bucketIndexForTimestamp(
@@ -269,6 +262,13 @@ object WaveformExtractor {
             frameIndex++
         }
         return frameIndex
+    }
+
+    internal fun pcmAmplitude(buffer: ByteBuffer, encoding: Int): Int = when (encoding) {
+        AudioFormat.ENCODING_PCM_8BIT -> pcm8Amplitude(buffer.get())
+        AudioFormat.ENCODING_PCM_FLOAT ->
+            (abs(buffer.float).coerceAtMost(1f) * 32_767f).toInt()
+        else -> abs(buffer.short.toInt())
     }
 
     private fun MediaExtractor.findAudioTrack(): Int? =
