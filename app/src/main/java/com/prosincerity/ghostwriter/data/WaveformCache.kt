@@ -14,24 +14,19 @@ internal object WaveformCache {
         val cacheFile = file(projectDir)
         if (!cacheFile.isFile) return null
 
-        return runCatching {
-            val encoded = cacheFile.readText()
-            val headerEnd = encoded.indexOf('\n')
-            if (headerEnd < 0) return null
+        return runCatching { decode(cacheFile.readText(), targetSampleCount) }.getOrNull()
+    }
 
-            val storedTargetCount = encoded.substring(0, headerEnd).toInt()
-            if (storedTargetCount != targetSampleCount) return null
+    private fun decode(encoded: String, targetSampleCount: Int): IntArray? {
+        val headerEnd = encoded.indexOf('\n')
+        if (headerEnd < 0) return null
+        if (encoded.substring(0, headerEnd).toInt() != targetSampleCount) return null
 
-            val payload = encoded.substring(headerEnd + 1).trim()
-            if (payload.isEmpty()) return null
-
-            val samples = payload.split(',').map { sample ->
-                sample.toInt().takeIf { it in 0..32_768 }
-                    ?: throw IllegalArgumentException("Invalid cached waveform sample")
-            }
-            if (samples.size != targetSampleCount) return null
-            samples.toIntArray()
-        }.getOrNull()
+        val payload = encoded.substring(headerEnd + 1).trim()
+        if (payload.isEmpty()) return null
+        val samples = payload.split(',').map { it.toInt() }
+        if (samples.size != targetSampleCount || samples.any { it !in 0..32_768 }) return null
+        return samples.toIntArray()
     }
 
     fun save(projectDir: File, targetSampleCount: Int, amplitudes: IntArray): Boolean {

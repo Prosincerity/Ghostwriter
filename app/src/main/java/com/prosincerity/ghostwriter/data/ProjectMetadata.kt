@@ -57,10 +57,7 @@ data class ProjectMetadata(
 
         fun fromJsonObject(json: JSONObject, fallbackTitle: String): ProjectMetadata {
             val title = json.optString("title", fallbackTitle).ifBlank { fallbackTitle }
-            val bpm = if (json.has("bpm") && !json.isNull("bpm")) {
-                val parsed = json.optInt("bpm", -1)
-                if (parsed > 0) parsed else null
-            } else null
+            val bpm = json.optInt("bpm", -1).takeIf { it > 0 }
             val key = json.optionalString("key")
             val timeSignature = json.optionalString("timeSignature")
             val notes = json.optionalString("notes")
