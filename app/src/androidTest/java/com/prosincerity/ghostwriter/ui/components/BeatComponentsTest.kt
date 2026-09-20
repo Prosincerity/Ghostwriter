@@ -306,6 +306,37 @@ class BeatComponentsTest {
     }
 
     @Test
+    fun playbackControls_restoresMutedVolumeAfterControlsAreRecreated() {
+        val beatPlayer = BeatPlayer()
+        val showControls = mutableStateOf(true)
+        composeRule.setContent {
+            GhostwriterTheme {
+                if (showControls.value) {
+                    BeatPlaybackControls(
+                        beatPlayer = beatPlayer,
+                        isPlaying = false,
+                        onPlayFromStart = {},
+                        onTogglePlayback = {},
+                        onReassignBeat = {},
+                        isReassigningBeat = false,
+                    )
+                }
+            }
+        }
+
+        composeRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(1f, 0f..1f)))
+            .performSemanticsAction(SemanticsActions.SetProgress) { setProgress ->
+                setProgress(0.35f)
+            }
+        composeRule.onNodeWithContentDescription("Mute").performClick()
+        composeRule.runOnIdle { showControls.value = false }
+        composeRule.runOnIdle { showControls.value = true }
+        composeRule.onNodeWithContentDescription("Unmute").performClick()
+
+        composeRule.runOnIdle { assertEquals(0.35f, beatPlayer.volume) }
+    }
+
+    @Test
     fun beatPlayerReadyState_zoomButtonsTrackViewportLimits() {
         composeRule.setContent {
             GhostwriterTheme {

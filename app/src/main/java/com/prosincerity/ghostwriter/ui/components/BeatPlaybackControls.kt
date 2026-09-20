@@ -41,7 +41,6 @@ internal fun BeatPlaybackControls(
     isReassigningBeat: Boolean,
 ) {
     var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
-    var volumeBeforeMute by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
     val isMuted = volume == 0f
     var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
 
@@ -90,14 +89,8 @@ internal fun BeatPlaybackControls(
         ) {
             IconButton(
                 onClick = {
-                    if (isMuted) {
-                        beatPlayer.setVolume(volumeBeforeMute.takeIf { it > 0f } ?: 1f)
-                        volume = beatPlayer.volume
-                    } else {
-                        if (volume > 0f) volumeBeforeMute = volume
-                        beatPlayer.setVolume(0f)
-                        volume = 0f
-                    }
+                    beatPlayer.toggleMute()
+                    volume = beatPlayer.volume
                 },
                 modifier = Modifier.size(32.dp),
             ) {
@@ -115,7 +108,6 @@ internal fun BeatPlaybackControls(
                 onValueChange = { newVolume ->
                     beatPlayer.setVolume(newVolume)
                     volume = beatPlayer.volume
-                    if (volume > 0f) volumeBeforeMute = volume
                 },
                 valueRange = 0f..1f,
                 modifier = Modifier

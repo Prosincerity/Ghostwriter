@@ -494,7 +494,7 @@
       "file_type": "code",
       "norm_label": ".load()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L59"
+      "source_location": "L61"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_pause",
@@ -506,7 +506,7 @@
       "file_type": "code",
       "norm_label": ".pause()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L83"
+      "source_location": "L85"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_play",
@@ -518,7 +518,7 @@
       "file_type": "code",
       "norm_label": ".play()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L77"
+      "source_location": "L79"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_release",
@@ -530,7 +530,7 @@
       "file_type": "code",
       "norm_label": ".release()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L127"
+      "source_location": "L135"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_seekto",
@@ -542,7 +542,7 @@
       "file_type": "code",
       "norm_label": ".seekto()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L96"
+      "source_location": "L98"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_setvolume",
@@ -554,7 +554,7 @@
       "file_type": "code",
       "norm_label": ".setvolume()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L116"
+      "source_location": "L118"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_toggleloop",
@@ -566,7 +566,19 @@
       "file_type": "code",
       "norm_label": ".toggleloop()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L106"
+      "source_location": "L108"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_togglemute",
+      "label": ".toggleMute()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "BeatPlayer",
+      "file_type": "code",
+      "norm_label": ".togglemute()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
+      "source_location": "L126"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_toggleplaypause",
@@ -578,19 +590,7 @@
       "file_type": "code",
       "norm_label": ".toggleplaypause()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L88"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols_beatplaybackcontrols",
-      "label": "BeatPlaybackControls()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "BeatPlayer",
-      "file_type": "code",
-      "norm_label": "beatplaybackcontrols()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt",
-      "source_location": "L34"
+      "source_location": "L90"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_freshplayer_currentpositioniszero",
@@ -686,7 +686,7 @@
       "file_type": "code",
       "norm_label": ".load_returnsfalse_whenfiledoesnotexist()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L152"
+      "source_location": "L174"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_pause_whennotprepared_doesnotcrash",
@@ -722,7 +722,7 @@
       "file_type": "code",
       "norm_label": ".release_calledtwice_doesnotcrash()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L171"
+      "source_location": "L193"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_release_whenneverloaded_doesnotcrash",
@@ -734,7 +734,7 @@
       "file_type": "code",
       "norm_label": ".release_whenneverloaded_doesnotcrash()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L163"
+      "source_location": "L185"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_seekto_whennotprepared_doesnotcrash",
@@ -807,6 +807,30 @@
       "norm_label": ".toggleloop_flipsfromtruetofalse()",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
       "source_location": "L106"
+    },
+    {
+      "id": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_togglemute_restoreslastaudiblevolumeafterplayerrelease",
+      "label": ".toggleMute_restoresLastAudibleVolumeAfterPlayerRelease()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "BeatPlayer",
+      "file_type": "code",
+      "norm_label": ".togglemute_restoreslastaudiblevolumeafterplayerrelease()",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
+      "source_location": "L150"
+    },
+    {
+      "id": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_togglemute_restoreslastaudiblevolumeaftersliderissettozero",
+      "label": ".toggleMute_restoresLastAudibleVolumeAfterSliderIsSetToZero()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "BeatPlayer",
+      "file_type": "code",
+      "norm_label": ".togglemute_restoreslastaudiblevolumeaftersliderissettozero()",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
+      "source_location": "L162"
     },
     {
       "id": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_toggleplaypause_whennotprepared_doesnotcrash",
@@ -1385,18 +1409,6 @@
       "source_location": "L19"
     },
     {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_waveformmarkerdialog",
-      "label": "WaveformMarkerDialog()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "waveformmarkerdialog()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
-      "source_location": "L69"
-    },
-    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_lyricsnotepad_lyricsnotepad",
       "label": "LyricsNotepad()",
       "_callable": true,
@@ -1419,18 +1431,6 @@
       "norm_label": "formatplaybacktime()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt",
       "source_location": "L3"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs_editormarkerdialogs",
-      "label": "EditorMarkerDialogs()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "editormarkerdialogs()",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
-      "source_location": "L8"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen_displaynamefor",
@@ -1815,6 +1815,30 @@
       "norm_label": ".tojsonobject()",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt",
       "source_location": "L29"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatdialogs_waveformmarkerdialog",
+      "label": "WaveformMarkerDialog()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "ProjectMetadata",
+      "file_type": "code",
+      "norm_label": "waveformmarkerdialog()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt",
+      "source_location": "L69"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs_editormarkerdialogs",
+      "label": "EditorMarkerDialogs()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "ProjectMetadata",
+      "file_type": "code",
+      "norm_label": "editormarkerdialogs()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
+      "source_location": "L8"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_projectinfodialog_parsepositivebpm",
@@ -3242,7 +3266,7 @@
       "file_type": "code",
       "norm_label": ".beatplayerreadystate_zoombuttonstrackviewportlimits()",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
-      "source_location": "L308"
+      "source_location": "L339"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_longbeatwarning_showsdurationandusesimportcancellationlabel",
@@ -3267,6 +3291,18 @@
       "norm_label": ".markerdialog_requiresnonblanknameandtrimssavedvalue()",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
       "source_location": "L75"
+    },
+    {
+      "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_playbackcontrols_restoresmutedvolumeaftercontrolsarerecreated",
+      "label": ".playbackControls_restoresMutedVolumeAfterControlsAreRecreated()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "GhostwriterTheme",
+      "file_type": "code",
+      "norm_label": ".playbackcontrols_restoresmutedvolumeaftercontrolsarerecreated()",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
+      "source_location": "L308"
     },
     {
       "id": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_reassigndialog_warnsaboutdatalossandinvokesconfirmation",
@@ -3327,6 +3363,18 @@
       "norm_label": ".existingproject_opensrenamesanddeletesthroughitsmenu()",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt",
       "source_location": "L56"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols_beatplaybackcontrols",
+      "label": "BeatPlaybackControls()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "GhostwriterTheme",
+      "file_type": "code",
+      "norm_label": "beatplaybackcontrols()",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt",
+      "source_location": "L34"
     },
     {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplayerpanel_beatplayerpanel",
@@ -3781,17 +3829,6 @@
       "file_type": "code",
       "norm_label": "beatplayer.kt",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L1"
-    },
-    {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols",
-      "label": "BeatPlaybackControls.kt",
-      "_origin": "ast",
-      "community": 0,
-      "community_name": "BeatPlayer",
-      "file_type": "code",
-      "norm_label": "beatplaybackcontrols.kt",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt",
       "source_location": "L1"
     },
     {
@@ -4851,17 +4888,6 @@
       "source_location": "L1"
     },
     {
-      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs",
-      "label": "EditorMarkerDialogs.kt",
-      "_origin": "ast",
-      "community": 19,
-      "community_name": "EditorScreen.kt",
-      "file_type": "code",
-      "norm_label": "editormarkerdialogs.kt",
-      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
-      "source_location": "L1"
-    },
-    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen",
       "label": "EditorScreen.kt",
       "_origin": "ast",
@@ -5453,6 +5479,17 @@
       "source_location": "L1"
     },
     {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editormarkerdialogs",
+      "label": "EditorMarkerDialogs.kt",
+      "_origin": "ast",
+      "community": 3,
+      "community_name": "ProjectMetadata",
+      "file_type": "code",
+      "norm_label": "editormarkerdialogs.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt",
+      "source_location": "L1"
+    },
+    {
       "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_projectinfodialog",
       "label": "ProjectInfoDialog.kt",
       "_origin": "ast",
@@ -5681,6 +5718,17 @@
       "file_type": "code",
       "norm_label": "homescreentest.kt",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt",
+      "source_location": "L1"
+    },
+    {
+      "id": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols",
+      "label": "BeatPlaybackControls.kt",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "GhostwriterTheme",
+      "file_type": "code",
+      "norm_label": "beatplaybackcontrols.kt",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt",
       "source_location": "L1"
     },
     {
@@ -6369,7 +6417,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
-      "source_location": "L311",
+      "source_location": "L342",
       "weight": 1.0
     },
     {
@@ -6381,7 +6429,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
-      "source_location": "L313",
+      "source_location": "L344",
       "weight": 1.0
     },
     {
@@ -6406,6 +6454,30 @@
       "context": "call",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
       "source_location": "L79",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_playbackcontrols_restoresmutedvolumeaftercontrolsarerecreated",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
+      "source_location": "L310",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_playbackcontrols_restoresmutedvolumeaftercontrolsarerecreated",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_ui_theme_theme_ghostwritertheme",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
+      "source_location": "L313",
       "weight": 1.0
     },
     {
@@ -7977,7 +8049,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L60",
+      "source_location": "L62",
       "weight": 1.0
     },
     {
@@ -7989,7 +8061,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L63",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -8001,7 +8073,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L66",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_togglemute",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_setvolume",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
+      "source_location": "L127",
       "weight": 1.0
     },
     {
@@ -8013,7 +8097,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L89",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -8025,7 +8109,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L89",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -12067,7 +12151,7 @@
     },
     {
       "source": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest",
-      "target": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_beatplayerreadystate_zoombuttonstrackviewportlimits",
+      "target": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_playbackcontrols_restoresmutedvolumeaftercontrolsarerecreated",
       "relation": "method",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -12085,6 +12169,17 @@
       "confidence_score": 1.0,
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
       "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest",
+      "target": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_beatplayerreadystate_zoombuttonstrackviewportlimits",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
+      "source_location": "L339",
       "weight": 1.0
     },
     {
@@ -13096,7 +13191,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L106",
+      "source_location": "L108",
       "weight": 1.0
     },
     {
@@ -13107,7 +13202,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L116",
+      "source_location": "L118",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer_togglemute",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
+      "source_location": "L126",
       "weight": 1.0
     },
     {
@@ -13118,7 +13224,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L127",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -13129,7 +13235,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L59",
+      "source_location": "L61",
       "weight": 1.0
     },
     {
@@ -13140,7 +13246,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L77",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -13151,7 +13257,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L83",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -13162,7 +13268,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L88",
+      "source_location": "L90",
       "weight": 1.0
     },
     {
@@ -13173,7 +13279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
-      "source_location": "L96",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -14190,13 +14296,35 @@
     },
     {
       "source": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_togglemute_restoreslastaudiblevolumeafterplayerrelease",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
+      "source_location": "L150",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest",
+      "target": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_togglemute_restoreslastaudiblevolumeaftersliderissettozero",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest",
       "target": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_load_returnsfalse_whenfiledoesnotexist",
       "relation": "method",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L152",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -14207,7 +14335,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L163",
+      "source_location": "L185",
       "weight": 1.0
     },
     {
@@ -14218,7 +14346,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L171",
+      "source_location": "L193",
       "weight": 1.0
     },
     {
@@ -14634,7 +14762,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
-      "source_location": "L312",
+      "source_location": "L343",
       "weight": 1.0
     },
     {
@@ -14659,6 +14787,18 @@
       "context": "call",
       "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
       "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_androidtest_java_com_prosincerity_ghostwriter_ui_components_beatcomponentstest_beatcomponentstest_playbackcontrols_restoresmutedvolumeaftercontrolsarerecreated",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols_beatplaybackcontrols",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt",
+      "source_location": "L315",
       "weight": 1.0
     },
     {
@@ -15450,7 +15590,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L154",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -15486,7 +15626,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L173",
+      "source_location": "L195",
       "weight": 1.0
     },
     {
@@ -15498,7 +15638,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
-      "source_location": "L165",
+      "source_location": "L187",
       "weight": 1.0
     },
     {
@@ -15574,6 +15714,30 @@
       "weight": 1.0
     },
     {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_togglemute_restoreslastaudiblevolumeafterplayerrelease",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_togglemute_restoreslastaudiblevolumeaftersliderissettozero",
+      "target": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt",
+      "source_location": "L164",
+      "weight": 1.0
+    },
+    {
       "source": "app_src_test_java_com_prosincerity_ghostwriter_media_beatplayertest_beatplayertest_toggleplaypause_whennotprepared_doesnotcrash",
       "target": "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer",
       "relation": "calls",
@@ -15587,5 +15751,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "bcae6cb1df0530427abd3bf5fbf2cc839f850e7b"
+  "built_at_commit": "8578b587cd30ccb8175a503ead5919d53bd71598"
 }
