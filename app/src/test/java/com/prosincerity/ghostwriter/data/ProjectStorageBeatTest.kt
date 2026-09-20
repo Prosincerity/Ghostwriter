@@ -339,6 +339,19 @@ class ProjectStorageBeatTest {
     }
 
     @Test
+    fun getProjectBeatFile_ignoresAnEmptyAssignedBeat() {
+        val project = tempFolder.newFolder("empty_assigned_beat")
+        File(project, "beat.mp3").createNewFile()
+
+        assertNull(
+            ProjectStorage.getProjectBeatFile(
+                project,
+                ProjectMetadata("empty_assigned_beat", beatFile = "beat.mp3"),
+            ),
+        )
+    }
+
+    @Test
     fun assignBeatToProject_rejectsUnsupportedExtensionBeforeCopy() {
         val project = tempFolder.newFolder("unsupported")
         val result = runCatching {
@@ -362,6 +375,7 @@ class ProjectStorageBeatTest {
         File(beatsDir, "notes.txt").writeText("not audio")
         File(beatsDir, "cover.png").writeText("not audio")
         File(beatsDir, "not_a_file.mp3").mkdir()
+        File(beatsDir, "empty.mp3").createNewFile()
 
         val result = ProjectStorage.listInstrumentals(beatsDir)
         assertEquals(3, result.size)

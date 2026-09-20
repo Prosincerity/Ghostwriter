@@ -30,9 +30,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt": {
-    "mtime": 1789921398.4978492,
-    "seen": 1789921446.3604686,
-    "ast_hash": "063e1a69d86c9bf21ec7d0866ea65282",
+    "mtime": 1789922005.1522226,
+    "seen": 1789922036.576937,
+    "ast_hash": "d287130f27ae2256827864e7c5fa8d18",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt": {
@@ -114,9 +114,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageBeatTest.kt": {
-    "mtime": 1789920967.707265,
-    "seen": 1789921052.6652908,
-    "ast_hash": "d830e220abba8d1a0737b55e995dda59",
+    "mtime": 1789921990.0424125,
+    "seen": 1789922036.5769787,
+    "ast_hash": "a46850520f27c90e82af5fd201dc6da3",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageTest.kt": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "documentation/AGENT_CONTEXT.md": {
-    "mtime": 1789921631.2169235,
-    "seen": 1789921650.0592868,
-    "ast_hash": "11a082cb5248f5603f6112a07be79344",
+    "mtime": 1789922005.4172192,
+    "seen": 1789922036.5770237,
+    "ast_hash": "beb429df2f8fc86d8d19c3e593b36b04",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
