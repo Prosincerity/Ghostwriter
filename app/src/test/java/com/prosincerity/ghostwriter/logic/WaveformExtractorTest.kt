@@ -30,6 +30,18 @@ class WaveformExtractorTest {
     }
 
     @Test
+    fun bucketIndexForTimestamp_doesNotOverflowForExtremeContainerMetadata() {
+        assertEquals(
+            999,
+            WaveformExtractor.bucketIndexForTimestamp(
+                timestampUs = Long.MAX_VALUE - 1,
+                durationUs = Long.MAX_VALUE,
+                bucketCount = 1_000,
+            ),
+        )
+    }
+
+    @Test
     fun bucketIndexForTimestamp_rejectsInvalidDimensions() {
         assertEquals(null, WaveformExtractor.bucketIndexForTimestamp(0L, 0L, 4))
         assertEquals(null, WaveformExtractor.bucketIndexForTimestamp(0L, 1_000L, 0))

@@ -9,6 +9,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import kotlin.text.Charsets.UTF_8
 
 class ProjectStorageTest {
 
@@ -94,6 +95,23 @@ class ProjectStorageTest {
     fun sanitizeTitle_emptyOrBlank_returnsUntitled() {
         assertEquals("untitled", ProjectStorage.sanitizeTitle(""))
         assertEquals("untitled", ProjectStorage.sanitizeTitle("   "))
+    }
+
+    @Test
+    fun sanitizeTitle_limitsUtf8LengthSoTheManualSaveNameFitsTheFilesystem() {
+        for (title in listOf("a".repeat(300), "🎵".repeat(100))) {
+            val sanitized = ProjectStorage.sanitizeTitle(title)
+
+            assertTrue(
+                "Sanitized title must leave room for the .txt extension: $sanitized",
+                sanitized.toByteArray(UTF_8).size <= 251,
+            )
+            assertFalse(sanitized.last().isHighSurrogate())
+
+            val project = File(tempFolder.root, sanitized)
+            assertTrue(project.mkdir())
+            assertTrue(ProjectStorage.saveManual(project, title, "lyrics", keepCount = 3))
+        }
     }
 
     // --- project deletion tests ---
