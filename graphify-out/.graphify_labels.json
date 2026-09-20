@@ -18,7 +18,7 @@
   "16": "settings.gradle.kts",
   "17": "What You Must Do When Invoked",
   "18": "Ghostwriter",
-  "19": "Settings",
+  "19": "EditorScreen.kt",
   "20": "MainActivityTest",
   "21": "graphify reference: extra exports and benchmark",
   "22": "Ghostwriter agent instructions",
@@ -29,10 +29,8 @@
   "27": "graphify reference: GitHub clone and cross-repo merge",
   "28": "graphify reference: transcribe video and audio",
   "29": "extraction-spec.md",
-  "30": "EditorScreen.kt",
   "31": "EditorScreenTest",
   "32": ".writeText",
   "33": "WaveformCache",
-  "34": "WaveformExtractorInstrumentedTest",
   "35": "ProjectLyricsStorage"
 }

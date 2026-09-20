@@ -1,16 +1,16 @@
 # Graph Report - Gh0stwrit3r  (2026-09-20)
 
 ## Corpus Check
-- 65 files · ~54,216 words
+- 65 files · ~54,188 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 490 nodes · 813 edges · 36 communities (19 shown, 13 thin omitted)
+- 492 nodes · 818 edges · 34 communities (19 shown, 11 thin omitted)
 - Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 88 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7b55d6b4`
+- Built from commit: `57a066c7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -30,7 +30,7 @@
 - ExampleInstrumentedTest
 - What You Must Do When Invoked
 - Ghostwriter
-- Settings
+- EditorScreen.kt
 - MainActivityTest
 - graphify reference: extra exports and benchmark
 - Ghostwriter agent instructions
@@ -41,11 +41,9 @@
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
 - extraction-spec.md
-- EditorScreen.kt
 - EditorScreenTest
 - .writeText
 - WaveformCache
-- WaveformExtractorInstrumentedTest
 - ProjectLyricsStorage
 
 ## God Nodes (most connected - your core abstractions)
@@ -61,21 +59,21 @@
 10. `EditorScreen()` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `LongBeatWarningDialog()` --calls--> `formatPlaybackTime()`  [INFERRED]
-  app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt
-- `WaveformMarkerDialog()` --calls--> `formatPlaybackTime()`  [INFERRED]
-  app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt
 - `BeatPlayerPanel()` --calls--> `BeatPlaybackControls()`  [INFERRED]
   app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlayerPanel.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt
 - `BeatPlayerPanel()` --calls--> `formatPlaybackTime()`  [INFERRED]
   app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlayerPanel.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt
 - `BeatPlayerPanel()` --calls--> `WaveformView()`  [INFERRED]
   app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlayerPanel.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt
+- `EditorScreen()` --calls--> `ProjectInfoDialog()`  [INFERRED]
+  app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt → app/src/main/java/com/prosincerity/ghostwriter/ui/screens/ProjectInfoDialog.kt
+- `BeatPlayerInstrumentedTest` --references--> `BeatPlayer`  [EXTRACTED]
+  app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt → app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt
 
 ## Import Cycles
 - None detected.
 
-## Communities (36 total, 13 thin omitted)
+## Communities (34 total, 11 thin omitted)
 
 ### Community 0 - "BeatPlayer"
 Cohesion: 0.10
@@ -85,9 +83,13 @@ Nodes (4): BeatPlayer, BeatPlaybackControls(), BeatPlayerTest, MediaPlayer
 Cohesion: 0.14
 Nodes (3): Context, IntArray, ProjectStorage
 
+### Community 2 - "BeatPlayerInstrumentedTest"
+Cohesion: 0.17
+Nodes (3): WaveformExtractorInstrumentedTest, BeatPlayerInstrumentedTest, ByteBuffer
+
 ### Community 3 - "ProjectMetadata"
-Cohesion: 0.09
-Nodes (11): ProjectInfoDialogTest, ProjectMetadata, WaveformMarker, WaveformMarkerDialog(), EditorMarkerDialogs(), parsePositiveBpm(), ProjectInfoDialog(), trimmedOrNull() (+3 more)
+Cohesion: 0.10
+Nodes (9): ProjectInfoDialogTest, ProjectMetadata, WaveformMarker, parsePositiveBpm(), ProjectInfoDialog(), trimmedOrNull(), ProjectMetadataTest, ProjectInfoBpmTest (+1 more)
 
 ### Community 5 - "WaveformViewport"
 Cohesion: 0.13
@@ -98,8 +100,8 @@ Cohesion: 0.13
 Nodes (10): BeatComponentsTest, LyricsNotepadTest, HomeScreenTest, BeatPlayerPanel(), CenteredPlayerContent(), IntArray, Modifier, WaveformZoomButton() (+2 more)
 
 ### Community 8 - "WaveformExtractor"
-Cohesion: 0.20
-Nodes (6): DecoderProgressGuard, IntArray, WaveformExtractor, ByteBuffer, MediaCodec, MediaFormat
+Cohesion: 0.25
+Nodes (5): DecoderProgressGuard, IntArray, WaveformExtractor, MediaCodec, MediaFormat
 
 ### Community 9 - "MainActivity.kt"
 Cohesion: 0.11
@@ -117,9 +119,9 @@ Nodes (24): For /graphify add and --watch, For /graphify query, For the commit h
 Cohesion: 0.05
 Nodes (37): 1. What this project is, 2. Non-negotiable philosophy — read this before suggesting anything, 3. Tech stack (as of last verified state), 4. Repository structure (current), 5. What's actually built right now, 6. Deliberate architectural decisions — please don't silently reverse these, 7. Known technical debt (not yet addressed, tracked, but not urgent), Project handoff: Ghostwriter (+29 more)
 
-### Community 19 - "Settings"
-Cohesion: 0.21
-Nodes (5): Context, Settings, formatPlaybackTime(), formatInterval(), SettingsFormatTest
+### Community 19 - "EditorScreen.kt"
+Cohesion: 0.10
+Nodes (18): Context, Settings, LongBeatWarningDialog(), ReassignBeatDialog(), WaveformMarkerDialog(), Modifier, LyricsNotepad(), formatPlaybackTime() (+10 more)
 
 ### Community 21 - "graphify reference: extra exports and benchmark"
 Cohesion: 0.22
@@ -145,28 +147,24 @@ Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify refer
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
-### Community 30 - "EditorScreen.kt"
-Cohesion: 0.20
-Nodes (11): LongBeatWarningDialog(), ReassignBeatDialog(), Modifier, LyricsNotepad(), displayNameFor(), EditorScreen(), Context, PendingBeatPreparation (+3 more)
-
 ### Community 31 - "EditorScreenTest"
 Cohesion: 0.29
 Nodes (3): EditorScreenTest, IntArray, MutableState
 
 ## Knowledge Gaps
 - **76 isolated node(s):** `Home`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)`, `Step 1 - Ensure graphify is installed` (+71 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 166 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 165 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **11 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `BeatPlayer` connect `BeatPlayer` to `BeatPlayerInstrumentedTest`, `EditorScreen.kt`, `GhostwriterTheme`?**
-  _High betweenness centrality (0.144) - this node is a cross-community bridge._
+  _High betweenness centrality (0.142) - this node is a cross-community bridge._
 - **Why does `ProjectMetadata` connect `ProjectMetadata` to `ProjectStorage`, `EditorScreen.kt`?**
-  _High betweenness centrality (0.138) - this node is a cross-community bridge._
-- **Why does `ProjectStorage` connect `ProjectStorage` to `MainActivity.kt`, `MainActivityTest`, `EditorScreen.kt`, `EditorScreenTest`?**
-  _High betweenness centrality (0.109) - this node is a cross-community bridge._
+  _High betweenness centrality (0.137) - this node is a cross-community bridge._
+- **Why does `ProjectStorage` connect `ProjectStorage` to `MainActivity.kt`, `EditorScreen.kt`, `MainActivityTest`, `EditorScreenTest`?**
+  _High betweenness centrality (0.108) - this node is a cross-community bridge._
 - **Are the 19 inferred relationships involving `BeatPlayer` (e.g. with `.freshPlayer_currentPositionIsZero()` and `.freshPlayer_defaultsLoopingToTrue()`) actually correct?**
   _`BeatPlayer` has 19 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 13 inferred relationships involving `WaveformViewport` (e.g. with `.clamped_shrinkingViewportKeepsScrollWithinTheNewEnd()` and `.panBy_clampsAtTheStartAndEndOfTheTimeline()`) actually correct?**

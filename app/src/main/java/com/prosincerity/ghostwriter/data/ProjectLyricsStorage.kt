@@ -7,19 +7,11 @@ internal object ProjectLyricsStorage {
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         val manualFile = File(projectDir, "${projectDir.name}.txt")
-        var newestReadableAutosave: Pair<File, String>? = null
-        for (i in 1..5) {
+        val newestReadableAutosave = (1..5).firstNotNullOfOrNull { i ->
             val file = File(projectDir, "autosave$i.txt")
-            if (file.isFile) {
-                val text = runCatching { file.readText() }.getOrNull()
-                if (text != null) {
-                    newestReadableAutosave = file to text
-                    break
-                }
-            }
+            file.readTextIfFile()?.let { file to it }
         }
-        val manualText = manualFile.takeIf { it.isFile }
-            ?.let { runCatching { it.readText() }.getOrNull() }
+        val manualText = manualFile.readTextIfFile()
         return when {
             manualText != null &&
                 (newestReadableAutosave == null ||
@@ -28,6 +20,9 @@ internal object ProjectLyricsStorage {
             else -> manualText ?: ""
         }
     }
+
+    private fun File.readTextIfFile(): String? =
+        if (isFile) runCatching { readText() }.getOrNull() else null
 
     fun saveManual(projectDir: File, fileName: String, content: String, keepCount: Int): Boolean =
         runCatching {

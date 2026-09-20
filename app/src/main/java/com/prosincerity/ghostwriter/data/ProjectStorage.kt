@@ -209,11 +209,13 @@ object ProjectStorage {
         shouldCancel: () -> Boolean = { false },
         extract: (File, Int) -> IntArray,
     ): IntArray {
-        if (
-            targetSampleCount !in 1..WaveformCache.MAX_SAMPLES ||
-            !beatFile.isFile ||
-            runCatching { beatFile.canonicalFile.parentFile == projectDir.canonicalFile }.getOrDefault(false).not()
-        ) return IntArray(0)
+        if (targetSampleCount !in 1..WaveformCache.MAX_SAMPLES || !beatFile.isFile) {
+            return IntArray(0)
+        }
+        val belongsToProject = runCatching {
+            beatFile.canonicalFile.parentFile == projectDir.canonicalFile
+        }.getOrDefault(false)
+        if (!belongsToProject) return IntArray(0)
 
         val beatRevisionAtStart = synchronized(this) { beatMutationRevision }
         throwIfWaveformCancelled(shouldCancel)
@@ -239,15 +241,9 @@ object ProjectStorage {
     }
 
     fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {
-        val file = metadataFile(projectDir)
-        if (!file.exists()) {
-            return ProjectMetadata(title = fallbackTitle)
-        }
-        return runCatching {
-            ProjectMetadata.fromJsonString(file.readText(), fallbackTitle)
-        }.getOrElse {
-            ProjectMetadata(title = fallbackTitle)
-        }
+        val contents = runCatching { metadataFile(projectDir).readText() }.getOrNull()
+            ?: return ProjectMetadata(title = fallbackTitle)
+        return ProjectMetadata.fromJsonString(contents, fallbackTitle)
     }
 
     @Synchronized
