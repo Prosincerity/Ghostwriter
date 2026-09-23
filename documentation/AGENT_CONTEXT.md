@@ -50,7 +50,8 @@ you have to "modernize" or "improve" things in ways that conflict with them:
   zero external serialization libraries)
 - No navigation library (hand-rolled sealed-class navigation, see below)
 - No DI framework (project is small enough not to need one yet)
-- No local database yet (plain text files & JSON on disk — see storage section)
+- Project state remains plain text and JSON. Optional pronunciation indexes
+  are downloaded as read-only SQLite files in app-private internal storage.
 
 ## 4. Repository structure (current)
 
@@ -122,6 +123,9 @@ reference remains, it is a stale identifier that must be migrated.
 - Offline beat player + project-local beat import — done.
 - Interactive waveform, zoom/pan, markers, caching, and processing safety — done.
 - About screen with open-source and dictionary-data attribution — done.
+- Per-language rhyme dictionary downloads and read-only pronunciation lookup
+  infrastructure — in progress; the Dictionary Screen and JNI fallback remain
+  planned.
 
 Walking through what each file does:
 
@@ -292,7 +296,12 @@ Walking through what each file does:
   bug, just not instant.
 
 - **`ui/screens/SettingsScreen.kt`** — Two dropdowns (autosave interval and
-  backup count) backed by `Settings.kt`, plus an About entry. The planned
+  backup count) backed by `Settings.kt`, user-initiated English, German, and
+  Turkish dictionary downloads, plus an About entry. The downloader uses the
+  pinned GitHub release manifest, stores each pair of decompressed read-only
+  SQLite files in app-private internal storage, and leaves normal editing
+  offline. `DictionaryInstaller.kt` and `DictionaryPronunciations.kt` own that
+  behavior. The planned
   gutter work adds independent **Syllable counter** and **Bar counter**
   toggles here.
   Deliberately implemented with a
@@ -355,8 +364,8 @@ just "fix" it without flagging it first:
 3. Plain `DropdownMenu` instead of `ExposedDropdownMenuBox`.
 4. App-private external storage instead of SAF, for autosave specifically.
 5. `configChanges` on the Activity instead of a custom `Saver` for nav state.
-6. No Navigation library, no DI framework, no local database — kept minimal
-   on purpose while the app is small.
+6. No Navigation library, no DI framework, and no app-state database. The
+   optional read-only SQLite pronunciation indexes use Android's built-in API.
 7. `android.media.MediaPlayer` (built into AOSP framework) instead of ExoPlayer/Media3
    for audio playback, maintaining zero added library bloat and native offline AOSP compatibility.
 8. `org.json` (built into Android framework) instead of external serialization libraries

@@ -1,7 +1,7 @@
 # Rhyme detection: dictionary and eSpeak NG integration plan
 
-Status: planning. Work takes place on the `rhyme-detection` branch created from
-`dev`. Complete and verify each step before starting the next one.
+Status: in progress on the `rhyme-detection` branch created from `dev`.
+Complete and verify each step before starting the next one.
 
 ## Goal and data flow
 
@@ -90,6 +90,12 @@ Exit check: JVM tests cover lookup/precedence/variants and instrumented tests
 exercise local-archive installation, lookup, failed downloads, and offline
 reuse on an AOSP emulator or device.
 
+Implementation note: Settings now has per-language download controls, and the
+app has a versioned installer and read-only lookup path. Synthetic instrumented
+tests are present and compile. The maintainer will run device tests through
+Android Studio; real release downloads and local archive fixtures remain to
+be exercised there.
+
 ### 3. Build a minimal eSpeak NG 1.52 Android library
 
 - Pin the upstream `1.52.0` source as a Git submodule or an explicitly
@@ -147,15 +153,35 @@ airplane mode enabled and no Google services on the device.
 
 ### 6. Implement rhyme queries and editor behavior
 
+- Add a Dictionary Screen opened by a book button in the Editor top bar.
+  Its input accepts a word and displays that word's IPA from the selected
+  language database, followed by matching words. Keep the hand-rolled
+  navigation and return to the same editor project.
+- For the default rhyme mode, look up the word's IPA first, derive its
+  reversed phoneme search key with the producer's token rules, then query
+  `ipa_reversed` with `LIKE` using progressively longer prefixes. Define a
+  clear result ranking and stopping/limit rule so common endings do not flood
+  the screen or stall typing.
+- Provide a dropdown with rhyme, word-prefix, word-suffix, and assonance
+  search modes. Word-prefix/suffix modes search the `word` column;
+  assonance uses `assonance_reversed`. Parameterize every query and escape
+  literal `%`, `_`, and the chosen `LIKE` escape character. Benchmark suffix
+  searches because `LIKE '%suffix'` cannot use a normal leading-word index;
+  document or add an indexed strategy if scans are too slow. Keep searches
+  off the main thread and bound result counts.
+- Initially search installed databases. A later pass uses bundled eSpeak NG
+  to generate IPA only when the input word is OOV in both sources, then uses
+  that IPA for rhyme/assonance searches. Show when the IPA was generated.
 - Use the existing `ipa_reversed` and `assonance_reversed` indexes for rhyme
   candidate searches. Port the dictionary producer's audited phoneme-token
   rules where a runtime IPA must produce compatible search keys; do not
   reverse raw Unicode characters. Add the documented SQLite
   `PRAGMA case_sensitive_like = ON` for prefix queries and escape user input.
 - Define and test rhyme matching, multiple pronunciations, identity-rhyme
-  treatment, language selection, and the UI behavior before coloring syllables
-  in `LyricsNotepad`. Keep the editor responsive and its autosave behavior
-  intact. Keep syllable/bar gutter work scoped to the existing roadmap.
+  treatment, language selection, and Dictionary Screen behavior before
+  coloring syllables in `LyricsNotepad`. Keep the editor responsive and its
+  autosave behavior intact. Keep syllable/bar gutter work scoped to the
+  existing roadmap.
 
 Exit check: pure JVM tests cover rhyme-key and matching logic; Compose/device
 tests cover the chosen editor behavior and performance with realistic lines.
