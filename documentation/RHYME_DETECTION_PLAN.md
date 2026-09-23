@@ -198,12 +198,10 @@ tests cover the chosen editor behavior and performance with realistic lines.
 
 ### 7. Licensing, attribution, and release verification
 
-- Decide whether to change Ghostwriter's current `GPL-3.0-only` grant to
-  `GPL-3.0-or-later`. eSpeak NG's `GPL-3.0-or-later` code can already be used
-  under GPLv3, so this change is optional. Before changing the app's grant,
-  check that all app copyright holders have authorized it and update the
-  repository and in-app license notices consistently. This choice does not
-  change the dictionary databases' CC BY-SA 4.0 attribution and sharing terms.
+- Ghostwriter's project grant is `GPL-3.0-or-later`, matching eSpeak NG's
+  `GPL-3.0-or-later` grant. Keep the repository and in-app notices consistent.
+  This does not change the dictionary databases' CC BY-SA 4.0 attribution and
+  sharing terms.
 - Include eSpeak NG's GPL-3.0-or-later copyright/license notices, exact source
   revision, any changes, and reproducible native build instructions/source
   availability with distributed builds. Review licenses of the bundled eSpeak
