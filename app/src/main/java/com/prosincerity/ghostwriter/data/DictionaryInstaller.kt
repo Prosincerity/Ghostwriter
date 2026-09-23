@@ -19,6 +19,11 @@ internal data class DictionaryLanguage(val wiktionary: DictionaryAsset, val espe
     val downloadBytes: Long get() = wiktionary.sizeBytes + espeak.sizeBytes
 }
 
+internal enum class DictionarySource(val fileName: String) {
+    WIKTIONARY("wiktionary.db"),
+    ESPEAK("espeak.db"),
+}
+
 /** The app pins release URLs; it never needs to query GitHub while editing. */
 internal class DictionaryRelease private constructor(
     val tag: String,
@@ -83,7 +88,7 @@ internal data class DictionaryDownloadProgress(
     val totalBytes: Long,
 )
 
-/** Installs both sources for one language before exposing either database. */
+/** Installs each source independently in versioned app-private storage. */
 internal class DictionaryInstaller(
     context: Context,
     private val source: DictionaryArchiveSource = releaseSource,
@@ -92,104 +97,89 @@ internal class DictionaryInstaller(
     val release = DictionaryRelease.load(appContext)
     private val root = File(appContext.filesDir, "dictionaries")
 
-    fun installedDatabases(language: String): Pair<File, File>? {
+    fun installedDatabase(language: String, source: DictionarySource): File? {
         require(language in release.languages)
-        val pair = File(File(root, language), release.tag)
-        return databasePair(pair)
+        return File(File(File(root, language), release.tag), source.fileName)
+            .takeIf { it.isFile }
     }
 
-    fun availableDatabases(language: String): Pair<File, File>? {
-        installedDatabases(language)?.let { return it }
+    fun availableDatabase(language: String, source: DictionarySource): File? {
+        installedDatabase(language, source)?.let { return it }
         val languageDir = File(root, language)
         return languageDir.listFiles()
             ?.asSequence()
             ?.filter { it.isDirectory && !it.name.startsWith(".") }
             ?.sortedByDescending { it.name }
-            ?.mapNotNull(::databasePair)
+            ?.map { File(it, source.fileName) }
+            ?.filter { it.isFile }
             ?.firstOrNull()
-    }
-
-    private fun databasePair(pair: File): Pair<File, File>? {
-        val wiktionary = File(pair, "wiktionary.db")
-        val espeak = File(pair, "espeak.db")
-        return if (wiktionary.isFile && espeak.isFile) wiktionary to espeak else null
     }
 
     suspend fun install(
         language: String,
+        dictionarySource: DictionarySource,
         onProgress: (DictionaryDownloadProgress) -> Unit = {},
-    ): Pair<File, File> = withContext(Dispatchers.IO) {
+    ): File = withContext(Dispatchers.IO) {
         require(language in release.languages)
-        installedDatabases(language)?.let { return@withContext it }
-        val pair = release.languages.getValue(language)
+        installedDatabase(language, dictionarySource)?.let { return@withContext it }
+        val languageAssets = release.languages.getValue(language)
+        val asset = when (dictionarySource) {
+            DictionarySource.WIKTIONARY -> languageAssets.wiktionary
+            DictionarySource.ESPEAK -> languageAssets.espeak
+        }
         val languageDir = File(root, language)
         check(languageDir.mkdirs() || languageDir.isDirectory) { "Cannot create dictionary directory" }
-        val staging = File(languageDir, ".${release.tag}-${System.nanoTime()}.part")
-        check(staging.mkdir()) { "Cannot create temporary dictionary directory" }
+        val versionDir = File(languageDir, release.tag)
+        check(versionDir.mkdirs() || versionDir.isDirectory) { "Cannot create version directory" }
+        val staging = File(versionDir, ".${dictionarySource.fileName}-${System.nanoTime()}.part")
         try {
-            var completedBytes = 0L
-            for ((asset, name) in listOf(pair.wiktionary to "wiktionary.db", pair.espeak to "espeak.db")) {
-                var received = 0L
-                source.open(asset.url).use { input ->
-                    val counted = object : FilterInputStream(input) {
-                        override fun read(): Int {
-                            val value = super.read()
-                            if (value >= 0) received++
-                            return value
-                        }
-
-                        override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-                            val count = super.read(buffer, offset, length)
-                            if (count > 0) received += count
-                            return count
-                        }
+            var received = 0L
+            source.open(asset.url).use { input ->
+                val counted = object : FilterInputStream(input) {
+                    override fun read(): Int {
+                        val value = super.read()
+                        if (value >= 0) received++
+                        return value
                     }
-                    GZIPInputStream(counted).use { archive ->
-                        File(staging, name).outputStream().buffered().use { output ->
-                            val buffer = ByteArray(64 * 1024)
-                            var lastReported = 0L
-                            while (true) {
-                                coroutineContext.ensureActive()
-                                val count = archive.read(buffer)
-                                if (count < 0) break
-                                output.write(buffer, 0, count)
-                                if (received - lastReported >= 256 * 1024) {
-                                    onProgress(DictionaryDownloadProgress(
-                                        (completedBytes + received).coerceAtMost(pair.downloadBytes),
-                                        pair.downloadBytes,
-                                    ))
-                                    lastReported = received
-                                }
+
+                    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                        val count = super.read(buffer, offset, length)
+                        if (count > 0) received += count
+                        return count
+                    }
+                }
+                GZIPInputStream(counted).use { archive ->
+                    staging.outputStream().buffered().use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        var lastReported = 0L
+                        while (true) {
+                            coroutineContext.ensureActive()
+                            val count = archive.read(buffer)
+                            if (count < 0) break
+                            output.write(buffer, 0, count)
+                            if (received - lastReported >= 256 * 1024) {
+                                onProgress(DictionaryDownloadProgress(
+                                    received.coerceAtMost(asset.sizeBytes), asset.sizeBytes,
+                                ))
+                                lastReported = received
                             }
                         }
                     }
                 }
-                completedBytes += received
             }
-            val installed = File(languageDir, release.tag)
-            check(!installed.exists() || installedDatabases(language) != null) {
-                "Incomplete dictionary installation already exists"
+            val installed = File(versionDir, dictionarySource.fileName)
+            if (!installed.isFile) {
+                check(staging.renameTo(installed)) { "Cannot activate downloaded dictionary" }
             }
-            if (installed.exists()) {
-                installedDatabases(language)!!
-            } else {
-                check(staging.renameTo(installed)) { "Cannot activate downloaded dictionaries" }
-                onProgress(DictionaryDownloadProgress(pair.downloadBytes, pair.downloadBytes))
-                installedDatabases(language)!!
-            }
+            onProgress(DictionaryDownloadProgress(asset.sizeBytes, asset.sizeBytes))
+            installed
         } finally {
-            staging.deleteRecursively()
+            staging.delete()
         }
     }
 
-    fun openReadOnly(language: String): Pair<SQLiteDatabase, SQLiteDatabase>? {
-        val (wiktionary, espeak) = availableDatabases(language) ?: return null
-        val first = SQLiteDatabase.openDatabase(wiktionary.path, null, SQLiteDatabase.OPEN_READONLY)
-        try {
-            return first to SQLiteDatabase.openDatabase(espeak.path, null, SQLiteDatabase.OPEN_READONLY)
-        } catch (error: Exception) {
-            first.close()
-            throw error
+    fun openReadOnly(language: String, source: DictionarySource): SQLiteDatabase? =
+        availableDatabase(language, source)?.let {
+            SQLiteDatabase.openDatabase(it.path, null, SQLiteDatabase.OPEN_READONLY)
         }
-    }
 }

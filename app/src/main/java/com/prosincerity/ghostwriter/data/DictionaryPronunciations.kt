@@ -16,19 +16,17 @@ internal class DictionaryPronunciations(private val installer: DictionaryInstall
         require(language in installer.release.languages)
         val normalized = Normalizer.normalize(word, Normalizer.Form.NFC)
         if (normalized.isBlank()) return null
-        val (wiktionary, espeak) = installer.openReadOnly(language) ?: return null
-        try {
-            pronunciations(wiktionary, normalized).takeIf { it.isNotEmpty() }?.let {
-                return PronunciationResult(it, PronunciationSource.WIKTIONARY)
+        for ((source, resultSource) in listOf(
+            DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
+            DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
+        )) {
+            installer.openReadOnly(language, source)?.use { database ->
+                pronunciations(database, normalized).takeIf { it.isNotEmpty() }?.let {
+                    return PronunciationResult(it, resultSource)
+                }
             }
-            pronunciations(espeak, normalized).takeIf { it.isNotEmpty() }?.let {
-                return PronunciationResult(it, PronunciationSource.ESPEAK_DATABASE)
-            }
-            return null
-        } finally {
-            wiktionary.close()
-            espeak.close()
         }
+        return null
     }
 
     private fun pronunciations(database: SQLiteDatabase, word: String): List<String> =

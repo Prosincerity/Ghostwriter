@@ -54,6 +54,17 @@ class MainActivityTest {
     }
 
     @Test
+    fun settings_dictionaryDownloadsOpensListAndReturns() {
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onNodeWithText("Download Dictionaries").performClick()
+        composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.").assertExists()
+        composeRule.onNodeWithContentDescription("Download Wiktionary Kaikki for English").assertExists()
+        composeRule.onNodeWithContentDescription("Download eSpeak NG generated for English").assertExists()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("About Ghostwriter").assertExists()
+    }
+
+    @Test
     fun projectLifecycle_createNavigateRenameAndDelete() {
         val projectTitle = uniqueProjectTitle("Main activity project")
         val renamedTitle = "$projectTitle renamed"

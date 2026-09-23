@@ -7,7 +7,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -24,7 +23,7 @@ class DictionaryInstallerInstrumentedTest {
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun installsBothSourcesAndUsesWiktionaryFirst() = withTestContext { context ->
+    fun installsSourcesSeparatelyAndUsesWiktionaryFirst() = withTestContext { context ->
         val wiki = archive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/"))
         val espeak = archive(context, listOf("hammer" to "/hamɚ/", "fallback" to "/fɔlbæk/"))
         var opens = 0
@@ -33,9 +32,16 @@ class DictionaryInstallerInstrumentedTest {
             ByteArrayInputStream(if ("_espeak_" in url) espeak else wiki)
         })
 
-        runBlocking { installer.install("en") }
+        runBlocking { installer.install("en", DictionarySource.ESPEAK) }
+        assertEquals(1, opens)
+        assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+        assertTrue(installer.installedDatabase("en", DictionarySource.ESPEAK) != null)
+        assertEquals(
+            PronunciationResult(listOf("/hamɚ/"), PronunciationSource.ESPEAK_DATABASE),
+            DictionaryPronunciations(installer).lookup("hammer", "en"),
+        )
+        runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
         assertEquals(2, opens)
-        assertTrue(installer.installedDatabases("en") != null)
         assertEquals(
             PronunciationResult(listOf("/ˈhæmə/", "/ˈhæmɚ/"), PronunciationSource.WIKTIONARY),
             DictionaryPronunciations(installer).lookup("hammer", "en"),
@@ -45,22 +51,26 @@ class DictionaryInstallerInstrumentedTest {
             DictionaryPronunciations(installer).lookup("fallback", "en"),
         )
         assertNull(DictionaryPronunciations(installer).lookup("absent", "en"))
-        runBlocking { installer.install("en") }
+        runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
         assertEquals(2, opens)
     }
 
     @Test
-    fun failedSecondArchiveDoesNotInstallHalfTheLanguage() = withTestContext { context ->
+    fun failedArchiveDoesNotRemoveInstalledOtherSource() = withTestContext { context ->
         val wiki = archive(context, listOf("word" to "/wɜːd/"))
         val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
             if ("_espeak_" in url) throw IOException("interrupted download")
             ByteArrayInputStream(wiki)
         })
 
-        val failure = runCatching { runBlocking { installer.install("tr") } }.exceptionOrNull()
+        runBlocking { installer.install("tr", DictionarySource.WIKTIONARY) }
+        val failure = runCatching {
+            runBlocking { installer.install("tr", DictionarySource.ESPEAK) }
+        }.exceptionOrNull()
         assertTrue(failure is IOException)
-        assertFalse(installer.installedDatabases("tr") != null)
-        assertNull(DictionaryPronunciations(installer).lookup("word", "tr"))
+        assertNull(installer.installedDatabase("tr", DictionarySource.ESPEAK))
+        assertTrue(installer.installedDatabase("tr", DictionarySource.WIKTIONARY) != null)
+        assertEquals(PronunciationSource.WIKTIONARY, DictionaryPronunciations(installer).lookup("word", "tr")?.source)
     }
 
     private fun archive(context: Context, entries: List<Pair<String, String>>): ByteArray {

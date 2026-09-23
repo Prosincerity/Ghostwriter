@@ -91,16 +91,16 @@ fun AboutScreen(
 
             AboutSectionTitle("Dictionary attribution")
             Text(
-                "Dictionary datasets prepared for Ghostwriter are derived from Kaikki.org's " +
-                    "machine-readable dictionaries, extracted from Wiktionary with Wiktextract, " +
-                    "and modified for this project.",
+                "The Wiktionary dictionary data was prepared from Kaikki.org's machine-readable " +
+                    "Wiktionary extraction by Wiktextract. The separate eSpeak NG dictionary " +
+                    "contains generated pronunciations. Both were prepared for Ghostwriter.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "The source data is available under the same licenses as Wiktionary: Creative " +
-                    "Commons Attribution-ShareAlike 4.0 International and the GNU Free " +
-                    "Documentation License 1.1 or later.",
+                "The dictionary databases are distributed under Creative Commons " +
+                    "Attribution-ShareAlike 4.0 International. Wiktionary source material " +
+                    "also has GNU Free Documentation License terms; see the links below.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             AboutLink("Dictionary source files", DICTIONARY_REPOSITORY_URL, onOpenLink)
