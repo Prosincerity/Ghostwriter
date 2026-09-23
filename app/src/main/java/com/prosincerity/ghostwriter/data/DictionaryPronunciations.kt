@@ -1,9 +1,11 @@
 package com.prosincerity.ghostwriter.data
 
 import android.database.sqlite.SQLiteDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.Normalizer
 
-internal enum class PronunciationSource { WIKTIONARY, ESPEAK_DATABASE }
+internal enum class PronunciationSource { WIKTIONARY, ESPEAK_DATABASE, ESPEAK_GENERATED }
 
 internal data class PronunciationResult(
     val ipa: List<String>,
@@ -11,22 +13,27 @@ internal data class PronunciationResult(
 )
 
 /** Reads the producer's documented schema without modifying the release files. */
-internal class DictionaryPronunciations(private val installer: DictionaryInstaller) {
-    fun lookup(word: String, language: String): PronunciationResult? {
+internal class DictionaryPronunciations(
+    private val installer: DictionaryInstaller,
+    private val generator: IpaGenerator = EspeakIpa(installer.appContext),
+) {
+    suspend fun lookup(word: String, language: String): PronunciationResult? = withContext(Dispatchers.IO) {
         require(language in installer.release.languages)
         val normalized = Normalizer.normalize(word, Normalizer.Form.NFC)
-        if (normalized.isBlank()) return null
+        if (normalized.isBlank()) return@withContext null
         for ((source, resultSource) in listOf(
             DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
             DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
         )) {
             installer.openReadOnly(language, source)?.use { database ->
                 pronunciations(database, normalized).takeIf { it.isNotEmpty() }?.let {
-                    return PronunciationResult(it, resultSource)
+                    return@withContext PronunciationResult(it, resultSource)
                 }
             }
         }
-        return null
+        generator.ipa(normalized, language)?.let {
+            PronunciationResult(listOf(it), PronunciationSource.ESPEAK_GENERATED)
+        }
     }
 
     private fun pronunciations(database: SQLiteDatabase, word: String): List<String> =

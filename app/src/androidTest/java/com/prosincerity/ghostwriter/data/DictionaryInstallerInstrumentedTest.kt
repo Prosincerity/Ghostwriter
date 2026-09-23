@@ -38,19 +38,29 @@ class DictionaryInstallerInstrumentedTest {
         assertTrue(installer.installedDatabase("en", DictionarySource.ESPEAK) != null)
         assertEquals(
             PronunciationResult(listOf("/hamɚ/"), PronunciationSource.ESPEAK_DATABASE),
-            DictionaryPronunciations(installer).lookup("hammer", "en"),
+            lookup(installer, "hammer", "en"),
         )
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
         assertEquals(2, opens)
         assertEquals(
             PronunciationResult(listOf("/ˈhæmə/", "/ˈhæmɚ/"), PronunciationSource.WIKTIONARY),
-            DictionaryPronunciations(installer).lookup("hammer", "en"),
+            lookup(installer, "hammer", "en"),
         )
         assertEquals(
             PronunciationResult(listOf("/fɔlbæk/"), PronunciationSource.ESPEAK_DATABASE),
-            DictionaryPronunciations(installer).lookup("fallback", "en"),
+            lookup(installer, "fallback", "en"),
         )
-        assertNull(DictionaryPronunciations(installer).lookup("absent", "en"))
+        var generatedCalls = 0
+        val withFallback = DictionaryPronunciations(installer, IpaGenerator { _, _ ->
+            generatedCalls++
+            "ˈfallback"
+        })
+        assertEquals(PronunciationSource.WIKTIONARY, runBlocking { withFallback.lookup("hammer", "en") }?.source)
+        assertEquals(PronunciationSource.ESPEAK_DATABASE, runBlocking { withFallback.lookup("fallback", "en") }?.source)
+        assertEquals(0, generatedCalls)
+        assertEquals(PronunciationSource.ESPEAK_GENERATED, runBlocking { withFallback.lookup("absent", "en") }?.source)
+        assertEquals(1, generatedCalls)
+        assertNull(lookup(installer, "absent", "en"))
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
         assertEquals(2, opens)
     }
@@ -70,8 +80,23 @@ class DictionaryInstallerInstrumentedTest {
         assertTrue(failure is IOException)
         assertNull(installer.installedDatabase("tr", DictionarySource.ESPEAK))
         assertTrue(installer.installedDatabase("tr", DictionarySource.WIKTIONARY) != null)
-        assertEquals(PronunciationSource.WIKTIONARY, DictionaryPronunciations(installer).lookup("word", "tr")?.source)
+        assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "tr")?.source)
     }
+
+    @Test
+    fun generatedIpaIsUsedOnlyAfterBothDatabasesMiss() = withTestContext { context ->
+        val installer = DictionaryInstaller(context)
+        val generated = DictionaryPronunciations(installer, IpaGenerator { _, _ -> "ˈɪpa" })
+        assertEquals(
+            PronunciationResult(listOf("ˈɪpa"), PronunciationSource.ESPEAK_GENERATED),
+            runBlocking { generated.lookup("invented", "en") },
+        )
+    }
+
+    private fun lookup(installer: DictionaryInstaller, word: String, language: String): PronunciationResult? =
+        runBlocking {
+            DictionaryPronunciations(installer, IpaGenerator { _, _ -> null }).lookup(word, language)
+        }
 
     private fun archive(context: Context, entries: List<Pair<String, String>>): ByteArray {
         val file = File(context.cacheDir, "dictionary-fixture-${System.nanoTime()}.db")
