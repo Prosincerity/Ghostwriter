@@ -47,6 +47,7 @@ import com.prosincerity.ghostwriter.data.Settings as AppSettings
 fun SettingsScreen(
     onBack: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenDictionaryDownloads: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
 
@@ -100,7 +101,12 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            DictionaryDownloads()
+            OutlinedButton(
+                onClick = onOpenDictionaryDownloads,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Download Dictionaries")
+            }
 
             Spacer(Modifier.height(24.dp))
 

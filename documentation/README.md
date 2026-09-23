@@ -36,10 +36,12 @@ over new libraries. Build versions and SDK levels live in the Gradle files.
   `WaveformViewport.kt` handles zoom and seek math. Compose Canvas and gestures
   render and control the waveform. Extraction supports cancellation and cache
   reuse.
-- Settings offers user-initiated dictionary downloads. The pinned release
-  manifest identifies read-only SQLite pronunciation indexes stored in
-  app-private internal storage. Normal editing and installed-dictionary lookup
-  remain offline. The dictionary screen and runtime IPA fallback are planned;
+- Settings links to a dedicated rhyme dictionary download screen. Each language
+  offers independent Wiktionary Kaikki and eSpeak NG generated downloads, with
+  installed sources marked on device. The pinned release manifest identifies
+  read-only SQLite pronunciation indexes stored in app-private internal storage.
+  Normal editing and installed-dictionary lookup remain offline. The dictionary
+  screen and runtime IPA fallback are planned;
   see the [rhyme plan](RHYME_DETECTION_PLAN.md).
 
 ## Current limits

@@ -67,6 +67,7 @@ class AboutScreenTest {
                 SettingsScreen(
                     onBack = {},
                     onOpenAbout = { openedAbout = true },
+                    onOpenDictionaryDownloads = {},
                 )
             }
         }

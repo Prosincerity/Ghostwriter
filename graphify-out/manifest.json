@@ -18,9 +18,9 @@
     "semantic_hash": "7c1404307d239fc98adb19ea5796d3ee"
   },
   "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt": {
-    "mtime": 1789757794.4772081,
-    "seen": 1789757827.6449115,
-    "ast_hash": "0bc1d7acf528da71c623bcad3c1a350d",
+    "mtime": 1790189649.1630235,
+    "seen": 1790190052.3672714,
+    "ast_hash": "0bd6a9f84d8c79c6dc0e78a1da5300f3",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt": {
@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt": {
-    "mtime": 1790186921.5143147,
-    "seen": 1790187770.2680128,
-    "ast_hash": "02d73e5cad4cc3651b3ddec7cc69b6fd",
+    "mtime": 1790190111.7212083,
+    "seen": 1790190129.6610487,
+    "ast_hash": "c4ce8c9471633d99d4875b61acdf80db",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt": {
@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790188581.3000953,
-    "seen": 1790188637.5709057,
-    "ast_hash": "e4d8d8d4a7192818bc12540dc6621270",
+    "mtime": 1790189890.8999844,
+    "seen": 1790190052.367352,
+    "ast_hash": "288d0ea963af860fd8053ef166689df9",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -384,15 +384,15 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/AboutScreenTest.kt": {
-    "mtime": 1789754813.81268,
-    "seen": 1789754847.3134382,
-    "ast_hash": "8415c99e3068ddb8f265a9156ff29da5",
+    "mtime": 1790189839.5046306,
+    "seen": 1790190052.3672638,
+    "ast_hash": "ebe78dae0428148bdd7c7620bbc599b6",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/AboutScreen.kt": {
-    "mtime": 1789754813.5566833,
-    "seen": 1789754847.313462,
-    "ast_hash": "7486fb72ecd336445a34798462fd3cae",
+    "mtime": 1790190267.1142547,
+    "seen": 1790190297.5030506,
+    "ast_hash": "ab5b1d9ba7689f3d41ccd1810511476f",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {
@@ -414,9 +414,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/MainActivityTest.kt": {
-    "mtime": 1789757527.5095644,
-    "seen": 1789757560.5160866,
-    "ast_hash": "78a31cddd23586c0ae818f2b94c0a834",
+    "mtime": 1790190258.8433588,
+    "seen": 1790190297.5030077,
+    "ast_hash": "d36631a110f5bbb18417086d3272951c",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryInstallerInstrumentedTest.kt": {
-    "mtime": 1790187056.3856192,
-    "seen": 1790187770.2679546,
-    "ast_hash": "3110f883303a902b09f451789338e143",
+    "mtime": 1790190072.0977066,
+    "seen": 1790190129.6610034,
+    "ast_hash": "86de2bf877759c721c4e7ef492ae987b",
     "semantic_hash": ""
   },
   "app/src/main/assets/dictionary_release.json": {
@@ -492,27 +492,27 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryInstaller.kt": {
-    "mtime": 1790186968.02173,
-    "seen": 1790187770.2679753,
-    "ast_hash": "e92fe4475540e0943976755e938eb84d",
+    "mtime": 1790189721.6841118,
+    "seen": 1790190052.3672743,
+    "ast_hash": "189447e97b0da84bc7839b0205fe11f4",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryPronunciations.kt": {
-    "mtime": 1790186968.023249,
-    "seen": 1790187770.267978,
-    "ast_hash": "33e807bba0c36808a4419d61cdecf370",
+    "mtime": 1790189721.7071114,
+    "seen": 1790190052.3672764,
+    "ast_hash": "5b2eacb9384ade0183179195ab7aca05",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloads.kt": {
-    "mtime": 1790187596.6348271,
-    "seen": 1790187770.2680023,
-    "ast_hash": "d0c2b93940ea48602048757232c71c26",
+    "mtime": 1790190258.8423588,
+    "seen": 1790190297.5030537,
+    "ast_hash": "03737137f6618d4ab9ec6bf0b5f960de",
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
-    "mtime": 1790188581.3002498,
-    "seen": 1790188637.570908,
-    "ast_hash": "f04e34589623b61ad27a6d6008001c36",
+    "mtime": 1790190072.1007063,
+    "seen": 1790190129.6610835,
+    "ast_hash": "7625a8b8185e34c0d16853360e4f678a",
     "semantic_hash": ""
   }
 }

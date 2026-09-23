@@ -17,8 +17,8 @@ The dictionary producer is
 [Prosincerity/Ghostwriter-Dict](https://github.com/Prosincerity/Ghostwriter-Dict).
 Its release naming scheme is `<lang>_kaikki-vYYYYMMDD.db.gz` and
 `<lang>_espeak_kaikki-vYYYYMMDD.db.gz` for each of `en`, `de`, and `tr`.
-The app downloads the two archives for a selected language from a pinned
-GitHub release. After installation, lookup works offline. The app ships the
+The app downloads either archive independently for a selected language from a pinned
+GitHub release. Each installed source works offline. The app ships the
 eSpeak fallback and its language data, so missing or not-yet-downloaded
 databases do not prevent IPA generation.
 
@@ -51,7 +51,7 @@ the producer's normalization policy.
   producer's command, especially stress marks and tie/separator behavior.
 - Decide supported Android ABIs from the project's actual device targets.
   The six current archives total about 127 MB compressed and 467 MB unpacked;
-  download one language pair at a time so users choose the storage cost.
+  let users download individual sources so they choose the storage cost.
 
 Exit check: the checked-in release manifest identifies the corrected public
 release and every asset without relying on a local path. Done for
@@ -60,15 +60,15 @@ native integration.
 
 ### 2. Download, install, and read the SQLite databases
 
-- Add a user-initiated Download action for each language, showing the two
-  archive sizes, progress, completion, and retry. Use an explicit `INTERNET`
+- Add a user-initiated Download action for each language and source, showing the
+  archive size, progress, completion, and retry. Use an explicit `INTERNET`
   permission and Android/AOSP networking APIs without adding a networking
   library. Avoid network access during normal editing or lookup. Keep the
   previously installed release usable if a download fails or is cancelled.
-- Fetch the selected language's Wiktionary and eSpeak `.db.gz` assets from the
-  pinned HTTPS release URLs into temporary files, then stream-decompress them
-  into versioned app-private internal storage. Replace the installed language
-  pair only after both complete; clean up partial files. SQLite needs the
+- Fetch the selected language's Wiktionary or eSpeak `.db.gz` asset from the
+  pinned HTTPS release URL into a temporary file, then stream-decompress it
+  into versioned app-private internal storage. Activate each source only after
+  its download completes; clean up partial files. SQLite needs the
   decompressed files. Report insufficient storage and network errors clearly.
 - For local development, use the same `.gz` archives from the dictionary
   checkout as input to the installer through a debug or instrumented-test
@@ -90,8 +90,8 @@ Exit check: JVM tests cover lookup/precedence/variants and instrumented tests
 exercise local-archive installation, lookup, failed downloads, and offline
 reuse on an AOSP emulator or device.
 
-Implementation note: Settings now has per-language download controls, and the
-app has a versioned installer and read-only lookup path. Synthetic instrumented
+Implementation note: Settings now links to a dedicated download list with separate
+per-language source controls, and the app has a versioned installer and read-only lookup path. Synthetic instrumented
 tests are present and compile. The maintainer will run device tests through
 Android Studio; real release downloads and local archive fixtures remain to
 be exercised there.

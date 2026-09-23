@@ -18,6 +18,7 @@ import androidx.core.net.toUri
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.ui.screens.AboutScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
+import com.prosincerity.ghostwriter.ui.screens.DictionaryDownloadsScreen
 import com.prosincerity.ghostwriter.ui.screens.HomeScreen
 import com.prosincerity.ghostwriter.ui.screens.SettingsScreen
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
@@ -42,6 +43,7 @@ private sealed class Screen {
     data class Editor(val projectTitle: String) : Screen()
     data class Settings(val returnTo: Screen) : Screen()
     data class About(val returnTo: Settings) : Screen()
+    data class DictionaryDownloads(val returnTo: Settings) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -135,6 +137,11 @@ private fun GhostwriterApp(
         is Screen.Settings -> SettingsScreen(
             onBack = { screen = current.returnTo },
             onOpenAbout = { screen = Screen.About(returnTo = current) },
+            onOpenDictionaryDownloads = { screen = Screen.DictionaryDownloads(returnTo = current) },
+        )
+
+        is Screen.DictionaryDownloads -> DictionaryDownloadsScreen(
+            onBack = { screen = current.returnTo },
         )
 
         is Screen.About -> AboutScreen(
