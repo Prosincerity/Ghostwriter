@@ -40,8 +40,11 @@ over new libraries. Build versions and SDK levels live in the Gradle files.
   offers independent Wiktionary Kaikki and eSpeak NG generated downloads, with
   installed sources marked on device. The pinned release manifest identifies
   read-only SQLite pronunciation indexes stored in app-private internal storage.
-  Normal editing and installed-dictionary lookup remain offline. The dictionary
-  screen and runtime IPA fallback are planned;
+  Normal editing and installed-dictionary lookup remain offline. An eSpeak NG
+  1.52.0 JNI fallback generates IPA locally for database misses, with only
+  English, German, and Turkish language data packaged. Its native build and
+  data-generation steps are in [ESPEAK_NATIVE.md](ESPEAK_NATIVE.md). The dictionary
+  screen is planned;
   see the [rhyme plan](RHYME_DETECTION_PLAN.md).
 
 ## Current limits
