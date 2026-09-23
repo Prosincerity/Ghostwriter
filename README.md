@@ -57,4 +57,6 @@ philosophy in mind for every contribution.
 
 ## License
 
-GNU General Public License v3.0 only (`GPL-3.0-only`) — see [LICENSE](LICENSE).
+GNU General Public License v3.0 or later (`GPL-3.0-or-later`) — see [LICENSE](LICENSE).
+Third-party software and downloadable dictionary data have separate notices in
+[THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
