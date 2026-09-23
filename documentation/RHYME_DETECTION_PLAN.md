@@ -44,19 +44,17 @@ the producer's normalization policy.
   `.db.gz` assets, not intermediate wordlists or raw archives.
   Use the schema documented in the producer's README; a full content audit,
   row count, and SQLite integrity scan are outside this integration step.
-- Record the eSpeak binary version that generated that release. Pin eSpeak NG
-  source and generated language data to `1.52.0` if that is the producer's
-  exact version; otherwise resolve the version mismatch before integration.
+- The producer used eSpeak NG `1.52`. The app pins source and generated language
+  data to release `1.52.0` at commit `4870adfa25b1a32b4361592f1be8a40337c58d6c`.
 - Confirm English voice/accent selection and IPA formatting against the
   producer's command, especially stress marks and tie/separator behavior.
-- Decide supported Android ABIs from the project's actual device targets.
+- Build `arm64-v8a` for devices and `x86_64` for the Android Studio emulator.
   The six current archives total about 127 MB compressed and 467 MB unpacked;
   let users download individual sources so they choose the storage cost.
 
 Exit check: the checked-in release manifest identifies the corrected public
 release and every asset without relying on a local path. Done for
-`kaikki-v20260909`; eSpeak version and Android ABI decisions remain before
-native integration.
+`kaikki-v20260909`; the maintainer confirmed eSpeak version 1.52 and the two ABIs.
 
 ### 2. Download, install, and read the SQLite databases
 
@@ -92,9 +90,8 @@ reuse on an AOSP emulator or device.
 
 Implementation note: Settings now links to a dedicated download list with separate
 per-language source controls, and the app has a versioned installer and read-only lookup path. Synthetic instrumented
-tests are present and compile. The maintainer will run device tests through
-Android Studio; real release downloads and local archive fixtures remain to
-be exercised there.
+tests are present and compile. The maintainer confirmed instrumented tests,
+downloading, and cancelling on an Android Studio virtual emulator.
 
 ### 3. Build a minimal eSpeak NG 1.52 Android library
 
@@ -115,6 +112,10 @@ be exercised there.
 
 Exit check: `assembleDebug` succeeds from a clean checkout and the data files
 and native library are present in the APK for every selected ABI.
+
+Implementation note: the pinned 1.52.0 submodule and reduced data bundle build
+for both ABIs. The host generation script, exact asset list, build settings,
+and verification are documented in [ESPEAK_NATIVE.md](ESPEAK_NATIVE.md).
 
 ### 4. Add the IPA-only JNI wrapper and prove it on Android
 
@@ -137,6 +138,11 @@ Exit check: instrumented tests on Android return nonempty IPA for all three
 languages, match agreed CLI fixtures, and handle bad language/input/data
 errors without crashing. This is the runtime proof for the native approach.
 
+Implementation note: the narrow JNI bridge, offline data extraction, and
+three-language comparison tests are present. The host API produces the same
+IPA as the pinned CLI fixtures. The maintainer will run the JNI instrumented
+tests in Android Studio; device results remain pending.
+
 ### 5. Join database lookup and runtime fallback
 
 - Build a single pronunciation service used by future dictionary/rhyme UI:
@@ -150,6 +156,10 @@ errors without crashing. This is the runtime proof for the native approach.
 
 Exit check: installed databases and the bundled JNI fallback work with
 airplane mode enabled and no Google services on the device.
+
+Implementation note: the read-only lookup now falls through from Wiktionary
+to eSpeak database to local generation on a background dispatcher. Device
+verification of the complete lookup path remains pending.
 
 ### 6. Implement rhyme queries and editor behavior
 

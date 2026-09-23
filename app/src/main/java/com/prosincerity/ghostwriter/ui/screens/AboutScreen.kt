@@ -33,6 +33,8 @@ internal const val WIKTIONARY_COPYRIGHT_URL =
     "https://en.wiktionary.org/wiki/Wiktionary:Copyrights"
 internal const val CC_BY_SA_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
 internal const val GFDL_URL = "https://www.gnu.org/licenses/fdl-1.3.html"
+internal const val ESPEAK_SOURCE_URL = "https://github.com/espeak-ng/espeak-ng/tree/1.52.0"
+internal const val ESPEAK_LICENSE_URL = "https://github.com/espeak-ng/espeak-ng/blob/1.52.0/COPYING"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,6 +110,16 @@ fun AboutScreen(
             AboutLink("Wiktionary copyright and licensing", WIKTIONARY_COPYRIGHT_URL, onOpenLink)
             AboutLink("CC BY-SA 4.0", CC_BY_SA_URL, onOpenLink)
             AboutLink("GNU Free Documentation License", GFDL_URL, onOpenLink)
+
+            AboutSectionTitle("Offline IPA generation")
+            Text(
+                "For words missing from both downloaded dictionaries, Ghostwriter uses " +
+                    "eSpeak NG 1.52.0 locally to generate IPA. Its source is available under " +
+                    "the GNU General Public License version 3 or later.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            AboutLink("eSpeak NG 1.52.0 source", ESPEAK_SOURCE_URL, onOpenLink)
+            AboutLink("eSpeak NG license", ESPEAK_LICENSE_URL, onOpenLink)
 
             Text(
                 "Ghostwriter is not affiliated with or endorsed by Kaikki.org, Wiktionary, " +
