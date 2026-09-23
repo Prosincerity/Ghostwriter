@@ -1,11 +1,57 @@
 # Ghostwriter documentation
 
-## Documentation Index
+- [FEATURES.md](FEATURES.md): implemented features and roadmap.
+- [TESTING.md](TESTING.md): test, lint, and coverage commands.
+- [SETUP_NOTES.md](SETUP_NOTES.md): build requirements.
+- [RHYME_DETECTION_PLAN.md](RHYME_DETECTION_PLAN.md): dictionary and rhyme work in progress.
 
-- [FEATURES.md](FEATURES.md) — authoritative roadmap and non-goals.
-- [AGENT_CONTEXT.md](AGENT_CONTEXT.md) — current architecture, constraints,
-  technical debt, and deliberate decisions.
-- [TESTING.md](TESTING.md) — test commands and coverage-report workflow.
-- [SETUP_NOTES.md](SETUP_NOTES.md) — current build prerequisites and setup.
-- [RHYME_DETECTION_PLAN.md](RHYME_DETECTION_PLAN.md) — stepwise dictionary,
-  eSpeak NG JNI, rhyme detection, and licensing plan.
+## Architecture
+
+Ghostwriter is a Kotlin, Jetpack Compose, Material 3 Android app. Its namespace
+is `com.prosincerity.ghostwriter`. It works offline by default, has no AI
+features or Google Play Services dependency, and favors Android framework APIs
+over new libraries. Build versions and SDK levels live in the Gradle files.
+
+- `MainActivity.kt` hosts a small sealed-class screen navigator. Keep the
+  hand-rolled navigation unless a feature requires a change. Its
+  `configChanges` setting preserves this in-memory navigation on rotation;
+  process death still resets it.
+- `data/Settings.kt` uses `SharedPreferences` for autosave interval and backup
+  count. Keep that store for new settings.
+- `data/ProjectStorage.kt` coordinates project files under the app-specific
+  external-files directory: lyric snapshots, `project.json`, an assigned beat,
+  and `waveform.dat`. `ProjectLyricsStorage.kt` handles manual saves and
+  rotating autosaves; `StagedFileWriter.kt` replaces files through a temporary
+  file; `WaveformCache.kt` validates cached peaks. Storage mutations are
+  synchronized. Loading chooses the newest readable manual or autosave
+  snapshot. Import and export should use the Storage Access Framework so users
+  can choose a visible destination; autosaves stay in app storage.
+- Project metadata uses Android's `org.json`. Assigned beats are copied into
+  their project. Changing a beat invalidates its waveform cache and markers.
+  The global instrumentals library is planned, not implemented.
+- `EditorScreen.kt` owns lyric persistence and player state; `LyricsNotepad.kt`
+  owns the editing surface. Autosave runs periodically and on editor exit.
+  `BeatPlayer.kt` wraps AOSP `MediaPlayer`. `WaveformExtractor.kt` uses
+  `MediaExtractor` and `MediaCodec` off the UI thread;
+  `WaveformViewport.kt` handles zoom and seek math. Compose Canvas and gestures
+  render and control the waveform. Extraction supports cancellation and cache
+  reuse.
+- Settings offers user-initiated dictionary downloads. The pinned release
+  manifest identifies read-only SQLite pronunciation indexes stored in
+  app-private internal storage. Normal editing and installed-dictionary lookup
+  remain offline. The dictionary screen and runtime IPA fallback are planned;
+  see the [rhyme plan](RHYME_DETECTION_PLAN.md).
+
+## Current limits
+
+- Navigation survives rotation but not process death.
+- Initial project reads and the final editor save can run on the main thread;
+  large storage operations can delay other saves.
+- Beat and metadata replacement are separate writes, so a metadata failure can
+  leave the new beat with old metadata.
+- Player volume, loop setting, and position last only for the current session.
+- First-time waveform extraction can be slow; it has cancel, retry, and a
+  duration warning, but no percentage progress.
+
+See [FEATURES.md](FEATURES.md) for planned work. Agent workflow rules live in
+the repository's [AGENTS.md](../AGENTS.md).
