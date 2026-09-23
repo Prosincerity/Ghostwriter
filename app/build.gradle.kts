@@ -6,6 +6,7 @@ plugins {
 
 android {
     namespace = "com.prosincerity.ghostwriter"
+    ndkVersion = "30.0.16248370"
     compileSdk {
         version = release(37)
     }
@@ -18,6 +19,14 @@ android {
         versionName = "1.1.0-waveform-test.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+        externalNativeBuild {
+            cmake {
+                targets += "ghostwriter_ipa"
+            }
+        }
     }
 
     buildTypes {
@@ -37,6 +46,12 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "4.1.2"
+        }
     }
 }
 
