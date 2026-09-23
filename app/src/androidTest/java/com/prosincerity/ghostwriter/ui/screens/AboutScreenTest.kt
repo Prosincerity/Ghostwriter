@@ -32,9 +32,11 @@ class AboutScreenTest {
         }
 
         composeRule.onNodeWithText("Version 1.2.3").assertExists()
-        composeRule.onNodeWithText("GNU GPL v3.0").assertExists()
+        composeRule.onNodeWithText("GNU GPL v3.0 or later").assertExists()
         composeRule.onNodeWithText("Dictionary attribution").assertExists()
         composeRule.onNodeWithText("CC BY-SA 4.0").assertExists()
+        composeRule.onNodeWithText("Third-party licenses").assertExists()
+        composeRule.onNodeWithText("Dictionary data license and attribution").assertExists()
         composeRule.onNodeWithText("Dictionary source files").performClick()
 
         composeRule.runOnIdle {

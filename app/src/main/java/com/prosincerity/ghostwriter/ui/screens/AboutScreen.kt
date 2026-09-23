@@ -28,6 +28,10 @@ internal const val GHOSTWRITER_LICENSE_URL =
     "https://github.com/Prosincerity/Ghostwriter/blob/main/LICENSE"
 internal const val DICTIONARY_REPOSITORY_URL =
     "https://github.com/Prosincerity/Ghostwriter-Dict"
+internal const val DICTIONARY_DATA_LICENSE_URL =
+    "https://github.com/Prosincerity/Ghostwriter-Dict/blob/main/LICENSE-DATA.md"
+internal const val THIRD_PARTY_LICENSES_URL =
+    "https://github.com/Prosincerity/Ghostwriter/blob/main/THIRD_PARTY_LICENSES.md"
 internal const val KAIKKI_URL = "https://kaikki.org/dictionary/"
 internal const val WIKTIONARY_COPYRIGHT_URL =
     "https://en.wiktionary.org/wiki/Wiktionary:Copyrights"
@@ -85,11 +89,12 @@ fun AboutScreen(
             AboutSectionTitle("Open source")
             Text(
                 "Copyright © 2026 Ghostwriter contributors. Ghostwriter is released under " +
-                    "the GNU General Public License v3.0 only.",
+                    "the GNU General Public License v3.0 or later.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             AboutLink("Source code", GHOSTWRITER_REPOSITORY_URL, onOpenLink)
-            AboutLink("GNU GPL v3.0", GHOSTWRITER_LICENSE_URL, onOpenLink)
+            AboutLink("GNU GPL v3.0 or later", GHOSTWRITER_LICENSE_URL, onOpenLink)
+            AboutLink("Third-party licenses", THIRD_PARTY_LICENSES_URL, onOpenLink)
 
             AboutSectionTitle("Dictionary attribution")
             Text(
@@ -106,6 +111,7 @@ fun AboutScreen(
                 style = MaterialTheme.typography.bodyMedium,
             )
             AboutLink("Dictionary source files", DICTIONARY_REPOSITORY_URL, onOpenLink)
+            AboutLink("Dictionary data license and attribution", DICTIONARY_DATA_LICENSE_URL, onOpenLink)
             AboutLink("Kaikki.org data source", KAIKKI_URL, onOpenLink)
             AboutLink("Wiktionary copyright and licensing", WIKTIONARY_COPYRIGHT_URL, onOpenLink)
             AboutLink("CC BY-SA 4.0", CC_BY_SA_URL, onOpenLink)
