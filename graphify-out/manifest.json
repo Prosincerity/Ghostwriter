@@ -228,9 +228,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1790188581.2999496,
-    "seen": 1790188637.5709019,
-    "ast_hash": "f993a12aa55a15b1d9da0ea5e2a6699c",
+    "mtime": 1790193920.2093291,
+    "seen": 1790194097.3933656,
+    "ast_hash": "77c2a8547a8b7c2af34a50de944c255c",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
@@ -384,15 +384,15 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/AboutScreenTest.kt": {
-    "mtime": 1790189839.5046306,
-    "seen": 1790190052.3672638,
-    "ast_hash": "ebe78dae0428148bdd7c7620bbc599b6",
+    "mtime": 1790193920.2113292,
+    "seen": 1790194097.3930066,
+    "ast_hash": "8509260b726f9f3f29adc4f419bdef6e",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/AboutScreen.kt": {
-    "mtime": 1790192462.09066,
-    "seen": 1790192587.2424526,
-    "ast_hash": "21140977a20fd5c5f9fe22cdcb0f10da",
+    "mtime": 1790193920.210329,
+    "seen": 1790194097.3930562,
+    "ast_hash": "ea17308ef622993a65600774b55f9768",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {
@@ -510,9 +510,9 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
-    "mtime": 1790192462.0916603,
-    "seen": 1790192587.2429118,
-    "ast_hash": "5508f5f813875b25a337f2b0bd2495d3",
+    "mtime": 1790193494.676679,
+    "seen": 1790193568.137216,
+    "ast_hash": "bfe4aed42bc027c1e0784d1062716dca",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
@@ -1560,9 +1560,9 @@
     "semantic_hash": ""
   },
   "documentation/ESPEAK_NATIVE.md": {
-    "mtime": 1790192944.8005917,
-    "seen": 1790192995.2258708,
-    "ast_hash": "8d8d74776e3b2ca251522d628536c0d8",
+    "mtime": 1790193920.210329,
+    "seen": 1790194097.3933895,
+    "ast_hash": "d92bd85eb970734b5e6e1d0410c8eaee",
     "semantic_hash": ""
   },
   "third_party/espeak-ng/.github/dependabot.yml": {
@@ -3783,6 +3783,24 @@
     "mtime": 1790191660.6407359,
     "seen": 1790192587.24377,
     "ast_hash": "d18107992dd811465bc97caba0107a4b",
+    "semantic_hash": ""
+  },
+  "THIRD_PARTY_LICENSES.md": {
+    "mtime": 1790194037.5158544,
+    "seen": 1790194097.3933704,
+    "ast_hash": "9a4f1d65e7ba05d536a61fd8ac73e66d",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/GPL-3.0-or-later.txt": {
+    "mtime": 1790194005.6872544,
+    "seen": 1790194097.3933735,
+    "ast_hash": "2e9fb6322cacddc19bebd661f36121da",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/THIRD_PARTY_LICENSES.md": {
+    "mtime": 1790194043.0757844,
+    "seen": 1790194097.3933754,
+    "ast_hash": "9a4f1d65e7ba05d536a61fd8ac73e66d",
     "semantic_hash": ""
   }
 }
