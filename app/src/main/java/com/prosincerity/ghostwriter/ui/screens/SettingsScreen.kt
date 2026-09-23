@@ -100,6 +100,10 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(24.dp))
 
+            DictionaryDownloads()
+
+            Spacer(Modifier.height(24.dp))
+
             OutlinedButton(
                 onClick = onOpenAbout,
                 modifier = Modifier.fillMaxWidth(),
