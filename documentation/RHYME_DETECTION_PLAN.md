@@ -212,12 +212,3 @@ tests cover the chosen editor behavior and performance with realistic lines.
 
 Exit check: a clean release build can be reproduced, all attribution is
 visible, and the offline device verification passes.
-
-## Build setup already present
-
-This checkout's `local.properties` points to an Android SDK visible from the
-current distrobox, with NDK `30.0.16248370` and CMake `4.1.2` installed.
-The upstream 1.52 Android project requests CMake `3.22.1` and NDK
-`26.1.10909125`; the first native build must validate the current tools or
-pin/install the compatible versions in the shared SDK. No second SDK copy is
-needed merely because Android Studio runs in another distrobox.

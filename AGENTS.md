@@ -2,7 +2,7 @@
 
 Before modifying code, read:
 
-- documentation/AGENT_CONTEXT.md
+- documentation/README.md
 - documentation/FEATURES.md
 - README.md
 
@@ -30,7 +30,7 @@ Before modifying code, read:
 
 ## Current architecture
 
-See documentation/AGENT_CONTEXT.md for authoritative details.
+See documentation/README.md for architecture and deliberate decisions.
 
 If documentation conflicts with assumptions or general Android conventions,
 the repository documentation wins.

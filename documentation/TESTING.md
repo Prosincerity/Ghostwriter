@@ -1,134 +1,39 @@
 # Testing and coverage
 
-Ghostwriter has local JVM tests and Android instrumented tests. Debug builds
-have JaCoCo coverage enabled for both test types, and Gradle can combine their
-results into one HTML report.
+Ghostwriter has JUnit 4 tests in `app/src/test/` and Android instrumented
+tests in `app/src/androidTest/` using AndroidJUnitRunner, Espresso, and
+Compose UI testing. Instrumented tests run on an AOSP device or emulator
+without Google Play Services. Test totals change as coverage grows.
 
-## Test stack
+## Regular checks
 
-- Local tests use JUnit 4 and live in `app/src/test/`.
-- Instrumented tests use `AndroidJUnitRunner`, Espresso, and Compose UI testing
-  and live in `app/src/androidTest/`.
-- Coverage uses the JaCoCo support built into the Android Gradle Plugin.
-- Instrumented tests can run on an AOSP emulator; Google Play Services are not
-  required.
-
-## Regular verification
-
-Run the local tests, lint, and compile the instrumented-test APK with:
+From the repository root:
 
 ```bash
 ./gradlew test lint assembleDebugAndroidTest
 ```
 
-Local test result pages are written below:
+Local reports appear under `app/build/reports/tests/`. Connected test reports
+appear under `app/build/reports/androidTests/connected/`. Run the connected
+suite from Android Studio or with `./gradlew connectedDebugAndroidTest` when a
+device is available.
 
-```text
-app/build/reports/tests/
-```
+## Coverage
 
-After a connected instrumented-test run, its result pages are written below:
+Debug builds enable JaCoCo for local and instrumented tests:
 
-```text
-app/build/reports/androidTests/connected/
-```
+| Report | Gradle task | HTML output |
+| --- | --- | --- |
+| Local tests | `./gradlew :app:createDebugUnitTestCoverageReport` | `app/build/reports/coverage/test/debug/index.html` |
+| Instrumented tests | `./gradlew :app:createDebugAndroidTestCoverageReport` | `app/build/reports/coverage/androidTest/debug/connected/index.html` |
+| Combined | `./gradlew :app:createCoverageReport` | `app/build/reports/code_coverage_html_report/global/index.html` |
 
-## Coverage reports
+The instrumented and combined reports require a connected device or running
+emulator. The combined task reruns both suites with coverage enabled. Android
+Gradle Plugin may warn that `reportAggregationSupport` is experimental.
+No minimum coverage threshold is enforced.
 
-### Unified report
-
-Start an AVD and wait until Android Studio reports that it is online. Then run
-this task from the project root:
-
-```bash
-./gradlew :app:createCoverageReport
-```
-
-This task runs the debug local tests and connected debug instrumented tests,
-then combines both coverage data sets. Open the resulting report at:
-
-```text
-app/build/reports/code_coverage_html_report/global/index.html
-```
-
-Unified report aggregation is currently an experimental Android Gradle Plugin
-feature. The warning printed by Gradle for
-`android.experimental.reportAggregationSupport=true` is therefore expected.
-
-### Local-test-only report
-
-This report does not require an emulator:
-
-```bash
-./gradlew :app:createDebugUnitTestCoverageReport
-```
-
-Open:
-
-```text
-app/build/reports/coverage/test/debug/index.html
-```
-
-### Instrumented-test-only report
-
-With an AVD or device connected, run:
-
-```bash
-./gradlew :app:createDebugAndroidTestCoverageReport
-```
-
-Open:
-
-```text
-app/build/reports/coverage/androidTest/debug/connected/index.html
-```
-
-## Running the unified report from Android Studio
-
-1. Start the AVD from **Tools > Device Manager** and wait for it to finish
-   booting.
-2. Open **View > Tool Windows > Gradle**.
-3. Use **Execute Gradle Task** in the Gradle tool window and enter
-   `:app:createCoverageReport`. The integrated terminal can run the same
-   command when it has access to the Android SDK and the AVD's ADB server.
-4. Wait for both the local and connected tests to finish. A previous successful
-   test run is not reused; the coverage task runs the tests again with coverage
-   collection enabled.
-5. In the Project tool window, switch from the **Android** view to the
-   **Project** view and open
-   `app/build/reports/code_coverage_html_report/global/index.html`. If Android
-   Studio does not preview it, use **Open In > Browser** or open that file
-   directly in a web browser.
-
-The unified report lets you drill down from packages to classes and source
-lines. Green lines were executed, red lines were missed, and yellow lines were
-only partially covered. Compose and Kotlin compiler-generated code can add
-noise, so source-level line and branch coverage are more useful than treating
-the overall percentage as a target. No minimum coverage threshold is currently
-enforced.
-
-## ADB and container troubleshooting
-
-The coverage task must run in an environment that can see the emulator. If an
-AVD is visible to Android Studio but not inside Distrobox, run the Gradle task
-through Android Studio's Gradle tool window or from a host terminal instead.
-Confirm device visibility with:
-
-```bash
-adb devices
-```
-
-The emulator should appear with the state `device`. If the coverage task fails,
-fix the failing test or device connection first; Gradle will not create a
-complete unified report after a failed test run.
-
-On newer JDKs, Gradle may also print a warning that
-`com.google.protobuf.UnsafeUtil` called a terminally deprecated
-`sun.misc.Unsafe` method. This originates in protobuf used by the Android/Gradle
-toolchain, not Ghostwriter's application code. It does not invalidate a report
-when the build finishes successfully. Prefer updating Android Studio and the
-Android Gradle Plugin when an upstream fix becomes available instead of adding
-or forcing a protobuf application dependency solely to hide the warning.
-
-All generated test and coverage pages are under `app/build/`. They are ignored
-by Git, can be regenerated at any time, and are removed by `./gradlew clean`.
+If Gradle cannot see a running emulator, check `adb devices` or launch the
+coverage task from Android Studio's Gradle tool window. A failed test run
+does not produce a complete combined report. All generated reports live in
+`app/build/` and can be recreated.

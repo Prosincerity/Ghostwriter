@@ -28,10 +28,7 @@ Feature roadmap below.
 
 Project documentation lives in [`documentation/`](documentation/):
 
-- [Feature roadmap](documentation/FEATURES.md)
-- [Architecture and agent context](documentation/AGENT_CONTEXT.md)
-- [Testing and coverage](documentation/TESTING.md)
-- [Build setup](documentation/SETUP_NOTES.md)
+- [Documentation index and architecture](documentation/README.md)
 
 ## Roadmap
 
@@ -52,8 +49,6 @@ remaining work.
 - JaCoCo can generate local, instrumented, or unified HTML coverage reports.
   See [`documentation/TESTING.md`](documentation/TESTING.md) for the commands,
   Android Studio workflow, output paths, and ADB troubleshooting.
-- Active physical-device testing uses an AOSP-based Pixel 8. Testing APKs are
-  also sent to test users for additional real-device feedback.
 
 ## Contributing
 
