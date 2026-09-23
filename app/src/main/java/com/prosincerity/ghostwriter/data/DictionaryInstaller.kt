@@ -93,7 +93,7 @@ internal class DictionaryInstaller(
     context: Context,
     private val source: DictionaryArchiveSource = releaseSource,
 ) {
-    private val appContext = context.applicationContext
+    internal val appContext = context.applicationContext
     val release = DictionaryRelease.load(appContext)
     private val root = File(appContext.filesDir, "dictionaries")
 
