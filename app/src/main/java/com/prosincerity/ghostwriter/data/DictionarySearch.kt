@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.data
 import android.database.sqlite.SQLiteDatabase
 import com.prosincerity.ghostwriter.logic.IpaSearchKeys
 import com.prosincerity.ghostwriter.logic.DictionaryHeadword
+import com.prosincerity.ghostwriter.logic.CompoundRhymeFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -53,9 +54,21 @@ internal class DictionarySearch(
         }.sortedWith(compareByDescending<SearchPrefix> { it.tokenCount }.thenByDescending { it.value.length })
             .distinctBy { it.tokens ?: it.value }
         val matches = linkedMapOf<String, DictionaryMatch>()
-        val collectionLimit = RESULT_LIMIT
-        fun result(): DictionarySearchResult =
-            DictionarySearchResult(pronunciation, matches.values.take(RESULT_LIMIT))
+        val collectionLimit = if (mode == DictionarySearchMode.RHYME) {
+            CANDIDATE_LIMIT
+        } else RESULT_LIMIT
+        fun result(): DictionarySearchResult {
+            val collected = matches.values.toList()
+            val excluded = if (mode == DictionarySearchMode.RHYME) {
+                CompoundRhymeFilter.excludedWords(
+                    collected.map { CompoundRhymeFilter.Entry(it.word, it.ipa) },
+                    pronunciation?.ipa.orEmpty().map { CompoundRhymeFilter.Entry(normalized, it) },
+                    language,
+                )
+            } else emptySet()
+            return DictionarySearchResult(pronunciation,
+                collected.filterNot { it.word in excluded }.take(RESULT_LIMIT))
+        }
         val sources = listOf(
             DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
             DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
@@ -173,6 +186,7 @@ internal class DictionarySearch(
 
     private companion object {
         const val RESULT_LIMIT = 60
+        const val CANDIDATE_LIMIT = RESULT_LIMIT * 3
         const val SCAN_LIMIT = 200
 
         fun escapeLike(value: String): String = buildString {

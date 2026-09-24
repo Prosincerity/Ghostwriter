@@ -49,6 +49,9 @@ class DictionarySearchInstrumentedTest {
         assertTrue(jointSuffix.matches.any { it.word == "checkpoint" })
         val pointSuffix = runBlocking { search.search("point", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertTrue(pointSuffix.matches.any { it.word == "checkpoint" })
+        val jointRhymes = runBlocking { search.search("joint", "en", DictionarySearchMode.RHYME) }
+        assertTrue(jointRhymes.matches.any { it.word == "point" })
+        assertFalse(jointRhymes.matches.any { it.word == "outpoint" })
 
         val escaped = runBlocking { search.search("a%", "en", DictionarySearchMode.WORD_PREFIX) }
         assertEquals(listOf("a%mazing"), escaped.matches.map { it.word })
