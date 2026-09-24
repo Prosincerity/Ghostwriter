@@ -16,6 +16,51 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class DictionarySearchInstrumentedTest {
     @Test
+    fun paginatesPastResultAndDatabaseScanLimits() = withDictionaryFixture { installer ->
+        val file = File(installer.appContext.filesDir, "dictionaries/en/${installer.release.tag}/wiktionary.db")
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.beginTransaction()
+            try {
+                repeat(205) { index ->
+                    db.execSQL("INSERT INTO dictionary VALUES (?, ?, ?, ?)", arrayOf(
+                        "rhyme${index.toString().padStart(3, '0')}", "/ˈbæt/", "tæbˈ", "æ",
+                    ))
+                }
+                repeat(70) { index ->
+                    db.execSQL("INSERT INTO dictionary VALUES (?, ?, ?, ?)", arrayOf(
+                        "ending${index.toString().padStart(3, '0')}", "/ˈlaɪtɪŋ/", "ŋɪtaɪlˈ", "ɪ aɪ",
+                    ))
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+        }
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer, IpaGenerator { _, _ -> null }))
+
+        val rhymePages = (0..3).map { page ->
+            runBlocking { search.search("cat", "en", DictionarySearchMode.RHYME, page) }
+        }
+        assertEquals(listOf(60, 60, 60, 30), rhymePages.map { it.matches.size })
+        assertEquals(listOf(true, true, true, false), rhymePages.map { it.hasNext })
+        assertEquals(210, rhymePages.flatMap { it.matches }.map { it.word }.toSet().size)
+
+        val prefixPages = (0..3).map { page ->
+            runBlocking { search.search("rhyme", "en", DictionarySearchMode.WORD_PREFIX, page) }
+        }
+        assertEquals(listOf(60, 60, 60, 25), prefixPages.map { it.matches.size })
+        assertEquals(205, prefixPages.flatMap { it.matches }.map { it.word }.toSet().size)
+
+        val suffixFirst = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX, 0) }
+        val suffixSecond = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX, 1) }
+        assertEquals(60, suffixFirst.matches.size)
+        assertTrue(suffixFirst.hasNext)
+        assertTrue(suffixSecond.matches.any { it.word == "sing" })
+        assertTrue(suffixFirst.matches.map { it.word }.toSet().intersect(
+            suffixSecond.matches.map { it.word }.toSet()).isEmpty())
+    }
+
+    @Test
     fun unstressedGermanRhymesSurviveCommonEndingScanLimit() = withDictionaryFixture { installer ->
         val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
         version.mkdirs()

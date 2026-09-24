@@ -208,8 +208,10 @@ tests cover the chosen editor behavior and performance with realistic lines.
 Implementation note: a first Dictionary Screen is reachable from the Editor's
 book button and returns to the same project. It offers rhyme, word-prefix,
 word-suffix, and assonance searches over installed databases, with bounded
-results, source labels, and generated IPA for missing input words. The IPA
-tokenizer and headword cleanup are ported from the dictionary producer with
+pages of 60 results, source labels, and generated IPA for missing input words.
+Previous and Next controls sit below the results. Search reads indexed database
+rows in batches as pages are requested, preserving the match order across pages.
+The IPA tokenizer and headword cleanup are ported from the dictionary producer with
 JVM fixture tests. The language menu lists only installed languages, combining
 the two English sources under English. With no dictionaries installed, the
 screen links to dictionary downloads in Settings. Each menu opens beside its
@@ -220,18 +222,18 @@ spellings with the same pronunciation remain eligible. Search queries run on
 an IO dispatcher. Rhyme mode requires an exact stressed rime instead of
 trying shorter reversed prefixes. Synthetic database and Compose tests have
 been added and compile; the earlier Android Studio test run passed. The new
-exact-rime, phoneme-suffix, and compound-ending device tests still need to run
-in Android Studio. Real-database
-performance, especially word-suffix scans, and syllable coloring remain.
+pagination, exact-rime, phoneme-suffix, and compound-ending device tests still
+need to run in Android Studio. Real-database performance, especially
+word-suffix scans, and syllable coloring remain.
 
 Rhyme results omit a longer word when its written ending is
 another returned word (or the query word), the shorter word's vowel-through-end
 IPA matches, and the longer word has an earlier vowel. This suppresses
 compound endings such as `checkpoint`/`point` and German `-schaft`/`Schaft`
-without removing one-syllable rhymes such as `bat`/`at`. The search gathers a
-bounded extra set of rhyme candidates before this filter, then displays at most
-60. Word-suffix mode keeps compounds because it searches the exact phoneme
-suffix at each length.
+without removing one-syllable rhymes such as `bat`/`at`. Candidates are checked
+against the query and earlier matches so later pages cannot remove a result
+from an earlier page. Each page displays at most 60 matches. Word-suffix mode
+keeps compounds because it searches the exact phoneme suffix at each length.
 
 ### 7. Licensing, attribution, and release verification
 

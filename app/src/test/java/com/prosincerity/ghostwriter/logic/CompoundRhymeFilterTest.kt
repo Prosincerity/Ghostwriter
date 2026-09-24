@@ -29,6 +29,14 @@ class CompoundRhymeFilterTest {
     }
 
     @Test
+    fun laterMatchesDoNotChangeEarlierPageExclusions() {
+        val firstPage = listOf(entry("checkpoint", "/ˈtʃɛkpɔɪnt/"))
+        assertEquals(emptySet<String>(), CompoundRhymeFilter.excludedWords(firstPage, emptyList(), "en"))
+        assertEquals(emptySet<String>(), CompoundRhymeFilter.excludedWords(
+            firstPage + entry("point", "/ˈpɔɪnt/"), emptyList(), "en"))
+    }
+
+    @Test
     fun germanSuffixMatchesRegardlessOfNounCapitalization() {
         assertEquals(setOf("Anwaltschaft", "Wissenschaft"), CompoundRhymeFilter.excludedWords(
             listOf(

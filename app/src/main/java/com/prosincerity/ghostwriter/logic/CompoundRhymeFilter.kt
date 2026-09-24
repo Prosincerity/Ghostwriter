@@ -13,17 +13,21 @@ internal object CompoundRhymeFilter {
             return Pronounced(entry, entry.word.lowercase(locale), IpaSearchKeys.phonemeTokens(keys),
                 IpaSearchKeys.rimeTokens(keys, language)?.let(IpaSearchKeys::phonemeTokens))
         }
-        val resultEntries = results.mapNotNull(::pronounced)
-        val entries = resultEntries + query.mapNotNull(::pronounced)
-        return resultEntries.filter { candidate ->
-            entries.any { base ->
-                val ending = base.rime ?: return@any false
-                candidate.entry.word != base.entry.word && candidate.spelling.length > base.spelling.length &&
-                    candidate.spelling.endsWith(base.spelling) &&
+        val seen = mutableMapOf<String, MutableList<Pronounced>>()
+        query.mapNotNull(::pronounced).forEach { seen.getOrPut(it.spelling) { mutableListOf() } += it }
+        val excluded = mutableSetOf<String>()
+        results.mapNotNull(::pronounced).forEach { candidate ->
+            val repeatedEnding = (1 until candidate.spelling.length).any { start ->
+                seen[candidate.spelling.substring(start)].orEmpty().any base@{ base ->
+                    val ending = base.rime ?: return@base false
                     candidate.phonemes.size > ending.size && candidate.phonemes.takeLast(ending.size) == ending &&
-                    IpaSearchKeys.hasVowel(candidate.phonemes.dropLast(ending.size), language)
+                        IpaSearchKeys.hasVowel(candidate.phonemes.dropLast(ending.size), language)
+                }
             }
-        }.mapTo(mutableSetOf()) { it.entry.word }
+            if (repeatedEnding) excluded += candidate.entry.word
+            seen.getOrPut(candidate.spelling) { mutableListOf() } += candidate
+        }
+        return excluded
     }
 
     private data class Pronounced(
