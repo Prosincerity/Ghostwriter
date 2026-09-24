@@ -123,7 +123,7 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
                         )
                     }
                     if (installed[key] == true) {
-                        Icon(Icons.Default.Check, contentDescription = "$sourceLabel installed on device")
+                        Icon(Icons.Default.Check, contentDescription = "$sourceLabel installed for ${labels.getValue(language)}")
                     } else {
                         IconButton(
                             onClick = {

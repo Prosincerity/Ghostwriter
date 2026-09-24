@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -58,8 +59,14 @@ class MainActivityTest {
         composeRule.onNodeWithContentDescription("Settings").performClick()
         composeRule.onNodeWithText("Download Dictionaries").performClick()
         composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.").assertExists()
-        composeRule.onNodeWithContentDescription("Download Wiktionary Kaikki for English").assertExists()
-        composeRule.onNodeWithContentDescription("Download eSpeak NG generated for English").assertExists()
+        composeRule.onNode(
+            hasContentDescription("Download Wiktionary Kaikki for English") or
+                hasContentDescription("Wiktionary Kaikki installed for English"),
+        ).assertExists()
+        composeRule.onNode(
+            hasContentDescription("Download eSpeak NG generated for English") or
+                hasContentDescription("eSpeak NG generated installed for English"),
+        ).assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("About Ghostwriter").assertExists()
     }
