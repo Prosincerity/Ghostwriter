@@ -36,7 +36,7 @@ class DictionarySearchInstrumentedTest {
                 db.endTransaction()
             }
         }
-        val search = DictionarySearch(installer, DictionaryPronunciations(installer, IpaGenerator { _, _ -> null }))
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
         val rhymePages = (0..3).map { page ->
             runBlocking { search.search("cat", "en", DictionarySearchMode.RHYME, page) }
@@ -73,7 +73,7 @@ class DictionarySearchInstrumentedTest {
                 Row("Schaft", "[ʃaft]", "tfaʃ", "a"),
                 Row("pafft", "[paft]", "tfap", "a"),
             ))
-        val search = DictionarySearch(installer, DictionaryPronunciations(installer, IpaGenerator { _, _ -> null }))
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
         val rhymes = runBlocking { search.search("Kraft", "de", DictionarySearchMode.RHYME) }
         assertEquals(setOf("Saft", "Schaft", "pafft"), rhymes.matches.map { it.word }.toSet())
@@ -81,7 +81,7 @@ class DictionarySearchInstrumentedTest {
 
     @Test
     fun searchesRhymeAssonanceAndWordsWithSourcePrecedence() = withDictionaryFixture { installer ->
-        val pronunciations = DictionaryPronunciations(installer, IpaGenerator { _, _ -> null })
+        val pronunciations = DictionaryPronunciations(installer) { _, _ -> null }
         val search = DictionarySearch(installer, pronunciations)
 
         val rhymes = runBlocking { search.search("cat", "en", DictionarySearchMode.RHYME) }
