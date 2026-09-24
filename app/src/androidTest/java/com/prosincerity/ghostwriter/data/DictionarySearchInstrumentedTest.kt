@@ -16,6 +16,25 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class DictionarySearchInstrumentedTest {
     @Test
+    fun unstressedGermanRhymesSurviveCommonEndingScanLimit() = withDictionaryFixture { installer ->
+        val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
+        version.mkdirs()
+        val longIpa = "/ˈa${"b".repeat(10)}aft/"
+        val longReversed = "tfa${"b".repeat(10)}aˈ"
+        database(File(version, "wiktionary.db"),
+            (0..205).map { Row("decoy$it", longIpa, longReversed, "a a") } + listOf(
+                Row("Kraft", "/kʁaft/", "tfaʁk", "a"),
+                Row("Saft", "/zaft/", "tfaz", "a"),
+                Row("Schaft", "[ʃaft]", "tfaʃ", "a"),
+                Row("pafft", "[paft]", "tfap", "a"),
+            ))
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer, IpaGenerator { _, _ -> null }))
+
+        val rhymes = runBlocking { search.search("Kraft", "de", DictionarySearchMode.RHYME) }
+        assertEquals(setOf("Saft", "Schaft", "pafft"), rhymes.matches.map { it.word }.toSet())
+    }
+
+    @Test
     fun searchesRhymeAssonanceAndWordsWithSourcePrecedence() = withDictionaryFixture { installer ->
         val pronunciations = DictionaryPronunciations(installer, IpaGenerator { _, _ -> null })
         val search = DictionarySearch(installer, pronunciations)
