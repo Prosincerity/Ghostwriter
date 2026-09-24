@@ -36,9 +36,9 @@ internal class DictionarySearch(
         val keys = pronunciation?.ipa.orEmpty().mapNotNull { IpaSearchKeys.fromIpa(it, language) }
         val prefixes = when (mode) {
             DictionarySearchMode.RHYME -> keys.flatMap { key ->
-                IpaSearchKeys.rhymePrefixes(key, language).mapIndexed { index, prefix ->
-                    SearchPrefix(prefix, key.tokens.size - index)
-                }
+                val rime = IpaSearchKeys.rimeTokens(key, language)
+                if (rime == null) emptyList()
+                else listOf(SearchPrefix(rime.asReversed().joinToString(""), rime.size, rime))
             }
             DictionarySearchMode.ASSONANCE -> keys.flatMap { key ->
                 val variants = IpaSearchKeys.assonancePrefixes(key)
@@ -46,7 +46,7 @@ internal class DictionarySearch(
             }
             else -> emptyList()
         }.sortedWith(compareByDescending<SearchPrefix> { it.tokenCount }.thenByDescending { it.value.length })
-            .distinctBy { it.value }
+            .distinctBy { it.rimeTokens ?: it.value }
         val matches = linkedMapOf<String, DictionaryMatch>()
         for ((source, label) in listOf(
             DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
@@ -62,7 +62,7 @@ internal class DictionarySearch(
                             val sql = "SELECT word, ipa FROM dictionary WHERE $column LIKE ? ESCAPE '!' " +
                                 "ORDER BY $column, word LIMIT $SCAN_LIMIT"
                             collect(database, sql, arrayOf("${escapeLike(prefix)}%"),
-                                normalized, language, mode, prefix, label, matches)
+                                normalized, language, mode, searchPrefix, label, matches)
                             if (matches.size >= RESULT_LIMIT) break
                         }
                     }
@@ -76,7 +76,7 @@ internal class DictionarySearch(
                             database,
                             "SELECT word, ipa FROM dictionary WHERE word LIKE ? ESCAPE '!' " +
                                 "ORDER BY word, ipa LIMIT $SCAN_LIMIT",
-                            arrayOf(pattern), normalized, language, mode, "", label, matches,
+                            arrayOf(pattern), normalized, language, mode, null, label, matches,
                         )
                     }
                 }
@@ -93,7 +93,7 @@ internal class DictionarySearch(
         input: String,
         language: String,
         mode: DictionarySearchMode,
-        prefix: String,
+        searchPrefix: SearchPrefix?,
         source: PronunciationSource,
         matches: MutableMap<String, DictionaryMatch>,
     ) {
@@ -105,9 +105,9 @@ internal class DictionarySearch(
                 if (mode == DictionarySearchMode.RHYME || mode == DictionarySearchMode.ASSONANCE) {
                     val keys = IpaSearchKeys.fromIpa(ipa, language) ?: continue
                     val valid = if (mode == DictionarySearchMode.RHYME) {
-                        IpaSearchKeys.rhymePrefixes(keys, language).any { it == prefix }
+                        IpaSearchKeys.rimeTokens(keys, language) == searchPrefix?.rimeTokens
                     } else {
-                        IpaSearchKeys.assonancePrefixes(keys).any { it == prefix }
+                        IpaSearchKeys.assonancePrefixes(keys).any { it == searchPrefix?.value }
                     }
                     if (!valid) continue
                 }
@@ -128,5 +128,5 @@ internal class DictionarySearch(
         }
     }
 
-    private data class SearchPrefix(val value: String, val tokenCount: Int)
+    private data class SearchPrefix(val value: String, val tokenCount: Int, val rimeTokens: List<String>? = null)
 }

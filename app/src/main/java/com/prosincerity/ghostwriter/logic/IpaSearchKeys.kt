@@ -91,13 +91,18 @@ internal object IpaSearchKeys {
         )
     }
 
-    fun rhymePrefixes(keys: Keys, language: String): List<String> {
-        val reversed = keys.tokens.asReversed()
-        val minimum = reversed.indexOfFirst { isVowel(it, language) }
-        if (minimum < 0) return emptyList()
-        return (reversed.size downTo minimum + 1)
-            .map { length -> reversed.take(length).joinToString("") }
-            .distinct()
+    /** Phonemes from the final primary-stressed vowel through the end of the word. */
+    fun rimeTokens(keys: Keys, language: String): List<String>? {
+        if (language !in vowels) return null
+        val tokens = keys.tokens
+        val stressIndex = tokens.indexOfLast { it == "ˈ" }.takeIf { it >= 0 }
+            ?: tokens.indexOfLast { it == "ˌ" }.takeIf { it >= 0 }
+        val vowelIndex = if (stressIndex != null) {
+            (stressIndex + 1 until tokens.size).firstOrNull { isVowel(tokens[it], language) }
+        } else {
+            tokens.indices.filter { isVowel(tokens[it], language) }.singleOrNull()
+        } ?: return null
+        return tokens.drop(vowelIndex)
     }
 
     fun assonancePrefixes(keys: Keys): List<String> {
