@@ -176,14 +176,18 @@ database miss; it still needs to be run in Android Studio.
   complete reversed rime, then verify each candidate's stressed rime. A
   single-vowel pronunciation can omit a stress marker; an unmarked
   multi-vowel pronunciation has no reliable rime. Bound result counts so
-  common endings do not flood the screen or stall typing.
+  common endings do not flood the screen or stall typing. Rank short
+  pronunciations first before applying the scan limit, so exact monosyllabic
+  rhymes are not lost behind many longer compounds with the same ending.
 - Provide a dropdown with rhyme, word-prefix, word-suffix, and assonance
-  search modes. Word-prefix/suffix modes search the `word` column;
-  assonance uses `assonance_reversed`. Parameterize every query and escape
+  search modes. Word-prefix searches the `word` column. Word-suffix searches
+  `ipa_reversed` using the input pronunciation's last x-2, x-4, x-6, ...
+  phonemes, stopping at one phoneme; each candidate's suffix is checked
+  exactly, and longer suffix matches rank first across both sources.
+  Assonance uses `assonance_reversed`. Parameterize every query and escape
   literal `%`, `_`, and the chosen `LIKE` escape character. Benchmark suffix
-  searches because `LIKE '%suffix'` cannot use a normal leading-word index;
-  document or add an indexed strategy if scans are too slow. Keep searches
-  off the main thread and bound result counts.
+  searches on realistic data. Keep searches off the main thread and bound
+  result counts.
 - Initially search installed databases. A later pass uses bundled eSpeak NG
   to generate IPA only when the input word is OOV in both sources, then uses
   that IPA for rhyme/assonance searches. Show when the IPA was generated.
@@ -211,13 +215,23 @@ the two English sources under English. With no dictionaries installed, the
 screen links to dictionary downloads in Settings. Each menu opens beside its
 own label.
 
-Rhyme and assonance matching excludes the queried spelling but retains
-different spellings with the same pronunciation. Search queries run on an IO
-dispatcher. Rhyme mode now requires an exact stressed rime instead of trying
-shorter reversed prefixes. Synthetic database and Compose tests have been added
-and compile; the earlier Android Studio test run passed. The new exact-rime
-device test still needs to run in Android Studio. Real-database
+Rhyme and assonance matching excludes the queried spelling. Different
+spellings with the same pronunciation remain eligible. Search queries run on
+an IO dispatcher. Rhyme mode requires an exact stressed rime instead of
+trying shorter reversed prefixes. Synthetic database and Compose tests have
+been added and compile; the earlier Android Studio test run passed. The new
+exact-rime, phoneme-suffix, and compound-ending device tests still need to run
+in Android Studio. Real-database
 performance, especially word-suffix scans, and syllable coloring remain.
+
+Rhyme results omit a longer word when its written ending is
+another returned word (or the query word), the shorter word's vowel-through-end
+IPA matches, and the longer word has an earlier vowel. This suppresses
+compound endings such as `checkpoint`/`point` and German `-schaft`/`Schaft`
+without removing one-syllable rhymes such as `bat`/`at`. The search gathers a
+bounded extra set of rhyme candidates before this filter, then displays at most
+60. Word-suffix mode keeps compounds because it searches the exact phoneme
+suffix at each length.
 
 ### 7. Licensing, attribution, and release verification
 

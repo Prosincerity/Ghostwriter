@@ -94,8 +94,11 @@ internal class DictionarySearch(
                         for (searchPrefix in prefixes) {
                             val prefix = searchPrefix.value
                             val column = if (mode == DictionarySearchMode.RHYME) "ipa_reversed" else "assonance_reversed"
+                            val order = if (mode == DictionarySearchMode.RHYME) {
+                                "length(ipa_reversed), ipa_reversed, word"
+                            } else "$column, word"
                             val sql = "SELECT word, ipa FROM dictionary WHERE $column LIKE ? ESCAPE '!' " +
-                                "ORDER BY $column, word LIMIT $SCAN_LIMIT"
+                                "ORDER BY $order LIMIT $SCAN_LIMIT"
                             collect(database, sql, arrayOf("${escapeLike(prefix)}%"),
                                 normalized, language, mode, searchPrefix, label, matches, collectionLimit)
                             if (matches.size >= collectionLimit) break
