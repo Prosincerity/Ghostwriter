@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.DictionaryInstaller
@@ -51,7 +52,7 @@ import kotlinx.coroutines.launch
 internal fun DictionaryScreen(
     onBack: () -> Unit,
     onOpenDownloads: () -> Unit,
-    search: (suspend (String, String, DictionarySearchMode) -> DictionarySearchResult)? = null,
+    search: (suspend (String, String, DictionarySearchMode, Int) -> DictionarySearchResult)? = null,
     installedLanguages: List<String>? = null,
 ) {
     BackHandler(onBack = onBack)
@@ -69,12 +70,13 @@ internal fun DictionaryScreen(
     var languageMenu by remember { mutableStateOf(false) }
     var modeMenu by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<DictionarySearchResult?>(null) }
+    var page by remember { mutableIntStateOf(0) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var job by remember { mutableStateOf<Job?>(null) }
     var revision by remember { mutableIntStateOf(0) }
 
-    fun submit() {
+    fun submit(requestedPage: Int = 0) {
         val input = word.trim()
         if (input.isEmpty() || language !in availableLanguages) return
         job?.cancel()
@@ -84,8 +86,11 @@ internal fun DictionaryScreen(
         result = null
         job = scope.launch {
             try {
-                val found = searchAction(input, language, mode)
-                if (requested == revision) result = found
+                val found = searchAction(input, language, mode, requestedPage)
+                if (requested == revision) {
+                    result = found
+                    page = requestedPage
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -116,7 +121,7 @@ internal fun DictionaryScreen(
             } else {
                 OutlinedTextField(
                     value = word,
-                    onValueChange = { word = it; job?.cancel(); revision++; loading = false; result = null },
+                    onValueChange = { word = it; job?.cancel(); revision++; loading = false; result = null; page = 0 },
                     label = { Text("Word") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -128,7 +133,7 @@ internal fun DictionaryScreen(
                             availableLanguages.forEach { code ->
                                 DropdownMenuItem(
                                     text = { Text(languageLabel(code)) },
-                                    onClick = { selectedLanguage = code; languageMenu = false; job?.cancel(); revision++; loading = false; result = null },
+                                    onClick = { selectedLanguage = code; languageMenu = false; job?.cancel(); revision++; loading = false; result = null; page = 0 },
                                 )
                             }
                         }
@@ -139,13 +144,13 @@ internal fun DictionaryScreen(
                             DictionarySearchMode.entries.forEach { option ->
                                 DropdownMenuItem(
                                     text = { Text(modeLabel(option)) },
-                                    onClick = { modeName = option.name; modeMenu = false; job?.cancel(); revision++; loading = false; result = null },
+                                    onClick = { modeName = option.name; modeMenu = false; job?.cancel(); revision++; loading = false; result = null; page = 0 },
                                 )
                             }
                         }
                     }
                 }
-                Button(onClick = ::submit, enabled = word.isNotBlank() && !loading) { Text("Search") }
+                Button(onClick = { submit() }, enabled = word.isNotBlank() && !loading) { Text("Search") }
                 Spacer(Modifier.height(12.dp))
                 if (loading) Text("Searching…")
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -162,13 +167,24 @@ internal fun DictionaryScreen(
                     if (found.matches.isEmpty()) {
                         Text("No matches in installed dictionaries")
                     } else {
-                        LazyColumn {
+                        LazyColumn(modifier = Modifier.weight(1f)) {
                             items(found.matches) { match ->
                                 Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                                     Text(match.word, style = MaterialTheme.typography.bodyLarge)
                                     Text("${match.ipa} · ${sourceLabel(match.source)}", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
+                        }
+                    }
+                    if (page > 0 || found.hasNext) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            TextButton(onClick = { submit(page - 1) }, enabled = page > 0) { Text("Previous") }
+                            Text("Page ${page + 1}")
+                            TextButton(onClick = { submit(page + 1) }, enabled = found.hasNext) { Text("Next") }
                         }
                     }
                 }
