@@ -170,11 +170,13 @@ database miss; it still needs to be run in Android Studio.
   Its input accepts a word and displays that word's IPA from the selected
   language database, followed by matching words. Keep the hand-rolled
   navigation and return to the same editor project.
-- For the default rhyme mode, look up the word's IPA first, derive its
-  reversed phoneme search key with the producer's token rules, then query
-  `ipa_reversed` with `LIKE` using progressively longer prefixes. Define a
-  clear result ranking and stopping/limit rule so common endings do not flood
-  the screen or stall typing.
+- For the default rhyme mode, look up the word's IPA first. Find the vowel
+  of its primary-stressed syllable and require every phoneme from that vowel
+  through the end of the word to match. Query `ipa_reversed` with that one
+  complete reversed rime, then verify each candidate's stressed rime. A
+  single-vowel pronunciation can omit a stress marker; an unmarked
+  multi-vowel pronunciation has no reliable rime. Bound result counts so
+  common endings do not flood the screen or stall typing.
 - Provide a dropdown with rhyme, word-prefix, word-suffix, and assonance
   search modes. Word-prefix/suffix modes search the `word` column;
   assonance uses `assonance_reversed`. Parameterize every query and escape
@@ -211,8 +213,10 @@ own label.
 
 Rhyme and assonance matching excludes the queried spelling but retains
 different spellings with the same pronunciation. Search queries run on an IO
-dispatcher. Synthetic database and Compose tests have been added and compile;
-the maintainer reports the Android Studio test run passed. Real-database
+dispatcher. Rhyme mode now requires an exact stressed rime instead of trying
+shorter reversed prefixes. Synthetic database and Compose tests have been added
+and compile; the earlier Android Studio test run passed. The new exact-rime
+device test still needs to run in Android Studio. Real-database
 performance, especially word-suffix scans, and syllable coloring remain.
 
 ### 7. Licensing, attribution, and release verification

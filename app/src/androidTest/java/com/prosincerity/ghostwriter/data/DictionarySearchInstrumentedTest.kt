@@ -27,6 +27,9 @@ class DictionarySearchInstrumentedTest {
         assertEquals(2, rhymes.pronunciation?.ipa?.size)
         assertFalse(rhymes.matches.any { it.word == "cat" })
 
+        val writing = runBlocking { search.search("writing", "en", DictionarySearchMode.RHYME) }
+        assertEquals(listOf("lighting"), writing.matches.map { it.word })
+
         val assonance = runBlocking { search.search("cat", "en", DictionarySearchMode.ASSONANCE) }
         assertTrue(assonance.matches.any { it.word == "bat" })
         assertFalse(assonance.matches.any { it.word == "cut" })
@@ -71,6 +74,10 @@ class DictionarySearchInstrumentedTest {
                 Row("flat", "/ˈflæt/", "tælfˈ", "æ"),
                 Row("cot", "/ˈkɑt/", "tɑkˈ", "ɑ"),
                 Row("cut", "/ˈkʌt/", "tʌkˈ", "ʌ"),
+                Row("writing", "/ˈɹaɪtɪŋ/", "ŋɪtaɪɹˈ", "ɪ aɪ"),
+                Row("lighting", "/ˈlaɪtɪŋ/", "ŋɪtaɪlˈ", "ɪ aɪ"),
+                Row("sing", "/ˈsɪŋ/", "ŋɪsˈ", "ɪ"),
+                Row("baiting", "/ˈbeɪtɪŋ/", "ŋɪteɪbˈ", "ɪ eɪ"),
                 Row("a%mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
                 Row("a_mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
                 Row("a!mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),

@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
-    "mtime": 1790266767.5982227,
-    "seen": 1790266978.7188573,
-    "ast_hash": "3d35aa2cae5870687d4d994921c30f72",
+    "mtime": 1790268469.4508276,
+    "seen": 1790268960.8729138,
+    "ast_hash": "8a546bbd6c75368b813fff28693372c7",
     "semantic_hash": ""
   },
   "documentation/README.md": {
@@ -510,9 +510,9 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
-    "mtime": 1790267556.6803026,
-    "seen": 1790267584.9329185,
-    "ast_hash": "690ab6b700d019b0822f1ad65bff0d5e",
+    "mtime": 1790268990.0202832,
+    "seen": 1790269017.307422,
+    "ast_hash": "bbad05dc252d683484063b390413419d",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
@@ -3804,9 +3804,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionarySearchInstrumentedTest.kt": {
-    "mtime": 1790266915.3303657,
-    "seen": 1790266978.7184968,
-    "ast_hash": "13253c43263e5cbe75a005ed1369e1ba",
+    "mtime": 1790268887.6985695,
+    "seen": 1790268960.8725495,
+    "ast_hash": "f2522a77de29d569f3f211a4fe064d40",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreenTest.kt": {
@@ -3816,15 +3816,15 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt": {
-    "mtime": 1790266852.4781556,
-    "seen": 1790266978.7185287,
-    "ast_hash": "456f6fa1b1e383d0aba9385aaf6c7772",
+    "mtime": 1790268997.8921843,
+    "seen": 1790269017.3067565,
+    "ast_hash": "58c1713376ea62e24ae7dee1f8b1ef25",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt": {
-    "mtime": 1790266538.6951005,
-    "seen": 1790266730.9271853,
-    "ast_hash": "2876aebc80b8828f7147b400a656aee8",
+    "mtime": 1790268858.8029327,
+    "seen": 1790268960.8726041,
+    "ast_hash": "1fdaba7d1dc3446ec7d7ed068861a022",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreen.kt": {
@@ -3834,9 +3834,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/IpaSearchKeysTest.kt": {
-    "mtime": 1790266142.0050876,
-    "seen": 1790266730.9272587,
-    "ast_hash": "e2a273b11607c58035492324281ce2fc",
+    "mtime": 1790268943.3888695,
+    "seen": 1790268960.8726463,
+    "ast_hash": "14cb83db5429a3cb514c81edf978694c",
     "semantic_hash": ""
   },
   "app/src/main/assets/licenses/Ghostwriter-Dict-MIT.txt": {

@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.logic
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -40,11 +41,27 @@ class IpaSearchKeysTest {
     }
 
     @Test
-    fun prefixesRespectWholeTokensAndVowelBoundaries() {
+    fun rimeStartsAtPrimaryStressedVowel() {
         val keys = IpaSearchKeys.fromIpa("/ˈkæt/", "en")!!
-        assertEquals(listOf("tækˈ", "tæk", "tæ"), IpaSearchKeys.rhymePrefixes(keys, "en"))
+        assertEquals(listOf("æ", "t"), IpaSearchKeys.rimeTokens(keys, "en"))
+        assertEquals(listOf("aɪ", "t", "ɪ", "ŋ"),
+            IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/ˈɹaɪtɪŋ/", "en")!!, "en"))
+        assertEquals(listOf("ɪ", "ŋ"),
+            IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/ɹaɪˈtɪŋ/", "en")!!, "en"))
         assertEquals(listOf("æ"), IpaSearchKeys.assonancePrefixes(keys))
+        assertEquals(listOf("æ", "t"),
+            IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/kæt/", "en")!!, "en"))
+        assertNull(IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/kætɪŋ/", "en")!!, "en"))
         assertNull(IpaSearchKeys.fromIpa("/ˈa☃̃/", "en"))
         assertNull(IpaSearchKeys.fromIpa("/a/", "fr"))
+    }
+
+    @Test
+    fun exactRimeRejectsSharedUnstressedEnding() {
+        fun rime(ipa: String) = IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa(ipa, "en")!!, "en")
+
+        assertEquals(rime("/ˈɹaɪtɪŋ/"), rime("/ˈlaɪtɪŋ/"))
+        assertNotEquals(rime("/ˈɹaɪtɪŋ/"), rime("/ˈsɪŋ/"))
+        assertNotEquals(rime("/ˈɹaɪtɪŋ/"), rime("/ˈbeɪtɪŋ/"))
     }
 }
