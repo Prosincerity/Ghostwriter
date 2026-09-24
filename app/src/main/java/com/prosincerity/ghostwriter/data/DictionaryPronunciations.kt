@@ -3,7 +3,7 @@ package com.prosincerity.ghostwriter.data
 import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.text.Normalizer
+import com.prosincerity.ghostwriter.logic.DictionaryHeadword
 
 internal enum class PronunciationSource { WIKTIONARY, ESPEAK_DATABASE, ESPEAK_GENERATED }
 
@@ -19,8 +19,7 @@ internal class DictionaryPronunciations(
 ) {
     suspend fun lookup(word: String, language: String): PronunciationResult? = withContext(Dispatchers.IO) {
         require(language in installer.release.languages)
-        val normalized = Normalizer.normalize(word, Normalizer.Form.NFC)
-        if (normalized.isBlank()) return@withContext null
+        val normalized = DictionaryHeadword.normalizedEligible(word) ?: return@withContext null
         for ((source, resultSource) in listOf(
             DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
             DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
