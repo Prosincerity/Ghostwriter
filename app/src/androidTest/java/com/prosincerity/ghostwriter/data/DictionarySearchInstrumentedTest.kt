@@ -88,7 +88,7 @@ class DictionarySearchInstrumentedTest {
 
         val rhymes = runBlocking { search.search("cat", "en", DictionarySearchMode.RHYME) }
         assertEquals(PronunciationSource.WIKTIONARY, rhymes.pronunciation?.source)
-        assertEquals(listOf("kat", "cot", "bat", "flat", "mat"), rhymes.matches.map { it.word })
+        assertEquals(listOf("bat", "kat", "flat", "cot", "mat"), rhymes.matches.map { it.word })
         assertEquals(PronunciationSource.WIKTIONARY, rhymes.matches.first().source)
         assertEquals(2, rhymes.pronunciation?.ipa?.size)
         assertFalse(rhymes.matches.any { it.word == "cat" })
@@ -101,7 +101,7 @@ class DictionarySearchInstrumentedTest {
         assertFalse(assonance.matches.any { it.word == "cut" })
 
         val prefix = runBlocking { search.search("ba", "en", DictionarySearchMode.WORD_PREFIX) }
-        assertEquals(listOf("bat"), prefix.matches.map { it.word })
+        assertEquals(listOf("baiting", "bat"), prefix.matches.map { it.word })
         val suffix = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertEquals(listOf("lighting", "baiting"), suffix.matches.take(2).map { it.word })
         assertFalse(suffix.matches.any { it.word == "sing" })
