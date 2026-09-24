@@ -182,8 +182,11 @@ database miss; it still needs to be run in Android Studio.
 - Provide a dropdown with rhyme, word-prefix, word-suffix, and assonance
   search modes. Word-prefix searches the `word` column. Word-suffix searches
   `ipa_reversed` using the input pronunciation's last x-2, x-4, x-6, ...
-  phonemes, stopping at one phoneme; each candidate's suffix is checked
-  exactly, and longer suffix matches rank first across both sources.
+  phonemes, stopping before a tier of two or fewer phonemes except for input
+  pronunciations with fewer than four phonemes, which match their final two
+  phonemes when available. A one-phoneme pronunciation has no suffix search.
+  Each candidate's suffix is checked exactly, and longer suffix matches rank
+  first across both sources.
   Assonance uses `assonance_reversed`. Parameterize every query and escape
   literal `%`, `_`, and the chosen `LIKE` escape character. Benchmark suffix
   searches on realistic data. Keep searches off the main thread and bound
