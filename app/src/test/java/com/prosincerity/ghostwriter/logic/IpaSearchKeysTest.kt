@@ -64,4 +64,23 @@ class IpaSearchKeysTest {
         assertNotEquals(rime("/ˈɹaɪtɪŋ/"), rime("/ˈsɪŋ/"))
         assertNotEquals(rime("/ˈɹaɪtɪŋ/"), rime("/ˈbeɪtɪŋ/"))
     }
+
+    @Test
+    fun unstressedGermanMonosyllablesUseTheirOnlyVowel() {
+        fun rime(ipa: String) = IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa(ipa, "de")!!, "de")
+
+        assertEquals(listOf("a", "f", "t"), rime("/kʁaft/"))
+        assertEquals(rime("/kʁaft/"), rime("/zaft/"))
+        assertEquals(rime("/kʁaft/"), rime("[ʃaft]"))
+        assertEquals(rime("/kʁaft/"), rime("[paft]"))
+    }
+
+    @Test
+    fun suffixStagesCountPhonemesAndEndAtOne() {
+        val writing = IpaSearchKeys.fromIpa("/ˈɹaɪtɪŋ/", "en")!!
+        assertEquals(listOf(listOf("t", "ɪ", "ŋ"), listOf("ŋ")), IpaSearchKeys.phonemeSuffixes(writing))
+        val longWord = IpaSearchKeys.fromIpa("/ˈkatɪŋab/", "en")!!
+        assertEquals(listOf(5, 3, 1), IpaSearchKeys.phonemeSuffixes(longWord).map { it.size })
+        assertEquals(listOf(listOf("a")), IpaSearchKeys.phonemeSuffixes(IpaSearchKeys.fromIpa("/a/", "en")!!))
+    }
 }

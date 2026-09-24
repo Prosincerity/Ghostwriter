@@ -40,18 +40,40 @@ internal class DictionarySearch(
                 if (rime == null) emptyList()
                 else listOf(SearchPrefix(rime.asReversed().joinToString(""), rime.size, rime))
             }
+            DictionarySearchMode.WORD_SUFFIX -> keys.flatMap { key ->
+                IpaSearchKeys.phonemeSuffixes(key).map { suffix ->
+                    SearchPrefix(suffix.asReversed().joinToString(""), suffix.size, suffix)
+                }
+            }
             DictionarySearchMode.ASSONANCE -> keys.flatMap { key ->
                 val variants = IpaSearchKeys.assonancePrefixes(key)
                 variants.mapIndexed { index, prefix -> SearchPrefix(prefix, variants.size - index) }
             }
-            else -> emptyList()
+            DictionarySearchMode.WORD_PREFIX -> emptyList()
         }.sortedWith(compareByDescending<SearchPrefix> { it.tokenCount }.thenByDescending { it.value.length })
-            .distinctBy { it.rimeTokens ?: it.value }
+            .distinctBy { it.tokens ?: it.value }
         val matches = linkedMapOf<String, DictionaryMatch>()
-        for ((source, label) in listOf(
+        val collectionLimit = RESULT_LIMIT
+        fun result(): DictionarySearchResult =
+            DictionarySearchResult(pronunciation, matches.values.take(RESULT_LIMIT))
+        val sources = listOf(
             DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
             DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
-        )) {
+        )
+        if (mode == DictionarySearchMode.WORD_SUFFIX) {
+            for (searchPrefix in prefixes) {
+                for ((source, label) in sources) {
+                    installer.openReadOnly(language, source)?.use { database ->
+                        database.execSQL("PRAGMA case_sensitive_like = ON")
+                        collectSuffix(database, searchPrefix, normalized, language, label, matches, collectionLimit)
+                    }
+                    if (matches.size >= collectionLimit) break
+                }
+                if (matches.size >= collectionLimit) break
+            }
+            return@withContext result()
+        }
+        for ((source, label) in sources) {
             installer.openReadOnly(language, source)?.use { database ->
                 database.execSQL("PRAGMA case_sensitive_like = ON")
                 when (mode) {
@@ -62,28 +84,25 @@ internal class DictionarySearch(
                             val sql = "SELECT word, ipa FROM dictionary WHERE $column LIKE ? ESCAPE '!' " +
                                 "ORDER BY $column, word LIMIT $SCAN_LIMIT"
                             collect(database, sql, arrayOf("${escapeLike(prefix)}%"),
-                                normalized, language, mode, searchPrefix, label, matches)
-                            if (matches.size >= RESULT_LIMIT) break
+                                normalized, language, mode, searchPrefix, label, matches, collectionLimit)
+                            if (matches.size >= collectionLimit) break
                         }
                     }
-                    DictionarySearchMode.WORD_PREFIX, DictionarySearchMode.WORD_SUFFIX -> {
-                        val pattern = if (mode == DictionarySearchMode.WORD_PREFIX) {
-                            "${escapeLike(normalized)}%"
-                        } else {
-                            "%${escapeLike(normalized)}"
-                        }
+                    DictionarySearchMode.WORD_PREFIX -> {
                         collect(
                             database,
                             "SELECT word, ipa FROM dictionary WHERE word LIKE ? ESCAPE '!' " +
                                 "ORDER BY word, ipa LIMIT $SCAN_LIMIT",
-                            arrayOf(pattern), normalized, language, mode, null, label, matches,
+                            arrayOf("${escapeLike(normalized)}%"), normalized, language, mode, null, label, matches,
+                            collectionLimit,
                         )
                     }
+                    DictionarySearchMode.WORD_SUFFIX -> Unit
                 }
             }
-            if (matches.size >= RESULT_LIMIT) break
+            if (matches.size >= collectionLimit) break
         }
-        DictionarySearchResult(pronunciation, matches.values.take(RESULT_LIMIT))
+        result()
     }
 
     private fun collect(
@@ -96,16 +115,17 @@ internal class DictionarySearch(
         searchPrefix: SearchPrefix?,
         source: PronunciationSource,
         matches: MutableMap<String, DictionaryMatch>,
+        limit: Int,
     ) {
         database.rawQuery(sql, args).use { cursor ->
-            while (cursor.moveToNext() && matches.size < RESULT_LIMIT) {
+            while (cursor.moveToNext() && matches.size < limit) {
                 val candidate = cursor.getString(0)
                 if (candidate == input || candidate in matches) continue
                 val ipa = cursor.getString(1)
                 if (mode == DictionarySearchMode.RHYME || mode == DictionarySearchMode.ASSONANCE) {
                     val keys = IpaSearchKeys.fromIpa(ipa, language) ?: continue
                     val valid = if (mode == DictionarySearchMode.RHYME) {
-                        IpaSearchKeys.rimeTokens(keys, language) == searchPrefix?.rimeTokens
+                        IpaSearchKeys.rimeTokens(keys, language) == searchPrefix?.tokens
                     } else {
                         IpaSearchKeys.assonancePrefixes(keys).any { it == searchPrefix?.value }
                     }
@@ -113,6 +133,41 @@ internal class DictionarySearch(
                 }
                 matches[candidate] = DictionaryMatch(candidate, ipa, source)
             }
+        }
+    }
+
+    private fun collectSuffix(
+        database: SQLiteDatabase,
+        searchPrefix: SearchPrefix,
+        input: String,
+        language: String,
+        source: PronunciationSource,
+        matches: MutableMap<String, DictionaryMatch>,
+        limit: Int,
+    ) {
+        val suffix = searchPrefix.tokens ?: return
+        val pattern = suffix.asReversed().joinToString("%") { escapeLike(it) } + "%"
+        var offset = 0
+        while (matches.size < limit) {
+            var rows = 0
+            database.rawQuery(
+                "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
+                    "ORDER BY ipa_reversed, word LIMIT $SCAN_LIMIT OFFSET $offset",
+                arrayOf(pattern),
+            ).use { cursor ->
+                while (cursor.moveToNext() && matches.size < limit) {
+                    rows++
+                    val word = cursor.getString(0)
+                    if (word == input || word in matches) continue
+                    val ipa = cursor.getString(1)
+                    val candidate = IpaSearchKeys.fromIpa(ipa, language) ?: continue
+                    val candidatePhonemes = IpaSearchKeys.phonemeTokens(candidate)
+                    if (candidatePhonemes.size < suffix.size || candidatePhonemes.takeLast(suffix.size) != suffix) continue
+                    matches[word] = DictionaryMatch(word, ipa, source)
+                }
+            }
+            if (rows < SCAN_LIMIT) break
+            offset += rows
         }
     }
 
@@ -128,5 +183,5 @@ internal class DictionarySearch(
         }
     }
 
-    private data class SearchPrefix(val value: String, val tokenCount: Int, val rimeTokens: List<String>? = null)
+    private data class SearchPrefix(val value: String, val tokenCount: Int, val tokens: List<String>? = null)
 }

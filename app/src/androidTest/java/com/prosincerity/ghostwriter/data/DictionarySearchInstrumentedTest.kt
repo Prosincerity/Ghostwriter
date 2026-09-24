@@ -36,8 +36,19 @@ class DictionarySearchInstrumentedTest {
 
         val prefix = runBlocking { search.search("ba", "en", DictionarySearchMode.WORD_PREFIX) }
         assertEquals(listOf("bat"), prefix.matches.map { it.word })
-        val suffix = runBlocking { search.search("at", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertEquals(listOf("bat", "cat", "flat", "kat", "mat"), suffix.matches.map { it.word })
+        val suffix = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertEquals(listOf("lighting", "baiting"), suffix.matches.take(2).map { it.word })
+        assertTrue(suffix.matches.indexOfFirst { it.word == "sing" } > 1)
+        assertFalse(suffix.matches.any { it.word == "writing" })
+
+        val stressShift = runBlocking { search.search("suffixlong", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertEquals("stressshift", stressShift.matches.first().word)
+
+        val jointSuffix = runBlocking { search.search("joint", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertTrue(jointSuffix.matches.any { it.word == "point" })
+        assertTrue(jointSuffix.matches.any { it.word == "checkpoint" })
+        val pointSuffix = runBlocking { search.search("point", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertTrue(pointSuffix.matches.any { it.word == "checkpoint" })
 
         val escaped = runBlocking { search.search("a%", "en", DictionarySearchMode.WORD_PREFIX) }
         assertEquals(listOf("a%mazing"), escaped.matches.map { it.word })
@@ -78,6 +89,12 @@ class DictionarySearchInstrumentedTest {
                 Row("lighting", "/ˈlaɪtɪŋ/", "ŋɪtaɪlˈ", "ɪ aɪ"),
                 Row("sing", "/ˈsɪŋ/", "ŋɪsˈ", "ɪ"),
                 Row("baiting", "/ˈbeɪtɪŋ/", "ŋɪteɪbˈ", "ɪ eɪ"),
+                Row("suffixlong", "/ˈkatɪŋab/", "baŋɪtakˈ", "a ɪ a"),
+                Row("stressshift", "/katɪˈŋab/", "baŋˈɪtak", "a ɪ a"),
+                Row("joint", "/ˈdʒɔɪnt/", "tnɔɪdʒˈ", "ɔɪ"),
+                Row("point", "/ˈpɔɪnt/", "tnɔɪpˈ", "ɔɪ"),
+                Row("checkpoint", "/ˈtʃɛkpɔɪnt/", "tnɔɪpkɛtʃˈ", "ɔɪ ɛ"),
+                Row("outpoint", "/aʊtˈpɔɪnt/", "tnɔɪpˈtaʊ", "ɔɪ aʊ"),
                 Row("a%mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
                 Row("a_mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
                 Row("a!mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),

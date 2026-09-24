@@ -105,6 +105,27 @@ internal object IpaSearchKeys {
         return tokens.drop(vowelIndex)
     }
 
+    /** Suffix lengths x-2, x-4, ...; include one phoneme as the final fallback. */
+    fun phonemeSuffixes(keys: Keys): List<List<String>> {
+        val phonemes = phonemeTokens(keys)
+        if (phonemes.isEmpty()) return emptyList()
+        val lengths = mutableListOf<Int>()
+        var length = (phonemes.size - 2).coerceAtLeast(1)
+        while (length >= 1) {
+            lengths += length
+            length -= 2
+        }
+        if (lengths.last() != 1) lengths += 1
+        return lengths.map(phonemes::takeLast)
+    }
+
+    fun phonemeTokens(keys: Keys): List<String> = phonemeTokens(keys.tokens)
+
+    fun phonemeTokens(tokens: List<String>): List<String> = tokens.filter { it !in stress && it !in prosody }
+
+    fun hasVowel(tokens: List<String>, language: String): Boolean =
+        language in vowels && tokens.any { isVowel(it, language) }
+
     fun assonancePrefixes(keys: Keys): List<String> {
         val vowelsOnly = keys.assonance.split(' ').filter { it.isNotEmpty() }
         return (vowelsOnly.size downTo 1).map { length -> vowelsOnly.take(length).joinToString(" ") }
