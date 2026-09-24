@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -85,6 +86,7 @@ fun EditorScreen(
     projectTitle: String,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenDictionary: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
 
@@ -418,6 +420,9 @@ fun EditorScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onOpenDictionary) {
+                        Icon(Icons.Filled.Book, contentDescription = "Dictionary")
+                    }
                     IconButton(
                         onClick = { showInfoDialog = true },
                         enabled = !isImporting && !isReassigningBeat && !isWaveformLoading,

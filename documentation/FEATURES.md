@@ -36,7 +36,9 @@ This document is the single source of truth for where Ghostwriter is headed. Kee
 - [ ] **Cloud sync** (optional, user-provided backend/account — AOSP-friendly, so avoid anything requiring Google Play Services)
 - [ ] **Import / export** — plain text at minimum; consider `.docx`/`.pdf` export later
 - [ ] **Dictionary** — word lookup while writing
-- [ ] **Rhyme dictionary** — look up rhymes on demand when stuck
+- [ ] **Rhyme dictionary** — look up rhymes on demand when stuck. The editor's
+  Dictionary Screen and indexed search logic are implemented; realistic-data
+  performance verification remains.
 - [ ] **Testable code blocks** — keep syllable counting, bar counting, rhyme
   detection, and hyphenation as pure logic with JVM tests; cover gutter
   visibility and alignment with Compose tests.

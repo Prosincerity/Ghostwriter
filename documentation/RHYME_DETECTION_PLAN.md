@@ -140,8 +140,8 @@ errors without crashing. This is the runtime proof for the native approach.
 
 Implementation note: the narrow JNI bridge, offline data extraction, and
 three-language comparison tests are present. The host API produces the same
-IPA as the pinned CLI fixtures. The maintainer will run the JNI instrumented
-tests in Android Studio; device results remain pending.
+IPA as the pinned CLI fixtures. The maintainer reports the JNI instrumented
+tests passed in Android Studio with airplane mode enabled.
 
 ### 5. Join database lookup and runtime fallback
 
@@ -159,7 +159,10 @@ airplane mode enabled and no Google services on the device.
 
 Implementation note: the read-only lookup now falls through from Wiktionary
 to eSpeak database to local generation on a background dispatcher. Device
-verification of the complete lookup path remains pending.
+tests passed in airplane mode. The existing dictionary lookup tests inject a
+fake IPA generator and the JNI test exercises real eSpeak separately. A new
+instrumented test now covers the complete service with real JNI after a
+database miss; it still needs to be run in Android Studio.
 
 ### 6. Implement rhyme queries and editor behavior
 
@@ -195,6 +198,22 @@ verification of the complete lookup path remains pending.
 
 Exit check: pure JVM tests cover rhyme-key and matching logic; Compose/device
 tests cover the chosen editor behavior and performance with realistic lines.
+
+Implementation note: a first Dictionary Screen is reachable from the Editor's
+book button and returns to the same project. It offers rhyme, word-prefix,
+word-suffix, and assonance searches over installed databases, with bounded
+results, source labels, and generated IPA for missing input words. The IPA
+tokenizer and headword cleanup are ported from the dictionary producer with
+JVM fixture tests. The language menu lists only installed languages, combining
+the two English sources under English. With no dictionaries installed, the
+screen links to dictionary downloads in Settings. Each menu opens beside its
+own label.
+
+Rhyme and assonance matching excludes the queried spelling but retains
+different spellings with the same pronunciation. Search queries run on an IO
+dispatcher. Synthetic database and Compose tests have been added and compile;
+the maintainer reports the Android Studio test run passed. Real-database
+performance, especially word-suffix scans, and syllable coloring remain.
 
 ### 7. Licensing, attribution, and release verification
 
