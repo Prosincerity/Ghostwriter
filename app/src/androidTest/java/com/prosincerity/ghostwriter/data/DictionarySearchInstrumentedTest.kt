@@ -55,7 +55,9 @@ class DictionarySearchInstrumentedTest {
         val suffixSecond = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX, 1) }
         assertEquals(60, suffixFirst.matches.size)
         assertTrue(suffixFirst.hasNext)
-        assertTrue(suffixSecond.matches.any { it.word == "sing" })
+        assertEquals(12, suffixSecond.matches.size)
+        assertFalse(suffixSecond.hasNext)
+        assertFalse((suffixFirst.matches + suffixSecond.matches).any { it.word == "sing" })
         assertTrue(suffixFirst.matches.map { it.word }.toSet().intersect(
             suffixSecond.matches.map { it.word }.toSet()).isEmpty())
     }
@@ -102,17 +104,22 @@ class DictionarySearchInstrumentedTest {
         assertEquals(listOf("bat"), prefix.matches.map { it.word })
         val suffix = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertEquals(listOf("lighting", "baiting"), suffix.matches.take(2).map { it.word })
-        assertTrue(suffix.matches.indexOfFirst { it.word == "sing" } > 1)
+        assertFalse(suffix.matches.any { it.word == "sing" })
         assertFalse(suffix.matches.any { it.word == "writing" })
 
         val stressShift = runBlocking { search.search("suffixlong", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertEquals("stressshift", stressShift.matches.first().word)
 
         val jointSuffix = runBlocking { search.search("joint", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertTrue(jointSuffix.matches.any { it.word == "point" })
-        assertTrue(jointSuffix.matches.any { it.word == "checkpoint" })
+        assertTrue(jointSuffix.matches.isEmpty())
         val pointSuffix = runBlocking { search.search("point", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertTrue(pointSuffix.matches.any { it.word == "checkpoint" })
+        assertTrue(pointSuffix.matches.isEmpty())
+        val batSuffix = runBlocking { search.search("bat", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertTrue(batSuffix.matches.any { it.word == "cat" })
+        assertFalse(batSuffix.matches.any { it.word == "cot" })
+        val outpointSuffix = runBlocking { search.search("outpoint", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertTrue(outpointSuffix.matches.any { it.word == "point" })
+        assertTrue(outpointSuffix.matches.any { it.word == "checkpoint" })
         val jointRhymes = runBlocking { search.search("joint", "en", DictionarySearchMode.RHYME) }
         assertTrue(jointRhymes.matches.any { it.word == "point" })
         assertFalse(jointRhymes.matches.any { it.word == "outpoint" })
