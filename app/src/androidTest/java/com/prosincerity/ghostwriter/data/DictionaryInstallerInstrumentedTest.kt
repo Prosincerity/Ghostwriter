@@ -24,7 +24,8 @@ class DictionaryInstallerInstrumentedTest {
 
     @Test
     fun installsSourcesSeparatelyAndUsesWiktionaryFirst() = withTestContext { context ->
-        val wiki = archive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/"))
+        val wiki = archive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/",
+            "d'accord" to "/dakɔʁ/"))
         val espeak = archive(context, listOf("hammer" to "/hamɚ/", "fallback" to "/fɔlbæk/"))
         var opens = 0
         val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
@@ -32,8 +33,10 @@ class DictionaryInstallerInstrumentedTest {
             ByteArrayInputStream(if ("_espeak_" in url) espeak else wiki)
         })
 
+        assertTrue(installer.availableLanguages().isEmpty())
         runBlocking { installer.install("en", DictionarySource.ESPEAK) }
         assertEquals(1, opens)
+        assertEquals(listOf("en"), installer.availableLanguages())
         assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
         assertTrue(installer.installedDatabase("en", DictionarySource.ESPEAK) != null)
         assertEquals(
@@ -57,6 +60,10 @@ class DictionaryInstallerInstrumentedTest {
         })
         assertEquals(PronunciationSource.WIKTIONARY, runBlocking { withFallback.lookup("hammer", "en") }?.source)
         assertEquals(PronunciationSource.ESPEAK_DATABASE, runBlocking { withFallback.lookup("fallback", "en") }?.source)
+        assertEquals(PronunciationSource.WIKTIONARY, runBlocking { withFallback.lookup("d’accord", "en") }?.source)
+        assertEquals(0, generatedCalls)
+        assertNull(runBlocking { withFallback.lookup("two words", "en") })
+        assertNull(runBlocking { withFallback.lookup("x", "en") })
         assertEquals(0, generatedCalls)
         assertEquals(PronunciationSource.ESPEAK_GENERATED, runBlocking { withFallback.lookup("absent", "en") }?.source)
         assertEquals(1, generatedCalls)
@@ -74,6 +81,7 @@ class DictionaryInstallerInstrumentedTest {
         })
 
         runBlocking { installer.install("tr", DictionarySource.WIKTIONARY) }
+        assertEquals(listOf("tr"), installer.availableLanguages())
         val failure = runCatching {
             runBlocking { installer.install("tr", DictionarySource.ESPEAK) }
         }.exceptionOrNull()

@@ -19,6 +19,7 @@ import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.ui.screens.AboutScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
 import com.prosincerity.ghostwriter.ui.screens.DictionaryDownloadsScreen
+import com.prosincerity.ghostwriter.ui.screens.DictionaryScreen
 import com.prosincerity.ghostwriter.ui.screens.HomeScreen
 import com.prosincerity.ghostwriter.ui.screens.SettingsScreen
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
@@ -43,7 +44,8 @@ private sealed class Screen {
     data class Editor(val projectTitle: String) : Screen()
     data class Settings(val returnTo: Screen) : Screen()
     data class About(val returnTo: Settings) : Screen()
-    data class DictionaryDownloads(val returnTo: Settings) : Screen()
+    data class DictionaryDownloads(val returnTo: Screen) : Screen()
+    data class Dictionary(val projectTitle: String) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -132,6 +134,12 @@ private fun GhostwriterApp(
                 screen = Screen.Home
             },
             onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Editor(current.projectTitle)) },
+            onOpenDictionary = { screen = Screen.Dictionary(current.projectTitle) },
+        )
+
+        is Screen.Dictionary -> DictionaryScreen(
+            onBack = { screen = Screen.Editor(current.projectTitle) },
+            onOpenDownloads = { screen = Screen.DictionaryDownloads(returnTo = current) },
         )
 
         is Screen.Settings -> SettingsScreen(

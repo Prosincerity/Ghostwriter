@@ -115,6 +115,10 @@ internal class DictionaryInstaller(
             ?.firstOrNull()
     }
 
+    fun availableLanguages(): List<String> = release.languages.keys.filter { language ->
+        DictionarySource.entries.any { source -> availableDatabase(language, source) != null }
+    }
+
     suspend fun install(
         language: String,
         dictionarySource: DictionarySource,

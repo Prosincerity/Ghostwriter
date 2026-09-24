@@ -43,9 +43,11 @@ over new libraries. Build versions and SDK levels live in the Gradle files.
   Normal editing and installed-dictionary lookup remain offline. An eSpeak NG
   1.52.0 JNI fallback generates IPA locally for database misses, with only
   English, German, and Turkish language data packaged. Its native build and
-  data-generation steps are in [ESPEAK_NATIVE.md](ESPEAK_NATIVE.md). The dictionary
-  screen is planned;
-  see the [rhyme plan](RHYME_DETECTION_PLAN.md).
+  data-generation steps are in [ESPEAK_NATIVE.md](ESPEAK_NATIVE.md). The editor
+  opens a Dictionary Screen with bounded rhyme, assonance, word-prefix, and
+  word-suffix searches over installed indexes. Its IPA tokenizer follows the
+  producer's phoneme rules. Syllable coloring remains planned; see the
+  [rhyme plan](RHYME_DETECTION_PLAN.md).
 
 ## Current limits
 

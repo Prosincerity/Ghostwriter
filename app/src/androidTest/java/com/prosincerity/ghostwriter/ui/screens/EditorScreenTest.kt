@@ -44,6 +44,7 @@ class EditorScreenTest {
         val projectTitle = uniqueProjectTitle("Editor controls")
         val showEditor = mutableStateOf(true)
         var openedSettings = false
+        var openedDictionary = false
 
         try {
             composeRule.setContent {
@@ -53,6 +54,7 @@ class EditorScreenTest {
                             projectTitle = projectTitle,
                             onBack = { showEditor.value = false },
                             onOpenSettings = { openedSettings = true },
+                            onOpenDictionary = { openedDictionary = true },
                         )
                     }
                 }
@@ -63,6 +65,8 @@ class EditorScreenTest {
             composeRule.onNodeWithText("Start writing...").assertExists()
             composeRule.onNodeWithContentDescription("Project Info").assertExists()
             composeRule.onNodeWithContentDescription("Save").assertExists()
+            composeRule.onNodeWithContentDescription("Dictionary").performClick()
+            composeRule.runOnIdle { assertTrue(openedDictionary) }
 
             composeRule.onNodeWithContentDescription("Settings").performClick()
             composeRule.runOnIdle { assertTrue(openedSettings) }
