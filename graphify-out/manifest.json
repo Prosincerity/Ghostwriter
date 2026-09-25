@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryInstallerInstrumentedTest.kt": {
-    "mtime": 1790267474.9273305,
-    "seen": 1790267584.9325497,
-    "ast_hash": "59aa74706371f2dc2b2989076bd122bb",
+    "mtime": 1790365158.7341032,
+    "seen": 1790365394.2134764,
+    "ast_hash": "8206655910d1fd819de77348cad24c55",
     "semantic_hash": ""
   },
   "app/src/main/assets/dictionary_release.json": {
@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryInstaller.kt": {
-    "mtime": 1790267413.7800992,
-    "seen": 1790267584.932584,
-    "ast_hash": "d5c57d8a40a4f9dbef6a7ccac172adc2",
+    "mtime": 1790365270.7566948,
+    "seen": 1790365394.213516,
+    "ast_hash": "5b80fda8e95bc8f17789b7520312e3f7",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryPronunciations.kt": {
