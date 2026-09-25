@@ -258,8 +258,7 @@ class DictionarySearchInstrumentedTest {
         val pointSuffix = runBlocking { search.search("point", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertEquals(setOf("checkpoint", "outpoint"), pointSuffix.matches.map { it.word }.toSet())
         val batSuffix = runBlocking { search.search("bat", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertTrue(batSuffix.matches.any { it.word == "cat" })
-        assertFalse(batSuffix.matches.any { it.word == "cot" })
+        assertTrue(batSuffix.matches.isEmpty())
         val outpointSuffix = runBlocking { search.search("outpoint", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertTrue(outpointSuffix.matches.any { it.word == "point" })
         assertTrue(outpointSuffix.matches.any { it.word == "checkpoint" })
@@ -281,6 +280,23 @@ class DictionarySearchInstrumentedTest {
         val generated = runBlocking { realFallback.lookup("ghostwriter", "en") }
         assertEquals(PronunciationSource.ESPEAK_GENERATED, generated?.source)
         assertEquals(listOf("ɡˈəʊstɹaɪtə"), generated?.ipa)
+
+        val file = File(installer.appContext.filesDir, "dictionaries/en/${installer.release.tag}/wiktionary.db")
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            listOf(
+                "acrobat" to "/ˈækrəbæt/",
+                "action" to "/ˈækʃən/",
+                "information" to "/ˌɪnfəˈmeɪʃən/",
+            ).forEach { (word, ipa) ->
+                val keys = IpaSearchKeys.fromIpa(ipa, "en")!!
+                db.execSQL("INSERT INTO dictionary VALUES (?, ?, ?, ?)",
+                    arrayOf(word, ipa, keys.reversed, keys.assonance))
+            }
+        }
+        val batEnding = runBlocking { search.search("bat", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertEquals(listOf("acrobat"), batEnding.matches.map { it.word })
+        val actionEnding = runBlocking { search.search("action", "en", DictionarySearchMode.WORD_SUFFIX) }
+        assertEquals(listOf("information"), actionEnding.matches.map { it.word })
     }
 
     private fun withDictionaryFixture(block: (DictionaryInstaller) -> Unit) {
