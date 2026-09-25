@@ -26,7 +26,8 @@ class DictionaryHeadwordTest {
     @Test
     fun rejectsProducerIneligibleHeadwords() {
         listOf("", "ü", "ß", "zyg-", "Dr.", "a..b", "a-7", "rock&", "tw*t", "email@example.com",
-            "AC/", "/DC", "100%off", "%100", "C+17", "+C", "two words", "snow☃man").forEach {
+            "AC/", "/DC", "100%off", "%100", "C+17", "+C", "two words", "snow☃man",
+            "rock''roll").forEach {
             assertFalse(it, DictionaryHeadword.eligible(it))
         }
     }

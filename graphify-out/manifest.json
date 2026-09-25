@@ -3846,15 +3846,15 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/DictionaryHeadword.kt": {
-    "mtime": 1790266852.4761558,
-    "seen": 1790266978.7185438,
-    "ast_hash": "739b2848d256823b0c9cbad4de860473",
+    "mtime": 1790366457.1527798,
+    "seen": 1790366493.2757108,
+    "ast_hash": "c87fcce730156878fdb1be8340425743",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/DictionaryHeadwordTest.kt": {
-    "mtime": 1790266865.0109982,
-    "seen": 1790266978.7185886,
-    "ast_hash": "2474a988887c554a0913b997e54a18ac",
+    "mtime": 1790366440.606988,
+    "seen": 1790366493.2757587,
+    "ast_hash": "abd80ef72b6f1b028e423313e68b2612",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/CompoundRhymeFilter.kt": {
