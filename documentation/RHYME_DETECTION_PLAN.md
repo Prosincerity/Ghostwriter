@@ -23,7 +23,7 @@ eSpeak fallback and its language data, so missing or not-yet-downloaded
 databases do not prevent IPA generation.
 
 The corrected release is
-[`kaikki-v20260909`](https://github.com/Prosincerity/Ghostwriter-Dict/releases/tag/kaikki-v20260909).
+[`kaikki-v20260920`](https://github.com/Prosincerity/Ghostwriter-Dict/releases/tag/kaikki-v20260920).
 The app's `app/src/main/assets/dictionary_release.json` pins its six exact
 asset URLs and published compressed sizes. Keep this manifest explicit when
 updating releases; do not construct asset URLs from an assumed date.
@@ -54,7 +54,7 @@ the producer's normalization policy.
 
 Exit check: the checked-in release manifest identifies the corrected public
 release and every asset without relying on a local path. Done for
-`kaikki-v20260909`; the maintainer confirmed eSpeak version 1.52 and the two ABIs.
+`kaikki-v20260920`; the maintainer confirmed eSpeak version 1.52 and the two ABIs.
 
 ### 2. Download, install, and read the SQLite databases
 
