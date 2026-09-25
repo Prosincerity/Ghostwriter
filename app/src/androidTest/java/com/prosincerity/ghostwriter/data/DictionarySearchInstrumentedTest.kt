@@ -5,6 +5,7 @@ import android.content.ContextWrapper
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.prosincerity.ghostwriter.logic.IpaSearchKeys
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -104,6 +105,123 @@ class DictionarySearchInstrumentedTest {
         assertEquals(listOf("Urknall"), knall.matches.map { it.word })
         val ah = runBlocking { search.search("Ah", "de", DictionarySearchMode.WORD_SUFFIX) }
         assertTrue(ah.matches.any { it.word == "Bah" })
+    }
+
+    @Test
+    fun assonanceFallsBackOnlyWhenNoExactKeyMatchesAcrossSources() = withDictionaryFixture { installer ->
+        val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
+        version.mkdirs()
+        fun row(word: String, ipa: String): Row {
+            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
+            return Row(word, ipa, keys.reversed, keys.assonance)
+        }
+        database(File(version, "wiktionary.db"), listOf(
+            row("source", "/aeiou/"),
+            row("partial", "/iou/"),
+            row("absent", "/ɑeiou/"),
+            row("short", "/æɒ/"),
+            row("extended", "/uæɒ/"),
+        ))
+        database(File(version, "espeak.db"), listOf(row("exact", "/baeiosu/")))
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
+
+        val exact = runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE) }
+        assertEquals(listOf("exact"), exact.matches.map { it.word })
+        assertTrue(runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE, 1) }
+            .matches.isEmpty())
+
+        val fallback = runBlocking { search.search("absent", "de", DictionarySearchMode.ASSONANCE) }
+        assertEquals(setOf("partial", "source", "exact"), fallback.matches.map { it.word }.toSet())
+        val short = runBlocking { search.search("short", "de", DictionarySearchMode.ASSONANCE) }
+        assertEquals(listOf("extended"), short.matches.map { it.word })
+    }
+
+    @Test
+    fun assonancePaginatesDistinctBaseForms() = withDictionaryFixture { installer ->
+        val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
+        version.mkdirs()
+        val rows = buildList {
+            add(Row("source", "/ae/", "ea", "e a"))
+            repeat(65) { index ->
+                val base = "stem${index.toString().padStart(3, '0')}"
+                add(Row(base, "/bae/", "eab", "e a"))
+                add(Row("${base}n", "/baen/", "neab", "e a"))
+            }
+        }
+        database(File(version, "wiktionary.db"), rows)
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
+
+        val first = runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE) }
+        val second = runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE, 1) }
+        assertEquals(60, first.matches.size)
+        assertTrue(first.hasNext)
+        assertEquals(5, second.matches.size)
+        assertFalse(second.hasNext)
+        assertEquals(65, (first.matches + second.matches).map { it.word }.toSet().size)
+        assertFalse((first.matches + second.matches).any { it.word.endsWith("n") })
+    }
+
+    @Test
+    fun assonanceChecksShorterExactKeyBeforeLargeLongerKey() = withDictionaryFixture { installer ->
+        val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
+        version.mkdirs()
+        fun row(word: String, ipa: String): Row {
+            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
+            return Row(word, ipa, keys.reversed, keys.assonance)
+        }
+        database(File(version, "wiktionary.db"), buildList {
+            add(row("source", "/aeio/"))
+            add(row("source", "/eio/"))
+            add(row("base", "/beio/"))
+            repeat(70) { index -> add(row("form$index", "/baeio/")) }
+        })
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
+
+        val first = runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE) }
+        assertEquals("base", first.matches.first().word)
+        assertTrue(first.hasNext)
+    }
+
+    @Test
+    fun assonanceCollapsesReleasedGermanInflections() = withDictionaryFixture { installer ->
+        val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
+        version.mkdirs()
+        fun row(word: String, ipa: String): Row {
+            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
+            return Row(word, ipa, keys.reversed, keys.assonance)
+        }
+        database(File(version, "wiktionary.db"), listOf(
+            row("verfolgen", "/fɛɐ̯ˈfɔlɡən/"),
+            row("verfolgen", "[fɛɐ̯ˈfɔlɡn̩]"),
+            row("erblond", "[ɛɐ̯ˈblɔnt]"),
+            row("erblonde", "[ɛɐ̯ˈblɔndə]"),
+            row("erblonden", "[ɛɐ̯ˈblɔndn̩]"),
+            row("erblondende", "[ɛɐ̯ˈblɔndn̩də]"),
+            row("erblondendem", "[ɛɐ̯ˈblɔndn̩dəm]"),
+            row("erborg", "[ɛɐ̯ˈbɔʁk]"),
+            row("erborge", "[ɛɐ̯ˈbɔʁɡə]"),
+            row("erborgende", "[ɛɐ̯ˈbɔʁɡn̩də]"),
+            row("erborgendem", "[ɛɐ̯ˈbɔʁɡn̩dəm]"),
+            row("erborgte", "[ɛɐ̯ˈbɔʁktə]"),
+            row("erborgtem", "[ɛɐ̯ˈbɔʁktəm]"),
+            row("erborget", "[ɛɐ̯ˈbɔʁɡət]"),
+            row("erborgtet", "[ɛɐ̯ˈbɔʁktət]"),
+            row("erdrossel", "[ɛɐ̯ˈdʁɔsl̩]"),
+            row("erdrosselnde", "[ɛɐ̯ˈdʁɔsl̩ndə]"),
+            row("erdrosselte", "[ɛɐ̯ˈdʁɔsl̩tə]"),
+            row("verdoppel", "[fɛɐ̯ˈdɔpl̩]"),
+            row("verdoppelnde", "[fɛɐ̯ˈdɔpl̩ndə]"),
+            row("verborgen", "[fɛɐ̯ˈbɔʁɡn̩]"),
+            row("verborgenste", "[fɛɐ̯ˈbɔʁɡn̩stə]"),
+            row("erfolg", "[ɛɐ̯ˈfɔlk]"),
+            row("erfolgende", "[ɛɐ̯ˈfɔlɡn̩də]"),
+        ))
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
+
+        val result = runBlocking { search.search("verfolgen", "de", DictionarySearchMode.ASSONANCE) }
+        assertEquals(setOf("erblond", "erborg", "erdrossel", "verdoppel", "verborgen", "erfolg"),
+            result.matches.map { it.word }.toSet())
+        assertFalse(result.hasNext)
     }
 
     @Test

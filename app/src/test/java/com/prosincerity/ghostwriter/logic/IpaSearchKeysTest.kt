@@ -48,7 +48,7 @@ class IpaSearchKeysTest {
             IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/ˈɹaɪtɪŋ/", "en")!!, "en"))
         assertEquals(listOf("ɪ", "ŋ"),
             IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/ɹaɪˈtɪŋ/", "en")!!, "en"))
-        assertEquals(listOf("æ"), IpaSearchKeys.assonancePrefixes(keys))
+        assertEquals(listOf("æ"), IpaSearchKeys.assonanceFallbacks(keys))
         assertEquals(listOf("æ", "t"),
             IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/kæt/", "en")!!, "en"))
         assertNull(IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/kætɪŋ/", "en")!!, "en"))
@@ -91,5 +91,18 @@ class IpaSearchKeysTest {
             IpaSearchKeys.fromIpa("/kæt/", "en")!!))
         assertEquals(listOf(listOf("ʊ", "n", "t")), IpaSearchKeys.phonemeSuffixes(
             IpaSearchKeys.fromIpa("/ʊnt/", "de")!!))
+    }
+
+    @Test
+    fun assonanceFallbacksUseWholeShortKeysAndStepDownToFourOrFewerVowels() {
+        fun fallbacks(ipa: String) =
+            IpaSearchKeys.assonanceFallbacks(IpaSearchKeys.fromIpa(ipa, "en")!!)
+
+        assertEquals(listOf("a"), fallbacks("/a/"))
+        assertEquals(listOf("e a"), fallbacks("/ae/"))
+        assertEquals(listOf("o i e a"), fallbacks("/aeio/"))
+        assertEquals(listOf("u o i"), fallbacks("/aeiou/"))
+        assertEquals(listOf("æ u o i"), fallbacks("/aeiouæ/"))
+        assertEquals(listOf("ɒ æ u o i", "ɒ æ u"), fallbacks("/aeiouæɒ/"))
     }
 }

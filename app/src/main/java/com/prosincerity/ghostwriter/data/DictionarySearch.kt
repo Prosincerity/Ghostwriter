@@ -4,6 +4,7 @@ import android.database.sqlite.SQLiteDatabase
 import com.prosincerity.ghostwriter.logic.IpaSearchKeys
 import com.prosincerity.ghostwriter.logic.DictionaryHeadword
 import com.prosincerity.ghostwriter.logic.CompoundRhymeFilter
+import com.prosincerity.ghostwriter.logic.AssonanceFormFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -52,23 +53,29 @@ internal class DictionarySearch(
                     SearchPrefix(suffix.asReversed().joinToString(""), suffix.size, suffix)
                 }
             }
-            DictionarySearchMode.ASSONANCE -> keys.flatMap { key ->
-                val variants = IpaSearchKeys.assonancePrefixes(key)
-                variants.mapIndexed { index, prefix -> SearchPrefix(prefix, variants.size - index) }
-            }
+            DictionarySearchMode.ASSONANCE -> keys.filter { it.assonance.isNotEmpty() }
+                .map { key -> SearchPrefix(key.assonance, key.assonance.split(' ').size) }
             DictionarySearchMode.WORD_PREFIX -> emptyList()
-        }.sortedWith(compareByDescending<SearchPrefix> { it.tokenCount }.thenByDescending { it.value.length })
+        }.sortedWith(if (mode == DictionarySearchMode.ASSONANCE) {
+            compareBy<SearchPrefix> { it.tokenCount }.thenBy { it.value.length }
+        } else {
+            compareByDescending<SearchPrefix> { it.tokenCount }.thenByDescending { it.value.length }
+        })
             .distinctBy { it.tokens ?: it.value }
         val matches = linkedMapOf<String, DictionaryMatch>()
         fun visibleMatches(): List<DictionaryMatch> {
             val collected = matches.values.toList()
-            val excluded = if (mode == DictionarySearchMode.RHYME) {
-                CompoundRhymeFilter.excludedWords(
+            val excluded = when (mode) {
+                DictionarySearchMode.RHYME -> CompoundRhymeFilter.excludedWords(
                     collected.map { CompoundRhymeFilter.Entry(it.word, it.ipa) },
                     pronunciation?.ipa.orEmpty().map { CompoundRhymeFilter.Entry(normalized, it) },
                     language,
                 )
-            } else emptySet()
+                DictionarySearchMode.ASSONANCE -> AssonanceFormFilter.excludedWords(
+                    collected.map { AssonanceFormFilter.Entry(it.word, it.ipa) }, language,
+                )
+                else -> emptySet()
+            }
             return collected.filterNot { it.word in excluded }
         }
         fun enough(): Boolean = visibleMatches().size > nextPageIndex
@@ -81,6 +88,45 @@ internal class DictionarySearch(
             DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
             DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
         )
+        if (mode == DictionarySearchMode.ASSONANCE) {
+            for ((source, label) in sources) {
+                installer.openReadOnly(language, source)?.use { database ->
+                    for (key in prefixes) {
+                        collectRows(
+                            database,
+                            "SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? " +
+                                "ORDER BY word, ipa",
+                            arrayOf(key.value), normalized, label, matches, ::enough,
+                        ) { ipa -> IpaSearchKeys.fromIpa(ipa, language)?.assonance == key.value }
+                        if (enough()) break
+                    }
+                }
+                if (enough()) break
+            }
+            if (visibleMatches().isNotEmpty()) return@withContext result()
+
+            val fallbacks = keys.flatMap(IpaSearchKeys::assonanceFallbacks).distinct()
+                .sortedByDescending { it.split(' ').size }
+            for (prefix in fallbacks) {
+                for ((source, label) in sources) {
+                    installer.openReadOnly(language, source)?.use { database ->
+                        database.execSQL("PRAGMA case_sensitive_like = ON")
+                        collectRows(
+                            database,
+                            "SELECT word, ipa FROM dictionary WHERE assonance_reversed LIKE ? ESCAPE '!' " +
+                                "ORDER BY assonance_reversed, word, ipa",
+                            arrayOf("${escapeLike(prefix)}%"), normalized, label, matches, ::enough,
+                        ) { ipa ->
+                            val candidate = IpaSearchKeys.fromIpa(ipa, language)?.assonance
+                            candidate == prefix || candidate?.startsWith("$prefix ") == true
+                        }
+                    }
+                    if (enough()) break
+                }
+                if (enough()) break
+            }
+            return@withContext result()
+        }
         if (mode == DictionarySearchMode.WORD_SUFFIX) {
             for (searchPrefix in prefixes) {
                 for ((source, label) in sources) {
@@ -117,20 +163,12 @@ internal class DictionarySearch(
                 } else {
                     for (searchPrefix in prefixes) {
                         val prefix = searchPrefix.value
-                        val column = if (mode == DictionarySearchMode.RHYME) "ipa_reversed" else "assonance_reversed"
-                        val order = if (mode == DictionarySearchMode.RHYME) {
-                            "length(ipa_reversed), ipa_reversed, word, ipa"
-                        } else "$column, word, ipa"
-                        val sql = "SELECT word, ipa FROM dictionary WHERE $column LIKE ? ESCAPE '!' " +
-                            "ORDER BY $order"
+                        val sql = "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
+                            "ORDER BY length(ipa_reversed), ipa_reversed, word, ipa"
                         collectRows(database, sql, arrayOf("${escapeLike(prefix)}%"),
                             normalized, label, matches, ::enough) { ipa ->
                             val keys = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
-                            if (mode == DictionarySearchMode.RHYME) {
-                                IpaSearchKeys.rimeTokens(keys, language) == searchPrefix.tokens
-                            } else {
-                                IpaSearchKeys.assonancePrefixes(keys).contains(searchPrefix.value)
-                            }
+                            IpaSearchKeys.rimeTokens(keys, language) == searchPrefix.tokens
                         }
                         if (enough()) break
                     }

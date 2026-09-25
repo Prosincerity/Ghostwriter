@@ -187,8 +187,21 @@ database miss; it still needs to be run in Android Studio.
   pronunciation.
   Each candidate's suffix is checked exactly, and longer suffix matches rank
   first across both sources.
-  Assonance uses `assonance_reversed`. Parameterize every query and escape
-  literal `%`, `_`, and the chosen `LIKE` escape character. Benchmark suffix
+  Assonance first returns only words whose complete `assonance_reversed` key
+  equals the input key. Only when that search finds no other words does it
+  search vowel suffixes of lengths x-2, x-4, ... until a length of four or fewer
+  vowels is reached; keys of up to four vowels use the entire key as fallback.
+  With multiple input pronunciations, exact keys with fewer vowels are scanned
+  first so shorter base forms can be found before their longer inflections.
+  German and English assonance results collapse common inflected spellings
+  when they share a written stem and compatible vowel keys. German endings
+  with syllabic consonants may differ by a final schwa; those also require
+  matching phonetic stems, allowing German final devoicing of `p/b`, `t/d`,
+  and `k/ɡ`. Pagination counts the remaining forms. The database has no lemma
+  column, so this keeps the shortest available form in a clear family rather
+  than deriving a lemma.
+  Parameterize every query and escape literal `%`, `_`, and the chosen `LIKE`
+  escape character. Benchmark suffix
   searches on realistic data. Keep searches off the main thread and bound
   result counts.
 - Initially search installed databases. A later pass uses bundled eSpeak NG
