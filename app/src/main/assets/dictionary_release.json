@@ -1,41 +1,41 @@
 {
-  "tag": "kaikki-v20260909",
-  "releaseUrl": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/tag/kaikki-v20260909",
+  "tag": "kaikki-v20260920",
+  "releaseUrl": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/tag/kaikki-v20260920",
   "languages": {
     "en": {
       "wiktionary": {
-        "file": "en_kaikki-v20260909.db.gz",
-        "sizeBytes": 9954217,
-        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260909/en_kaikki-v20260909.db.gz"
+        "file": "en_kaikki-v20260920.db.gz",
+        "sizeBytes": 8444921,
+        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260920/en_kaikki-v20260920.db.gz"
       },
       "espeak": {
-        "file": "en_espeak_kaikki-v20260909.db.gz",
-        "sizeBytes": 48136789,
-        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260909/en_espeak_kaikki-v20260909.db.gz"
+        "file": "en_espeak_kaikki-v20260920.db.gz",
+        "sizeBytes": 44559066,
+        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260920/en_espeak_kaikki-v20260920.db.gz"
       }
     },
     "de": {
       "wiktionary": {
-        "file": "de_kaikki-v20260909.db.gz",
-        "sizeBytes": 50385234,
-        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260909/de_kaikki-v20260909.db.gz"
+        "file": "de_kaikki-v20260920.db.gz",
+        "sizeBytes": 47893013,
+        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260920/de_kaikki-v20260920.db.gz"
       },
       "espeak": {
-        "file": "de_espeak_kaikki-v20260909.db.gz",
-        "sizeBytes": 5299001,
-        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260909/de_espeak_kaikki-v20260909.db.gz"
+        "file": "de_espeak_kaikki-v20260920.db.gz",
+        "sizeBytes": 5688557,
+        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260920/de_espeak_kaikki-v20260920.db.gz"
       }
     },
     "tr": {
       "wiktionary": {
-        "file": "tr_kaikki-v20260909.db.gz",
-        "sizeBytes": 1525821,
-        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260909/tr_kaikki-v20260909.db.gz"
+        "file": "tr_kaikki-v20260920.db.gz",
+        "sizeBytes": 1227264,
+        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260920/tr_kaikki-v20260920.db.gz"
       },
       "espeak": {
-        "file": "tr_espeak_kaikki-v20260909.db.gz",
-        "sizeBytes": 11743750,
-        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260909/tr_espeak_kaikki-v20260909.db.gz"
+        "file": "tr_espeak_kaikki-v20260920.db.gz",
+        "sizeBytes": 11720526,
+        "url": "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/kaikki-v20260920/tr_espeak_kaikki-v20260920.db.gz"
       }
     }
   }

@@ -4,7 +4,7 @@ import java.text.Normalizer
 
 /**
  * Adapted from Ghostwriter-Dict's generate_rhyme_db.py token rules for
- * release kaikki-v20260909. Copyright (c) 2026 Ghostwriter Dictionary
+ * release kaikki-v20260920. Copyright (c) 2026 Ghostwriter Dictionary
  * contributors; MIT license. See assets/licenses/Ghostwriter-Dict-MIT.txt.
  */
 internal object IpaSearchKeys {

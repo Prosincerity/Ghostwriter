@@ -41,7 +41,7 @@ speechPlayer components. Build and data-generation details are in
 ## Downloadable rhyme dictionaries
 
 The six databases in the
-[`kaikki-v20260909` release](https://github.com/Prosincerity/Ghostwriter-Dict/releases/tag/kaikki-v20260909)
+[`kaikki-v20260920` release](https://github.com/Prosincerity/Ghostwriter-Dict/releases/tag/kaikki-v20260920)
 are offered under **Creative Commons Attribution-ShareAlike 4.0 International
 (CC BY-SA 4.0)**. Their authoritative attribution and modification notice is
 [Ghostwriter Dictionary's LICENSE-DATA.md](https://github.com/Prosincerity/Ghostwriter-Dict/blob/main/LICENSE-DATA.md).
