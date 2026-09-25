@@ -171,6 +171,12 @@ internal class DictionaryInstaller(
                     }
                 }
             }
+            SQLiteDatabase.openDatabase(staging.path, null, SQLiteDatabase.OPEN_READONLY).use { database ->
+                database.rawQuery(
+                    "SELECT word, ipa, ipa_reversed, assonance_reversed FROM dictionary LIMIT 1",
+                    null,
+                ).use { cursor -> cursor.moveToFirst() }
+            }
             val installed = File(versionDir, dictionarySource.fileName)
             if (!installed.isFile) {
                 check(staging.renameTo(installed)) { "Cannot activate downloaded dictionary" }

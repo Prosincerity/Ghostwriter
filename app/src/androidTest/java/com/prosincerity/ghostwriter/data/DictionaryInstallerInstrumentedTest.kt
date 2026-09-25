@@ -92,6 +92,30 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
+    fun invalidDatabaseArchiveIsRejectedAndCanBeRetried() = withTestContext { context ->
+        val valid = archive(context, listOf("word" to "/wɜːd/"))
+        val invalid = ByteArrayOutputStream().use { output ->
+            GZIPOutputStream(output).use { it.write("not a SQLite database".toByteArray()) }
+            output.toByteArray()
+        }
+        var opens = 0
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+            ByteArrayInputStream(if (++opens == 1) invalid else valid)
+        })
+
+        val failure = runCatching {
+            runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
+        }.exceptionOrNull()
+        assertTrue(failure != null)
+        assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+        assertTrue(installer.availableLanguages().isEmpty())
+
+        runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
+        assertEquals(2, opens)
+        assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "en")?.source)
+    }
+
+    @Test
     fun generatedIpaIsUsedOnlyAfterBothDatabasesMiss() = withTestContext { context ->
         val installer = DictionaryInstaller(context)
         val generated = DictionaryPronunciations(installer, IpaGenerator { _, _ -> "ˈɪpa" })
