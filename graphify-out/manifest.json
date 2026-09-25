@@ -3804,9 +3804,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionarySearchInstrumentedTest.kt": {
-    "mtime": 1790363030.798855,
-    "seen": 1790363049.8242805,
-    "ast_hash": "b991e3f12d05fe4c6e290f99ce1cdb90",
+    "mtime": 1790364771.1709754,
+    "seen": 1790364913.2092311,
+    "ast_hash": "f84f9892d613792de9247716b7afe818",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreenTest.kt": {
