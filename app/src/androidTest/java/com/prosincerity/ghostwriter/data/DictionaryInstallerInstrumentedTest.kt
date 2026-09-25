@@ -116,6 +116,25 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
+    fun corruptInstalledDatabaseCanBeReplaced() = withTestContext { context ->
+        val valid = archive(context, listOf("word" to "/wɜːd/"))
+        var opens = 0
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+            opens++
+            ByteArrayInputStream(valid)
+        })
+        val version = File(context.filesDir, "dictionaries/en/${installer.release.tag}")
+        version.mkdirs()
+        File(version, "wiktionary.db").writeText("not a SQLite database")
+
+        assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+        assertTrue(installer.availableLanguages().isEmpty())
+        runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
+        assertEquals(1, opens)
+        assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "en")?.source)
+    }
+
+    @Test
     fun generatedIpaIsUsedOnlyAfterBothDatabasesMiss() = withTestContext { context ->
         val installer = DictionaryInstaller(context)
         val generated = DictionaryPronunciations(installer, IpaGenerator { _, _ -> "ˈɪpa" })

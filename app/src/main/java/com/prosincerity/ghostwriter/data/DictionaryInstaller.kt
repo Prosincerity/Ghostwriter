@@ -2,6 +2,7 @@ package com.prosincerity.ghostwriter.data
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -100,7 +101,7 @@ internal class DictionaryInstaller(
     fun installedDatabase(language: String, source: DictionarySource): File? {
         require(language in release.languages)
         return File(File(File(root, language), release.tag), source.fileName)
-            .takeIf { it.isFile }
+            .takeIf(::isUsableDatabase)
     }
 
     fun availableDatabase(language: String, source: DictionarySource): File? {
@@ -111,7 +112,7 @@ internal class DictionaryInstaller(
             ?.filter { it.isDirectory && !it.name.startsWith(".") }
             ?.sortedByDescending { it.name }
             ?.map { File(it, source.fileName) }
-            ?.filter { it.isFile }
+            ?.filter(::isUsableDatabase)
             ?.firstOrNull()
     }
 
@@ -171,16 +172,13 @@ internal class DictionaryInstaller(
                     }
                 }
             }
-            SQLiteDatabase.openDatabase(staging.path, null, SQLiteDatabase.OPEN_READONLY).use { database ->
-                database.rawQuery(
-                    "SELECT word, ipa, ipa_reversed, assonance_reversed FROM dictionary LIMIT 1",
-                    null,
-                ).use { cursor -> cursor.moveToFirst() }
-            }
+            check(isUsableDatabase(staging)) { "Downloaded dictionary is invalid" }
             val installed = File(versionDir, dictionarySource.fileName)
-            if (!installed.isFile) {
-                check(staging.renameTo(installed)) { "Cannot activate downloaded dictionary" }
+            if (installed.isFile) {
+                if (isUsableDatabase(installed)) return@withContext installed
+                check(installed.delete()) { "Cannot replace invalid dictionary" }
             }
+            check(staging.renameTo(installed)) { "Cannot activate downloaded dictionary" }
             onProgress(DictionaryDownloadProgress(asset.sizeBytes, asset.sizeBytes))
             installed
         } finally {
@@ -192,4 +190,19 @@ internal class DictionaryInstaller(
         availableDatabase(language, source)?.let {
             SQLiteDatabase.openDatabase(it.path, null, SQLiteDatabase.OPEN_READONLY)
         }
+
+    private fun isUsableDatabase(file: File): Boolean {
+        if (!file.isFile) return false
+        return try {
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READONLY).use { database ->
+                database.rawQuery(
+                    "SELECT word, ipa, ipa_reversed, assonance_reversed FROM dictionary LIMIT 1",
+                    null,
+                ).use { cursor -> cursor.moveToFirst() }
+            }
+            true
+        } catch (_: SQLiteException) {
+            false
+        }
+    }
 }
