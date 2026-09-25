@@ -44,7 +44,9 @@ internal object DictionaryHeadword {
                     if (!isLetter(before) || !isLetter(after)) return false
                 }
                 character == '\'' -> {
-                    if (!isAlphanumeric(before) && !isAlphanumeric(after)) return false
+                    if (before == '\'' || after == '\'' ||
+                        !isAlphanumeric(before) && !isAlphanumeric(after)
+                    ) return false
                 }
                 character == '/' -> {
                     if (!isLetter(before) || !isLetter(after)) return false
