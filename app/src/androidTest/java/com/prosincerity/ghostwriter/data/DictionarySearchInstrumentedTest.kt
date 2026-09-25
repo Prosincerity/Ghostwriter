@@ -82,6 +82,31 @@ class DictionarySearchInstrumentedTest {
     }
 
     @Test
+    fun shortGermanSuffixesUseAllInputPhonemes() = withDictionaryFixture { installer ->
+        val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
+        version.mkdirs()
+        database(File(version, "wiktionary.db"), listOf(
+            Row("und", "/ʊnt/", "tnʊ", "ʊ"),
+            Row("Hund", "/hʊnt/", "tnʊh", "ʊ"),
+            Row("Windhund", "/vɪnthʊnt/", "tnʊhtnɪv", "ʊ ɪ"),
+            Row("Knall", "/knal/", "lank", "a"),
+            Row("Urknall", "/uːɐ̯knal/", "lankɐ̯uː", "a ɐ̯ uː"),
+            Row("Ah", "/a/", "a", "a"),
+            Row("Bah", "/ba/", "ab", "a"),
+        ))
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
+
+        val und = runBlocking { search.search("und", "de", DictionarySearchMode.WORD_SUFFIX) }
+        assertEquals(setOf("Hund", "Windhund"), und.matches.map { it.word }.toSet())
+        val hund = runBlocking { search.search("Hund", "de", DictionarySearchMode.WORD_SUFFIX) }
+        assertEquals(listOf("Windhund"), hund.matches.map { it.word })
+        val knall = runBlocking { search.search("Knall", "de", DictionarySearchMode.WORD_SUFFIX) }
+        assertEquals(listOf("Urknall"), knall.matches.map { it.word })
+        val ah = runBlocking { search.search("Ah", "de", DictionarySearchMode.WORD_SUFFIX) }
+        assertTrue(ah.matches.any { it.word == "Bah" })
+    }
+
+    @Test
     fun searchesRhymeAssonanceAndWordsWithSourcePrecedence() = withDictionaryFixture { installer ->
         val pronunciations = DictionaryPronunciations(installer) { _, _ -> null }
         val search = DictionarySearch(installer, pronunciations)
@@ -113,7 +138,7 @@ class DictionarySearchInstrumentedTest {
         val jointSuffix = runBlocking { search.search("joint", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertTrue(jointSuffix.matches.isEmpty())
         val pointSuffix = runBlocking { search.search("point", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertTrue(pointSuffix.matches.isEmpty())
+        assertEquals(setOf("checkpoint", "outpoint"), pointSuffix.matches.map { it.word }.toSet())
         val batSuffix = runBlocking { search.search("bat", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertTrue(batSuffix.matches.any { it.word == "cat" })
         assertFalse(batSuffix.matches.any { it.word == "cot" })

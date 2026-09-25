@@ -105,11 +105,11 @@ internal object IpaSearchKeys {
         return tokens.drop(vowelIndex)
     }
 
-    /** Suffix lengths x-2, x-4, ...; short words use two phonemes, never one. */
+    /** Words of up to four phonemes use all phonemes; longer words use x-2, x-4, ... above two. */
     fun phonemeSuffixes(keys: Keys): List<List<String>> {
         val phonemes = phonemeTokens(keys)
-        if (phonemes.size < 4) {
-            return if (phonemes.size >= 2) listOf(phonemes.takeLast(2)) else emptyList()
+        if (phonemes.size <= 4) {
+            return listOf(phonemes)
         }
         val lengths = mutableListOf<Int>()
         var length = phonemes.size - 2

@@ -76,17 +76,20 @@ class IpaSearchKeysTest {
     }
 
     @Test
-    fun suffixStagesStopBeforeTwoPhonemes() {
+    fun suffixStagesKeepWholeShortWordsAndStopBeforeTwoForLongWords() {
         val writing = IpaSearchKeys.fromIpa("/ˈɹaɪtɪŋ/", "en")!!
         assertEquals(listOf(listOf("t", "ɪ", "ŋ")), IpaSearchKeys.phonemeSuffixes(writing))
         val longWord = IpaSearchKeys.fromIpa("/ˈkatɪŋab/", "en")!!
         assertEquals(listOf(5, 3), IpaSearchKeys.phonemeSuffixes(longWord).map { it.size })
-        assertEquals(emptyList<List<String>>(), IpaSearchKeys.phonemeSuffixes(IpaSearchKeys.fromIpa("/a/", "en")!!))
+        assertEquals(listOf(listOf("a")), IpaSearchKeys.phonemeSuffixes(IpaSearchKeys.fromIpa("/a/", "en")!!))
         assertEquals(listOf(listOf("æ", "t")), IpaSearchKeys.phonemeSuffixes(IpaSearchKeys.fromIpa("/æt/", "en")!!))
-        assertEquals(emptyList<List<String>>(), IpaSearchKeys.phonemeSuffixes(IpaSearchKeys.fromIpa("/pɔɪnt/", "en")!!))
-        assertEquals(emptyList<List<String>>(), IpaSearchKeys.phonemeSuffixes(
+        assertEquals(listOf(listOf("p", "ɔɪ", "n", "t")), IpaSearchKeys.phonemeSuffixes(
+            IpaSearchKeys.fromIpa("/pɔɪnt/", "en")!!))
+        assertEquals(listOf(listOf("f", "l", "æ", "t")), IpaSearchKeys.phonemeSuffixes(
             IpaSearchKeys.fromIpa("/flæt/", "en")!!))
-        assertEquals(listOf(listOf("æ", "t")), IpaSearchKeys.phonemeSuffixes(
+        assertEquals(listOf(listOf("k", "æ", "t")), IpaSearchKeys.phonemeSuffixes(
             IpaSearchKeys.fromIpa("/kæt/", "en")!!))
+        assertEquals(listOf(listOf("ʊ", "n", "t")), IpaSearchKeys.phonemeSuffixes(
+            IpaSearchKeys.fromIpa("/ʊnt/", "de")!!))
     }
 }
