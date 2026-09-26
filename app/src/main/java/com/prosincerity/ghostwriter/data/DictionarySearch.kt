@@ -6,7 +6,9 @@ import com.prosincerity.ghostwriter.logic.DictionaryHeadword
 import com.prosincerity.ghostwriter.logic.CompoundRhymeFilter
 import com.prosincerity.ghostwriter.logic.AssonanceFormFilter
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 
 internal enum class DictionarySearchMode { RHYME, WORD_PREFIX, WORD_SUFFIX, ASSONANCE }
 
@@ -86,6 +88,7 @@ internal class DictionarySearch(
         }
         if (mode == DictionarySearchMode.ASSONANCE) {
             for (source in DictionarySource.entries) {
+                coroutineContext.ensureActive()
                 installer.openReadOnly(language, source)?.use { database ->
                     for (key in prefixes) {
                         collectRows(
@@ -105,6 +108,7 @@ internal class DictionarySearch(
                 .sortedByDescending { it.split(' ').size }
             for (prefix in fallbacks) {
                 for (source in DictionarySource.entries) {
+                    coroutineContext.ensureActive()
                     installer.openReadOnly(language, source)?.use { database ->
                         database.execSQL("PRAGMA case_sensitive_like = ON")
                         collectRows(
@@ -126,6 +130,7 @@ internal class DictionarySearch(
         if (mode == DictionarySearchMode.WORD_SUFFIX) {
             for (searchPrefix in prefixes) {
                 for (source in DictionarySource.entries) {
+                    coroutineContext.ensureActive()
                     installer.openReadOnly(language, source)?.use { database ->
                         database.execSQL("PRAGMA case_sensitive_like = ON")
                         val suffix = searchPrefix.tokens ?: return@use
@@ -147,6 +152,7 @@ internal class DictionarySearch(
             return@withContext result()
         }
         for (source in DictionarySource.entries) {
+            coroutineContext.ensureActive()
             installer.openReadOnly(language, source)?.use { database ->
                 database.execSQL("PRAGMA case_sensitive_like = ON")
                 if (mode == DictionarySearchMode.WORD_PREFIX) {
@@ -175,7 +181,7 @@ internal class DictionarySearch(
         result()
     }
 
-    private fun collectRows(
+    private suspend fun collectRows(
         database: SQLiteDatabase,
         sql: String,
         args: Array<String>,
@@ -187,12 +193,9 @@ internal class DictionarySearch(
     ) {
         var offset = 0
         while (!enough()) {
-            var rows = 0
-            database.rawQuery("$sql LIMIT $SCAN_LIMIT OFFSET $offset", args).use { cursor ->
-                while (cursor.moveToNext()) {
-                    rows++
-                    val candidate = cursor.getString(0)
-                    if (candidate == input || candidate in matches) continue
+            val rows = database.readDictionaryRows("$sql LIMIT $SCAN_LIMIT OFFSET $offset", args) { cursor ->
+                val candidate = cursor.getString(0)
+                if (candidate != input && candidate !in matches) {
                     val ipa = cursor.getString(1)
                     if (validIpa(ipa)) matches[candidate] = DictionaryMatch(candidate, ipa, source)
                 }

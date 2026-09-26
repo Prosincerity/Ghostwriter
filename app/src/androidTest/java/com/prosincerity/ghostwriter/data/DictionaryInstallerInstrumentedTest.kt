@@ -5,6 +5,8 @@ import android.content.ContextWrapper
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -131,6 +133,37 @@ class DictionaryInstallerInstrumentedTest {
         assertTrue(installer.availableLanguages().isEmpty())
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
         assertEquals(1, opens)
+        assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "en")?.source)
+    }
+
+    @Test
+    fun cancellationAfterReadingArchiveDoesNotActivateDictionary() = withTestContext { context ->
+        val valid = archive(context, listOf("word" to "/wɜːd/"))
+        var cancelDownload: () -> Unit = {}
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+            object : ByteArrayInputStream(valid) {
+                override fun close() {
+                    super.close()
+                    cancelDownload()
+                }
+            }
+        })
+
+        val failure = runCatching {
+            runBlocking {
+                val downloadContext = coroutineContext
+                cancelDownload = { downloadContext.cancel() }
+                installer.install("en", DictionarySource.WIKTIONARY)
+            }
+        }.exceptionOrNull()
+
+        assertTrue(failure is CancellationException)
+        assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+        val version = File(context.filesDir, "dictionaries/en/${installer.release.tag}")
+        assertTrue(version.listFiles().orEmpty().isEmpty())
+
+        cancelDownload = {}
+        runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
         assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "en")?.source)
     }
 

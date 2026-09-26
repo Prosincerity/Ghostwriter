@@ -2,10 +2,13 @@ package com.prosincerity.ghostwriter.data
 
 import android.content.Context
 import android.content.ContextWrapper
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.logic.IpaSearchKeys
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,6 +19,32 @@ import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class DictionarySearchInstrumentedTest {
+    @Test
+    fun cancellationStopsReadingRowsAndClosesCursor() = withDictionaryFixture { installer ->
+        installer.openReadOnly("en", DictionarySource.WIKTIONARY)!!.use { database ->
+            var visited = 0
+            var readCursor: Cursor? = null
+            val failure = runCatching {
+                runBlocking {
+                    val queryContext = coroutineContext
+                    database.readDictionaryRows("SELECT word, ipa FROM dictionary", emptyArray()) { cursor ->
+                        visited++
+                        readCursor = cursor
+                        queryContext.cancel()
+                    }
+                }
+            }.exceptionOrNull()
+
+            assertTrue(failure is CancellationException)
+            assertEquals(1, visited)
+            assertTrue(readCursor?.isClosed == true)
+            database.rawQuery("SELECT count(*) FROM dictionary", null).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertTrue(cursor.getInt(0) > 1)
+            }
+        }
+    }
+
     @Test
     fun paginatesPastResultAndDatabaseScanLimits() = withDictionaryFixture { installer ->
         val file = File(installer.appContext.filesDir, "dictionaries/en/${installer.release.tag}/wiktionary.db")

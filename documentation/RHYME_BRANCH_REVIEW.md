@@ -16,6 +16,8 @@ matching rules remain the baseline.
    installation can activate a file after cancellation during the final read.
    Share a cancellation-aware cursor reader, add checkpoints before expensive
    work and activation, and test cancellation and staging-file cleanup.
+   Load the eSpeak shared library inside its existing IO initialization lock,
+   so constructing a search repository does not load JNI during composition.
 3. **Screen state and disk access.** Both dictionary screens validate databases
    during composition. Load installed status on the IO dispatcher. The search
    screen repeats cancellation/reset code in three callbacks and leaves stale
@@ -30,6 +32,10 @@ matching rules remain the baseline.
   `./gradlew connectedDebugAndroidTest` passed (58 emulator tests).
   The Gradle comma-separated class filter ran only its first class, so full
   suite results were checked in the generated XML before accepting this stage.
+- Stage 2: `./gradlew test lint connectedDebugAndroidTest
+  -Pandroid.testInstrumentationRunnerArguments.package=com.prosincerity.ghostwriter.data`
+  passed (134 JVM tests and 17 emulator tests, including both new cancellation
+  regressions and the real eSpeak checks).
 - Each stage runs relevant Gradle JVM/lint and emulator tests before commit.
 - Refresh `graphify-out/` after source edits.
 
@@ -40,3 +46,5 @@ navigation additions, backup exclusions, and existing branch tests were also
 inspected. Upstream eSpeak sources and unrelated pre-existing app code are
 outside this cleanup. Synthetic fixtures exercise ranking and pagination;
 the existing roadmap's realistic-database performance benchmark remains open.
+Cancellation is checked between cursor rows and database scans; it does not
+interrupt a single SQLite call or native phonemization already in progress.
