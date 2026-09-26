@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790266767.5972228,
-    "seen": 1790266978.7188597,
-    "ast_hash": "26aad4b11e0872768a5f9fd2e883b009",
+    "mtime": 1790424081.1398008,
+    "seen": 1790424160.3826022,
+    "ast_hash": "f852131075cecac3bbfbccf323833901",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryInstallerInstrumentedTest.kt": {
-    "mtime": 1790423666.3950148,
-    "seen": 1790423682.3761232,
-    "ast_hash": "f97d98464b01789e5eba70fd628d3b7f",
+    "mtime": 1790424130.765177,
+    "seen": 1790424160.3805687,
+    "ast_hash": "8eec3dfa9ccd6fba8f39a8953fa597b7",
     "semantic_hash": ""
   },
   "app/src/main/assets/dictionary_release.json": {
@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryInstaller.kt": {
-    "mtime": 1790423630.8484616,
-    "seen": 1790423682.3761923,
-    "ast_hash": "aa02234f2f1c3d178c247a4bdb42c262",
+    "mtime": 1790424130.4071815,
+    "seen": 1790424160.3817453,
+    "ast_hash": "90527f47e9cbed19545205eb498ac8f9",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryPronunciations.kt": {
@@ -504,9 +504,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloads.kt": {
-    "mtime": 1790423873.025417,
-    "seen": 1790423930.9338138,
-    "ast_hash": "00952b9f72e8bdca8f7d5d8f1ab0f0e9",
+    "mtime": 1790424130.5841792,
+    "seen": 1790424160.3818455,
+    "ast_hash": "24b0e3abceef77c8cd8f51b4f871830c",
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
@@ -3882,9 +3882,9 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_BRANCH_REVIEW.md": {
-    "mtime": 1790423813.3391676,
-    "seen": 1790423930.9345818,
-    "ast_hash": "aeac99ccfa3b2fe9480c2974e9997901",
+    "mtime": 1790424130.9401748,
+    "seen": 1790424160.3826094,
+    "ast_hash": "eac73fa9d7e1eddc40479d9d2f33c8be",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryQueries.kt": {
