@@ -102,10 +102,7 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
         for ((language, assets) in installer.release.languages) {
             Text(labels.getValue(language), style = MaterialTheme.typography.titleMedium)
             for (source in DictionarySource.entries) {
-                val asset = when (source) {
-                    DictionarySource.WIKTIONARY -> assets.wiktionary
-                    DictionarySource.ESPEAK -> assets.espeak
-                }
+                val asset = assets.asset(source)
                 val key = language to source
                 val sourceLabel = when (source) {
                     DictionarySource.WIKTIONARY -> "Wiktionary Kaikki"
