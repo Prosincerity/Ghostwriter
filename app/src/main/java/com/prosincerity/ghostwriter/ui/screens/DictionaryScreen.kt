@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.DictionaryInstaller
 import com.prosincerity.ghostwriter.data.DictionarySearch
@@ -118,7 +119,7 @@ internal fun DictionaryScreen(
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("Dictionary") },
+            title = { Text("Rhyme Search") },
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -130,11 +131,20 @@ internal fun DictionaryScreen(
             if (checkingDictionaries) {
                 Text("Checking installed dictionaries…")
             } else if (availableLanguages.isEmpty()) {
-                Text("No rhyme dictionaries are installed")
-                Spacer(Modifier.height(8.dp))
-                Text("Download at least one language to search for matching words.")
-                Spacer(Modifier.height(12.dp))
-                Button(onClick = onOpenDownloads) { Text("Download dictionaries") }
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text("No rhyme dictionaries are installed", textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Download at least one language to search for matching words.",
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Button(onClick = onOpenDownloads) { Text("Download dictionaries") }
+                }
             } else {
                 OutlinedTextField(
                     value = word,
