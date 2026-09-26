@@ -17,12 +17,16 @@ import kotlin.coroutines.coroutineContext
 
 internal data class DictionaryAsset(val file: String, val sizeBytes: Long, val url: String)
 internal data class DictionaryLanguage(val wiktionary: DictionaryAsset, val espeak: DictionaryAsset) {
-    val downloadBytes: Long get() = wiktionary.sizeBytes + espeak.sizeBytes
+    fun asset(source: DictionarySource): DictionaryAsset = when (source) {
+        DictionarySource.WIKTIONARY -> wiktionary
+        DictionarySource.ESPEAK -> espeak
+    }
 }
 
-internal enum class DictionarySource(val fileName: String) {
-    WIKTIONARY("wiktionary.db"),
-    ESPEAK("espeak.db"),
+/** Declaration order is the lookup priority: curated pronunciations before generated data. */
+internal enum class DictionarySource(val fileName: String, val pronunciationSource: PronunciationSource) {
+    WIKTIONARY("wiktionary.db", PronunciationSource.WIKTIONARY),
+    ESPEAK("espeak.db", PronunciationSource.ESPEAK_DATABASE),
 }
 
 /** The app pins release URLs; it never needs to query GitHub while editing. */
@@ -127,11 +131,7 @@ internal class DictionaryInstaller(
     ): File = withContext(Dispatchers.IO) {
         require(language in release.languages)
         installedDatabase(language, dictionarySource)?.let { return@withContext it }
-        val languageAssets = release.languages.getValue(language)
-        val asset = when (dictionarySource) {
-            DictionarySource.WIKTIONARY -> languageAssets.wiktionary
-            DictionarySource.ESPEAK -> languageAssets.espeak
-        }
+        val asset = release.languages.getValue(language).asset(dictionarySource)
         val languageDir = File(root, language)
         check(languageDir.mkdirs() || languageDir.isDirectory) { "Cannot create dictionary directory" }
         val versionDir = File(languageDir, release.tag)

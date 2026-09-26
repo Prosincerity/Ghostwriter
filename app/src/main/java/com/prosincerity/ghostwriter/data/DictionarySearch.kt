@@ -84,19 +84,15 @@ internal class DictionarySearch(
             return DictionarySearchResult(pronunciation,
                 visible.drop(firstIndex.toInt()).take(PAGE_SIZE), visible.size > nextPageIndex)
         }
-        val sources = listOf(
-            DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
-            DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
-        )
         if (mode == DictionarySearchMode.ASSONANCE) {
-            for ((source, label) in sources) {
+            for (source in DictionarySource.entries) {
                 installer.openReadOnly(language, source)?.use { database ->
                     for (key in prefixes) {
                         collectRows(
                             database,
                             "SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? " +
                                 "ORDER BY word, ipa",
-                            arrayOf(key.value), normalized, label, matches, ::enough,
+                            arrayOf(key.value), normalized, source.pronunciationSource, matches, ::enough,
                         ) { ipa -> IpaSearchKeys.fromIpa(ipa, language)?.assonance == key.value }
                         if (enough()) break
                     }
@@ -108,14 +104,14 @@ internal class DictionarySearch(
             val fallbacks = keys.flatMap(IpaSearchKeys::assonanceFallbacks).distinct()
                 .sortedByDescending { it.split(' ').size }
             for (prefix in fallbacks) {
-                for ((source, label) in sources) {
+                for (source in DictionarySource.entries) {
                     installer.openReadOnly(language, source)?.use { database ->
                         database.execSQL("PRAGMA case_sensitive_like = ON")
                         collectRows(
                             database,
                             "SELECT word, ipa FROM dictionary WHERE assonance_reversed LIKE ? ESCAPE '!' " +
                                 "ORDER BY assonance_reversed, word, ipa",
-                            arrayOf("${escapeLike(prefix)}%"), normalized, label, matches, ::enough,
+                            arrayOf("${escapeLike(prefix)}%"), normalized, source.pronunciationSource, matches, ::enough,
                         ) { ipa ->
                             val candidate = IpaSearchKeys.fromIpa(ipa, language)?.assonance
                             candidate == prefix || candidate?.startsWith("$prefix ") == true
@@ -129,7 +125,7 @@ internal class DictionarySearch(
         }
         if (mode == DictionarySearchMode.WORD_SUFFIX) {
             for (searchPrefix in prefixes) {
-                for ((source, label) in sources) {
+                for (source in DictionarySource.entries) {
                     installer.openReadOnly(language, source)?.use { database ->
                         database.execSQL("PRAGMA case_sensitive_like = ON")
                         val suffix = searchPrefix.tokens ?: return@use
@@ -138,7 +134,7 @@ internal class DictionarySearch(
                             database,
                             "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
                                 "ORDER BY ipa_reversed, word, ipa",
-                            arrayOf(pattern), normalized, label, matches, ::enough,
+                            arrayOf(pattern), normalized, source.pronunciationSource, matches, ::enough,
                         ) { ipa ->
                             val candidate = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
                             IpaSearchKeys.phonemeTokens(candidate).takeLast(suffix.size) == suffix
@@ -150,7 +146,7 @@ internal class DictionarySearch(
             }
             return@withContext result()
         }
-        for ((source, label) in sources) {
+        for (source in DictionarySource.entries) {
             installer.openReadOnly(language, source)?.use { database ->
                 database.execSQL("PRAGMA case_sensitive_like = ON")
                 if (mode == DictionarySearchMode.WORD_PREFIX) {
@@ -158,7 +154,7 @@ internal class DictionarySearch(
                         database,
                         "SELECT word, ipa FROM dictionary WHERE word LIKE ? ESCAPE '!' " +
                             "ORDER BY word, ipa",
-                        arrayOf("${escapeLike(normalized)}%"), normalized, label, matches, ::enough,
+                        arrayOf("${escapeLike(normalized)}%"), normalized, source.pronunciationSource, matches, ::enough,
                     ) { true }
                 } else {
                     for (searchPrefix in prefixes) {
@@ -166,7 +162,7 @@ internal class DictionarySearch(
                         val sql = "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
                             "ORDER BY length(ipa_reversed), ipa_reversed, word, ipa"
                         collectRows(database, sql, arrayOf("${escapeLike(prefix)}%"),
-                            normalized, label, matches, ::enough) { ipa ->
+                            normalized, source.pronunciationSource, matches, ::enough) { ipa ->
                             val keys = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
                             IpaSearchKeys.rimeTokens(keys, language) == searchPrefix.tokens
                         }

@@ -20,13 +20,10 @@ internal class DictionaryPronunciations(
     suspend fun lookup(word: String, language: String): PronunciationResult? = withContext(Dispatchers.IO) {
         require(language in installer.release.languages)
         val normalized = DictionaryHeadword.normalizedEligible(word) ?: return@withContext null
-        for ((source, resultSource) in listOf(
-            DictionarySource.WIKTIONARY to PronunciationSource.WIKTIONARY,
-            DictionarySource.ESPEAK to PronunciationSource.ESPEAK_DATABASE,
-        )) {
+        for (source in DictionarySource.entries) {
             installer.openReadOnly(language, source)?.use { database ->
                 pronunciations(database, normalized).takeIf { it.isNotEmpty() }?.let {
-                    return@withContext PronunciationResult(it, resultSource)
+                    return@withContext PronunciationResult(it, source.pronunciationSource)
                 }
             }
         }
