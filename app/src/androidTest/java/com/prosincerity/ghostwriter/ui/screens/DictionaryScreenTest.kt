@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -19,6 +20,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.math.abs
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -181,7 +183,21 @@ class DictionaryScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("No rhyme dictionaries are installed").assertExists()
+        val screen = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
+        val title = composeRule.onNodeWithText("Rhyme Search").fetchSemanticsNode().boundsInRoot
+        val headline = composeRule.onNodeWithText("No rhyme dictionaries are installed")
+            .fetchSemanticsNode().boundsInRoot
+        val description = composeRule.onNodeWithText(
+            "Download at least one language to search for matching words.",
+        ).fetchSemanticsNode().boundsInRoot
+        val button = composeRule.onNodeWithText("Download dictionaries").fetchSemanticsNode().boundsInRoot
+        val centerX = screen.center.x
+        assertTrue(abs(headline.center.x - centerX) < 4f)
+        assertTrue(abs(description.center.x - centerX) < 4f)
+        assertTrue(abs(button.center.x - centerX) < 4f)
+        val contentCenterY = (title.bottom + screen.bottom) / 2f
+        val emptyStateCenterY = (headline.top + button.bottom) / 2f
+        assertTrue(abs(emptyStateCenterY - contentCenterY) < screen.height * 0.06f)
         composeRule.onNodeWithText("Search").assertDoesNotExist()
         composeRule.onNodeWithText("Download dictionaries").performClick()
         composeRule.runOnIdle { assertTrue(openedDownloads) }
