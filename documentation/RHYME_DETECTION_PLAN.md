@@ -162,7 +162,7 @@ to eSpeak database to local generation on a background dispatcher. Device
 tests passed in airplane mode. The existing dictionary lookup tests inject a
 fake IPA generator and the JNI test exercises real eSpeak separately. A new
 instrumented test now covers the complete service with real JNI after a
-database miss; it still needs to be run in Android Studio.
+database miss and passed in the connected emulator suite.
 
 ### 6. Implement rhyme queries and editor behavior
 
@@ -236,11 +236,13 @@ own label.
 Rhyme and assonance matching excludes the queried spelling. Different
 spellings with the same pronunciation remain eligible. Search queries run on
 an IO dispatcher. Rhyme mode requires an exact stressed rime instead of
-trying shorter reversed prefixes. Synthetic database and Compose tests have
-been added and compile; the earlier Android Studio test run passed. The new
-pagination, exact-rime, phoneme-suffix, and compound-ending device tests still
-need to run in Android Studio. Real-database performance, especially
-word-suffix scans, and syllable coloring remain.
+trying shorter reversed prefixes. Synthetic database and Compose tests,
+including pagination, exact-rime, phoneme-suffix, and compound-ending cases,
+passed in the connected emulator suite. The maintainer tested on a physical
+Android device with real dictionary data downloaded from GitHub releases and
+reported that searches were fast and responsive.
+This is manual device feedback; a timed benchmark, especially for word-suffix
+scans, and syllable coloring remain.
 
 Rhyme results omit a longer word when its written ending is
 another returned word (or the query word), the shorter word's vowel-through-end
@@ -275,3 +277,8 @@ keeps compounds because it searches the exact phoneme suffix at each length.
 
 Exit check: a clean release build can be reproduced, all attribution is
 visible, and the offline device verification passes.
+
+Device verification note: the maintainer tested the app on a physical Android
+device with real dictionary data downloaded from GitHub releases
+and reported that searches felt fast and responsive. This report does not
+establish airplane-mode operation or 16 KB page-size compatibility.

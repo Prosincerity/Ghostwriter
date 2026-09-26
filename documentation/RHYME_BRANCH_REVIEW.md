@@ -58,6 +58,8 @@ The JNI bridge, native build configuration, IPA token rules, matching filters,
 navigation additions, backup exclusions, and existing branch tests were also
 inspected. Upstream eSpeak sources and unrelated pre-existing app code are
 outside this cleanup. Synthetic fixtures exercise ranking and pagination;
-the existing roadmap's realistic-database performance benchmark remains open.
+the maintainer reported fast, responsive searches on a physical Android device
+with real release dictionaries. A timed
+realistic-database performance benchmark remains open.
 Cancellation is checked between cursor rows and database scans; it does not
 interrupt a single SQLite call or native phonemization already in progress.
