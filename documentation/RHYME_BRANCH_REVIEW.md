@@ -36,6 +36,9 @@ matching rules remain the baseline.
   -Pandroid.testInstrumentationRunnerArguments.package=com.prosincerity.ghostwriter.data`
   passed (134 JVM tests and 17 emulator tests, including both new cancellation
   regressions and the real eSpeak checks).
+- Stage 3: full `./gradlew test lint connectedDebugAndroidTest` passed
+  (134 JVM tests and 62 emulator tests). The new Compose tests exercise stale
+  errors and late responses from a canceled search while a new search runs.
 - Each stage runs relevant Gradle JVM/lint and emulator tests before commit.
 - Refresh `graphify-out/` after source edits.
 

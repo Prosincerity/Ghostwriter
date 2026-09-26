@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -44,8 +45,10 @@ import com.prosincerity.ghostwriter.data.DictionarySearchMode
 import com.prosincerity.ghostwriter.data.DictionarySearchResult
 import com.prosincerity.ghostwriter.data.PronunciationSource
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +62,11 @@ internal fun DictionaryScreen(
     val context = LocalContext.current
     val installer = remember(context) { DictionaryInstaller(context) }
     val repository = remember(installer) { DictionarySearch(installer) }
-    val availableLanguages = installedLanguages ?: remember(installer) { installer.availableLanguages() }
+    val discoveredLanguages by produceState<List<String>?>(null, installer, installedLanguages) {
+        value = installedLanguages ?: withContext(Dispatchers.IO) { installer.availableLanguages() }
+    }
+    val checkingDictionaries = installedLanguages == null && discoveredLanguages == null
+    val availableLanguages = installedLanguages ?: discoveredLanguages.orEmpty()
     val searchAction = search ?: repository::search
     val scope = rememberCoroutineScope()
     var word by rememberSaveable { mutableStateOf("") }
@@ -76,14 +83,22 @@ internal fun DictionaryScreen(
     var job by remember { mutableStateOf<Job?>(null) }
     var revision by remember { mutableIntStateOf(0) }
 
+    fun resetSearch() {
+        revision++
+        job?.cancel()
+        job = null
+        loading = false
+        result = null
+        error = null
+        page = 0
+    }
+
     fun submit(requestedPage: Int = 0) {
         val input = word.trim()
         if (input.isEmpty() || language !in availableLanguages) return
-        job?.cancel()
-        val requested = ++revision
+        resetSearch()
+        val requested = revision
         loading = true
-        error = null
-        result = null
         job = scope.launch {
             try {
                 val found = searchAction(input, language, mode, requestedPage)
@@ -112,7 +127,9 @@ internal fun DictionaryScreen(
         )
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
-            if (availableLanguages.isEmpty()) {
+            if (checkingDictionaries) {
+                Text("Checking installed dictionaries…")
+            } else if (availableLanguages.isEmpty()) {
                 Text("No rhyme dictionaries are installed")
                 Spacer(Modifier.height(8.dp))
                 Text("Download at least one language to search for matching words.")
@@ -121,19 +138,26 @@ internal fun DictionaryScreen(
             } else {
                 OutlinedTextField(
                     value = word,
-                    onValueChange = { word = it; job?.cancel(); revision++; loading = false; result = null; page = 0 },
+                    onValueChange = {
+                        word = it
+                        resetSearch()
+                    },
                     label = { Text("Word") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box {
-                        TextButton(onClick = { languageMenu = true }) { Text("Language: ${languageLabel(language)}") }
+                        TextButton(onClick = { languageMenu = true }) { Text("Language: ${dictionaryLanguageLabel(language)}") }
                         DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
                             availableLanguages.forEach { code ->
                                 DropdownMenuItem(
-                                    text = { Text(languageLabel(code)) },
-                                    onClick = { selectedLanguage = code; languageMenu = false; job?.cancel(); revision++; loading = false; result = null; page = 0 },
+                                    text = { Text(dictionaryLanguageLabel(code)) },
+                                    onClick = {
+                                        selectedLanguage = code
+                                        languageMenu = false
+                                        resetSearch()
+                                    },
                                 )
                             }
                         }
@@ -144,7 +168,11 @@ internal fun DictionaryScreen(
                             DictionarySearchMode.entries.forEach { option ->
                                 DropdownMenuItem(
                                     text = { Text(modeLabel(option)) },
-                                    onClick = { modeName = option.name; modeMenu = false; job?.cancel(); revision++; loading = false; result = null; page = 0 },
+                                    onClick = {
+                                        modeName = option.name
+                                        modeMenu = false
+                                        resetSearch()
+                                    },
                                 )
                             }
                         }
@@ -191,12 +219,6 @@ internal fun DictionaryScreen(
             }
         }
     }
-}
-
-private fun languageLabel(language: String): String = when (language) {
-    "en" -> "English"
-    "de" -> "German"
-    else -> "Turkish"
 }
 
 private fun modeLabel(mode: DictionarySearchMode): String = when (mode) {
