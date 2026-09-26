@@ -504,9 +504,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloads.kt": {
-    "mtime": 1790423309.314504,
-    "seen": 1790423336.3514094,
-    "ast_hash": "30731f2cb980e09139cf2f16c709ca0c",
+    "mtime": 1790423873.025417,
+    "seen": 1790423930.9338138,
+    "ast_hash": "00952b9f72e8bdca8f7d5d8f1ab0f0e9",
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
@@ -3810,9 +3810,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreenTest.kt": {
-    "mtime": 1790274712.742339,
-    "seen": 1790274943.7204854,
-    "ast_hash": "cfa16d0fecf47c5a3339456eb5c48142",
+    "mtime": 1790423912.5839198,
+    "seen": 1790423930.933699,
+    "ast_hash": "80626373003c2a06271ce91cd3c4d712",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt": {
@@ -3828,9 +3828,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreen.kt": {
-    "mtime": 1790274854.2155602,
-    "seen": 1790274943.7205484,
-    "ast_hash": "02527a0e4e22813f5ba61fa23a905068",
+    "mtime": 1790423872.652422,
+    "seen": 1790423930.9338286,
+    "ast_hash": "63a64034cbfba8fb62bb6a4bb3cefeae",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/IpaSearchKeysTest.kt": {
@@ -3882,15 +3882,21 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_BRANCH_REVIEW.md": {
-    "mtime": 1790423666.7570102,
-    "seen": 1790423682.376947,
-    "ast_hash": "b35276ab0e332a4bd890a74bd75e634d",
+    "mtime": 1790423813.3391676,
+    "seen": 1790423930.9345818,
+    "ast_hash": "aeac99ccfa3b2fe9480c2974e9997901",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryQueries.kt": {
     "mtime": 1790423630.3114686,
     "seen": 1790423682.3762052,
     "ast_hash": "6b02cff3b6abad3e573f4d4582785eb4",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryLabels.kt": {
+    "mtime": 1790423872.8384194,
+    "seen": 1790423930.933821,
+    "ast_hash": "d8e15d6208dd56d372c4769d400d74c8",
     "semantic_hash": ""
   }
 }

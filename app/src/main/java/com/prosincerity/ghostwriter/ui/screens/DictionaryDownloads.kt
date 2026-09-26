@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,8 +37,10 @@ import com.prosincerity.ghostwriter.data.DictionaryDownloadProgress
 import com.prosincerity.ghostwriter.data.DictionaryInstaller
 import com.prosincerity.ghostwriter.data.DictionarySource
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,19 +71,26 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
     val installer = remember(context) { DictionaryInstaller(context) }
     val scope = rememberCoroutineScope()
     val installed = remember(installer) {
-        mutableStateMapOf<Pair<String, DictionarySource>, Boolean>().apply {
-            for (language in installer.release.languages.keys) {
-                for (source in DictionarySource.entries) {
-                    this[language to source] = installer.availableDatabase(language, source) != null
+        mutableStateMapOf<Pair<String, DictionarySource>, Boolean>()
+    }
+    var checkingDictionaries by remember(installer) { mutableStateOf(true) }
+    LaunchedEffect(installer) {
+        val status = withContext(Dispatchers.IO) {
+            buildMap {
+                for (language in installer.release.languages.keys) {
+                    for (source in DictionarySource.entries) {
+                        put(language to source, installer.availableDatabase(language, source) != null)
+                    }
                 }
             }
         }
+        installed.putAll(status)
+        checkingDictionaries = false
     }
     var active by remember { mutableStateOf<Pair<String, DictionarySource>?>(null) }
     var downloadJob by remember { mutableStateOf<Job?>(null) }
     var progress by remember { mutableStateOf<DictionaryDownloadProgress?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    val labels = mapOf("en" to "English", "de" to "German", "tr" to "Turkish")
 
     Column(modifier) {
         Text(
@@ -99,8 +109,10 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodySmall,
         )
         Spacer(Modifier.height(12.dp))
+        if (checkingDictionaries) Text("Checking installed dictionaries…")
         for ((language, assets) in installer.release.languages) {
-            Text(labels.getValue(language), style = MaterialTheme.typography.titleMedium)
+            val languageLabel = dictionaryLanguageLabel(language)
+            Text(languageLabel, style = MaterialTheme.typography.titleMedium)
             for (source in DictionarySource.entries) {
                 val asset = assets.asset(source)
                 val key = language to source
@@ -120,7 +132,7 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
                         )
                     }
                     if (installed[key] == true) {
-                        Icon(Icons.Default.Check, contentDescription = "$sourceLabel installed for ${labels.getValue(language)}")
+                        Icon(Icons.Default.Check, contentDescription = "$sourceLabel installed for $languageLabel")
                     } else {
                         IconButton(
                             onClick = {
@@ -136,7 +148,7 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
                                     } catch (cancelled: CancellationException) {
                                         throw cancelled
                                     } catch (failure: Exception) {
-                                        error = "Could not download $sourceLabel for ${labels.getValue(language)}: " +
+                                        error = "Could not download $sourceLabel for $languageLabel: " +
                                             (failure.message ?: "unknown error")
                                     } finally {
                                         active = null
@@ -145,9 +157,9 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
                                     }
                                 }
                             },
-                            enabled = active == null,
+                            enabled = !checkingDictionaries && active == null,
                         ) {
-                            Icon(Icons.Default.Download, contentDescription = "Download $sourceLabel for ${labels.getValue(language)}")
+                            Icon(Icons.Default.Download, contentDescription = "Download $sourceLabel for $languageLabel")
                         }
                     }
                 }

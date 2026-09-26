@@ -4,6 +4,7 @@
 - [TESTING.md](TESTING.md): test, lint, and coverage commands.
 - [SETUP_NOTES.md](SETUP_NOTES.md): build requirements.
 - [RHYME_DETECTION_PLAN.md](RHYME_DETECTION_PLAN.md): dictionary and rhyme work in progress.
+- [RHYME_BRANCH_REVIEW.md](RHYME_BRANCH_REVIEW.md): staged branch cleanup and validation.
 
 ## Architecture
 

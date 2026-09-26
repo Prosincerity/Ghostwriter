@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.data.DictionaryMatch
 import com.prosincerity.ghostwriter.data.DictionarySearchMode
@@ -18,10 +19,89 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @RunWith(AndroidJUnit4::class)
 class DictionaryScreenTest {
     @get:Rule val composeRule = createComposeRule()
+
+    @Test
+    fun changingWordLanguageOrModeClearsPreviousError() {
+        composeRule.setContent {
+            GhostwriterTheme {
+                DictionaryScreen(
+                    onBack = {},
+                    onOpenDownloads = {},
+                    installedLanguages = listOf("en", "de"),
+                    search = { _, _, _, _ -> error("Lookup failed") },
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Word").performTextInput("cat")
+        composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNodeWithText("Lookup failed").assertExists()
+        composeRule.onNodeWithText("Word").performTextReplacement("dog")
+        composeRule.onNodeWithText("Lookup failed").assertDoesNotExist()
+
+        composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNodeWithText("Lookup failed").assertExists()
+        composeRule.onNodeWithText("Language: English").performClick()
+        composeRule.onNodeWithText("German").performClick()
+        composeRule.onNodeWithText("Lookup failed").assertDoesNotExist()
+
+        composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNodeWithText("Lookup failed").assertExists()
+        composeRule.onNodeWithText("Mode: Rhyme").performClick()
+        composeRule.onNodeWithText("Word prefix").performClick()
+        composeRule.onNodeWithText("Lookup failed").assertDoesNotExist()
+    }
+
+    @Test
+    fun supersededSearchCannotPublishResultsOrClearNewSearchLoadingState() {
+        val pending = mutableMapOf<String, Continuation<DictionarySearchResult>>()
+        composeRule.setContent {
+            GhostwriterTheme {
+                DictionaryScreen(
+                    onBack = {},
+                    onOpenDownloads = {},
+                    installedLanguages = listOf("en"),
+                    // Deliberately allow a canceled request to return, as blocking IO can do.
+                    search = { word, _, _, _ -> suspendCoroutine { pending[word] = it } },
+                )
+            }
+        }
+
+        fun result(word: String) = DictionarySearchResult(
+            null, listOf(DictionaryMatch(word, "/æt/", PronunciationSource.WIKTIONARY)),
+        )
+
+        try {
+            composeRule.onNodeWithText("Word").performTextInput("cat")
+            composeRule.onNodeWithText("Search").performClick()
+            composeRule.onNodeWithText("Searching…").assertExists()
+            composeRule.onNodeWithText("Word").performTextReplacement("hat")
+            composeRule.onNodeWithText("Searching…").assertDoesNotExist()
+            composeRule.onNodeWithText("Search").performClick()
+
+            composeRule.runOnIdle { pending.remove("cat")!!.resume(result("stale result")) }
+            composeRule.onNodeWithText("stale result").assertDoesNotExist()
+            composeRule.onNodeWithText("Searching…").assertExists()
+            composeRule.onNodeWithText("Search").assertIsNotEnabled()
+
+            composeRule.runOnIdle { pending.remove("hat")!!.resume(result("current result")) }
+            composeRule.onNodeWithText("current result").assertExists()
+            composeRule.onNodeWithText("Searching…").assertDoesNotExist()
+            composeRule.onNodeWithText("stale result").assertDoesNotExist()
+        } finally {
+            composeRule.runOnIdle {
+                pending.values.toList().forEach { it.resume(DictionarySearchResult(null, emptyList())) }
+                pending.clear()
+            }
+        }
+    }
 
     @Test
     fun searchesAndReturnsToEditor() {
