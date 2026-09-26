@@ -2,12 +2,14 @@ package com.prosincerity.ghostwriter.data
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.text.Normalizer
+import kotlin.coroutines.coroutineContext
 
 internal fun interface IpaGenerator {
     suspend fun ipa(word: String, language: String): String?
@@ -29,7 +31,9 @@ internal class EspeakIpa(context: Context) : IpaGenerator {
             return@withContext null
         }
         initialization.withLock {
+            coroutineContext.ensureActive()
             if (!ready) {
+                System.loadLibrary("ghostwriter_ipa")
                 val parent = installData()
                 check(nativeInitialize(parent.absolutePath.toByteArray(StandardCharsets.UTF_8))) {
                     "Could not initialize eSpeak NG data"
@@ -37,6 +41,7 @@ internal class EspeakIpa(context: Context) : IpaGenerator {
                 ready = true
             }
         }
+        coroutineContext.ensureActive()
         nativePhonemize(normalized.toByteArray(StandardCharsets.UTF_8), voice)
             ?.toString(StandardCharsets.UTF_8)
             ?.trim()
@@ -83,9 +88,5 @@ internal class EspeakIpa(context: Context) : IpaGenerator {
             "en_dict", "de_dict", "tr_dict",
             "lang/gmw/en", "lang/gmw/de", "lang/trk/tr",
         )
-
-        init {
-            System.loadLibrary("ghostwriter_ipa")
-        }
     }
 }

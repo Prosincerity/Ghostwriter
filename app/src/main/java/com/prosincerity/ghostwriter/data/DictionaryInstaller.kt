@@ -172,7 +172,9 @@ internal class DictionaryInstaller(
                     }
                 }
             }
+            coroutineContext.ensureActive()
             check(isUsableDatabase(staging)) { "Downloaded dictionary is invalid" }
+            coroutineContext.ensureActive()
             val installed = File(versionDir, dictionarySource.fileName)
             if (installed.isFile) {
                 if (isUsableDatabase(installed)) return@withContext installed
