@@ -6,9 +6,13 @@ import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -165,6 +169,34 @@ class DictionaryInstallerInstrumentedTest {
         cancelDownload = {}
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
         assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "en")?.source)
+    }
+
+    @Test
+    fun installationWaitsForProgressDelivery() = withTestContext { context ->
+        val valid = archive(context, listOf("word" to "/wɜːd/"))
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource { ByteArrayInputStream(valid) })
+
+        runBlocking {
+            withTimeout(5_000) {
+                val progressStarted = CompletableDeferred<DictionaryDownloadProgress>()
+                val finishDelivery = CompletableDeferred<Unit>()
+                var delivered = false
+                val download = async {
+                    installer.install("en", DictionarySource.WIKTIONARY) { progress ->
+                        progressStarted.complete(progress)
+                        finishDelivery.await()
+                        delivered = true
+                    }
+                }
+
+                val progress = progressStarted.await()
+                assertEquals(progress.totalBytes, progress.downloadedBytes)
+                assertFalse(download.isCompleted)
+                finishDelivery.complete(Unit)
+                assertTrue(download.await().isFile)
+                assertTrue(delivered)
+            }
+        }
     }
 
     @Test

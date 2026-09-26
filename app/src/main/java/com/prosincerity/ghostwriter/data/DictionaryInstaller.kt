@@ -127,7 +127,7 @@ internal class DictionaryInstaller(
     suspend fun install(
         language: String,
         dictionarySource: DictionarySource,
-        onProgress: (DictionaryDownloadProgress) -> Unit = {},
+        onProgress: suspend (DictionaryDownloadProgress) -> Unit = {},
     ): File = withContext(Dispatchers.IO) {
         require(language in release.languages)
         installedDatabase(language, dictionarySource)?.let { return@withContext it }

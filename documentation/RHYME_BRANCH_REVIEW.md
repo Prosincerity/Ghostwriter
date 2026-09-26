@@ -5,7 +5,7 @@ Scope: app code introduced between `dev` (`534a240`) and the starting
 requested. Existing storage, navigation, dependency choices, and dictionary
 matching rules remain the baseline.
 
-## Staged changes
+## Completed stages
 
 1. **Source selection.** Lookup and search independently repeat source priority
    and attribution pairs; installer and downloads repeat asset selection.
@@ -24,6 +24,11 @@ matching rules remain the baseline.
    errors behind after input changes. Share that reset operation, centralize
    language labels, and cover input changes and superseded searches in Compose
    tests.
+4. **Download progress lifetime.** Progress callbacks launch sibling coroutines
+   that can update state after download cleanup. Make the callback suspend and
+   deliver UI updates with `withContext(Main.immediate)`, so delivery belongs to
+   the download job and completes before it returns. Test suspended delivery
+   without timing sleeps.
 
 ## Validation
 
@@ -39,8 +44,13 @@ matching rules remain the baseline.
 - Stage 3: full `./gradlew test lint connectedDebugAndroidTest` passed
   (134 JVM tests and 62 emulator tests). The new Compose tests exercise stale
   errors and late responses from a canceled search while a new search runs.
-- Each stage runs relevant Gradle JVM/lint and emulator tests before commit.
-- Refresh `graphify-out/` after source edits.
+- Stage 4: `./gradlew test lint connectedDebugAndroidTest
+  -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.data.DictionaryInstallerInstrumentedTest`
+  passed (134 JVM tests and all 7 installer emulator tests, including suspended
+  progress delivery). The full emulator run above preceded this final change;
+  this stage reran the affected installer suite.
+- Every stage was tested before committing, and `graphify update .` refreshed
+  the code graph after each stage's source edits.
 
 ## Review limits
 

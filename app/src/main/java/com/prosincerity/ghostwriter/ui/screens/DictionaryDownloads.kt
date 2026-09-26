@@ -142,7 +142,7 @@ internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
                                 downloadJob = scope.launch {
                                     try {
                                         installer.install(language, source) { value ->
-                                            scope.launch { progress = value }
+                                            withContext(Dispatchers.Main.immediate) { progress = value }
                                         }
                                         installed[key] = true
                                     } catch (cancelled: CancellationException) {
