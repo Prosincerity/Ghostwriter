@@ -46,6 +46,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun DictionaryDownloadsScreen(onBack: () -> Unit) {
     BackHandler(onBack = onBack)
+    val context = LocalContext.current
+    val installer = remember(context) { DictionaryInstaller(context) }
     Scaffold(topBar = {
         TopAppBar(
             title = { Text("Rhyme dictionary downloads") },
@@ -57,6 +59,7 @@ fun DictionaryDownloadsScreen(onBack: () -> Unit) {
         )
     }) { padding ->
         DictionaryDownloads(
+            installer = installer,
             modifier = Modifier
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
@@ -66,9 +69,7 @@ fun DictionaryDownloadsScreen(onBack: () -> Unit) {
 }
 
 @Composable
-internal fun DictionaryDownloads(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val installer = remember(context) { DictionaryInstaller(context) }
+internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val installed = remember(installer) {
         mutableStateMapOf<Pair<String, DictionarySource>, Boolean>()

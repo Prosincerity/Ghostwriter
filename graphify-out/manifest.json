@@ -480,9 +480,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryInstallerInstrumentedTest.kt": {
-    "mtime": 1790424130.765177,
-    "seen": 1790424160.3805687,
-    "ast_hash": "8eec3dfa9ccd6fba8f39a8953fa597b7",
+    "mtime": 1790425065.7284229,
+    "seen": 1790425255.429091,
+    "ast_hash": "d99ee4e506f2363afccdbc379935267c",
     "semantic_hash": ""
   },
   "app/src/main/assets/dictionary_release.json": {
@@ -504,9 +504,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloads.kt": {
-    "mtime": 1790424130.5841792,
-    "seen": 1790424160.3818455,
-    "ast_hash": "24b0e3abceef77c8cd8f51b4f871830c",
+    "mtime": 1790425065.5454252,
+    "seen": 1790425255.4292297,
+    "ast_hash": "bc9472913eee25e2da5a61d4cefd72d2",
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
@@ -3897,6 +3897,18 @@
     "mtime": 1790423872.8384194,
     "seen": 1790423930.933821,
     "ast_hash": "d8e15d6208dd56d372c4769d400d74c8",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryTestFixtures.kt": {
+    "mtime": 1790425065.3614275,
+    "seen": 1790425255.4291022,
+    "ast_hash": "103fb3b68f596d9d554c2d11bb36605b",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloadsTest.kt": {
+    "mtime": 1790425443.4926736,
+    "seen": 1790425626.2606192,
+    "ast_hash": "c4f1a232b4c4994f2a7d8c27f4a6b794",
     "semantic_hash": ""
   }
 }
