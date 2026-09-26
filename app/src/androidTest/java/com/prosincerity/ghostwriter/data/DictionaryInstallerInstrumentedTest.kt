@@ -1,10 +1,7 @@
 package com.prosincerity.ghostwriter.data
 
 import android.content.Context
-import android.content.ContextWrapper
-import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -18,16 +15,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+import java.io.ByteArrayOutputStream
 import java.util.zip.GZIPOutputStream
 
 @RunWith(AndroidJUnit4::class)
 class DictionaryInstallerInstrumentedTest {
-    private val baseContext: Context
-        get() = InstrumentationRegistry.getInstrumentation().targetContext
-
     @Test
     fun installsSourcesSeparatelyAndUsesWiktionaryFirst() = withTestContext { context ->
         val wiki = archive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/",
@@ -214,46 +208,7 @@ class DictionaryInstallerInstrumentedTest {
             DictionaryPronunciations(installer, IpaGenerator { _, _ -> null }).lookup(word, language)
         }
 
-    private fun archive(context: Context, entries: List<Pair<String, String>>): ByteArray {
-        val file = File(context.cacheDir, "dictionary-fixture-${System.nanoTime()}.db")
-        try {
-            SQLiteDatabase.openOrCreateDatabase(file, null).use { database ->
-                database.execSQL(
-                    "CREATE TABLE dictionary (word TEXT NOT NULL, ipa TEXT NOT NULL, " +
-                        "ipa_reversed TEXT NOT NULL, assonance_reversed TEXT NOT NULL, " +
-                        "PRIMARY KEY (word, ipa)) WITHOUT ROWID",
-                )
-                entries.forEach { (word, ipa) ->
-                    database.execSQL(
-                        "INSERT INTO dictionary VALUES (?, ?, '', '')",
-                        arrayOf(word, ipa),
-                    )
-                }
-            }
-            return ByteArrayOutputStream().use { output ->
-                GZIPOutputStream(output).use { gzip -> file.inputStream().use { it.copyTo(gzip) } }
-                output.toByteArray()
-            }
-        } finally {
-            file.delete()
-        }
-    }
+    private fun archive(context: Context, entries: List<Pair<String, String>>) = dictionaryArchive(context, entries)
 
-    private inline fun withTestContext(block: (Context) -> Unit) {
-        val root = File(baseContext.cacheDir, "dictionary-install-${System.nanoTime()}")
-        val files = File(root, "files")
-        val cache = File(root, "cache")
-        files.mkdirs()
-        cache.mkdirs()
-        val context = object : ContextWrapper(baseContext) {
-            override fun getApplicationContext(): Context = this
-            override fun getFilesDir(): File = files
-            override fun getCacheDir(): File = cache
-        }
-        try {
-            block(context)
-        } finally {
-            root.deleteRecursively()
-        }
-    }
+    private fun withTestContext(block: (Context) -> Unit) = withDictionaryTestContext(block)
 }
