@@ -174,7 +174,7 @@ class DictionarySearchInstrumentedTest {
             repeat(65) { index ->
                 val base = "stem${index.toString().padStart(3, '0')}"
                 add(Row(base, "/bae/", "eab", "e a"))
-                add(Row("${base}n", "/baen/", "neab", "e a"))
+                add(Row("${base}e", "/baen/", "neab", "e a"))
             }
         }
         database(File(version, "wiktionary.db"), rows)
@@ -187,7 +187,7 @@ class DictionarySearchInstrumentedTest {
         assertEquals(5, second.matches.size)
         assertFalse(second.hasNext)
         assertEquals(65, (first.matches + second.matches).map { it.word }.toSet().size)
-        assertFalse((first.matches + second.matches).any { it.word.endsWith("n") })
+        assertFalse((first.matches + second.matches).any { it.word.endsWith("e") })
     }
 
     @Test
@@ -235,20 +235,24 @@ class DictionarySearchInstrumentedTest {
             row("erborgtem", "[ɛɐ̯ˈbɔʁktəm]"),
             row("erborget", "[ɛɐ̯ˈbɔʁɡət]"),
             row("erborgtet", "[ɛɐ̯ˈbɔʁktət]"),
+            row("erborgen", "[ɛɐ̯ˈbɔʁɡn̩]"),
             row("erdrossel", "[ɛɐ̯ˈdʁɔsl̩]"),
+            row("erdrosseln", "[ɛɐ̯ˈdʁɔsl̩n]"),
             row("erdrosselnde", "[ɛɐ̯ˈdʁɔsl̩ndə]"),
             row("erdrosselte", "[ɛɐ̯ˈdʁɔsl̩tə]"),
             row("verdoppel", "[fɛɐ̯ˈdɔpl̩]"),
+            row("verdoppeln", "[fɛɐ̯ˈdɔpl̩n]"),
             row("verdoppelnde", "[fɛɐ̯ˈdɔpl̩ndə]"),
             row("verborgen", "[fɛɐ̯ˈbɔʁɡn̩]"),
             row("verborgenste", "[fɛɐ̯ˈbɔʁɡn̩stə]"),
             row("erfolg", "[ɛɐ̯ˈfɔlk]"),
+            row("erfolgen", "[ɛɐ̯ˈfɔlɡn̩]"),
             row("erfolgende", "[ɛɐ̯ˈfɔlɡn̩də]"),
         ))
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
         val result = runBlocking { search.search("verfolgen", "de", DictionarySearchMode.ASSONANCE) }
-        assertEquals(setOf("erblonden", "erborg", "erdrossel", "verdoppel", "verborgen", "erfolg"),
+        assertEquals(setOf("erblonden", "erborgen", "erdrosseln", "verdoppeln", "verborgen", "erfolgen"),
             result.matches.map { it.word }.toSet())
         assertFalse(result.hasNext)
     }

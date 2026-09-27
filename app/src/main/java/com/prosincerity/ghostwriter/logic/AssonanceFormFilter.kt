@@ -40,7 +40,11 @@ internal object AssonanceFormFilter {
                 for (baseIndex in node.entries) {
                     if (baseIndex == candidate.index) continue
                     val base = byIndex.getValue(baseIndex)
-                    if (base.spelling.length < 4 || base.spelling.length == candidate.spelling.length ||
+                    val shortInfinitive = language == "de" &&
+                        (candidate.spelling == "tun" || candidate.spelling == "sein") &&
+                        base.spelling == candidate.spelling.dropLast(1)
+                    if ((base.spelling.length < 4 && !shortInfinitive) ||
+                        base.spelling.length == candidate.spelling.length ||
                         !compatible(base, candidate, language)) continue
                     parents[representative(candidate.index)] = representative(base.index)
                     if (candidate.phonemes.size > base.phonemes.size &&
@@ -53,10 +57,22 @@ internal object AssonanceFormFilter {
         val families = pronounced.groupBy { representative(it.index) }
         val excluded = mutableSetOf<String>()
         for (family in families.values) {
+            val spellings = family.mapTo(mutableSetOf()) { it.spelling }
+            // A returned German stem plus -en or -n identifies an infinitive among the forms.
+            val germanInfinitives = if (language == "de") family.filter {
+                val stem = when {
+                    it.spelling.endsWith("en") -> it.spelling.dropLast(2)
+                    it.spelling.endsWith("n") -> it.spelling.dropLast(1)
+                    else -> null
+                }
+                stem != null && stem in spellings
+            } else emptyList()
             // Prefer the form that actually starts the most returned pronunciations.
             // A spelling-only shortest form can end in a different sound (erblond/erblonden).
             val hasExactExtensions = family.any { exactExtensions[it.index] > 0 }
-            val kept = if (hasExactExtensions) {
+            val kept = if (germanInfinitives.isNotEmpty()) {
+                germanInfinitives.minWith(compareBy<Pronounced> { it.spelling.length }.thenBy { it.index })
+            } else if (hasExactExtensions) {
                 family.maxWith(compareBy<Pronounced> { exactExtensions[it.index] }
                     .thenBy { it.spelling.length }.thenByDescending { it.index })
             } else {

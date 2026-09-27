@@ -198,10 +198,14 @@ database miss and passed in the connected emulator suite.
   German endings
   with syllabic consonants may differ by a final schwa; those also require
   matching phonetic stems, allowing German final devoicing of `p/b`, `t/d`,
-  and `k/ɡ`. Within each family, the retained form is the one whose pronunciation
-  starts the most longer returned pronunciations, falling back to the shortest
-  spelling. Pagination counts the remaining forms. The database has no lemma
-  column, so the retained form is chosen from returned words rather than derived.
+  and `k/ɡ`. When a compatible German family contains a returned infinitive
+  whose spelling stem is also returned, keep the infinitive (`erborgen` over
+  `erborg`, including infinitives ending in `-n` and short irregular `tun`/`sein`).
+  Otherwise, keep the form whose pronunciation starts the most longer returned
+  pronunciations, falling back
+  to the shortest spelling. English families keep the uninflected base when
+  present (`work` over `works` and `working`). Pagination counts the remaining
+  forms. The database has no lemma column, so retained forms come from results.
   Parameterize every query and escape literal `%`, `_`, and the chosen `LIKE`
   escape character. Benchmark suffix
   searches on realistic data. Keep searches off the main thread and bound

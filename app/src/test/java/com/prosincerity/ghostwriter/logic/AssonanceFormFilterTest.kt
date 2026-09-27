@@ -18,25 +18,40 @@ class AssonanceFormFilterTest {
             AssonanceFormFilter.Entry("erborge", "[ɛɐ̯ˈbɔʁɡə]"),
             AssonanceFormFilter.Entry("erborget", "[ɛɐ̯ˈbɔʁɡət]"),
             AssonanceFormFilter.Entry("erborgtet", "[ɛɐ̯ˈbɔʁktət]"),
+            AssonanceFormFilter.Entry("erborgen", "[ɛɐ̯ˈbɔʁɡn̩]"),
             AssonanceFormFilter.Entry("erborg", "[ɛɐ̯ˈbɔʁk]"),
             AssonanceFormFilter.Entry("erblond", "[ɛɐ̯ˈblɔnt]"),
         )
 
         val excluded = setOf("erblond", "erblonde", "erblondendem", "erblondende",
             "erborgendem", "erborgende", "erborgtem", "erborgte", "erborge",
-            "erborget", "erborgtet")
+            "erborget", "erborgtet", "erborg")
         assertEquals(excluded, AssonanceFormFilter.excludedWords(results, "de"))
         assertEquals(excluded, AssonanceFormFilter.excludedWords(results.reversed(), "de"))
     }
 
     @Test
-    fun groupsOtherGermanFamiliesByTheSameRule() {
+    fun keepsGermanInfinitiveWhenImperativeAndOtherFormsAreReturned() {
         val results = listOf(
-            AssonanceFormFilter.Entry("verkaufe", "/fɛɐkaʊfə/"),
-            AssonanceFormFilter.Entry("Verkauf", "/fɛɐkaʊf/"),
+            AssonanceFormFilter.Entry("kaufe", "/kaʊfə/"),
+            AssonanceFormFilter.Entry("kauf", "/kaʊf/"),
+            AssonanceFormFilter.Entry("kaufen", "/kaʊfən/"),
         )
 
-        assertEquals(setOf("verkaufe"), AssonanceFormFilter.excludedWords(results, "de"))
+        assertEquals(setOf("kaufe", "kauf"), AssonanceFormFilter.excludedWords(results, "de"))
+        assertEquals(setOf("kaufe", "kauf"), AssonanceFormFilter.excludedWords(results.reversed(), "de"))
+    }
+
+    @Test
+    fun keepsShortIrregularGermanInfinitives() {
+        val results = listOf(
+            AssonanceFormFilter.Entry("tu", "/tuː/"),
+            AssonanceFormFilter.Entry("tun", "/tuːn/"),
+            AssonanceFormFilter.Entry("sei", "/zaɪ/"),
+            AssonanceFormFilter.Entry("sein", "/zaɪn/"),
+        )
+
+        assertEquals(setOf("tu", "sei"), AssonanceFormFilter.excludedWords(results, "de"))
     }
 
     @Test
@@ -48,13 +63,17 @@ class AssonanceFormFilterTest {
             AssonanceFormFilter.Entry("verborgenste", "[fɛɐ̯ˈbɔʁɡn̩stə]"),
             AssonanceFormFilter.Entry("erfolgende", "[ɛɐ̯ˈfɔlɡn̩də]"),
             AssonanceFormFilter.Entry("erdrossel", "[ɛɐ̯ˈdʁɔsl̩]"),
+            AssonanceFormFilter.Entry("erdrosseln", "[ɛɐ̯ˈdʁɔsl̩n]"),
             AssonanceFormFilter.Entry("verdoppel", "[fɛɐ̯ˈdɔpl̩]"),
+            AssonanceFormFilter.Entry("verdoppeln", "[fɛɐ̯ˈdɔpl̩n]"),
             AssonanceFormFilter.Entry("verborgen", "[fɛɐ̯ˈbɔʁɡn̩]"),
             AssonanceFormFilter.Entry("erfolg", "[ɛɐ̯ˈfɔlk]"),
+            AssonanceFormFilter.Entry("erfolgen", "[ɛɐ̯ˈfɔlɡn̩]"),
         )
 
         assertEquals(setOf("erdrosselnde", "erdrosselte", "verdoppelnde",
-            "verborgenste", "erfolgende"), AssonanceFormFilter.excludedWords(results, "de"))
+            "verborgenste", "erfolgende", "erdrossel", "verdoppel", "erfolg"),
+            AssonanceFormFilter.excludedWords(results, "de"))
     }
 
     @Test
@@ -84,6 +103,16 @@ class AssonanceFormFilterTest {
     }
 
     @Test
+    fun doesNotTreatLongerParticipialEndingAsAnInfinitive() {
+        val results = listOf(
+            AssonanceFormFilter.Entry("erblondenden", "[ɛɐ̯ˈblɔndn̩dən]"),
+            AssonanceFormFilter.Entry("erblondende", "[ɛɐ̯ˈblɔndn̩də]"),
+        )
+
+        assertEquals(setOf("erblondenden"), AssonanceFormFilter.excludedWords(results, "de"))
+    }
+
+    @Test
     fun keepsUnrelatedWordsThatOnlyShareShortPrefixes() {
         val results = listOf(
             AssonanceFormFilter.Entry("erfolgen", "/ɛɐfɔlɡən/"),
@@ -107,11 +136,12 @@ class AssonanceFormFilterTest {
     @Test
     fun keepsEnglishBaseWhenInflectedFormsArePresent() {
         val results = listOf(
-            AssonanceFormFilter.Entry("walked", "/wɔkt/"),
-            AssonanceFormFilter.Entry("walking", "/wɔkɪŋ/"),
-            AssonanceFormFilter.Entry("walk", "/wɔk/"),
+            AssonanceFormFilter.Entry("working", "/wɜrkɪŋ/"),
+            AssonanceFormFilter.Entry("works", "/wɜrks/"),
+            AssonanceFormFilter.Entry("work", "/wɜrk/"),
         )
 
-        assertEquals(setOf("walked", "walking"), AssonanceFormFilter.excludedWords(results, "en"))
+        assertEquals(setOf("working", "works"), AssonanceFormFilter.excludedWords(results, "en"))
+        assertEquals(setOf("working", "works"), AssonanceFormFilter.excludedWords(results.reversed(), "en"))
     }
 }
