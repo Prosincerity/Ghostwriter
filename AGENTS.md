@@ -24,7 +24,9 @@ Before modifying code, read:
 - Make focused changes; do not opportunistically refactor unrelated code.
 - Inspect existing architecture before introducing abstractions.
 - Add or update tests for behavior changes.
-- Before completing a task, run the relevant Gradle tests.
+- The maintainer uses Android Studio with an emulator for device testing. Leave
+  emulator and physical-device testing to the maintainer; do not run those tests.
+- Before completing a task, run the relevant non-device tests, including JVM tests.
 - Run ./gradlew test and ./gradlew lint when practical.
 - Do not modify main unless explicitly requested.
 
