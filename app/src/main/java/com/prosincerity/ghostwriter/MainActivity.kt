@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.screens.AboutScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
 import com.prosincerity.ghostwriter.ui.screens.DictionaryDownloadsScreen
@@ -97,6 +98,7 @@ private fun GhostwriterApp(
             },
             onOpenProject = { title -> screen = Screen.Editor(title) },
             onDeleteProject = { title ->
+                BeatPlaybackService.forgetProject(context, title)
                 coroutineScope.launch {
                     val deleted = withContext(Dispatchers.IO) {
                         ProjectStorage.deleteProject(context, title)
@@ -111,6 +113,7 @@ private fun GhostwriterApp(
                 }
             },
             onRenameProject = { currentTitle, renamedTitle ->
+                BeatPlaybackService.forgetProject(context, currentTitle)
                 coroutineScope.launch {
                     val renamed = withContext(Dispatchers.IO) {
                         ProjectStorage.renameProject(context, currentTitle, renamedTitle)

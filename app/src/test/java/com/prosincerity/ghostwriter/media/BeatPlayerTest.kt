@@ -25,6 +25,15 @@ import java.io.File
 class BeatPlayerTest {
 
     @Test
+    fun unpreparedPlayer_neverRequestsPlaybackServiceStart() {
+        var starts = 0
+        val player = BeatPlayer(beforePlay = { starts++; true })
+        player.play()
+        player.togglePlayPause()
+        assertEquals(0, starts)
+    }
+
+    @Test
     fun setVolume_ignoresNaNAndKeepsPreviousVolume() {
         val player = BeatPlayer()
         player.setVolume(0.5f)
