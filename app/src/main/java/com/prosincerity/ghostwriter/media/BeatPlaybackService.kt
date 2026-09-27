@@ -1,5 +1,6 @@
 package com.prosincerity.ghostwriter.media
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -175,6 +176,7 @@ class BeatPlaybackService : Service() {
         }
     }
 
+    @SuppressLint("NotificationPermission")
     private fun publishState() {
         if (destroying) return
         val playing = player.isPlaying
@@ -202,6 +204,7 @@ class BeatPlaybackService : Service() {
                 stopForeground(STOP_FOREGROUND_DETACH)
                 foreground = false
             }
+            // MediaStyle carries our active MediaSession token, so this notification is exempt.
             getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification())
         }
     }
