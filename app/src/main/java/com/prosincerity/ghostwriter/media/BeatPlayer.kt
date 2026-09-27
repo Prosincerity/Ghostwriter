@@ -1,6 +1,9 @@
 package com.prosincerity.ghostwriter.media
 
+import android.content.Context
+import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.os.PowerManager
 import android.util.Log
 import java.io.File
 
@@ -9,17 +12,26 @@ import java.io.File
  *
  * Design decisions:
  * - Zero external dependencies: uses only AOSP [MediaPlayer].
- * - Lifecycle is caller-managed: call [release] when the editor screen
- *   is disposed so the OS can reclaim audio resources.
+ * - Production playback is owned by BeatPlaybackService, independently of screens.
  * - Looping defaults to ON: rap songwriters almost always want their
  *   instrumental to loop continuously while writing verses.
  * - State is exposed through properties; callers observe it via Compose state
  *   (see EditorScreen) rather than callbacks or flows.
  */
-class BeatPlayer {
+class BeatPlayer(
+    private val context: Context? = null,
+    private val beforePlay: () -> Boolean = { true },
+    private val onStateChanged: () -> Unit = {},
+    private val onPauseRequested: () -> Unit = {},
+) {
 
     private var player: MediaPlayer? = null
     private var prepared = false
+    private var loadedFile: File? = null
+
+    /** Reattaching an editor must not restart the current beat. */
+    fun ensureLoaded(beatFile: File): Boolean =
+        (prepared && loadedFile == beatFile) || load(beatFile)
 
     /** True if a beat file is loaded and [MediaPlayer] is prepared. */
     val isReady: Boolean get() = prepared
@@ -63,11 +75,20 @@ class BeatPlayer {
         if (!beatFile.isFile) return false
         return runCatching {
             val mp = MediaPlayer().also { player = it }
+            mp.setAudioAttributes(AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            context?.let { mp.setWakeMode(it, PowerManager.PARTIAL_WAKE_LOCK) }
+            mp.setOnCompletionListener { onStateChanged() }
+            mp.setOnSeekCompleteListener { onStateChanged() }
+            mp.setOnErrorListener { _, _, _ -> release(); true }
             mp.setDataSource(beatFile.absolutePath)
             mp.isLooping = isLooping
             mp.setVolume(volume, volume)
             mp.prepare()
             prepared = true
+            loadedFile = beatFile
+            onStateChanged()
             true
         }.onFailure { e ->
             Log.e(TAG, "BeatPlayer: failed to load ${beatFile.name}", e)
@@ -77,13 +98,16 @@ class BeatPlayer {
 
     /** Starts or resumes playback. No-op if not prepared. */
     fun play() {
-        if (!prepared) return
+        if (!prepared || isPlaying || !beforePlay()) return
         player?.start()
+        onStateChanged()
     }
 
     /** Pauses playback. No-op if not playing. */
     fun pause() {
+        onPauseRequested()
         player?.takeIf { it.isPlaying }?.pause()
+        onStateChanged()
     }
 
     /** Toggles between play and pause. */
@@ -129,8 +153,7 @@ class BeatPlayer {
 
     /**
      * Stops playback and releases all underlying [MediaPlayer] resources.
-     * Must be called when the editor screen is disposed. Safe to call
-     * multiple times.
+     * Called on beat/project replacement or service destruction, never screen exit.
      */
     fun release() {
         // release() already stops playback; querying/stopping first can throw
@@ -138,7 +161,9 @@ class BeatPlayer {
         val previousPlayer = player
         player = null
         prepared = false
+        loadedFile = null
         runCatching { previousPlayer?.release() }
+        onStateChanged()
     }
 
     private companion object {

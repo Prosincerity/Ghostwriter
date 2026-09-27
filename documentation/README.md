@@ -30,9 +30,17 @@ over new libraries. Build versions and SDK levels live in the Gradle files.
 - Project metadata uses Android's `org.json`. Assigned beats are copied into
   their project. Changing a beat invalidates its waveform cache and markers.
   The global instrumentals library is planned, not implemented.
-- `EditorScreen.kt` owns lyric persistence and player state; `LyricsNotepad.kt`
+- `EditorScreen.kt` owns lyric persistence; `LyricsNotepad.kt`
   owns the editing surface. Autosave runs periodically and on editor exit.
-  `BeatPlayer.kt` wraps AOSP `MediaPlayer`. `WaveformExtractor.kt` uses
+  `BeatPlaybackService.kt` owns `BeatPlayer.kt` (AOSP `MediaPlayer`) and a
+  framework `MediaSession`. The editor binds to the service; navigating away
+  unbinds without interrupting started playback. A media-playback foreground
+  service and playback wake lock keep beats running in other apps and with the
+  screen locked. Android media controls support play, pause, seek, restart,
+  and stop. Opening another project, replacing/removing its beat, or deleting/
+  renaming the playing project releases playback. Audio focus and headphone
+  disconnection are respected. Process death does not automatically restart audio.
+  `WaveformExtractor.kt` uses
   `MediaExtractor` and `MediaCodec` off the UI thread;
   `WaveformViewport.kt` handles zoom and seek math. Compose Canvas and gestures
   render and control the waveform. Extraction supports cancellation and cache

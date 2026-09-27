@@ -46,7 +46,7 @@ import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
-import com.prosincerity.ghostwriter.media.BeatPlayer
+import com.prosincerity.ghostwriter.media.rememberBeatPlayback
 import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
 import com.prosincerity.ghostwriter.ui.components.LyricsNotepad
@@ -89,6 +89,7 @@ fun EditorScreen(
     onOpenDictionary: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
+    val playback = rememberBeatPlayback(projectTitle) ?: return
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -106,7 +107,7 @@ fun EditorScreen(
     }
     var showInfoDialog by rememberSaveable { mutableStateOf(false) }
 
-    val beatPlayer = remember(projectTitle) { BeatPlayer() }
+    val beatPlayer = playback.player
     var isBeatReady by remember(projectTitle) { mutableStateOf(false) }
     var beatFile by remember(projectTitle) {
         mutableStateOf(ProjectStorage.getProjectBeatFile(projectDir, metadata))
@@ -266,7 +267,8 @@ fun EditorScreen(
                 return@LaunchedEffect
             }
 
-            isBeatReady = beatPlayer.load(currentBeat)
+            playback.setBeatTitle(metadata.beatOriginalName ?: currentBeat.nameWithoutExtension)
+            isBeatReady = beatPlayer.ensureLoaded(currentBeat)
             if (isBeatReady && autoPlayWhenWaveformReady) beatPlayer.play()
             autoPlayWhenWaveformReady = false
             isImportedBeatPreparation = false
@@ -353,12 +355,6 @@ fun EditorScreen(
                 isImporting = false
             }
         }
-    }
-
-    // MediaPlayer owns native audio resources, so it must be released when
-    // this editor is left or a different project is opened.
-    DisposableEffect(beatPlayer) {
-        onDispose { beatPlayer.release() }
     }
 
     // Background autosave loop. Settings are re-read every cycle so a

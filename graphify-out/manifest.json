@@ -18,9 +18,9 @@
     "semantic_hash": "7c1404307d239fc98adb19ea5796d3ee"
   },
   "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt": {
-    "mtime": 1790267413.781099,
-    "seen": 1790267584.9325807,
-    "ast_hash": "b2eb7fcbc7acd49322712b8a1987f289",
+    "mtime": 1790512167.3021202,
+    "seen": 1790512513.5373516,
+    "ast_hash": "f5bbf06e3ffdcf4da1ff27a82ee840c3",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt": {
-    "mtime": 1789925041.4010518,
-    "seen": 1789925106.1621227,
-    "ast_hash": "a8ea9171aa3ade371873711f289470a3",
+    "mtime": 1790512304.6373937,
+    "seen": 1790512513.537406,
+    "ast_hash": "915c7ba70ff9b20dcd3f94e660f3f98a",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt": {
@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt": {
-    "mtime": 1790266293.9511774,
-    "seen": 1790266730.9272327,
-    "ast_hash": "2bfe83f2e16a85408edfec9fbd2641dd",
+    "mtime": 1790512167.0911229,
+    "seen": 1790512513.53744,
+    "ast_hash": "fd743c20ed8a54cb5defe7b85ed5504e",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/HomeScreen.kt": {
@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt": {
-    "mtime": 1789925041.943045,
-    "seen": 1789925106.1621597,
-    "ast_hash": "153ae0e38741f0d60ff1906c76e92d2a",
+    "mtime": 1790512268.8448436,
+    "seen": 1790512513.5374815,
+    "ast_hash": "2c71b8bd811f6122b8b253f9d1c2f05a",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
-    "mtime": 1790268469.4508276,
-    "seen": 1790268960.8729138,
-    "ast_hash": "8a546bbd6c75368b813fff28693372c7",
+    "mtime": 1790512408.884083,
+    "seen": 1790512513.5394914,
+    "ast_hash": "6cc260aeb7f78a893d4bcb5b6564d924",
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790424081.1398008,
-    "seen": 1790424160.3826022,
-    "ast_hash": "f852131075cecac3bbfbccf323833901",
+    "mtime": 1790512408.6830857,
+    "seen": 1790512513.5394995,
+    "ast_hash": "51a43d0e1f325ed3f320a34175bc78c9",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
-    "mtime": 1790266341.5945785,
-    "seen": 1790266730.927115,
-    "ast_hash": "a9373a61a8390caed77f97e4ceb9c7cc",
+    "mtime": 1790512269.1818395,
+    "seen": 1790512513.537337,
+    "ast_hash": "5fdcf410213220bc4908deb860f693d5",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt": {
@@ -438,9 +438,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt": {
-    "mtime": 1789755533.5846314,
-    "seen": 1789755565.805644,
-    "ast_hash": "c5c326ede753822be563f84e6eeaffac",
+    "mtime": 1790512269.0018415,
+    "seen": 1790512513.5373173,
+    "ast_hash": "3d6d830809eb80677885a0a9ff2c70c0",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/ui/ProjectInfoBpmTest.kt": {
@@ -510,9 +510,9 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
-    "mtime": 1790362995.1013038,
-    "seen": 1790363049.8248432,
-    "ast_hash": "e122ad46a263c8f566f7f78e88a6b4e1",
+    "mtime": 1790426277.6721866,
+    "seen": 1790512513.5395083,
+    "ast_hash": "f06e3d562d106ea3706224854b77f6c0",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
@@ -3882,9 +3882,9 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_BRANCH_REVIEW.md": {
-    "mtime": 1790424215.4841118,
-    "seen": 1790424502.815886,
-    "ast_hash": "a3bb3184393ba6f65ec3967bbc24ce47",
+    "mtime": 1790426277.487189,
+    "seen": 1790512513.5395038,
+    "ast_hash": "add8f1fbc653340e039eeea5ba699c4d",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryQueries.kt": {
@@ -3909,6 +3909,24 @@
     "mtime": 1790425443.4926736,
     "seen": 1790425626.2606192,
     "ast_hash": "c4f1a232b4c4994f2a7d8c27f4a6b794",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlaybackServiceTest.kt": {
+    "mtime": 1790512365.141633,
+    "seen": 1790512513.5373113,
+    "ast_hash": "08a98a42926e37e24031d5ce943502d1",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt": {
+    "mtime": 1790512408.4670885,
+    "seen": 1790512513.5374033,
+    "ast_hash": "eb3b733f2b1d8bd45ed0645b68d31403",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/RememberBeatPlayback.kt": {
+    "mtime": 1790512137.5124948,
+    "seen": 1790512513.5374086,
+    "ast_hash": "0b476514dd48de15102ee0bed1f141d1",
     "semantic_hash": ""
   }
 }

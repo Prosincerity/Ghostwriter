@@ -1,5 +1,11 @@
 package com.prosincerity.ghostwriter.ui.screens
 
+import android.app.Notification
+import android.app.NotificationManager
+import android.content.Intent
+import android.media.session.MediaController
+import android.media.session.MediaSession
+import android.media.session.PlaybackState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
@@ -19,6 +25,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
+import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +45,48 @@ class EditorScreenTest {
 
     private val context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test
+    fun leavingAndReturningToEditor_keepsBeatPlaying_andSystemControlsStopIt() {
+        val title = uniqueProjectTitle("Background beat")
+        val visible = mutableStateOf(true)
+        createAssignedBeat(title, durationMs = 30_000, cacheWaveform = true)
+        try {
+            setEditorContent(title, visible)
+            waitUntilTextExists("editor-fixture")
+            composeRule.onNodeWithContentDescription("Play").performClick()
+            composeRule.waitUntil(5_000) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications.isNotEmpty()
+            }
+            val notification = context.getSystemService(NotificationManager::class.java)
+                .activeNotifications.single().notification
+            @Suppress("DEPRECATION")
+            val token = notification.extras.getParcelable<MediaSession.Token>(Notification.EXTRA_MEDIA_SESSION)!!
+            val controller = MediaController(context, token)
+            controller.transportControls.seekTo(5_000)
+            composeRule.waitUntil(5_000) { controller.playbackState?.position ?: 0 >= 4_750 }
+
+            composeRule.runOnIdle { visible.value = false }
+            composeRule.waitForIdle()
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
+            composeRule.runOnIdle { visible.value = true }
+            waitUntilTextExists("editor-fixture")
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
+            assertTrue(controller.playbackState!!.position >= 4_750)
+
+            controller.transportControls.pause()
+            composeRule.waitUntil(5_000) { controller.playbackState?.state == PlaybackState.STATE_PAUSED }
+            controller.transportControls.play()
+            composeRule.waitUntil(5_000) { controller.playbackState?.state == PlaybackState.STATE_PLAYING }
+            controller.transportControls.stop()
+            composeRule.waitUntil(5_000) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty()
+            }
+            assertEquals(PlaybackState.STATE_PAUSED, controller.playbackState!!.state)
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
 
     @Test
     fun emptyEditor_showsCoreControlsAndInvokesNavigation() {
@@ -60,6 +109,7 @@ class EditorScreenTest {
                 }
             }
 
+            waitUntilTextExists(projectTitle)
             composeRule.onNodeWithText(projectTitle).assertExists()
             composeRule.onNodeWithText("Import beat").assertExists()
             composeRule.onNodeWithText("Start writing...").assertExists()
@@ -99,6 +149,7 @@ class EditorScreenTest {
                 }
             }
 
+            waitUntilTextExists(projectTitle)
             composeRule.onNodeWithContentDescription("Project Info").performClick()
             composeRule.onNodeWithText("Project Information").assertExists()
             composeRule.onNodeWithText("Title: $projectTitle").assertExists()
@@ -355,6 +406,7 @@ class EditorScreenTest {
     ) {
         composeRule.runOnIdle { showEditor.value = false }
         composeRule.waitForIdle()
+        context.stopService(Intent(context, BeatPlaybackService::class.java))
         ProjectStorage.deleteProject(context, projectTitle)
     }
 
