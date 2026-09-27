@@ -192,14 +192,16 @@ database miss and passed in the connected emulator suite.
   search vowel suffixes of lengths x-2, x-4, ... until a length of four or fewer
   vowels is reached; keys of up to four vowels use the entire key as fallback.
   With multiple input pronunciations, exact keys with fewer vowels are scanned
-  first so shorter base forms can be found before their longer inflections.
-  German and English assonance results collapse common inflected spellings
-  when they share a written stem and compatible vowel keys. German endings
+  first so base forms can be found before their longer inflections.
+  German and English assonance results collapse returned spellings when one is
+  a compatible prefix of another; they do not rely on a list of word endings.
+  German endings
   with syllabic consonants may differ by a final schwa; those also require
   matching phonetic stems, allowing German final devoicing of `p/b`, `t/d`,
-  and `k/ɡ`. Pagination counts the remaining forms. The database has no lemma
-  column, so this keeps the shortest available form in a clear family rather
-  than deriving a lemma.
+  and `k/ɡ`. Within each family, the retained form is the one whose pronunciation
+  starts the most longer returned pronunciations, falling back to the shortest
+  spelling. Pagination counts the remaining forms. The database has no lemma
+  column, so the retained form is chosen from returned words rather than derived.
   Parameterize every query and escape literal `%`, `_`, and the chosen `LIKE`
   escape character. Benchmark suffix
   searches on realistic data. Keep searches off the main thread and bound

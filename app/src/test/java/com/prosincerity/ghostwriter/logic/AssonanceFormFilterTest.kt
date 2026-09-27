@@ -5,7 +5,7 @@ import org.junit.Test
 
 class AssonanceFormFilterTest {
     @Test
-    fun groupsReleasedGermanFormsToShortestBaseRegardlessOfResultOrder() {
+    fun keepsPronouncedBaseOfGermanPrefixFamilyRegardlessOfResultOrder() {
         val results = listOf(
             AssonanceFormFilter.Entry("erblondendem", "[ɛɐ̯ˈblɔndn̩dəm]"),
             AssonanceFormFilter.Entry("erblondende", "[ɛɐ̯ˈblɔndn̩də]"),
@@ -22,10 +22,11 @@ class AssonanceFormFilterTest {
             AssonanceFormFilter.Entry("erblond", "[ɛɐ̯ˈblɔnt]"),
         )
 
-        assertEquals(setOf("erblonde", "erblondendem", "erblondende", "erblonden",
+        val excluded = setOf("erblond", "erblonde", "erblondendem", "erblondende",
             "erborgendem", "erborgende", "erborgtem", "erborgte", "erborge",
-            "erborget", "erborgtet"),
-            AssonanceFormFilter.excludedWords(results, "de"))
+            "erborget", "erborgtet")
+        assertEquals(excluded, AssonanceFormFilter.excludedWords(results, "de"))
+        assertEquals(excluded, AssonanceFormFilter.excludedWords(results.reversed(), "de"))
     }
 
     @Test
@@ -80,6 +81,27 @@ class AssonanceFormFilterTest {
 
         assertEquals(setOf("erblondendem", "erblondende"),
             AssonanceFormFilter.excludedWords(results, "de"))
+    }
+
+    @Test
+    fun keepsUnrelatedWordsThatOnlyShareShortPrefixes() {
+        val results = listOf(
+            AssonanceFormFilter.Entry("erfolgen", "/ɛɐfɔlɡən/"),
+            AssonanceFormFilter.Entry("erborgen", "/ɛɐbɔʁɡən/"),
+            AssonanceFormFilter.Entry("erbrochen", "/ɛɐbʁɔxən/"),
+        )
+
+        assertEquals(emptySet<String>(), AssonanceFormFilter.excludedWords(results, "de"))
+    }
+
+    @Test
+    fun recognizesReturnedPrefixWithoutAListedInflectionEnding() {
+        val results = listOf(
+            AssonanceFormFilter.Entry("walkwise", "/wɔkwaɪz/"),
+            AssonanceFormFilter.Entry("walk", "/wɔk/"),
+        )
+
+        assertEquals(setOf("walkwise"), AssonanceFormFilter.excludedWords(results, "en"))
     }
 
     @Test

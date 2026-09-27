@@ -248,7 +248,7 @@ class DictionarySearchInstrumentedTest {
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
         val result = runBlocking { search.search("verfolgen", "de", DictionarySearchMode.ASSONANCE) }
-        assertEquals(setOf("erblond", "erborg", "erdrossel", "verdoppel", "verborgen", "erfolg"),
+        assertEquals(setOf("erblonden", "erborg", "erdrossel", "verdoppel", "verborgen", "erfolg"),
             result.matches.map { it.word }.toSet())
         assertFalse(result.hasNext)
     }

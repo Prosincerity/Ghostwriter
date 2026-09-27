@@ -2,46 +2,74 @@ package com.prosincerity.ghostwriter.logic
 
 import java.util.Locale
 
-/** Keeps the shortest returned spelling among forms with a shared inflection stem and vowel key. */
+/** Keeps one returned form per compatible spelling-prefix family. */
 internal object AssonanceFormFilter {
     data class Entry(val word: String, val ipa: String)
 
-    private val germanEndings = setOf(
-        "e", "en", "em", "er", "es", "n", "s", "t", "st", "est", "et",
-        "te", "ten", "tem", "ter", "tes", "test", "tet",
-        "ete", "eten", "etem", "eter", "etes", "etest", "etet",
-        "end", "ende", "enden", "endem", "ender", "endes",
-        "nd", "nde", "nden", "ndem", "nder", "ndes",
-        "de", "den", "dem", "der", "des",
-        "ste", "sten", "stem", "ster", "stes",
-    )
-    private val englishEndings = setOf("s", "es", "d", "ed", "ing", "er", "est")
-
     fun excludedWords(results: List<Entry>, language: String): Set<String> {
-        val endings = when (language) {
-            "de" -> germanEndings
-            "en" -> englishEndings
-            else -> return emptySet()
-        }
+        if (language != "de" && language != "en") return emptySet()
         val locale = Locale.forLanguageTag(language)
         val pronounced = results.mapIndexedNotNull { index, entry ->
             val keys = IpaSearchKeys.fromIpa(entry.ipa, language) ?: return@mapIndexedNotNull null
             val spelling = entry.word.lowercase(locale)
             Pronounced(entry, spelling, keys.assonance, IpaSearchKeys.phonemeTokens(keys), index)
-        }.sortedWith(compareBy<Pronounced> { it.spelling.length }.thenBy { it.index })
-        val kept = mutableMapOf<String, MutableList<Pronounced>>()
-        val excluded = mutableSetOf<String>()
-        for (candidate in pronounced) {
-            val inflected = endings.any { ending ->
-                val spelling = candidate.spelling
-                spelling.endsWith(ending) && spelling.length - ending.length >= 4 &&
-                    kept[spelling.dropLast(ending.length)].orEmpty()
-                        .any { base -> compatible(base, candidate, language) }
+        }
+        val byIndex = pronounced.associateBy { it.index }
+        val root = PrefixNode()
+        pronounced.forEach { candidate ->
+            var node = root
+            candidate.spelling.forEach { letter ->
+                node = node.children.getOrPut(letter) { PrefixNode() }
             }
-            if (inflected) excluded += candidate.entry.word
-            else kept.getOrPut(candidate.spelling) { mutableListOf() } += candidate
+            node.entries += candidate.index
+        }
+        val parents = IntArray(results.size) { it }
+        val exactExtensions = IntArray(results.size)
+        fun representative(index: Int): Int {
+            var current = index
+            while (parents[current] != current) {
+                parents[current] = parents[parents[current]]
+                current = parents[current]
+            }
+            return current
+        }
+        for (candidate in pronounced) {
+            var node = root
+            for (letter in candidate.spelling) {
+                node = node.children.getValue(letter)
+                for (baseIndex in node.entries) {
+                    if (baseIndex == candidate.index) continue
+                    val base = byIndex.getValue(baseIndex)
+                    if (base.spelling.length < 4 || base.spelling.length == candidate.spelling.length ||
+                        !compatible(base, candidate, language)) continue
+                    parents[representative(candidate.index)] = representative(base.index)
+                    if (candidate.phonemes.size > base.phonemes.size &&
+                        candidate.phonemes.take(base.phonemes.size) == base.phonemes) {
+                        exactExtensions[base.index]++
+                    }
+                }
+            }
+        }
+        val families = pronounced.groupBy { representative(it.index) }
+        val excluded = mutableSetOf<String>()
+        for (family in families.values) {
+            // Prefer the form that actually starts the most returned pronunciations.
+            // A spelling-only shortest form can end in a different sound (erblond/erblonden).
+            val hasExactExtensions = family.any { exactExtensions[it.index] > 0 }
+            val kept = if (hasExactExtensions) {
+                family.maxWith(compareBy<Pronounced> { exactExtensions[it.index] }
+                    .thenBy { it.spelling.length }.thenByDescending { it.index })
+            } else {
+                family.minWith(compareBy<Pronounced> { it.spelling.length }.thenBy { it.index })
+            }
+            family.filter { it !== kept }.forEach { excluded += it.entry.word }
         }
         return excluded
+    }
+
+    private class PrefixNode {
+        val children = mutableMapOf<Char, PrefixNode>()
+        val entries = mutableListOf<Int>()
     }
 
     private fun compatible(base: Pronounced, candidate: Pronounced, language: String): Boolean {
