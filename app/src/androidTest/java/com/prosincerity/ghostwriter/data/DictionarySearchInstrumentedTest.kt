@@ -202,7 +202,7 @@ class DictionarySearchInstrumentedTest {
             add(row("source", "/aeio/"))
             add(row("source", "/eio/"))
             add(row("base", "/beio/"))
-            repeat(70) { index -> add(row("form$index", "/baeio/")) }
+            repeat(70) { index -> add(row("form${index.toString().padStart(2, '0')}", "/baeio/")) }
         })
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
