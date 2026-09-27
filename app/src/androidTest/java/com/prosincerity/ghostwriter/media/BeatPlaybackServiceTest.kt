@@ -53,7 +53,7 @@ class BeatPlaybackServiceTest {
             waitUntil { player.isPlaying }
             controller.transportControls.stop()
             waitUntil { !player.isReady }
-            assertTrue(context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty())
+            waitUntil { context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty() }
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
         }
     }
@@ -65,7 +65,7 @@ class BeatPlaybackServiceTest {
             waitUntil { service.player.isPlaying }
             onMain { service.selectProject("Second project") }
             assertFalse(onMainValue { service.player.isReady })
-            assertTrue(context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty())
+            waitUntil { context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty() }
         }
     }
 
