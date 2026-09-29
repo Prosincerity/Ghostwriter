@@ -40,11 +40,10 @@ class BeatPlaybackService : Service() {
     private lateinit var session: MediaSession
     private lateinit var audioManager: AudioManager
     private var focusRequest: AudioFocusRequest? = null
-    private var hasFocus = false
+    private val focus = PlaybackFocusState()
     private var foreground = false
     private var advertised = false
     private var destroying = false
-    private var resumeOnFocusGain = false
     private var pausingForFocus = false
     private var project: String? = null
     private var beatTitle = ""
@@ -71,20 +70,18 @@ class BeatPlaybackService : Service() {
     private val loopLabel get() = getString(if (player.isLooping) R.string.beat_disable_loop else R.string.beat_enable_loop)
     private val loopIcon get() = if (player.isLooping) R.drawable.ic_beat_loop_on else R.drawable.ic_beat_loop
 
-    private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
+    private val focusListener = AudioManager.OnAudioFocusChangeListener(::onAudioFocusChange)
+
+    internal fun onAudioFocusChange(change: Int) {
+        if (destroying) return
         when (change) {
             AudioManager.AUDIOFOCUS_GAIN -> {
-                hasFocus = true
-                if (resumeOnFocusGain) {
-                    resumeOnFocusGain = false
-                    player.play()
-                }
+                if (focus.onGain()) player.play()
             }
             AudioManager.AUDIOFOCUS_LOSS -> pause()
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                hasFocus = false
-                resumeOnFocusGain = resumeOnFocusGain || player.isPlaying
+                focus.onTransientLoss(player.isPlaying)
                 pausingForFocus = true
                 try { player.pause() } finally { pausingForFocus = false }
             }
@@ -103,7 +100,7 @@ class BeatPlaybackService : Service() {
         @Suppress("DEPRECATION")
         session.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
         player = BeatPlayer(this, ::preparePlayback, ::publishState,
-            onPauseRequested = { if (!pausingForFocus) resumeOnFocusGain = false })
+            onPauseRequested = { if (!pausingForFocus) focus.onPauseRequested() })
         session.setCallback(object : MediaSession.Callback() {
             override fun onPlay() { player.play() }
             override fun onPause() { pause() }
@@ -137,7 +134,7 @@ class BeatPlaybackService : Service() {
 
     fun selectProject(title: String) {
         if (project == title) return
-        resumeOnFocusGain = false
+        focus.onPauseRequested()
         player.release()
         project = title
         beatTitle = ""
@@ -166,7 +163,7 @@ class BeatPlaybackService : Service() {
     }
 
     private fun preparePlayback(): Boolean {
-        resumeOnFocusGain = false
+        focus.onPlaybackRequested()
         // Foreground status must precede audio-focus requests on Android 15+.
         startService(Intent(this, BeatPlaybackService::class.java))
         advertised = true
@@ -174,20 +171,20 @@ class BeatPlaybackService : Service() {
         notificationUpdates.cancel()
         startForeground(NOTIFICATION_ID, notification())
         foreground = true
-        val granted = if (hasFocus) true else if (Build.VERSION.SDK_INT >= 26) {
+        val granted = if (focus.hasFocus) true else if (Build.VERSION.SDK_INT >= 26) {
             audioManager.requestAudioFocus(focusRequest!!) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
         } else {
             @Suppress("DEPRECATION")
             (audioManager.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC,
                 AudioManager.AUDIOFOCUS_GAIN) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
         }
-        hasFocus = granted
+        focus.onRequestResult(granted)
         if (!granted) publishState()
         return granted
     }
 
     private fun pause() {
-        resumeOnFocusGain = false
+        focus.onPauseRequested()
         player.pause()
     }
 
@@ -207,7 +204,7 @@ class BeatPlaybackService : Service() {
     }
 
     private fun abandonFocus() {
-        hasFocus = false
+        focus.onAbandoned()
         if (Build.VERSION.SDK_INT >= 26) audioManager.abandonAudioFocusRequest(focusRequest!!)
         else {
             @Suppress("DEPRECATION")
@@ -235,15 +232,15 @@ class BeatPlaybackService : Service() {
             .setState(if (playing) PlaybackState.STATE_PLAYING else if (player.isReady)
                 PlaybackState.STATE_PAUSED else PlaybackState.STATE_STOPPED,
                 player.currentPositionMs.toLong(), if (playing) 1f else 0f).build())
-        if (!playing && !resumeOnFocusGain) abandonFocus()
+        if (!playing && !focus.resumeOnFocusGain) abandonFocus()
         if (!player.isReady) {
-            resumeOnFocusGain = false
+            focus.onPauseRequested()
             abandonFocus()
             clearNotification()
             session.isActive = false
             stopSelf()
         } else if (advertised) {
-            if (!playing && foreground) {
+            if (!focus.shouldKeepForeground(playing) && foreground) {
                 stopForeground(STOP_FOREGROUND_DETACH)
                 foreground = false
             }
