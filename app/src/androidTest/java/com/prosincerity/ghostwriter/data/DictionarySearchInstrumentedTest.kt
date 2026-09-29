@@ -137,7 +137,7 @@ class DictionarySearchInstrumentedTest {
     }
 
     @Test
-    fun assonanceFallsBackOnlyWhenNoExactKeyMatchesAcrossSources() = withDictionaryFixture { installer ->
+    fun assonanceAppendsShorterTiersAfterExactMatchesAcrossSources() = withDictionaryFixture { installer ->
         val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
         version.mkdirs()
         fun row(word: String, ipa: String): Row {
@@ -146,23 +146,79 @@ class DictionarySearchInstrumentedTest {
         }
         database(File(version, "wiktionary.db"), listOf(
             row("source", "/aeiou/"),
+            row("four", "/eiou/"),
             row("partial", "/iou/"),
+            row("two", "/ou/"),
+            row("one", "/u/"),
+            row("oneExact", "/bu/"),
+            row("wrongBoundary", "/oːu/"),
             row("absent", "/ɑeiou/"),
             row("short", "/æɒ/"),
+            row("shortExact", "/bæɒ/"),
             row("extended", "/uæɒ/"),
         ))
         database(File(version, "espeak.db"), listOf(row("exact", "/baeiosu/")))
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
         val exact = runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE) }
-        assertEquals(listOf("exact"), exact.matches.map { it.word })
+        assertEquals(listOf("exact", "four", "absent", "partial", "two"), exact.matches.map { it.word })
         assertTrue(runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE, 1) }
             .matches.isEmpty())
 
         val fallback = runBlocking { search.search("absent", "de", DictionarySearchMode.ASSONANCE) }
-        assertEquals(setOf("partial", "source", "exact"), fallback.matches.map { it.word }.toSet())
+        assertEquals(listOf("four", "source", "exact", "partial", "two"), fallback.matches.map { it.word })
         val short = runBlocking { search.search("short", "de", DictionarySearchMode.ASSONANCE) }
-        assertEquals(listOf("extended"), short.matches.map { it.word })
+        assertEquals(listOf("shortExact"), short.matches.map { it.word })
+        val single = runBlocking { search.search("one", "de", DictionarySearchMode.ASSONANCE) }
+        assertEquals(listOf("oneExact"), single.matches.map { it.word })
+    }
+
+    @Test
+    fun assonanceKeepsTierOrderAcrossSourcesAndEveryPage() = withDictionaryFixture { installer ->
+        val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
+        version.mkdirs()
+        fun row(word: String, ipa: String): Row {
+            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
+            return Row(word, ipa, keys.reversed, keys.assonance)
+        }
+        val tiers = listOf(
+            "exact" to "/a.e.i.o.u/",
+            "four" to "/æ.e.i.o.u/",
+            "three" to "/æ.i.o.u/",
+            "two" to "/æ.o.u/",
+        )
+        fun rows(source: String) = buildList {
+            for ((tier, ipa) in tiers) {
+                repeat(if (tier == "exact" && source == "wiki") 30 else 35) { index ->
+                    add(row("$tier$source${index.toString().padStart(3, '0')}", ipa))
+                }
+            }
+        }
+        database(File(version, "wiktionary.db"), rows("wiki") + listOf(
+            row("source", "/a.e.i.o.u/"),
+            row("single", "/u/"),
+            row("wrongBoundary", "/oː.u/"),
+        ))
+        database(File(version, "espeak.db"), rows("espeak") + listOf(
+            row("exactwiki000", "/æ.i.o.u/"), // A weaker pronunciation must not replace the exact result.
+        ))
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
+        val pages = (0..4).map { page ->
+            runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE, page) }
+        }
+        val expected = tiers.flatMap { (tier, _) ->
+            listOf("wiki", "espeak").flatMap { source ->
+                val count = if (tier == "exact" && source == "wiki") 30 else 35
+                (0 until count).map { "$tier$source${it.toString().padStart(3, '0')}" }
+            }
+        }
+        assertEquals(listOf(60, 60, 60, 60, 35), pages.map { it.matches.size })
+        assertEquals(listOf(true, true, true, true, false), pages.map { it.hasNext })
+        assertEquals(expected, pages.flatMap { it.matches }.map { it.word })
+        assertEquals(275, pages.flatMap { it.matches }.map { it.word }.toSet().size)
+        assertTrue(pages[1].matches.take(5).all { it.word.startsWith("exact") })
+        assertTrue(runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE, 5) }
+            .matches.isEmpty())
     }
 
     @Test
