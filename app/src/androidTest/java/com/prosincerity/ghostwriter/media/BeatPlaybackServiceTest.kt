@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSession
@@ -180,6 +181,69 @@ class BeatPlaybackServiceTest {
             onMain { service.selectProject("Service test") }
             assertTrue(onMainValue { service.player.isPlaying })
             assertTrue(onMainValue { service.player.currentPositionMs } >= 250)
+        }
+    }
+
+    @Test
+    fun transientFocusLoss_keepsUnboundServiceForeground_andResumesInBackground() {
+        withService { service, unbind ->
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            unbind()
+            composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+            try {
+                // Deliver callbacks deterministically; another app taking real audio focus
+                // is outside this test's control. Verify the actual service/notification state.
+                for (loss in listOf(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+                    AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)) {
+                    onMain { service.onAudioFocusChange(loss) }
+                    waitUntil { !service.player.isPlaying }
+                    val notification = waitForMediaNotification("Play", "Restart", "Disable loop")
+                    assertTrue("An interrupted beat must keep its foreground service",
+                        notification.flags and Notification.FLAG_FOREGROUND_SERVICE != 0)
+
+                    onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN) }
+                    waitUntil { service.player.isPlaying }
+                    waitForMediaNotification("Pause", "Restart", "Disable loop")
+                }
+            } finally {
+                composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            }
+        }
+    }
+
+    @Test
+    fun editorPauseDuringFocusLoss_cancelsResume_andLeavesForeground() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            onMain {
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+                // The editor calls BeatPlayer directly, including when already paused.
+                service.player.pause()
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN)
+            }
+
+            assertFalse(onMainValue { service.player.isPlaying })
+            val notification = waitForMediaNotification("Play", "Restart", "Disable loop")
+            assertEquals(0, notification.flags and Notification.FLAG_FOREGROUND_SERVICE)
+        }
+    }
+
+    @Test
+    fun replacingProjectDuringFocusLoss_doesNotResumeOrRestoreNotification() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            onMain {
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+                service.selectProject("Replacement project")
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN)
+            }
+
+            assertFalse(onMainValue { service.player.isReady })
+            assertFalse(onMainValue { service.player.isPlaying })
+            waitUntil { context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty() }
         }
     }
 
