@@ -10,6 +10,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.drawable.Icon
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -44,6 +46,22 @@ class BeatPlaybackService : Service() {
     private var pausingForFocus = false
     private var project: String? = null
     private var beatTitle = ""
+    private val artwork by lazy {
+        val icon = applicationInfo.loadIcon(packageManager)
+        Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888).also { bitmap ->
+            icon.setBounds(0, 0, bitmap.width, bitmap.height)
+            val canvas = Canvas(bitmap)
+            canvas.scale(0.75f, 0.75f, bitmap.width / 2f, bitmap.height / 2f)
+            icon.draw(canvas)
+        }
+    }
+
+    private val playbackTitle get() = beatTitle.ifBlank { getString(R.string.app_name) }
+    private val playbackSubtitle get() = listOfNotNull(
+        getString(R.string.beat_playback_source), project?.takeIf { it.isNotBlank() },
+    ).joinToString(" · ")
+    private val loopLabel get() = getString(if (player.isLooping) R.string.beat_disable_loop else R.string.beat_enable_loop)
+    private val loopIcon get() = if (player.isLooping) R.drawable.ic_beat_loop_on else R.drawable.ic_beat_loop
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
         when (change) {
@@ -83,9 +101,12 @@ class BeatPlaybackService : Service() {
             override fun onPause() { pause() }
             override fun onStop() { stopPlayback() }
             override fun onSeekTo(pos: Long) { player.seekTo(pos.coerceIn(0, Int.MAX_VALUE.toLong()).toInt()) }
-            override fun onSkipToPrevious() { player.seekTo(0) }
+            override fun onSkipToPrevious() { restartPlayback() }
             override fun onCustomAction(action: String, extras: Bundle?) {
-                if (action == ACTION_STOP) stopPlayback()
+                when (action) {
+                    ACTION_RESTART -> restartPlayback()
+                    ACTION_LOOP -> player.toggleLoop()
+                }
             }
         })
         session.setSessionActivity(contentIntent())
@@ -123,6 +144,8 @@ class BeatPlaybackService : Service() {
         when (intent?.action) {
             ACTION_PLAY -> player.play()
             ACTION_PAUSE -> pause()
+            ACTION_RESTART -> restartPlayback()
+            ACTION_LOOP -> player.toggleLoop()
             ACTION_STOP -> stopPlayback()
             ACTION_FORGET -> if (project == intent.getStringExtra(EXTRA_PROJECT)) {
                 player.release()
@@ -167,6 +190,11 @@ class BeatPlaybackService : Service() {
         stopSelf()
     }
 
+    private fun restartPlayback() {
+        player.seekTo(0)
+        player.play()
+    }
+
     private fun abandonFocus() {
         hasFocus = false
         if (Build.VERSION.SDK_INT >= 26) audioManager.abandonAudioFocusRequest(focusRequest!!)
@@ -181,14 +209,19 @@ class BeatPlaybackService : Service() {
         if (destroying) return
         val playing = player.isPlaying
         session.setMetadata(MediaMetadata.Builder()
-            .putString(MediaMetadata.METADATA_KEY_TITLE, beatTitle)
-            .putString(MediaMetadata.METADATA_KEY_ARTIST, project.orEmpty())
+            .putString(MediaMetadata.METADATA_KEY_TITLE, playbackTitle)
+            .putString(MediaMetadata.METADATA_KEY_ARTIST, playbackSubtitle)
+            .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, playbackTitle)
+            .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, playbackSubtitle)
+            .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, artwork)
+            .putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON, artwork)
             .putLong(MediaMetadata.METADATA_KEY_DURATION, player.durationMs.toLong()).build())
         session.setPlaybackState(PlaybackState.Builder()
             .setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or
-                PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_STOP or
-                PlaybackState.ACTION_SEEK_TO or PlaybackState.ACTION_SKIP_TO_PREVIOUS)
-            .addCustomAction(ACTION_STOP, getString(R.string.beat_stop), android.R.drawable.ic_media_pause)
+                PlaybackState.ACTION_PLAY_PAUSE or
+                PlaybackState.ACTION_SEEK_TO)
+            .addCustomAction(ACTION_RESTART, getString(R.string.beat_restart), R.drawable.ic_beat_restart)
+            .addCustomAction(ACTION_LOOP, loopLabel, loopIcon)
             .setState(if (playing) PlaybackState.STATE_PLAYING else if (player.isReady)
                 PlaybackState.STATE_PAUSED else PlaybackState.STATE_STOPPED,
                 player.currentPositionMs.toLong(), if (playing) 1f else 0f).build())
@@ -214,8 +247,8 @@ class BeatPlaybackService : Service() {
             else @Suppress("DEPRECATION") Notification.Builder(this)
         val playing = player.isPlaying
         return builder.setSmallIcon(R.drawable.ic_music_note)
-            .setContentTitle(beatTitle.ifBlank { getString(R.string.app_name) })
-            .setContentText(project).setContentIntent(contentIntent())
+            .setContentTitle(playbackTitle).setContentText(playbackSubtitle)
+            .setLargeIcon(artwork).setContentIntent(contentIntent())
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true).setOngoing(playing)
             .setDeleteIntent(actionIntent(ACTION_STOP))
@@ -223,9 +256,11 @@ class BeatPlaybackService : Service() {
                 Icon.createWithResource(this, if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play),
                 getString(if (playing) R.string.beat_pause else R.string.beat_play),
                 actionIntent(if (playing) ACTION_PAUSE else ACTION_PLAY)).build())
-            .addAction(Notification.Action.Builder(Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel),
-                getString(R.string.beat_stop), actionIntent(ACTION_STOP)).build())
-            .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken).setShowActionsInCompactView(0, 1))
+            .addAction(Notification.Action.Builder(Icon.createWithResource(this, R.drawable.ic_beat_restart),
+                getString(R.string.beat_restart), actionIntent(ACTION_RESTART)).build())
+            .addAction(Notification.Action.Builder(Icon.createWithResource(this, loopIcon),
+                loopLabel, actionIntent(ACTION_LOOP)).build())
+            .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken).setShowActionsInCompactView(0, 1, 2))
             .build()
     }
 
@@ -259,6 +294,8 @@ class BeatPlaybackService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val ACTION_PLAY = "com.prosincerity.ghostwriter.PLAY_BEAT"
         private const val ACTION_PAUSE = "com.prosincerity.ghostwriter.PAUSE_BEAT"
+        private const val ACTION_RESTART = "com.prosincerity.ghostwriter.RESTART_BEAT"
+        private const val ACTION_LOOP = "com.prosincerity.ghostwriter.LOOP_BEAT"
         private const val ACTION_STOP = "com.prosincerity.ghostwriter.STOP_BEAT"
         private const val ACTION_FORGET = "com.prosincerity.ghostwriter.FORGET_PROJECT"
         private const val EXTRA_PROJECT = "project"

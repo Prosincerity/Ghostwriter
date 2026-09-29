@@ -36,8 +36,11 @@ over new libraries. Build versions and SDK levels live in the Gradle files.
   framework `MediaSession`. The editor binds to the service; navigating away
   unbinds without interrupting started playback. A media-playback foreground
   service and playback wake lock keep beats running in other apps and with the
-  screen locked. Android media controls support play, pause, seek, restart,
-  and stop. Opening another project, replacing/removing its beat, or deleting/
+  screen locked. Android media controls show the app icon as artwork and a
+  `[Ghostwriter]` project label, with play, pause, seek, restart, and loop.
+  Pausing keeps the system player available for resuming. The loop setting is
+  shared with the editor. Opening another project,
+  replacing/removing its beat, or deleting/
   renaming the playing project releases playback. Audio focus and headphone
   disconnection are respected. Process death does not automatically restart audio.
   `WaveformExtractor.kt` uses

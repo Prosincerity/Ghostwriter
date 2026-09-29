@@ -113,6 +113,18 @@ class BeatPlayerTest {
     // --- Loop toggle ---
 
     @Test
+    fun toggleLoop_notifiesOwnerWithUpdatedState() {
+        val observed = mutableListOf<Boolean>()
+        lateinit var player: BeatPlayer
+        player = BeatPlayer(onStateChanged = { observed += player.isLooping })
+
+        player.toggleLoop()
+        player.toggleLoop()
+
+        assertEquals(listOf(false, true), observed)
+    }
+
+    @Test
     fun toggleLoop_flipsFromTrueToFalse() {
         val player = BeatPlayer()
         assertTrue(player.isLooping)         // default: true
