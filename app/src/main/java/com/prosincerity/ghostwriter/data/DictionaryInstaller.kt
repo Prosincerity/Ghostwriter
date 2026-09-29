@@ -35,10 +35,13 @@ internal class DictionaryRelease private constructor(
     val languages: Map<String, DictionaryLanguage>,
 ) {
     companion object {
-        fun load(context: Context): DictionaryRelease {
-            val json = JSONObject(
+        fun load(context: Context): DictionaryRelease = parse(
+            JSONObject(
                 context.assets.open("dictionary_release.json").bufferedReader().use { it.readText() },
-            )
+            ),
+        )
+
+        internal fun parse(json: JSONObject): DictionaryRelease {
             val tag = json.getString("tag")
             require(tag.matches(Regex("[A-Za-z0-9._-]+")))
             val source = json.getJSONObject("languages")
@@ -65,7 +68,11 @@ internal fun interface DictionaryArchiveSource {
 }
 
 private val releaseSource = DictionaryArchiveSource { address ->
-    val connection = URL(address).openConnection() as HttpURLConnection
+    openDictionaryArchive(URL(address).openConnection() as HttpURLConnection)
+}
+
+/** Owns the connection until the returned archive stream is closed. */
+internal fun openDictionaryArchive(connection: HttpURLConnection): InputStream {
     connection.connectTimeout = 15_000
     connection.readTimeout = 30_000
     connection.instanceFollowRedirects = true
@@ -73,7 +80,7 @@ private val releaseSource = DictionaryArchiveSource { address ->
         if (connection.responseCode != HttpURLConnection.HTTP_OK) {
             error("Dictionary download failed: HTTP ${connection.responseCode}")
         }
-        object : FilterInputStream(connection.inputStream) {
+        return object : FilterInputStream(connection.inputStream) {
             override fun close() {
                 try {
                     super.close()

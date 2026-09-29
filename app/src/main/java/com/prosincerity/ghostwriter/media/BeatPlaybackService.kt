@@ -87,7 +87,7 @@ class BeatPlaybackService : Service() {
             }
         }
     }
-    private val noisyReceiver = object : BroadcastReceiver() {
+    internal val noisyReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) pause()
         }

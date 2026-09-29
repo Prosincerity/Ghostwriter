@@ -247,6 +247,60 @@ class BeatPlaybackServiceTest {
         }
     }
 
+    @Test
+    fun headphoneDisconnection_pausesPlaybackAndCancelsPendingFocusResume() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) }
+            // Android protects this broadcast; deliver its intent to the real receiver.
+            onMain { service.noisyReceiver.onReceive(context, Intent(AudioManager.ACTION_AUDIO_BECOMING_NOISY)) }
+            waitUntil({ "Headphone disconnection did not leave the foreground" }) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications
+                    .singleOrNull()?.notification?.let {
+                        it.flags and Notification.FLAG_FOREGROUND_SERVICE == 0
+                    } == true
+            }
+            onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN) }
+
+            assertFalse(onMainValue { service.player.isPlaying })
+            assertTrue(onMainValue { service.player.isReady })
+            waitForMediaNotification("Play", "Restart", "Disable loop")
+        }
+    }
+
+    @Test
+    fun headphoneDisconnectionWhilePlaying_keepsPausedBeatAvailableForUserResume() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
+
+            onMain { service.noisyReceiver.onReceive(context, Intent(AudioManager.ACTION_AUDIO_BECOMING_NOISY)) }
+
+            waitUntil { !service.player.isPlaying }
+            assertTrue(onMainValue { service.player.isReady })
+            waitForMediaNotification("Play", "Restart", "Disable loop")
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
+        }
+    }
+
+    @Test
+    fun noisyReceiverIgnoresMissingAndUnrelatedActions() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
+
+            onMain {
+                service.noisyReceiver.onReceive(context, null)
+                service.noisyReceiver.onReceive(context, Intent())
+                service.noisyReceiver.onReceive(context, Intent("unrelated.action"))
+            }
+
+            assertTrue(onMainValue { service.player.isPlaying })
+        }
+    }
+
     /** NotificationManager can still return the previous buttons after player/session state changes. */
     private fun waitForMediaNotification(vararg expectedActions: String): Notification {
         val manager = context.getSystemService(NotificationManager::class.java)
