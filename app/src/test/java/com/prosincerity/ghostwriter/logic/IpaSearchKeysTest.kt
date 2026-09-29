@@ -114,4 +114,50 @@ class IpaSearchKeysTest {
         val keys = IpaSearchKeys.fromIpa("/a.eɪ.oʊ.uː/", "en")!!
         assertEquals(listOf("uː oʊ eɪ", "uː oʊ"), IpaSearchKeys.assonanceFallbacks(keys))
     }
+
+    @Test
+    fun rejectsEmptyProsodyOnlyAndUnattachedModifierInput() {
+        listOf("", "/[]/", "ˈˌ", "˥↗", "ː", "ʰ", "ˈːa", "↗ːa").forEach { ipa ->
+            assertNull(ipa, IpaSearchKeys.fromIpa(ipa, "en"))
+        }
+    }
+
+    @Test
+    fun leadingAndTrailingModifiersStayWithTheirPhoneme() {
+        assertEquals(listOf("ʰaː"), IpaSearchKeys.fromIpa("/ʰaː/", "en")!!.tokens)
+        assertEquals("ʰaː", IpaSearchKeys.fromIpa("/ʰaː/", "en")!!.assonance)
+        assertEquals(listOf("ã"), IpaSearchKeys.fromIpa("/a ̃/", "en")!!.tokens)
+        assertEquals(listOf("aʰ"), IpaSearchKeys.fromIpa("/a ʰ/", "en")!!.tokens)
+    }
+
+    @Test
+    fun enclosingDiacriticIsPartOfTheVowelRatherThanAnotherPhoneme() {
+        val keys = IpaSearchKeys.fromIpa("/a\u20dd/", "en")!!
+
+        assertEquals(listOf("a\u20dd"), keys.tokens)
+        assertEquals("a\u20dd", keys.assonance)
+    }
+
+    @Test
+    fun secondaryStressProvidesARimeWhenThereIsNoPrimaryStress() {
+        val keys = IpaSearchKeys.fromIpa("/kaˌtɛ/", "en")!!
+
+        assertEquals(listOf("ɛ"), IpaSearchKeys.rimeTokens(keys, "en"))
+    }
+
+    @Test
+    fun phonemeTokensRemoveStressAndToneMarkers() {
+        val keys = IpaSearchKeys.fromIpa("/ˌa˥b/", "en")!!
+
+        assertEquals(listOf("a", "b"), IpaSearchKeys.phonemeTokens(keys))
+    }
+
+    @Test
+    fun unsupportedLanguageCannotProduceARimeOrReportAVowel() {
+        val keys = IpaSearchKeys.fromIpa("/ˈkæt/", "en")!!
+
+        assertNull(IpaSearchKeys.rimeTokens(keys, "fr"))
+        assertEquals(false, IpaSearchKeys.hasVowel(keys.tokens, "fr"))
+        assertEquals(false, IpaSearchKeys.hasVowel(listOf("k", "t"), "en"))
+    }
 }

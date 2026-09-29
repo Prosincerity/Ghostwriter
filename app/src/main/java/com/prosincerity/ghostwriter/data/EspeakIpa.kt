@@ -48,7 +48,7 @@ internal class EspeakIpa(context: Context) : IpaGenerator {
             ?.takeIf { it.isNotEmpty() }
     }
 
-    private fun installData(): File {
+    internal fun installData(): File {
         val root = File(appContext.filesDir, "espeak-ng")
         check(root.mkdirs() || root.isDirectory) { "Cannot create eSpeak NG data directory" }
         val version = File(root, VERSION)
