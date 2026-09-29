@@ -5,6 +5,9 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.PowerManager
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import java.io.File
 
 /**
@@ -15,8 +18,9 @@ import java.io.File
  * - Production playback is owned by BeatPlaybackService, independently of screens.
  * - Looping defaults to ON: rap songwriters almost always want their
  *   instrumental to loop continuously while writing verses.
- * - State is exposed through properties; callers observe it via Compose state
- *   (see EditorScreen) rather than callbacks or flows.
+ * - State is exposed through properties; loop state is observable by Compose
+ *   so external media controls and the editor share the same setting.
+ *   Playback changes also notify the owning service to update its media session.
  */
 class BeatPlayer(
     private val context: Context? = null,
@@ -40,7 +44,7 @@ class BeatPlayer(
     val isPlaying: Boolean get() = player?.isPlaying == true
 
     /** Whether the beat will loop automatically when it reaches the end. */
-    var isLooping: Boolean = true
+    var isLooping: Boolean by mutableStateOf(true)
         private set
 
     /** Playback volume, from silent (0f) to full volume (1f). */
@@ -132,6 +136,7 @@ class BeatPlayer(
     fun toggleLoop(): Boolean {
         isLooping = !isLooping
         player?.isLooping = isLooping
+        onStateChanged()
         return isLooping
     }
 

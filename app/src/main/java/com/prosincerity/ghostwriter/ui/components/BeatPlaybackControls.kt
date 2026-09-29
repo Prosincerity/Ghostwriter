@@ -23,7 +23,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,7 +41,7 @@ internal fun BeatPlaybackControls(
 ) {
     var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
     val isMuted = volume == 0f
-    var isLooping by remember(beatPlayer) { mutableStateOf(beatPlayer.isLooping) }
+    val isLooping = beatPlayer.isLooping
 
     Box(modifier = Modifier.fillMaxWidth()) {
         TextButton(
@@ -71,7 +70,7 @@ internal fun BeatPlaybackControls(
                     contentDescription = if (isPlaying) "Pause" else "Play",
                 )
             }
-            IconButton(onClick = { isLooping = beatPlayer.toggleLoop() }) {
+            IconButton(onClick = { beatPlayer.toggleLoop() }) {
                 Icon(
                     imageVector = Icons.Filled.Loop,
                     contentDescription = if (isLooping) "Disable loop" else "Enable loop",
