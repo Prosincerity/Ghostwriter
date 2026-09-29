@@ -1,5 +1,22 @@
 {
-  "generated_at": "2026-09-29T13:25:09.507466+00:00",
-  "nodes": {},
+  "generated_at": "2026-09-29T16:07:26.947077+00:00",
+  "nodes": {
+    "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
+      "code_fingerprint": "caf9bf5587c8ff98bbc72e955022710c5342e8a88e0874088070ac0910248c4a",
+      "label": "DictionarySearch",
+      "last": "2026-09-29T13:28:38.102761+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-29T13:28:38.102761+00:00",
+          "outcome": "useful",
+          "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
+        }
+      ],
+      "score": 0.99745506,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
   "version": 1
 }

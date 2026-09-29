@@ -31,6 +31,32 @@ class DictionaryReleaseTest {
     }
 
     @Test
+    fun rejectsHiddenOrDotDirectoryReleaseTags() {
+        listOf(".", "..", ".release-v1").forEach { tag ->
+            assertThrows("tag: $tag", IllegalArgumentException::class.java) {
+                DictionaryRelease.parse(manifest().put("tag", tag))
+            }
+        }
+    }
+
+    @Test
+    fun rejectsNonPositiveArchiveSizesForEveryLanguageAndSource() {
+        listOf("en", "de", "tr").forEach { language ->
+            listOf("wiktionary", "espeak").forEach { source ->
+                listOf(0L, -1L, Long.MIN_VALUE).forEach { size ->
+                    val json = manifest()
+                    json.getJSONObject("languages").getJSONObject(language)
+                        .getJSONObject(source).put("sizeBytes", size)
+
+                    assertThrows("$language $source size: $size", IllegalArgumentException::class.java) {
+                        DictionaryRelease.parse(json)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     fun rejectsInvalidArchiveNamesEvenWhenUrlMatches() {
         listOf("../dictionary.db.gz", "dictionary.gz", "dictionary.db", "dictionary name.db.gz")
             .forEach { file ->

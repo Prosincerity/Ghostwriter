@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryInstaller.kt": {
-    "mtime": 1790697349.4424014,
-    "seen": 1790697570.6673968,
-    "ast_hash": "324dee59f02f9aa2dbdbe35450ae1e43",
+    "mtime": 1790698292.5055456,
+    "seen": 1790698305.9672701,
+    "ast_hash": "ad71c4e52c5f776980f0682910504c60",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryPronunciations.kt": {
@@ -3966,9 +3966,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/DictionaryReleaseTest.kt": {
-    "mtime": 1790697349.5444002,
-    "seen": 1790697570.6675184,
-    "ast_hash": "af5f8925eaf826a1bbaef0833b23266f",
+    "mtime": 1790698266.2058764,
+    "seen": 1790698305.9674237,
+    "ast_hash": "b23e12d1cb0a775727e480f2d44dee3f",
     "semantic_hash": ""
   }
 }

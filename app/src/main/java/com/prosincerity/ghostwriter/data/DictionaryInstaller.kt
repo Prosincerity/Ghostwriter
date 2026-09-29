@@ -44,6 +44,8 @@ internal class DictionaryRelease private constructor(
         internal fun parse(json: JSONObject): DictionaryRelease {
             val tag = json.getString("tag")
             require(tag.matches(Regex("[A-Za-z0-9._-]+")))
+            // Fallback discovery skips hidden directories; dot components also escape the version directory.
+            require(!tag.startsWith(".")) { "Release tag must name a visible version directory" }
             val source = json.getJSONObject("languages")
             val languages = listOf("en", "de", "tr").associateWith { code ->
                 val pair = source.getJSONObject(code)
@@ -58,7 +60,9 @@ internal class DictionaryRelease private constructor(
             require(file.matches(Regex("[A-Za-z0-9._-]+\\.db\\.gz")))
             require(url.startsWith("https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/"))
             require(url.endsWith("/$file"))
-            return DictionaryAsset(file, json.getLong("sizeBytes"), url)
+            val sizeBytes = json.getLong("sizeBytes")
+            require(sizeBytes > 0) { "Dictionary archive size must be positive" }
+            return DictionaryAsset(file, sizeBytes, url)
         }
     }
 }
