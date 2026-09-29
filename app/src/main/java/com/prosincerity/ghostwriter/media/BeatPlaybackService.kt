@@ -22,7 +22,9 @@ import android.media.session.PlaybackState
 import android.os.Binder
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.content.ContextCompat
 import com.prosincerity.ghostwriter.MainActivity
 import com.prosincerity.ghostwriter.R
@@ -46,6 +48,12 @@ class BeatPlaybackService : Service() {
     private var pausingForFocus = false
     private var project: String? = null
     private var beatTitle = ""
+    private val notificationHandler = Handler(Looper.getMainLooper())
+    private val notificationUpdates = PlaybackNotificationUpdater(
+        schedule = { task, delay -> notificationHandler.postDelayed(task, delay); Unit },
+        remove = { notificationHandler.removeCallbacks(it) },
+        publish = ::postNotification,
+    )
     private val artwork by lazy {
         val icon = applicationInfo.loadIcon(packageManager)
         Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888).also { bitmap ->
@@ -163,6 +171,7 @@ class BeatPlaybackService : Service() {
         startService(Intent(this, BeatPlaybackService::class.java))
         advertised = true
         session.isActive = true
+        notificationUpdates.cancel()
         startForeground(NOTIFICATION_ID, notification())
         foreground = true
         val granted = if (hasFocus) true else if (Build.VERSION.SDK_INT >= 26) {
@@ -183,9 +192,11 @@ class BeatPlaybackService : Service() {
     }
 
     private fun stopPlayback() {
+        // Remove the foreground notification before pause() can detach it. DETACH can
+        // post a deferred notification, which would race the subsequent cancellation.
+        clearNotification()
         pause()
         player.seekTo(0)
-        clearNotification()
         session.isActive = false
         stopSelf()
     }
@@ -204,7 +215,6 @@ class BeatPlaybackService : Service() {
         }
     }
 
-    @SuppressLint("NotificationPermission")
     private fun publishState() {
         if (destroying) return
         val playing = player.isPlaying
@@ -237,7 +247,15 @@ class BeatPlaybackService : Service() {
                 stopForeground(STOP_FOREGROUND_DETACH)
                 foreground = false
             }
-            // MediaStyle carries our active MediaSession token, so this notification is exempt.
+            // Seek completion and transport actions can arrive in bursts. Media notifications
+            // are exempt from notification permission, but still subject to update rate limits.
+            notificationUpdates.request()
+        }
+    }
+
+    @SuppressLint("NotificationPermission")
+    private fun postNotification() {
+        if (advertised && !destroying) {
             getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification())
         }
     }
@@ -274,6 +292,7 @@ class BeatPlaybackService : Service() {
 
     private fun clearNotification() {
         advertised = false
+        notificationUpdates.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
         foreground = false
         getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)

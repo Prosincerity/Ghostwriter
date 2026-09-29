@@ -11,7 +11,7 @@ import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.IBinder
-import android.os.SystemClock
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -36,7 +36,7 @@ class BeatPlaybackServiceTest {
         withService { service, _ ->
             onMain { service.player.play() }
             waitUntil { service.player.isPlaying }
-            val notification = mediaNotification()
+            val notification = waitForMediaNotification("Pause", "Restart", "Disable loop")
             val controller = mediaController(notification)
             val metadata = controller.metadata!!
 
@@ -60,7 +60,7 @@ class BeatPlaybackServiceTest {
             val player = service.player
             onMain { player.play() }
             waitUntil { player.isPlaying }
-            val controller = mediaController(mediaNotification())
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
             val actions = controller.playbackState!!.customActions
             val restart = actions.first { it.name.toString() == "Restart" }.action
             val loop = actions.first { it.name.toString() == "Disable loop" }.action
@@ -73,15 +73,18 @@ class BeatPlaybackServiceTest {
             controller.transportControls.sendCustomAction(loop, null)
             waitUntil { !player.isLooping }
             waitUntil { controller.playbackState!!.customActions.any { it.name.toString() == "Enable loop" } }
-            assertEquals("Enable loop", mediaNotification().actions[2].title.toString())
+            assertEquals("Enable loop",
+                waitForMediaNotification("Pause", "Restart", "Enable loop").actions[2].title.toString())
             onMain { player.toggleLoop() }
             waitUntil { controller.playbackState!!.customActions.any { it.name.toString() == "Disable loop" } }
-            assertEquals("Disable loop", mediaNotification().actions[2].title.toString())
+            assertEquals("Disable loop",
+                waitForMediaNotification("Pause", "Restart", "Disable loop").actions[2].title.toString())
 
             controller.transportControls.pause()
             waitUntil { !player.isPlaying }
             assertTrue(onMainValue { player.isReady })
-            assertEquals("Play", mediaNotification().actions[0].title.toString())
+            assertEquals("Play",
+                waitForMediaNotification("Play", "Restart", "Disable loop").actions[0].title.toString())
         }
     }
 
@@ -94,18 +97,18 @@ class BeatPlaybackServiceTest {
             onMain { player.seekTo(5_000); player.pause() }
             waitUntil { !player.isPlaying && player.currentPositionMs >= 5_000 }
 
-            mediaNotification().actions[2].actionIntent.send()
+            waitForMediaNotification("Play", "Restart", "Disable loop").actions[2].actionIntent.send()
             waitUntil { !player.isLooping }
             assertFalse(onMainValue { player.isPlaying })
-            mediaNotification().actions[2].actionIntent.send()
+            waitForMediaNotification("Play", "Restart", "Enable loop").actions[2].actionIntent.send()
             waitUntil { player.isLooping }
-            mediaNotification().actions[1].actionIntent.send()
+            waitForMediaNotification("Play", "Restart", "Disable loop").actions[1].actionIntent.send()
             waitUntil { player.isPlaying && player.currentPositionMs < 1_000 }
-            mediaNotification().actions[0].actionIntent.send()
+            waitForMediaNotification("Pause", "Restart", "Disable loop").actions[0].actionIntent.send()
             waitUntil { !player.isPlaying }
             assertTrue(onMainValue { player.isReady })
             assertEquals(listOf("Play", "Restart", "Disable loop"),
-                mediaNotification().actions.map { it.title.toString() })
+                waitForMediaNotification("Play", "Restart", "Disable loop").actions.map { it.title.toString() })
         }
     }
 
@@ -115,11 +118,7 @@ class BeatPlaybackServiceTest {
             val player = service.player
             onMain { player.play() }
             waitUntil { player.isPlaying }
-            val notification = context.getSystemService(NotificationManager::class.java)
-                .activeNotifications.single().notification
-            @Suppress("DEPRECATION")
-            val token = notification.extras.getParcelable<MediaSession.Token>(Notification.EXTRA_MEDIA_SESSION)!!
-            val controller = MediaController(context, token)
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
             unbind()
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
             val position = onMainValue { player.currentPositionMs }
@@ -134,6 +133,31 @@ class BeatPlaybackServiceTest {
             waitUntil { !player.isReady }
             waitUntil { context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty() }
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        }
+    }
+
+    @Test
+    fun stoppingImmediatelyAfterResume_removesNotificationWhileBound_andAllowsPlayingAgain() {
+        withService { service, _ ->
+            val player = service.player
+            onMain { player.play() }
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
+
+            controller.transportControls.pause()
+            waitUntil { !player.isPlaying }
+            controller.transportControls.play()
+            waitUntil { player.isPlaying }
+            // Stop before the resumed foreground notification update has been published.
+            controller.transportControls.stop()
+            waitUntil { !player.isPlaying && player.currentPositionMs == 0 }
+            assertTrue(onMainValue { player.isReady })
+            waitUntil({ "Stopped playback notification was not removed" }) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty()
+            }
+
+            onMain { player.play() }
+            waitUntil { player.isPlaying }
+            waitForMediaNotification("Pause", "Restart", "Disable loop")
         }
     }
 
@@ -159,8 +183,19 @@ class BeatPlaybackServiceTest {
         }
     }
 
-    private fun mediaNotification() = context.getSystemService(NotificationManager::class.java)
-        .activeNotifications.single().notification
+    /** NotificationManager can still return the previous buttons after player/session state changes. */
+    private fun waitForMediaNotification(vararg expectedActions: String): Notification {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        var notification: Notification? = null
+        waitUntil({
+            "Expected notification actions ${expectedActions.toList()}, " +
+                "last observed ${notification?.actions?.map { it.title.toString() }}"
+        }) {
+            notification = manager.activeNotifications.singleOrNull()?.notification
+            notification?.actions?.map { it.title.toString() } == expectedActions.toList()
+        }
+        return checkNotNull(notification)
+    }
 
     private fun mediaController(notification: Notification): MediaController {
         @Suppress("DEPRECATION")
@@ -211,10 +246,12 @@ class BeatPlaybackServiceTest {
         onMain { result = block() }
         return result!!
     }
-    private fun waitUntil(condition: () -> Boolean) {
-        val deadline = SystemClock.uptimeMillis() + 5_000
-        while (!onMainValue(condition) && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(20)
-        assertTrue("Playback condition timed out", onMainValue(condition))
+    private fun waitUntil(message: () -> String = { "Playback condition timed out" }, condition: () -> Boolean) {
+        try {
+            composeRule.waitUntil(timeoutMillis = 5_000) { onMainValue(condition) }
+        } catch (timeout: ComposeTimeoutException) {
+            throw AssertionError(message(), timeout)
+        }
     }
 
     private fun writeWav(file: File) {
