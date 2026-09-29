@@ -48,7 +48,7 @@ class IpaSearchKeysTest {
             IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/ˈɹaɪtɪŋ/", "en")!!, "en"))
         assertEquals(listOf("ɪ", "ŋ"),
             IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/ɹaɪˈtɪŋ/", "en")!!, "en"))
-        assertEquals(listOf("æ"), IpaSearchKeys.assonanceFallbacks(keys))
+        assertEquals(emptyList<String>(), IpaSearchKeys.assonanceFallbacks(keys))
         assertEquals(listOf("æ", "t"),
             IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/kæt/", "en")!!, "en"))
         assertNull(IpaSearchKeys.rimeTokens(IpaSearchKeys.fromIpa("/kætɪŋ/", "en")!!, "en"))
@@ -94,15 +94,24 @@ class IpaSearchKeysTest {
     }
 
     @Test
-    fun assonanceFallbacksUseWholeShortKeysAndStepDownToFourOrFewerVowels() {
+    fun assonanceFallbacksDropOneVowelAtATimeThroughTwo() {
         fun fallbacks(ipa: String) =
             IpaSearchKeys.assonanceFallbacks(IpaSearchKeys.fromIpa(ipa, "en")!!)
 
-        assertEquals(listOf("a"), fallbacks("/a/"))
-        assertEquals(listOf("e a"), fallbacks("/ae/"))
-        assertEquals(listOf("o i e a"), fallbacks("/aeio/"))
-        assertEquals(listOf("u o i"), fallbacks("/aeiou/"))
-        assertEquals(listOf("æ u o i"), fallbacks("/aeiouæ/"))
-        assertEquals(listOf("ɒ æ u o i", "ɒ æ u"), fallbacks("/aeiouæɒ/"))
+        assertEquals(emptyList<String>(), fallbacks("/b/"))
+        assertEquals(emptyList<String>(), fallbacks("/a/"))
+        assertEquals(emptyList<String>(), fallbacks("/ae/"))
+        assertEquals(listOf("i e"), fallbacks("/aei/"))
+        assertEquals(listOf("o i e", "o i"), fallbacks("/aeio/"))
+        assertEquals(listOf("u o i e", "u o i", "u o"), fallbacks("/aeiou/"))
+        assertEquals(listOf("æ u o i e", "æ u o i", "æ u o", "æ u"), fallbacks("/aeiouæ/"))
+        assertEquals(listOf("ɒ æ u o i e", "ɒ æ u o i", "ɒ æ u o", "ɒ æ u", "ɒ æ"),
+            fallbacks("/aeiouæɒ/"))
+    }
+
+    @Test
+    fun assonanceFallbacksKeepDiphthongsAndVowelModifiersIntact() {
+        val keys = IpaSearchKeys.fromIpa("/a.eɪ.oʊ.uː/", "en")!!
+        assertEquals(listOf("uː oʊ eɪ", "uː oʊ"), IpaSearchKeys.assonanceFallbacks(keys))
     }
 }

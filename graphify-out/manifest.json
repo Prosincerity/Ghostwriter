@@ -510,9 +510,9 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
-    "mtime": 1790517178.6861186,
-    "seen": 1790517223.8580134,
-    "ast_hash": "2ee29a79acd223f3fd0004fcb566c98b",
+    "mtime": 1790688437.4284408,
+    "seen": 1790688494.963539,
+    "ast_hash": "8ef5c13542104ef6c026972c4f68eb41",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
@@ -3804,9 +3804,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionarySearchInstrumentedTest.kt": {
-    "mtime": 1790518248.223957,
-    "seen": 1790518295.924225,
-    "ast_hash": "0482ab61d0c9ac462d8f883dd785362e",
+    "mtime": 1790688782.0881078,
+    "seen": 1790688799.2520177,
+    "ast_hash": "fac5a55a566a1b82ce6f9dc98ae5e7ef",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreenTest.kt": {
@@ -3816,15 +3816,15 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt": {
-    "mtime": 1790423631.459206,
-    "seen": 1790423682.3762102,
-    "ast_hash": "30a90f0ed1e01c378c82f345ca15f4f6",
+    "mtime": 1790688364.382359,
+    "seen": 1790688494.962569,
+    "ast_hash": "3acdc3921977a6713ebe1cb5c6f5fe7a",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt": {
-    "mtime": 1790360398.8909426,
-    "seen": 1790360466.2931721,
-    "ast_hash": "73ee84820b7e10a5e79cfb012543f7a7",
+    "mtime": 1790688364.2823603,
+    "seen": 1790688494.9626122,
+    "ast_hash": "e1ddf2661499266f78a83cbdc38fa1b9",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreen.kt": {
@@ -3834,9 +3834,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/IpaSearchKeysTest.kt": {
-    "mtime": 1790360419.6536815,
-    "seen": 1790360466.2932372,
-    "ast_hash": "a70e837b47604257449e8e3672cfc034",
+    "mtime": 1790688364.4813578,
+    "seen": 1790688494.962711,
+    "ast_hash": "bcffb070d4f022f041591bd65a8f9927",
     "semantic_hash": ""
   },
   "app/src/main/assets/licenses/Ghostwriter-Dict-MIT.txt": {
@@ -3927,6 +3927,12 @@
     "mtime": 1790512137.5124948,
     "seen": 1790512513.5374086,
     "ast_hash": "0b476514dd48de15102ee0bed1f141d1",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260929_132838_b998c83d_does_dictionary_assonance_search_put_exact_matches.md": {
+    "mtime": 1790688518.103276,
+    "seen": 1790688799.2523725,
+    "ast_hash": "e3d24baa0932f36d0d75cace3848ba5f",
     "semantic_hash": ""
   }
 }

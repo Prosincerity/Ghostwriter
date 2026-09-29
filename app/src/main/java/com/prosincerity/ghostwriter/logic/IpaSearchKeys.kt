@@ -127,19 +127,12 @@ internal object IpaSearchKeys {
     fun hasVowel(tokens: List<String>, language: String): Boolean =
         language in vowels && tokens.any { isVowel(it, language) }
 
-    /** Reversed-key prefixes for the x-2, x-4, ... vowel suffix fallback. */
+    /** Reversed-key prefixes for x-1, x-2, ... vowel suffix matches, down to two vowels. */
     fun assonanceFallbacks(keys: Keys): List<String> {
         val vowelsOnly = keys.assonance.split(' ').filter { it.isNotEmpty() }
-        if (vowelsOnly.isEmpty()) return emptyList()
-        if (vowelsOnly.size <= 4) return listOf(keys.assonance)
-        val prefixes = mutableListOf<String>()
-        var length = vowelsOnly.size - 2
-        while (length > 0) {
-            prefixes += vowelsOnly.take(length).joinToString(" ")
-            if (length <= 4) break
-            length -= 2
+        return (vowelsOnly.size - 1 downTo 2).map { length ->
+            vowelsOnly.take(length).joinToString(" ")
         }
-        return prefixes
     }
 
     private fun isVowel(token: String, language: String): Boolean {

@@ -187,10 +187,13 @@ database miss and passed in the connected emulator suite.
   pronunciation.
   Each candidate's suffix is checked exactly, and longer suffix matches rank
   first across both sources.
-  Assonance first returns only words whose complete `assonance_reversed` key
-  equals the input key. Only when that search finds no other words does it
-  search vowel suffixes of lengths x-2, x-4, ... until a length of four or fewer
-  vowels is reached; keys of up to four vowels use the entire key as fallback.
+  Assonance first searches both installed sources for complete
+  `assonance_reversed` keys equal to the input key. It then appends `LIKE`
+  prefix matches on that reversed key for vowel suffixes of lengths x-1,
+  x-2, ... down to and including two vowels. One- and two-vowel input keys
+  use only the direct search. Exact matches rank before all fallback tiers;
+  longer fallback tiers rank before shorter ones across both sources and
+  all result pages. A word appears only once, at its strongest matching tier.
   With multiple input pronunciations, exact keys with fewer vowels are scanned
   first so base forms can be found before their longer inflections.
   German and English assonance results collapse returned spellings when one is

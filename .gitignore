@@ -36,6 +36,7 @@ release/
 
 # Graphify local cache and in-progress build state
 /graphify-out/cache/
+/graphify-out/memory/
 /graphify-out/.graphify_python
 /graphify-out/.graphify_root
 /graphify-out/.graphify_detect.json

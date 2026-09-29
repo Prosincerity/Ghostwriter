@@ -102,8 +102,10 @@ internal class DictionarySearch(
                 }
                 if (enough()) break
             }
-            if (visibleMatches().isNotEmpty()) return@withContext result()
+            if (enough()) return@withContext result()
 
+            // Finish exact matches across both sources before appending shorter vowel tiers.
+            // Rebuild the same ordered sequence before slicing each requested page.
             val fallbacks = keys.flatMap(IpaSearchKeys::assonanceFallbacks).distinct()
                 .sortedByDescending { it.split(' ').size }
             for (prefix in fallbacks) {
