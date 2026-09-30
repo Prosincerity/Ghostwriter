@@ -35,6 +35,15 @@ coordinates project files in app-specific external storage. Each project
 contains lyric snapshots, `project.json` metadata, an optional copied beat,
 and its waveform cache. Metadata uses Android's `org.json`.
 
+Global lyric-pad typography is stored with those preferences. `LyricTextSettings`
+keeps defaults and bounds; the editor and Settings preview share a Compose text
+style mapping. On Android 10 and later, `SystemFonts.getAvailableFonts()` discovers
+device font files off the UI thread. Font selections preserve collection face
+indices and variation settings in SharedPreferences. Generic platform families
+remain available on older Android versions; unavailable saved files fall back to
+monospace. Sizes and letter spacing use scaled pixels, and line height is relative
+to the scaled font size.
+
 `EditorScreen.kt` owns persistence; `LyricsNotepad.kt` owns the editing surface.
 Lyrics are saved manually, periodically, and on editor exit. Loading selects
 the newest readable manual or autosave snapshot. Storage mutations are

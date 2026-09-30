@@ -9,6 +9,11 @@ to a release date or implementation order.
   full-screen Material 3 editor with dark-theme support.
 - **Local persistence:** manual saves and configurable periodic autosave
   with rotating backups.
+- **Lyric-pad typography:** choose a device font discovered through Android's
+  system font API (Android 10+), or a generic platform family, plus font size,
+  relative line height, letter spacing, and alignment in Settings, with a live
+  preview. Line height (0.5–4×) and letter spacing (−2–10 sp) use sliders.
+  Choices apply across projects and follow Android's font scaling.
 - **Project information:** musical key, tempo, time signature, notes,
   beat references, and timestamps stored with each project.
 - **Offline beat playback:** import a beat into a project; play, pause,

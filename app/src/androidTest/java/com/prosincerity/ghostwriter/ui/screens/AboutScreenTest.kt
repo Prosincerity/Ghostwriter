@@ -5,6 +5,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.Assert.assertEquals
@@ -77,7 +78,7 @@ class AboutScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("About Ghostwriter").performClick()
+        composeRule.onNodeWithText("About Ghostwriter").performScrollTo().performClick()
         composeRule.runOnIdle { assertTrue(openedAbout) }
     }
 }
