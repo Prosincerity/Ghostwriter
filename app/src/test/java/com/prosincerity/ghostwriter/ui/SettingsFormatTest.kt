@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.ui
 import com.prosincerity.ghostwriter.data.Settings
 import com.prosincerity.ghostwriter.ui.components.formatPlaybackTime
 import com.prosincerity.ghostwriter.ui.screens.formatInterval
+import com.prosincerity.ghostwriter.ui.screens.formatTypographyNumber
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -35,5 +36,17 @@ class SettingsFormatTest {
     fun settingsConstants_areValid() {
         assertTrue(Settings.INTERVAL_OPTIONS_SECONDS.contains(Settings.DEFAULT_INTERVAL_SECONDS))
         assertTrue(Settings.COUNT_OPTIONS.contains(Settings.DEFAULT_AUTOSAVE_COUNT))
+    }
+
+    @Test
+    fun typographyNumbers_keepFractionalSpacingWithoutUnnecessaryZeros() {
+        assertEquals("0", formatTypographyNumber(0f))
+        assertEquals("2", formatTypographyNumber(2f))
+        assertEquals("-0.5", formatTypographyNumber(-0.5f))
+        assertEquals("1.15", formatTypographyNumber(1.15f))
+        assertEquals("0.25", formatTypographyNumber(0.25f))
+        assertEquals("1.23", formatTypographyNumber(1.2345f))
+        assertEquals("7.78", formatTypographyNumber(7.777f))
+        assertEquals("10", formatTypographyNumber(10f))
     }
 }

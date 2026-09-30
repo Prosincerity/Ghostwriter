@@ -2,17 +2,26 @@ package com.prosincerity.ghostwriter
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.Settings
 import com.prosincerity.ghostwriter.ui.screens.GHOSTWRITER_REPOSITORY_URL
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -34,7 +43,7 @@ class MainActivityTest {
         composeRule.onNodeWithContentDescription("Settings").performClick()
         composeRule.onNodeWithText("Settings").assertExists()
 
-        composeRule.onNodeWithText("About Ghostwriter").performClick()
+        composeRule.onNodeWithText("About Ghostwriter").performScrollTo().performClick()
         composeRule.onNodeWithText("About").assertExists()
 
         var launchedIntent: Intent? = null
@@ -57,7 +66,7 @@ class MainActivityTest {
     @Test
     fun settings_dictionaryDownloadsOpensListAndReturns() {
         composeRule.onNodeWithContentDescription("Settings").performClick()
-        composeRule.onNodeWithText("Download Dictionaries").performClick()
+        composeRule.onNodeWithText("Download Dictionaries").performScrollTo().performClick()
         composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.").assertExists()
         composeRule.onNode(
             hasContentDescription("Download Wiktionary Kaikki for English") or
@@ -69,6 +78,40 @@ class MainActivityTest {
         ).assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("About Ghostwriter").assertExists()
+    }
+
+    @Test
+    fun changingTypographyInSettings_appliesWhenReturningToExistingLyrics() {
+        val projectTitle = uniqueProjectTitle("Typography")
+        val originalSettings = Settings.getLyricTextSettings(composeRule.activity)
+        try {
+            Settings.setLyricTextSettings(composeRule.activity, LyricTextSettings())
+            createProject(projectTitle)
+            composeRule.onNode(hasSetTextAction()).performTextInput("Keep these lyrics")
+            composeRule.onNodeWithContentDescription("Settings").performClick()
+            composeRule.onNodeWithContentDescription("Font family").performScrollTo().performClick()
+            composeRule.onNodeWithText("Serif").performClick()
+            composeRule.onNodeWithContentDescription("Font size").performScrollTo().performClick()
+            composeRule.onNodeWithText("24 sp").performClick()
+            composeRule.onNodeWithContentDescription("Text alignment").performScrollTo().performClick()
+            composeRule.onNodeWithText("Center").performClick()
+            composeRule.onNodeWithContentDescription("Back").performClick()
+
+            composeRule.onNodeWithText("Keep these lyrics").assertExists()
+            val results = mutableListOf<TextLayoutResult>()
+            composeRule.onNode(hasSetTextAction()).performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
+                it(results)
+            }
+            val style = results.single().layoutInput.style
+            assertEquals(FontFamily.Serif, style.fontFamily)
+            assertEquals(24.sp, style.fontSize)
+            assertEquals(TextAlign.Center, style.textAlign)
+            composeRule.onNodeWithContentDescription("Back").performClick()
+            waitUntilTextExists(projectTitle)
+        } finally {
+            Settings.setLyricTextSettings(composeRule.activity, originalSettings)
+            ProjectStorage.deleteProject(composeRule.activity, projectTitle)
+        }
     }
 
     @Test

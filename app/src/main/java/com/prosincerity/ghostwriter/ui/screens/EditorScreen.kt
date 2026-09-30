@@ -92,6 +92,7 @@ fun EditorScreen(
     val playback = rememberBeatPlayback(projectTitle) ?: return
 
     val context = LocalContext.current
+    val lyricTextSettings = remember(context) { AppSettings.getLyricTextSettings(context) }
     val coroutineScope = rememberCoroutineScope()
     val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
 
@@ -522,6 +523,7 @@ fun EditorScreen(
             LyricsNotepad(
                 lyrics = lyrics,
                 onLyricsChange = { lyrics = it },
+                textSettings = lyricTextSettings,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
