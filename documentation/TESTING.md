@@ -1,39 +1,74 @@
-# Testing and coverage
+# Testing
 
-Ghostwriter has JUnit 4 tests in `app/src/test/` and Android instrumented
-tests in `app/src/androidTest/` using AndroidJUnitRunner, Espresso, and
-Compose UI testing. Instrumented tests run on an AOSP device or emulator
-without Google Play Services. Test totals change as coverage grows.
+## Checks without a device
 
-## Regular checks
+Run from the repository root:
 
-From the repository root:
-
-```bash
+```sh
 ./gradlew test lint assembleDebugAndroidTest
 ```
 
-Local reports appear under `app/build/reports/tests/`. Connected test reports
-appear under `app/build/reports/androidTests/connected/`. Run the connected
-suite from Android Studio or with `./gradlew connectedDebugAndroidTest` when a
-device is available.
+This runs JVM tests and lint, then builds the instrumented test APK without
+running it. JVM reports are under `app/build/reports/tests/`; lint reports are
+under `app/build/reports/`. Use the generated reports for current results
+rather than maintaining test or warning totals in documentation.
 
-## Coverage
+## Android tests
 
-Debug builds enable JaCoCo for local and instrumented tests:
+The maintainer runs instrumented tests from Android Studio on an emulator or
+device. Agent work should compile these tests and leave execution to the
+maintainer, as required by [AGENTS.md](../AGENTS.md).
 
-| Report | Gradle task | HTML output |
+The equivalent terminal command for the maintainer is:
+
+```sh
+./gradlew connectedDebugAndroidTest
+```
+
+Tests use AndroidJUnitRunner, Espresso, and Compose UI testing and can run
+without Google Play Services. Reports appear under
+`app/build/reports/androidTests/connected/`. For a filtered run, confirm the
+expected classes appear in the generated XML before accepting the result.
+
+## Coverage and regression guidance
+
+- **JVM tests** (`app/src/test/`) cover project storage, metadata, playback
+  state, waveform calculations, input normalization, IPA keys, search-stage
+  ordering, filtering, and pagination. Dictionary search tests exercise the
+  production loop through an offline row adapter. Archive tests cover gzip
+  output, progress, failures, and cancellation.
+- **Android tests** (`app/src/androidTest/`) cover SQLite installation and
+  lookup, staging cleanup, real native IPA, playback, and Compose screens.
+  Dictionary UI tests cover input changes, stale errors, and superseded
+  searches. An integration test exercises real JNI after a database miss.
+
+Use small, deterministic fixtures for matching and ordering regressions.
+Keep pure logic testable on the JVM, and reserve Android tests for framework,
+native, and UI behavior. Test coroutine ordering with controlled dispatchers
+and explicit synchronization rather than timing sleeps. Compose test
+resumptions must respect the UI thread.
+
+The maintainer has confirmed the Android suite passes with airplane mode
+enabled. This includes SQLite fixtures, native IPA checks for supported
+languages, the fallback integration, and About notices. It does not replace
+full release-dictionary smoke tests, a timed search benchmark, or native
+page-size compatibility checks. Repeat the [release checks](RELEASING.md)
+for each distributed build.
+
+## Coverage reports
+
+Debug builds enable JaCoCo for JVM and instrumented tests.
+
+| Report | Command | HTML output |
 | --- | --- | --- |
-| Local tests | `./gradlew :app:createDebugUnitTestCoverageReport` | `app/build/reports/coverage/test/debug/index.html` |
-| Instrumented tests | `./gradlew :app:createDebugAndroidTestCoverageReport` | `app/build/reports/coverage/androidTest/debug/connected/index.html` |
+| JVM | `./gradlew :app:createDebugUnitTestCoverageReport` | `app/build/reports/coverage/test/debug/index.html` |
+| Android | `./gradlew :app:createDebugAndroidTestCoverageReport` | `app/build/reports/coverage/androidTest/debug/connected/index.html` |
 | Combined | `./gradlew :app:createCoverageReport` | `app/build/reports/code_coverage_html_report/global/index.html` |
 
-The instrumented and combined reports require a connected device or running
-emulator. The combined task reruns both suites with coverage enabled. Android
-Gradle Plugin may warn that `reportAggregationSupport` is experimental.
-No minimum coverage threshold is enforced.
+Android and combined coverage require a running emulator or connected device
+and are maintainer tasks. The combined task reruns both suites. No minimum
+coverage threshold is enforced.
 
-If Gradle cannot see a running emulator, check `adb devices` or launch the
-coverage task from Android Studio's Gradle tool window. A failed test run
-does not produce a complete combined report. All generated reports live in
-`app/build/` and can be recreated.
+If Gradle cannot see the emulator, check `adb devices` or launch the task from
+Android Studio's Gradle tool window. Failed runs do not produce complete
+combined reports. Generated reports stay in `app/build/` and can be recreated.
