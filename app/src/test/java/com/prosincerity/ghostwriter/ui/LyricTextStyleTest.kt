@@ -11,6 +11,7 @@ import com.prosincerity.ghostwriter.data.LyricTextAlignment
 import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.data.SystemFontFile
 import com.prosincerity.ghostwriter.ui.components.toTextStyle
+import com.prosincerity.ghostwriter.ui.theme.GhostTypography
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -57,7 +58,10 @@ class LyricTextStyleTest {
             LyricFontFamily.CURSIVE to FontFamily.Cursive,
         )
         for ((choice, family) in expected) {
-            assertEquals(family, LyricTextSettings(fontFamily = choice).toTextStyle(TextStyle()).fontFamily)
+            assertEquals(
+                family,
+                LyricTextSettings(fontFamily = choice).toTextStyle(GhostTypography.bodyLarge).fontFamily,
+            )
         }
     }
 

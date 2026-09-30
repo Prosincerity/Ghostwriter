@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -32,7 +33,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -74,7 +74,7 @@ fun WaveformView(
     val markerLabelPaddingPx = with(density) { 4.dp.toPx() }
     val markerLabelStyle = TextStyle(
         color = GhostSecondary,
-        fontFamily = FontFamily.Monospace,
+        fontFamily = MaterialTheme.typography.labelSmall.fontFamily,
         fontSize = 10.sp,
     )
     val latestViewport = rememberUpdatedState(viewport)

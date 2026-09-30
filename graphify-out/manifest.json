@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt": {
-    "mtime": 1789756503.9554322,
-    "seen": 1789756533.568302,
-    "ast_hash": "f5d4770741a0a3ffc30fe5c2e6c4487c",
+    "mtime": 1790788604.677453,
+    "seen": 1790788686.5330377,
+    "ast_hash": "45af48e816d30113b0c58780882cdf16",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt": {
@@ -102,10 +102,10 @@
     "semantic_hash": "4feb022cb7157e35589c432e0a653f68"
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Type.kt": {
-    "mtime": 1788796499.2028375,
-    "seen": 1788970343.61778,
-    "ast_hash": "fd5fa4d5e4c33b40c18b5f99e707948a",
-    "semantic_hash": "fd5fa4d5e4c33b40c18b5f99e707948a"
+    "mtime": 1790788604.5664544,
+    "seen": 1790788686.533064,
+    "ast_hash": "e6a8864cb7e523a22435e675b4f7ab18",
+    "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectMetadataTest.kt": {
     "mtime": 1789211420.7431269,
@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790787314.0326786,
-    "seen": 1790787507.3777437,
-    "ast_hash": "e3a3f33d4c19355605341016b91dea70",
+    "mtime": 1790788604.9874492,
+    "seen": 1790788686.5333881,
+    "ast_hash": "ae2b35bdad3a9bb4a7641bb48af0ec29",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -3780,9 +3780,9 @@
     "semantic_hash": ""
   },
   "THIRD_PARTY_LICENSES.md": {
-    "mtime": 1790777396.1523333,
-    "seen": 1790784015.4236488,
-    "ast_hash": "efb788a528da147c04d024735093cb67",
+    "mtime": 1790788676.9975438,
+    "seen": 1790788686.5333607,
+    "ast_hash": "41df4aea20b851a828a749c09e4c2db8",
     "semantic_hash": ""
   },
   "app/src/main/assets/licenses/GPL-3.0-or-later.txt": {
@@ -3792,9 +3792,9 @@
     "semantic_hash": ""
   },
   "app/src/main/assets/licenses/THIRD_PARTY_LICENSES.md": {
-    "mtime": 1790777396.159088,
-    "seen": 1790784015.42367,
-    "ast_hash": "efb788a528da147c04d024735093cb67",
+    "mtime": 1790788677.30254,
+    "seen": 1790788686.5333798,
+    "ast_hash": "41df4aea20b851a828a749c09e4c2db8",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionarySearchInstrumentedTest.kt": {
@@ -4056,9 +4056,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/ui/LyricTextStyleTest.kt": {
-    "mtime": 1790787467.6687472,
-    "seen": 1790787507.3772483,
-    "ast_hash": "fa7642f718c658a8b3085b6c90ee36ce",
+    "mtime": 1790788604.8894503,
+    "seen": 1790788686.5331028,
+    "ast_hash": "cf994b3a488256ffe8d027a3f0710925",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/SystemFontCatalogTest.kt": {
@@ -4083,6 +4083,18 @@
     "mtime": 1790787626.2247539,
     "seen": 1790787646.339455,
     "ast_hash": "8b663dd8e32c55e365958c36ad3f1418",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/ui/GhostTypographyTest.kt": {
+    "mtime": 1790788604.7894516,
+    "seen": 1790788686.5331,
+    "ast_hash": "eae66bc7c9ea9402b1b9efcb74e71e58",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/Roboto-Apache-2.0.txt": {
+    "mtime": 1790788481.2102113,
+    "seen": 1790788686.5333688,
+    "ast_hash": "86d3f3a95c324c9479bd8986968f4327",
     "semantic_hash": ""
   }
 }
