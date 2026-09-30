@@ -35,10 +35,20 @@ class LyricFontTest {
         val invalidValues = listOf(
             null, "REMOVED_FONT", "{", "{}", invalidFont.toPreferenceValue(),
             SystemFontFile("").toPreferenceValue(),
+            SystemFontFile("   ").toPreferenceValue(),
+            SystemFontFile("/test.ttf", weight = 0).toPreferenceValue(),
             SystemFontFile("/test.ttf", weight = 1001).toPreferenceValue(),
         )
         for (value in invalidValues) {
             assertEquals(LyricFontFamily.MONOSPACE, lyricFontFromPreference(value))
+        }
+    }
+
+    @Test
+    fun preferences_acceptBothWeightLimitsAndPreserveLargeCollectionIndices() {
+        for (weight in listOf(1, 1000)) {
+            val font = SystemFontFile("/fonts/Collection.ttc", ttcIndex = 99, weight = weight)
+            assertEquals(font, lyricFontFromPreference(font.toPreferenceValue()))
         }
     }
 

@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.data
 
 import android.graphics.Typeface
+import android.graphics.fonts.Font
 import android.graphics.fonts.FontStyle
 import android.graphics.fonts.FontVariationAxis
 import android.graphics.fonts.SystemFonts
@@ -9,10 +10,10 @@ import java.io.File
 
 /** Uses public Android APIs only. Call discovery off the UI thread. */
 internal object SystemFontCatalog {
-    fun availableFonts(): List<LyricFont> {
+    fun availableFonts(loadFonts: (() -> Set<Font>)? = null): List<LyricFont> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return LyricFontFamily.entries
         return try {
-            systemFontOptions(SystemFonts.getAvailableFonts().mapNotNull { font ->
+            systemFontOptions((loadFonts?.invoke() ?: SystemFonts.getAvailableFonts()).mapNotNull { font ->
                 val file = font.file?.takeIf { it.isFile && it.canRead() } ?: return@mapNotNull null
                 SystemFontFile(
                     path = file.absolutePath,

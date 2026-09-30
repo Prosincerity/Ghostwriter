@@ -20,6 +20,33 @@ class MarkerLoopTest {
     private fun start(position: Long) = WaveformMarker("Start", position, MarkerLoopRole.START)
     private fun end(position: Long) = WaveformMarker("End", position, MarkerLoopRole.END)
 
+    @Test fun frameRange_rejectsInvalidAudioDimensionsAndMissingRoles() {
+        for (rate in listOf(0, -1)) {
+            assertNull(MarkerLoopFrames.fromMarkers(listOf(start(0)), rate, 48000))
+        }
+        for (frames in listOf(0L, -1L)) {
+            assertNull(MarkerLoopFrames.fromMarkers(listOf(start(0)), 48000, frames))
+        }
+        assertNull(MarkerLoopFrames.fromMarkers(emptyList(), 48000, 48000))
+        assertNull(MarkerLoopFrames.fromMarkers(listOf(WaveformMarker("Verse", 10)), 48000, 48000))
+    }
+
+    @Test fun frameRange_rejectsReversedNegativeAndPhysicalEndStarts() {
+        for (markers in listOf(
+            listOf(start(-1), end(100)), listOf(start(100), end(50)),
+            listOf(start(1000)), listOf(end(0)), listOf(end(-1)),
+        )) {
+            assertNull(MarkerLoopFrames.fromMarkers(markers, 48000, 48000))
+        }
+    }
+
+    @Test fun frameRange_preservesSubMillisecondLoopsAndRescalesSavedFrames() {
+        val start = WaveformMarker("Start", 1000, MarkerLoopRole.START, 48001, 48000)
+        val end = WaveformMarker("End", 1000, MarkerLoopRole.END, 48002, 48000)
+        assertEquals(MarkerLoopFrames(48001, 48002), MarkerLoopFrames.fromMarkers(listOf(start, end), 48000, 96000))
+        assertEquals(MarkerLoopFrames(44100, 44101), MarkerLoopFrames.fromMarkers(listOf(start, end), 44100, 88200))
+    }
+
     @Test fun range_usesExplicitBoundariesAndIgnoresOrdinaryMarkers() {
         assertEquals(MarkerLoopRange(2000, 6000), MarkerLoopRange.fromMarkers(
             listOf(end(6000), WaveformMarker("Verse", 1000), start(2000)), 10000,

@@ -1,12 +1,16 @@
 package com.prosincerity.ghostwriter.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -18,6 +22,8 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -72,34 +78,90 @@ class WaveformViewTest {
         composeRule.runOnIdle { assertTrue(markers.value[1].positionMs > 5500) }
     }
 
+    @Test
+    fun labelTap_editsWhileTapBelowLabelSeeksToMarker() {
+        val marker = marker("Long marker label", 3000, MarkerLoopRole.START)
+        val markers = mutableStateOf(listOf(marker))
+        var clicked: WaveformMarker? = null
+        val seeks = mutableListOf<Long>()
+        renderWaveform(markers, onSeek = { seeks += it }, onClick = { clicked = it })
+        assertMarkerBoundsContainLine(marker)
+        composeRule.onNodeWithTag("Waveform marker Long marker label").performTouchInput {
+            click(Offset(right - 1f, height * 0.05f))
+        }
+        composeRule.runOnIdle {
+            assertSame(marker, clicked)
+            assertTrue(seeks.isEmpty())
+            clicked = null
+        }
+        composeRule.onNodeWithTag("Waveform marker Long marker label").performTouchInput {
+            click(center)
+        }
+        composeRule.runOnIdle {
+            assertNull(clicked)
+            assertEquals(listOf(3000L), seeks)
+        }
+    }
+
+    @Test
+    fun labelTap_afterNeighborClipsLeftSideStillEditsCorrectMarker() {
+        val start = marker("Start", 4000, MarkerLoopRole.START)
+        val end = marker("End label", 4300, MarkerLoopRole.END)
+        val markers = mutableStateOf(listOf(start, end))
+        var clicked: WaveformMarker? = null
+        renderWaveform(markers) { clicked = it }
+        assertMarkerBoundsContainLine(start)
+        assertMarkerBoundsContainLine(end)
+        composeRule.onNodeWithTag("Waveform marker End label").performTouchInput {
+            click(Offset(right - 1f, height * 0.05f))
+        }
+        composeRule.runOnIdle { assertSame(end, clicked) }
+    }
+
+    private fun assertMarkerBoundsContainLine(marker: WaveformMarker) {
+        val waveformBounds = composeRule.onNodeWithTag("Waveform").fetchSemanticsNode().boundsInRoot
+        val markerBounds = composeRule.onNodeWithTag("Waveform marker ${marker.label}")
+            .fetchSemanticsNode().boundsInRoot
+        val lineX = waveformBounds.left + waveformBounds.width * marker.positionMs.toFloat() / DURATION_MS
+        assertTrue(
+            "${marker.label} semantics $markerBounds must contain its line at x=$lineX",
+            markerBounds.contains(Offset(lineX, waveformBounds.center.y)),
+        )
+    }
+
     private fun renderWaveform(
         markers: MutableState<List<WaveformMarker>>,
+        onSeek: (Long) -> Unit = {},
         onClick: (WaveformMarker) -> Unit = {},
     ) {
         val viewport = mutableStateOf(WaveformViewport())
         composeRule.setContent {
             GhostwriterTheme {
-                WaveformView(
-                    amplitudes = intArrayOf(1000, 2000, 1000),
-                    durationMs = DURATION_MS,
-                    currentPositionMs = 0,
-                    markers = markers.value,
-                    onSeekFinished = {},
-                    onAddMarker = {},
-                    onMarkerClick = onClick,
-                    onMarkerMoveFinished = { marker, position ->
-                        // Use the editor's reference lookup and list normalization.
-                        val index = markers.value.indexOfFirst { it === marker }
-                        if (index >= 0) {
-                            markers.value = markers.value.toMutableList().apply {
-                                this[index] = marker.atPositionMs(position, SAMPLE_RATE)
-                            }.map { it.withSampleRate(SAMPLE_RATE) }
-                        }
-                    },
-                    viewport = viewport.value,
-                    onViewportChange = { viewport.value = it },
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                )
+                // Keep the label at the top of the waveform below system bars
+                // in the edge-to-edge test activity, as in the editor's Scaffold.
+                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                    WaveformView(
+                        amplitudes = intArrayOf(1000, 2000, 1000),
+                        durationMs = DURATION_MS,
+                        currentPositionMs = 0,
+                        markers = markers.value,
+                        onSeekFinished = onSeek,
+                        onAddMarker = {},
+                        onMarkerClick = onClick,
+                        onMarkerMoveFinished = { marker, position ->
+                            // Use the editor's reference lookup and list normalization.
+                            val index = markers.value.indexOfFirst { it === marker }
+                            if (index >= 0) {
+                                markers.value = markers.value.toMutableList().apply {
+                                    this[index] = marker.atPositionMs(position, SAMPLE_RATE)
+                                }.map { it.withSampleRate(SAMPLE_RATE) }
+                            }
+                        },
+                        viewport = viewport.value,
+                        onViewportChange = { viewport.value = it },
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                    )
+                }
             }
         }
     }

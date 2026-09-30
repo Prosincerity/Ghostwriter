@@ -9,9 +9,12 @@ import android.media.session.PlaybackState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import kotlinx.coroutines.test.StandardTestDispatcher
 import androidx.compose.ui.test.longClick
@@ -27,6 +30,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
+import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
@@ -258,6 +263,47 @@ class EditorScreenTest {
             }
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
+        }
+    }
+
+    @Test
+    fun openingLegacyLoop_migratesFramesRejectsInvalidMovesAndAcceptsRecovery() {
+        val title = uniqueProjectTitle("Legacy loop")
+        val visible = mutableStateOf(true)
+        val directory = createAssignedBeat(title, durationMs = 5000, cacheWaveform = true)
+        val markers = listOf(
+            WaveformMarker("Start", 1000, MarkerLoopRole.START),
+            WaveformMarker("End", 4000, MarkerLoopRole.END),
+        )
+        assertTrue(ProjectStorage.saveMetadata(directory, ProjectStorage.loadMetadata(directory, title).copy(markers = markers)))
+        try {
+            setEditorContent(title, visible)
+            waitUntilTextExists("editor-fixture")
+            waitUntilTextExists("0:00/0:05")
+            composeRule.waitUntil(10000) {
+                val saved = ProjectStorage.loadMetadata(directory, title).markers
+                saved.size == 2 && saved.all { it.sampleRate == 8000 }
+            }
+            val migrated = ProjectStorage.loadMetadata(directory, title).markers
+            assertEquals(listOf(8000L, 32000L), migrated.map { it.frameIndex })
+            for ((label, invalidPosition) in listOf("Start" to 4000f, "Start" to 4500f, "End" to 500f)) {
+                composeRule.onNodeWithTag("Waveform marker $label").performSemanticsAction(SemanticsActions.SetProgress) {
+                    assertTrue(it(invalidPosition))
+                }
+                composeRule.onNodeWithTag("Waveform marker $label").assert(hasProgressBarRangeInfo(
+                    ProgressBarRangeInfo(migrated.first { it.label == label }.positionMs.toFloat(), 0f..5000f),
+                ))
+                composeRule.runOnIdle { assertEquals(migrated, ProjectStorage.loadMetadata(directory, title).markers) }
+            }
+            composeRule.onNodeWithTag("Waveform marker Start").performSemanticsAction(SemanticsActions.SetProgress) {
+                assertTrue(it(2000f))
+            }
+            composeRule.waitUntil(5000) {
+                ProjectStorage.loadMetadata(directory, title).markers.first().frameIndex == 16000L
+            }
+            assertEquals(migrated[1], ProjectStorage.loadMetadata(directory, title).markers[1])
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
         }
     }
 
