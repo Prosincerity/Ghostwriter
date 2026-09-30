@@ -9,6 +9,8 @@ import android.media.session.PlaybackState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
@@ -36,6 +38,8 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class EditorScreenTest {
@@ -283,6 +287,56 @@ class EditorScreenTest {
     }
 
     @Test
+    fun processingBeat_disablesDictionaryUntilWaveformIsReady() {
+        val projectTitle = uniqueProjectTitle("Editor dictionary processing")
+        val showEditor = mutableStateOf(true)
+        var openedDictionary = false
+        val storageLocked = CountDownLatch(1)
+        val releaseStorage = CountDownLatch(1)
+        var storageThread: Thread? = null
+        val projectDir = createAssignedBeat(
+            projectTitle, LONG_TEST_BEAT_DURATION_MS, cacheWaveform = false,
+        )
+
+        try {
+            setEditorContent(projectTitle, showEditor) { openedDictionary = true }
+            waitUntilTextExists("Long audio file")
+
+            // Hold the storage monitor used at extraction startup so the loading
+            // state can be checked without racing the decoder on faster devices.
+            storageThread = Thread {
+                synchronized(ProjectStorage) {
+                    storageLocked.countDown()
+                    if (releaseStorage.await(30, TimeUnit.SECONDS)) {
+                        // Supply the cache before extraction resumes to keep this
+                        // navigation test independent of decoder speed.
+                        ProjectStorage.saveCachedWaveform(
+                            projectDir,
+                            WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+                            cachedWaveform(),
+                        )
+                    }
+                }
+            }.apply { start() }
+            assertTrue(storageLocked.await(5, TimeUnit.SECONDS))
+            composeRule.onNodeWithText("Process anyway").performClick()
+            composeRule.onNodeWithContentDescription("Dictionary").assertIsNotEnabled()
+                .performClick()
+            composeRule.runOnIdle { assertFalse(openedDictionary) }
+
+            releaseStorage.countDown()
+            waitUntilTextExists("editor-fixture")
+            composeRule.onNodeWithContentDescription("Dictionary").assertIsEnabled()
+                .performClick()
+            composeRule.runOnIdle { assertTrue(openedDictionary) }
+        } finally {
+            releaseStorage.countDown()
+            storageThread?.join(5_000)
+            disposeEditorAndDeleteProject(showEditor, projectTitle)
+        }
+    }
+
+    @Test
     fun longBeatWarning_cancelThenApprove_usesCachedWaveform() {
         val projectTitle = uniqueProjectTitle("Editor long beat")
         val showEditor = mutableStateOf(true)
@@ -320,6 +374,7 @@ class EditorScreenTest {
     private fun setEditorContent(
         projectTitle: String,
         showEditor: MutableState<Boolean>,
+        onOpenDictionary: () -> Unit = {},
     ) {
         composeRule.setContent {
             if (showEditor.value) {
@@ -328,6 +383,7 @@ class EditorScreenTest {
                         projectTitle = projectTitle,
                         onBack = { showEditor.value = false },
                         onOpenSettings = {},
+                        onOpenDictionary = onOpenDictionary,
                     )
                 }
             }

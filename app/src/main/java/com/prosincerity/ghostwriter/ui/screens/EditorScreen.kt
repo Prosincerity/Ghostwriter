@@ -416,7 +416,10 @@ fun EditorScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onOpenDictionary) {
+                    IconButton(
+                        onClick = onOpenDictionary,
+                        enabled = !isImporting && !isReassigningBeat && !isWaveformLoading,
+                    ) {
                         Icon(Icons.Filled.Book, contentDescription = "Dictionary")
                     }
                     IconButton(
