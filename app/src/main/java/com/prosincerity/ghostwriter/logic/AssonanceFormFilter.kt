@@ -6,7 +6,11 @@ import java.util.Locale
 internal object AssonanceFormFilter {
     data class Entry(val word: String, val ipa: String)
 
-    fun excludedWords(results: List<Entry>, language: String): Set<String> {
+    fun excludedWords(
+        results: List<Entry>,
+        language: String,
+        preservedWords: Set<String> = emptySet(),
+    ): Set<String> {
         if (language != "de" && language != "en") return emptySet()
         val locale = Locale.forLanguageTag(language)
         val pronounced = results.mapIndexedNotNull { index, entry ->
@@ -56,6 +60,12 @@ internal object AssonanceFormFilter {
         val families = pronounced.groupBy { representative(it.index) }
         val excluded = mutableSetOf<String>()
         for (family in families.values) {
+            // Full pages have already selected these forms. New rows may join
+            // families, but must not remove a word from an earlier page.
+            if (family.any { it.entry.word in preservedWords }) {
+                family.filter { it.entry.word !in preservedWords }.forEach { excluded += it.entry.word }
+                continue
+            }
             val kept = preferredForm(family, language, exactExtensions)
             family.filter { it !== kept }.forEach { excluded += it.entry.word }
         }

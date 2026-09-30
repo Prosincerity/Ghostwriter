@@ -117,3 +117,28 @@ the existing realistic-database benchmark remain open.
 `graphify update .` refreshed the code graph without API calls. Graphify's
 parser reported partial extraction of 42 upstream files; this is a graph
 coverage limitation, separate from the passing native build.
+
+## Bug hunt on 2026-09-30
+
+Reviewed application additions from `dev` (`534a240`) through `rhyme-detection`
+(`ad72706`). Fixed two confirmed assonance search bugs:
+
+- Exact keys were nested inside source traversal, so a large longer-key
+  Wiktionary tier could hide shorter-key eSpeak matches. Traverse each exact
+  tier across both sources before moving to the next key. Wiktionary still
+  wins within the same tier.
+- A later infinitive could replace a form from an earlier page, skipping
+  another word when subsequent pages were sliced. Preserve selected forms
+  after full pages acquire a lookahead match, at deterministic batch
+  checkpoints. Later family members remain filtered; incomplete pages still
+  prefer infinitives normally. Scans retain their existing bounds.
+
+Added a small SQLite adapter so JVM tests exercise the production search
+loop with offline rows. No new dependencies. Six tests cover both bugs,
+cross-source and same-source batch boundaries, direct/repeated page requests,
+infinitive selection before page completion, and same-tier source precedence.
+With the original ordering and pagination restored, three regressions failed
+and three controls passed. With the fixes, `./gradlew test lint
+assembleDebugAndroidTest` passed: 202 JVM tests, no failures/errors/skips,
+and lint with no errors and the same 14 warnings. Instrumented tests were
+compiled but not run; device validation remains with the maintainer.
