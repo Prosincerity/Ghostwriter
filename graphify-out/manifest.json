@@ -6,9 +6,9 @@
     "semantic_hash": "005ac71c84af2cae38e255e2b9de2411"
   },
   "app/build.gradle.kts": {
-    "mtime": 1790192068.1136131,
-    "seen": 1790192587.2423723,
-    "ast_hash": "1327f4ebb68094818eee5467103fab34",
+    "mtime": 1790776751.498438,
+    "seen": 1790776769.3631828,
+    "ast_hash": "09b77dfa29c3f6cc5f6247e7ef4c114b",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ExampleInstrumentedTest.kt": {
@@ -228,27 +228,27 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1790193920.2093291,
-    "seen": 1790194097.3933656,
-    "ast_hash": "77c2a8547a8b7c2af34a50de944c255c",
+    "mtime": 1790776501.8905175,
+    "seen": 1790776769.3642979,
+    "ast_hash": "2d5d1377986fcc99eb698cbf846adeec",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
-    "mtime": 1790691342.5909178,
-    "seen": 1790691698.3460937,
-    "ast_hash": "21b90fca576c0a4e405d508d4223ad81",
+    "mtime": 1790776605.675271,
+    "seen": 1790776769.3643312,
+    "ast_hash": "11c2e64f12c5e757f92c9e8fb232d4de",
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790774518.292513,
-    "seen": 1790774679.4814792,
-    "ast_hash": "b490aa6fa3e36abcbbc2bbf281330fee",
+    "mtime": 1790776501.8896472,
+    "seen": 1790776769.364335,
+    "ast_hash": "d6554627d56df7006a03536a429681b4",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
-    "mtime": 1789220217.1806953,
-    "seen": 1789754847.3135076,
-    "ast_hash": "ff4d2d1ca613f2a8ec518f73b1ee42f7",
+    "mtime": 1790776501.8900533,
+    "seen": 1790776769.3643441,
+    "ast_hash": "651843f808331440092d55499e3bc969",
     "semantic_hash": ""
   },
   "app/src/main/ic_launcher-playstore.png": {
@@ -408,9 +408,9 @@
     "semantic_hash": ""
   },
   "documentation/TESTING.md": {
-    "mtime": 1790188627.924052,
-    "seen": 1790188637.570912,
-    "ast_hash": "4b12c8fd535945362f75405583a7cfa9",
+    "mtime": 1790776501.890304,
+    "seen": 1790776769.364348,
+    "ast_hash": "69eb35092607b87eb307d5584dab48d4",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/MainActivityTest.kt": {
@@ -507,12 +507,6 @@
     "mtime": 1790769130.9062417,
     "seen": 1790769545.3979251,
     "ast_hash": "53208cc249eae1358a8775f0131e0a5b",
-    "semantic_hash": ""
-  },
-  "documentation/RHYME_DETECTION_PLAN.md": {
-    "mtime": 1790774670.5225992,
-    "seen": 1790774679.4814858,
-    "ast_hash": "162112da77cfaf21ad7c421aca43bd8d",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
@@ -1560,9 +1554,9 @@
     "semantic_hash": ""
   },
   "documentation/ESPEAK_NATIVE.md": {
-    "mtime": 1790774518.4035115,
-    "seen": 1790774679.4814754,
-    "ast_hash": "0c98baeab7164dcedbf188039ef2fc46",
+    "mtime": 1790776605.7752697,
+    "seen": 1790776769.364328,
+    "ast_hash": "fc5e947d1736a6d0eda4f3bb2bdd7f1d",
     "semantic_hash": ""
   },
   "third_party/espeak-ng/.github/dependabot.yml": {
@@ -3881,12 +3875,6 @@
     "ast_hash": "90872ca01c05dd7d55fd6699983fe005",
     "semantic_hash": ""
   },
-  "documentation/RHYME_BRANCH_REVIEW.md": {
-    "mtime": 1790772411.7579956,
-    "seen": 1790772421.3828344,
-    "ast_hash": "38ce935420fc56ffa80827328a1fd4f8",
-    "semantic_hash": ""
-  },
   "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryQueries.kt": {
     "mtime": 1790423630.3114686,
     "seen": 1790423682.3762052,
@@ -4026,9 +4014,15 @@
     "semantic_hash": ""
   },
   "documentation/RELEASING.md": {
-    "mtime": 1790774670.4136004,
-    "seen": 1790774679.481482,
-    "ast_hash": "350cd0be1bff698110942dc1dd6c1c79",
+    "mtime": 1790776501.8904088,
+    "seen": 1790776769.3643394,
+    "ast_hash": "b6e18039bdd282fa4138cd6fc4de2ed5",
+    "semantic_hash": ""
+  },
+  "documentation/DICTIONARIES.md": {
+    "mtime": 1790776605.5742724,
+    "seen": 1790776769.3643236,
+    "ast_hash": "3a52275b93afe03845e2717d02161703",
     "semantic_hash": ""
   }
 }

@@ -1,47 +1,68 @@
-# Release verification and corresponding source
+# Releasing
 
-Build releases from a clean, tagged commit after merging the branch. Initialize
-the recorded native source before building:
+## Build and verify
+
+Use a clean, tagged commit containing the intended release changes. Initialize
+the recorded native source and check the working trees:
 
 ```sh
 git submodule update --init third_party/espeak-ng
-git diff --exit-code
-git diff --cached --exit-code
-git -C third_party/espeak-ng diff --exit-code
-git -C third_party/espeak-ng diff --cached --exit-code
+git status --short
+git -C third_party/espeak-ng status --short
 git submodule status
 ./gradlew test lint assembleRelease assembleDebugAndroidTest
 ```
 
-The submodule status must start with a space (the checked-out revision matches
-the recorded revision), and its working tree must also be clean. The eSpeak
-revision, NDK/CMake versions, and language-data generation instructions are in
-[ESPEAK_NATIVE.md](ESPEAK_NATIVE.md). The release build currently produces an
-unsigned APK; sign the verified build using the maintainer's release key.
+Both status commands should produce no output. The eSpeak submodule status
+must start with a space, indicating that its checkout matches the recorded
+revision. Toolchain and native-data requirements are described in
+[Build setup](SETUP_NOTES.md) and [Native pronunciation engine](ESPEAK_NATIVE.md).
 
-The maintainer runs `connectedDebugAndroidTest` on an emulator or device.
-With dictionaries installed, enable airplane mode and verify dictionary
-searches and out-of-vocabulary eSpeak fallback in English, German, and Turkish.
-Scroll through Settings → About and verify the project license, warranty and
-redistribution notice, dictionary attribution, and eSpeak source/license links.
-Confirm native loading on a 16 KB page-size device or emulator before claiming
-that device compatibility. Record results in
-[RHYME_DETECTION_PLAN.md](RHYME_DETECTION_PLAN.md).
+The release build produces an unsigned APK. Sign the verified build with the
+release key, then inspect the distributed APK:
 
-Inspect the APK for both native ABIs, the ten reduced eSpeak data files, and
-the complete notices under `assets/licenses/`. Downloaded SQLite dictionaries
-must remain outside the APK. Their CC BY-SA 4.0 terms remain separate from the
-app's GPL-3.0-or-later terms; preserve their attribution/modification notice
-when redistributing them.
+- Native libraries are present for every ABI configured in Gradle.
+- The language assets listed in `EspeakIpa.kt` are present.
+- `assets/licenses/` contains the complete project and third-party notices,
+  including the dictionary producer's attribution and modification notice.
+- Downloaded SQLite dictionaries are outside the APK.
+- Native entries pass the SDK alignment check:
 
-## Publish matching source alongside the APK
+  ```sh
+  zipalign -c -P 16 -v 4 path/to/release.apk
+  ```
 
-Keep source available with the distributed APK as described by GPL section
-6(d). Publish the exact app source and the complete pinned eSpeak source,
-including build scripts, notices, and language/phoneme sources used to generate
-the packaged data. GitHub's automatic app source archive does not include the
-submodule's files. From the same clean commit used to build the APK, make a
-combined source archive with GNU tar:
+The APK path is a placeholder; use the signed artifact intended for release.
+Alignment checks do not replace native runtime verification.
+
+## Maintainer runtime checks
+
+Run the Android suite as described in [Testing](TESTING.md), then check:
+
+- Download progress, cancellation, retry, and continued access to an older
+  installed source after an unsuccessful update.
+- With full release dictionaries installed and airplane mode enabled,
+  searches in each supported language and a database-miss pronunciation
+  fallback.
+- Settings → About: the project license, warranty and redistribution notice,
+  dictionary attribution, and eSpeak source/license links are visible.
+- Native loading and pronunciation generation in an Android environment
+  using 16 KB memory pages.
+
+Record the tested app revision, dictionary release, and verification results
+in the release notes. Before publishing, verify that About links resolve on
+the published source branch. A passing fixture suite does not establish full
+release-data behavior or page-size compatibility.
+
+## Package matching source
+
+Publish the exact app and pinned native source alongside the APK, including
+build scripts, notices, and the language/phoneme sources used to generate
+bundled data. GitHub's automatic app source archive omits submodule contents.
+Keep the combined source archive available with the binary distribution.
+
+From the same clean commit used to build the APK, use GNU tar and an empty
+output directory:
 
 ```sh
 mkdir -p build/release-source
@@ -51,12 +72,15 @@ tar --concatenate --file=build/release-source/Ghostwriter-source.tar build/relea
 gzip -n build/release-source/Ghostwriter-source.tar
 ```
 
-Use an empty output directory for each release. Upload
-`Ghostwriter-source.tar.gz` alongside the APK and identify the app commit/tag
-and eSpeak commit in the release notes. Include
-[THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md) with the distribution.
-Extract the combined archive to a fresh directory, configure the Android SDK,
-and repeat the build commands to verify that the source is sufficient.
+Extract `Ghostwriter-source.tar.gz` to a fresh directory, configure the Android
+SDK, and verify that it builds without relying on previous outputs:
 
-After merging to `main`, verify that the About screen's project license and
-third-party-notice links resolve on GitHub. Do this before publishing the APK.
+```sh
+./gradlew test lint assembleRelease assembleDebugAndroidTest --no-build-cache
+```
+
+Upload the verified source archive with the APK and identify the app tag or
+commit and eSpeak commit in the release notes. Include
+[THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md) with the distribution.
+That notice is the reference for software and dictionary-data licensing;
+downloaded data retains its separate attribution and sharing terms.

@@ -1,77 +1,68 @@
-# eSpeak NG offline IPA fallback
+# Native pronunciation engine
 
-Ghostwriter uses eSpeak NG 1.52.0 only to generate IPA for words absent from the
-installed Wiktionary and eSpeak databases. It has no TTS service, audio output,
-microphone access, or network request in this path. The native source is the
-`third_party/espeak-ng` submodule, pinned to commit
-`4870adfa25b1a32b4361592f1be8a40337c58d6c` (release `1.52.0`).
+Ghostwriter uses the eSpeak NG core to generate IPA locally when dictionary
+lookup misses. This integration does not synthesize audio or expose a TTS
+service. Lookup behavior is documented in [Dictionaries](DICTIONARIES.md).
 
-## Clean checkout and build
+## Source and Android build
+
+The native source is the [`third_party/espeak-ng`](../third_party/espeak-ng)
+submodule. Its recorded Git revision is the source pin:
 
 ```sh
-git submodule update --init third_party/espeak-ng
-./gradlew assembleDebug
-./gradlew test lint compileDebugAndroidTestKotlin
+git ls-tree HEAD third_party/espeak-ng
 ```
 
-The Android build pins NDK `30.0.16248370` and CMake `4.1.2`, and packages
-`arm64-v8a` and `x86_64`. `app/src/main/cpp/CMakeLists.txt` links the upstream
-core statically into one JNI library and disables MBROLA, Sonic, PcAudio,
-Klatt, speechPlayer, and asynchronous synthesis. Gradle builds only the
-`ghostwriter_ipa` target, so the upstream CLI and data compiler are not built
-for Android. The CMake adapter also bypasses an unconditional Sonic fetch in
-upstream 1.52; Sonic remains disabled. No additional app dependency is introduced.
+Follow [Build setup](SETUP_NOTES.md) to initialize it and build the app.
+[`app/build.gradle.kts`](../app/build.gradle.kts) defines NDK/CMake versions,
+packaged ABIs, and the `ghostwriter_ipa` build target.
+[`CMakeLists.txt`](../app/src/main/cpp/CMakeLists.txt) links the upstream core
+statically into the JNI library. It disables optional audio components and
+asynchronous synthesis, and bypasses the upstream Sonic fetch while Sonic is
+disabled. The Android build does not build the upstream command-line tools
+or data compiler.
 
-The two native library segments are 16 KB aligned with this NDK. The APK's
-native entries were verified using `zipalign -c -P 16 -v 4`. Device behavior on
-a 16 KB page size emulator or device still needs confirmation.
+## Regenerating language data
 
-## Regenerate the packaged data
-
-On a Linux build host with CMake, Ninja, and a C/C++ compiler, run:
+On a Linux host with CMake, Ninja, and a C/C++ compiler, run from the repository
+root:
 
 ```sh
 scripts/generate_espeak_data.sh
 ```
 
-The script builds the pinned host CLI and compiles only the `en`, `de`, and
-`tr` dictionaries plus shared phoneme and intonation data. It copies the
-following files into `app/src/main/assets/espeak-ng-1.52/espeak-ng-data/`:
+The [generation script](../scripts/generate_espeak_data.sh) builds the pinned
+host CLI and compiles the supported language dictionaries with their shared
+phoneme and intonation data. It defines the packaged asset paths and compares
+reduced-data output against IPA fixtures. Review generated asset changes
+before committing them.
 
-```text
-intonations  phondata  phonindex  phontab
-en_dict  de_dict  tr_dict
-lang/gmw/en  lang/gmw/de  lang/trk/tr
-```
+Native code and compiled data must use the same eSpeak revision. If updating
+the engine, keep the generator, asset bundle, runtime version directory, and
+`DATA_FILES` list in [`EspeakIpa.kt`](../app/src/main/java/com/prosincerity/ghostwriter/data/EspeakIpa.kt)
+consistent. Compare the host and JNI output with the dictionary producer's
+`espeak-ng -q --ipa -v <language>` convention before adopting a new version.
 
-The script also compares reduced-data CLI output with pinned IPA fixtures for
-`ghostwriter`, `Übermut`, and `ışık`. The generated data and native code must
-stay on the same eSpeak revision. At runtime, the app copies these assets once
-into a versioned app-private directory before initializing the engine.
+## Runtime contract
 
-## API and verification
+The JNI bridge initializes the engine from an app-private data directory and
+converts a UTF-8 word using a supported language voice. Kotlin lazily loads the
+library and installs bundled data under an initialization lock on the IO
+dispatcher. Native calls serialize eSpeak's global state and copy returned
+IPA bytes into owned memory before releasing the lock.
 
-The JNI bridge has two operations: initialize with the app-private data path,
-and translate one UTF-8 word using the selected `en`, `de`, or `tr` voice. It
-copies eSpeak's returned IPA bytes before releasing the engine lock. Kotlin
-normalizes input to NFC, runs lookup on `Dispatchers.IO`, and uses generated
-IPA only after both local SQLite databases miss. The generated result has a
-separate source label and is never written into a downloaded database.
+Missing data and initialization failures are reported through the lookup
+error path. Unsupported languages and invalid input do not produce IPA.
+Bundled data is installed through a staging directory and reused once complete.
 
-Run `EspeakIpaInstrumentedTest` from Android Studio on an x86_64 emulator or
-ARM64 device. It compares the JNI output against the three host fixtures and
-checks invalid input. Then verify an OOV lookup with airplane mode enabled.
-These device checks remain pending.
+## Verification and distribution
 
-## Source and licensing
+Host fixture checks run in the generation script. Android tests compare real
+JNI output with host fixtures and exercise a database-miss fallback. See
+[Testing](TESTING.md) for execution responsibilities and coverage limits.
 
-eSpeak NG is copyright its contributors and is licensed under GPL version 3
-or later. The pinned source, its `COPYING` file, and notices for bundled
-components are in `third_party/espeak-ng`; its upstream source and license
-are linked from the app's About screen. Preserve these notices and the exact
-source revision when distributing the APK and corresponding source. The
-downloaded pronunciation databases have separate data attribution and
-licensing, also linked from About.
-The combined project notice is [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md).
-Publish matching app and native source alongside distributed APKs using the
-procedure in [RELEASING.md](RELEASING.md).
+Follow [Releasing](RELEASING.md) for native packaging, memory-page
+compatibility checks, and the combined app/native source archive.
+
+Preserve upstream source and notices. Authoritative license and attribution
+details are in [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md).
