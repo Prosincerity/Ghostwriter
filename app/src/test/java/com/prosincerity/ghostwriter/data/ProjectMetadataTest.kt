@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.data
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -38,6 +39,23 @@ class ProjectMetadataTest {
         val moved = migrated.atPositionMs(2000, 44100)
         assertEquals(88200L, moved.frameIndex)
         assertEquals(MarkerLoopRole.END, moved.loopRole)
+    }
+
+    @Test
+    fun normalizingAfterAnotherMarkerChanges_preservesUnchangedMarkerReferences() {
+        val start = WaveformMarker("Start", 1000, MarkerLoopRole.START).withSampleRate(44100)
+        val end = WaveformMarker("End", 2000, MarkerLoopRole.END).withSampleRate(44100)
+        val added = listOf(start, end).map { it.withSampleRate(44100) }
+        assertSame(start, added[0])
+        assertSame(end, added[1])
+
+        val movedEnd = end.atPositionMs(3000, 44100)
+        val moved = listOf(added[0], movedEnd).map { it.withSampleRate(44100) }
+        // Pointer handlers retain these references when their equal keys do not restart.
+        assertSame(start, moved[0])
+        assertSame(movedEnd, moved[1])
+        assertEquals(0, moved.indexOfFirst { it === start })
+        assertSame(start, start.withSampleRate(0))
     }
 
     @Test

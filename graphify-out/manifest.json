@@ -24,9 +24,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt": {
-    "mtime": 1790794188.3162572,
-    "seen": 1790795850.3948667,
-    "ast_hash": "c4f8f43590b899c78e8c423c1a114350",
+    "mtime": 1790797340.319631,
+    "seen": 1790797482.3680615,
+    "ast_hash": "22b34edccaf45ac479ef8795fc780ef3",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt": {
@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt": {
-    "mtime": 1790791863.1534884,
-    "seen": 1790792491.807542,
-    "ast_hash": "4701569a08358eb3e13e182411fc1eb5",
+    "mtime": 1790797340.5296285,
+    "seen": 1790797482.3681774,
+    "ast_hash": "9aa202e576cde891f8b1a7446eb5e846",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectMetadataTest.kt": {
-    "mtime": 1790795320.7290208,
-    "seen": 1790795850.3949811,
-    "ast_hash": "6bf18a15e8b2b8e179072d9a5afaf9e9",
+    "mtime": 1790797213.0942307,
+    "seen": 1790797482.3682458,
+    "ast_hash": "1f70187fe3dd6847e80fda285dc29fb8",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageBeatTest.kt": {
@@ -4167,6 +4167,24 @@
     "mtime": 1790795229.4321687,
     "seen": 1790795850.395013,
     "ast_hash": "b0da133091fc3c8c246056b536ae97a7",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/WaveformViewTest.kt": {
+    "mtime": 1790797457.8711534,
+    "seen": 1790797482.367993,
+    "ast_hash": "c20c19e829a19d8781593b75b363ef23",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformMarkerHitBounds.kt": {
+    "mtime": 1790797340.42063,
+    "seen": 1790797482.3681192,
+    "ast_hash": "a56478e1c53f823a7da5c16659ca999c",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformMarkerHitBoundsTest.kt": {
+    "mtime": 1790797340.6336272,
+    "seen": 1790797482.3682756,
+    "ast_hash": "491f47d5f2eecdf11b7848590f360af5",
     "semantic_hash": ""
   }
 }
