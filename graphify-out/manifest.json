@@ -396,9 +396,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {
-    "mtime": 1790785716.3237011,
-    "seen": 1790785800.4461243,
-    "ast_hash": "4d8c5261da4882968a6643987b956f4d",
+    "mtime": 1790789242.1784387,
+    "seen": 1790789262.9925535,
+    "ast_hash": "d8df46aa6ab6b2d7d8172871dcf0d1b2",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepad.kt": {
@@ -4032,9 +4032,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreenTest.kt": {
-    "mtime": 1790787467.9577436,
-    "seen": 1790787507.377003,
-    "ast_hash": "1a9c32907fb260f4f8346bedb38fb5a5",
+    "mtime": 1790789876.8724594,
+    "seen": 1790789895.261323,
+    "ast_hash": "db82d9f24afef029771600d61a5a3062",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/LyricTextSettings.kt": {
