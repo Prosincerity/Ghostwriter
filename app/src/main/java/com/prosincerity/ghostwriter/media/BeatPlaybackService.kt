@@ -49,8 +49,8 @@ class BeatPlaybackService : Service() {
     private var beatTitle = ""
     private val notificationHandler = Handler(Looper.getMainLooper())
     private val notificationUpdates = PlaybackNotificationUpdater(
-        schedule = { task, delay -> notificationHandler.postDelayed(task, delay); Unit },
-        remove = { notificationHandler.removeCallbacks(it) },
+        schedule = { task, delay -> notificationHandler.postDelayed(task, delay) },
+        remove = notificationHandler::removeCallbacks,
         publish = ::postNotification,
     )
     private val artwork by lazy {
@@ -83,7 +83,11 @@ class BeatPlaybackService : Service() {
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 focus.onTransientLoss(player.isPlaying)
                 pausingForFocus = true
-                try { player.pause() } finally { pausingForFocus = false }
+                try {
+                    player.pause()
+                } finally {
+                    pausingForFocus = false
+                }
             }
         }
     }
@@ -99,8 +103,12 @@ class BeatPlaybackService : Service() {
         session = MediaSession(this, "Ghostwriter beat")
         @Suppress("DEPRECATION")
         session.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
-        player = BeatPlayer(this, ::preparePlayback, ::publishState,
-            onPauseRequested = { if (!pausingForFocus) focus.onPauseRequested() })
+        player = BeatPlayer(
+            context = this,
+            beforePlay = ::preparePlayback,
+            onStateChanged = ::publishState,
+            onPauseRequested = { if (!pausingForFocus) focus.onPauseRequested() },
+        )
         session.setCallback(object : MediaSession.Callback() {
             override fun onPlay() { player.play() }
             override fun onPause() { pause() }
@@ -171,16 +179,22 @@ class BeatPlaybackService : Service() {
         notificationUpdates.cancel()
         startForeground(NOTIFICATION_ID, notification())
         foreground = true
-        val granted = if (focus.hasFocus) true else if (Build.VERSION.SDK_INT >= 26) {
-            audioManager.requestAudioFocus(focusRequest!!) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        } else {
-            @Suppress("DEPRECATION")
-            (audioManager.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC,
-                AudioManager.AUDIOFOCUS_GAIN) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
-        }
+        val granted = focus.hasFocus || requestAudioFocus()
         focus.onRequestResult(granted)
         if (!granted) publishState()
         return granted
+    }
+
+    private fun requestAudioFocus(): Boolean {
+        val result = if (Build.VERSION.SDK_INT >= 26) {
+            audioManager.requestAudioFocus(focusRequest!!)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                focusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN,
+            )
+        }
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
     }
 
     private fun pause() {
@@ -215,6 +229,11 @@ class BeatPlaybackService : Service() {
     private fun publishState() {
         if (destroying) return
         val playing = player.isPlaying
+        val playbackState = when {
+            playing -> PlaybackState.STATE_PLAYING
+            player.isReady -> PlaybackState.STATE_PAUSED
+            else -> PlaybackState.STATE_STOPPED
+        }
         session.setMetadata(MediaMetadata.Builder()
             .putString(MediaMetadata.METADATA_KEY_TITLE, playbackTitle)
             .putString(MediaMetadata.METADATA_KEY_ARTIST, playbackSubtitle)
@@ -229,9 +248,8 @@ class BeatPlaybackService : Service() {
                 PlaybackState.ACTION_SEEK_TO)
             .addCustomAction(ACTION_RESTART, getString(R.string.beat_restart), R.drawable.ic_beat_restart)
             .addCustomAction(ACTION_LOOP, loopLabel, loopIcon)
-            .setState(if (playing) PlaybackState.STATE_PLAYING else if (player.isReady)
-                PlaybackState.STATE_PAUSED else PlaybackState.STATE_STOPPED,
-                player.currentPositionMs.toLong(), if (playing) 1f else 0f).build())
+            .setState(playbackState, player.currentPositionMs.toLong(), if (playing) 1f else 0f)
+            .build())
         if (!playing && !focus.resumeOnFocusGain) abandonFocus()
         if (!player.isReady) {
             focus.onPauseRequested()
@@ -261,23 +279,26 @@ class BeatPlaybackService : Service() {
         val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CHANNEL)
             else @Suppress("DEPRECATION") Notification.Builder(this)
         val playing = player.isPlaying
+        val playPauseIcon = if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play
+        val playPauseLabel = getString(if (playing) R.string.beat_pause else R.string.beat_play)
+        val playPauseAction = if (playing) ACTION_PAUSE else ACTION_PLAY
         return builder.setSmallIcon(R.drawable.ic_music_note)
             .setContentTitle(playbackTitle).setContentText(playbackSubtitle)
             .setLargeIcon(artwork).setContentIntent(contentIntent())
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true).setOngoing(playing)
             .setDeleteIntent(actionIntent(ACTION_STOP))
-            .addAction(Notification.Action.Builder(
-                Icon.createWithResource(this, if (playing) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play),
-                getString(if (playing) R.string.beat_pause else R.string.beat_play),
-                actionIntent(if (playing) ACTION_PAUSE else ACTION_PLAY)).build())
-            .addAction(Notification.Action.Builder(Icon.createWithResource(this, R.drawable.ic_beat_restart),
-                getString(R.string.beat_restart), actionIntent(ACTION_RESTART)).build())
-            .addAction(Notification.Action.Builder(Icon.createWithResource(this, loopIcon),
-                loopLabel, actionIntent(ACTION_LOOP)).build())
+            .addAction(notificationAction(playPauseIcon, playPauseLabel, playPauseAction))
+            .addAction(notificationAction(R.drawable.ic_beat_restart, getString(R.string.beat_restart), ACTION_RESTART))
+            .addAction(notificationAction(loopIcon, loopLabel, ACTION_LOOP))
             .setStyle(Notification.MediaStyle().setMediaSession(session.sessionToken).setShowActionsInCompactView(0, 1, 2))
             .build()
     }
+
+    private fun notificationAction(icon: Int, label: String, action: String): Notification.Action =
+        Notification.Action.Builder(
+            Icon.createWithResource(this, icon), label, actionIntent(action),
+        ).build()
 
     private fun contentIntent() = PendingIntent.getActivity(this, 0,
         Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),

@@ -27,8 +27,9 @@ internal fun rememberBeatPlayback(projectTitle: String): BeatPlaybackService? {
             }
             override fun onServiceDisconnected(name: ComponentName?) { service = null }
         }
-        val bound = context.bindService(Intent(context, BeatPlaybackService::class.java),
-            connection, Context.BIND_AUTO_CREATE)
+        val bound = context.bindService(
+            Intent(context, BeatPlaybackService::class.java), connection, Context.BIND_AUTO_CREATE,
+        )
         onDispose { if (bound) context.unbindService(connection) }
     }
     return service
