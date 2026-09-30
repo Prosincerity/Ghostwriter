@@ -31,4 +31,14 @@ class DictionaryHeadwordTest {
             assertFalse(it, DictionaryHeadword.eligible(it))
         }
     }
+
+    @Test
+    fun plusRunsMustFollowALetterAndFinishTheHeadword() {
+        listOf("C+", "C++", "grade" + "+".repeat(10_000), "a-b++").forEach {
+            assertTrue(it, DictionaryHeadword.eligible(it))
+        }
+        listOf("+", "++", "7++", "C++17", "C++D+", "C++ ", "a..b++", "C'++").forEach {
+            assertFalse(it, DictionaryHeadword.eligible(it))
+        }
+    }
 }

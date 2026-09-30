@@ -52,10 +52,9 @@ internal object DictionaryHeadword {
                     if (position != word.lastIndex || before == null || before !in DIGITS) return false
                 }
                 character == '+' -> {
-                    val plusStart = word.indexOf('+')
-                    if (plusStart == 0 || word[plusStart - 1] !in LETTERS ||
-                        word.substring(plusStart).any { it != '+' }
-                    ) return false
+                    // A plus is valid only in a trailing run after a letter. Validate
+                    // that run once; the preceding characters have already been checked.
+                    return isLetter(before) && (position until word.length).all { word[it] == '+' }
                 }
                 else -> return false
             }
