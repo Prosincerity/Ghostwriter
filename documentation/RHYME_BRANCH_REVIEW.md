@@ -86,3 +86,34 @@ or skips, and lint with no errors (14 warnings). Added JVM regressions for
 infinitive selection ties, invalid pronunciations/unsupported languages, and
 odd/even suffix lengths. Instrumented tests were compiled, and the maintainer
 subsequently reported that the emulator tests passed.
+
+## Follow-up review on 2026-09-30
+
+Scope: files changed from `dev` (`534a240`) to `rhyme-detection`
+(`c4feae9`), plus their direct dependencies. Reviewed dictionary installation,
+lookup and search, phonetic filters, Compose screen changes, playback lifecycle,
+the JNI bridge, native build configuration, and branch tests. Upstream eSpeak
+implementation changes remain outside the cleanup scope.
+
+- Validate a trailing headword plus run once instead of rescanning it at each
+  plus character. Add a JVM regression for long runs and invalid prefixes/tails.
+- Extract `DictionarySearchPlan` so phonetic stage ordering and deduplication
+  can be tested independently of SQLite and pagination. Seven new JVM tests
+  preserve rhyme/suffix ordering, short exact assonance priority, fallback tiers,
+  stable ties, and handling of missing or invalid IPA.
+- Extract archive copying from dictionary activation. Six new JVM tests cover
+  decompressed output, compressed-byte progress and clamping, invalid gzip,
+  output-open failures, progress-callback failures, and cancellation during
+  suspended progress delivery. Activation and staging cleanup stay in the
+  installer, with its existing instrumented regressions retained.
+
+Behavior, source precedence, public APIs, and dependencies are unchanged.
+Baseline and final `./gradlew test lint assembleDebug assembleDebugAndroidTest`
+passed. The final run executed 196 JVM tests with no failures, errors, or skips;
+lint reported no errors and the same 14 warnings. Device tests were compiled
+but not run, in accordance with `AGENTS.md`; maintainer device validation and
+the existing realistic-database benchmark remain open.
+
+`graphify update .` refreshed the code graph without API calls. Graphify's
+parser reported partial extraction of 42 upstream files; this is a graph
+coverage limitation, separate from the passing native build.
