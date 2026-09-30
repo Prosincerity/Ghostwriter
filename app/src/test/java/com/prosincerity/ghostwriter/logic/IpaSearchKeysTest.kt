@@ -94,6 +94,16 @@ class IpaSearchKeysTest {
     }
 
     @Test
+    fun suffixStagesHandleOddAndEvenPhonemeCounts() {
+        listOf(5 to listOf(3), 6 to listOf(4), 7 to listOf(5, 3), 8 to listOf(6, 4))
+            .forEach { (count, expectedLengths) ->
+                val keys = IpaSearchKeys.fromIpa("/a${"b".repeat(count - 1)}/", "en")!!
+                assertEquals("$count phonemes", expectedLengths,
+                    IpaSearchKeys.phonemeSuffixes(keys).map { it.size })
+            }
+    }
+
+    @Test
     fun assonanceFallbacksDropOneVowelAtATimeThroughTwo() {
         fun fallbacks(ipa: String) =
             IpaSearchKeys.assonanceFallbacks(IpaSearchKeys.fromIpa(ipa, "en")!!)
