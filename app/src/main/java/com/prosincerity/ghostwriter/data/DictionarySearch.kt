@@ -45,10 +45,9 @@ internal class DictionarySearch(
         val pronunciation = pronunciations.lookup(normalized, language)
         val keys = pronunciation?.ipa.orEmpty().mapNotNull { IpaSearchKeys.fromIpa(it, language) }
         val prefixes = when (mode) {
-            DictionarySearchMode.RHYME -> keys.flatMap { key ->
-                val rime = IpaSearchKeys.rimeTokens(key, language)
-                if (rime == null) emptyList()
-                else listOf(SearchPrefix(rime.asReversed().joinToString(""), rime.size, rime))
+            DictionarySearchMode.RHYME -> keys.mapNotNull { key ->
+                val rime = IpaSearchKeys.rimeTokens(key, language) ?: return@mapNotNull null
+                SearchPrefix(rime.asReversed().joinToString(""), rime.size, rime)
             }
             DictionarySearchMode.WORD_SUFFIX -> keys.flatMap { key ->
                 IpaSearchKeys.phonemeSuffixes(key).map { suffix ->
@@ -83,24 +82,35 @@ internal class DictionarySearch(
         fun enough(): Boolean = visibleMatches().size > nextPageIndex
         fun result(): DictionarySearchResult {
             val visible = visibleMatches()
-            return DictionarySearchResult(pronunciation,
-                visible.drop(firstIndex.toInt()).take(PAGE_SIZE), visible.size > nextPageIndex)
+            return DictionarySearchResult(
+                pronunciation = pronunciation,
+                matches = visible.drop(firstIndex.toInt()).take(PAGE_SIZE),
+                hasNext = visible.size > nextPageIndex,
+            )
         }
-        if (mode == DictionarySearchMode.ASSONANCE) {
+
+        // Every stage visits curated data first and closes each database before advancing.
+        suspend fun scanSources(scan: suspend (SQLiteDatabase, PronunciationSource) -> Unit) {
             for (source in DictionarySource.entries) {
                 coroutineContext.ensureActive()
                 installer.openReadOnly(language, source)?.use { database ->
-                    for (key in prefixes) {
-                        collectRows(
-                            database,
-                            "SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? " +
-                                "ORDER BY word, ipa",
-                            arrayOf(key.value), normalized, source.pronunciationSource, matches, ::enough,
-                        ) { ipa -> IpaSearchKeys.fromIpa(ipa, language)?.assonance == key.value }
-                        if (enough()) break
-                    }
+                    scan(database, source.pronunciationSource)
                 }
                 if (enough()) break
+            }
+        }
+
+        if (mode == DictionarySearchMode.ASSONANCE) {
+            scanSources { database, source ->
+                for (key in prefixes) {
+                    collectRows(
+                        database,
+                        "SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? " +
+                            "ORDER BY word, ipa",
+                        arrayOf(key.value), normalized, source, matches, ::enough,
+                    ) { ipa -> IpaSearchKeys.fromIpa(ipa, language)?.assonance == key.value }
+                    if (enough()) break
+                }
             }
             if (enough()) return@withContext result()
 
@@ -109,21 +119,17 @@ internal class DictionarySearch(
             val fallbacks = keys.flatMap(IpaSearchKeys::assonanceFallbacks).distinct()
                 .sortedByDescending { it.split(' ').size }
             for (prefix in fallbacks) {
-                for (source in DictionarySource.entries) {
-                    coroutineContext.ensureActive()
-                    installer.openReadOnly(language, source)?.use { database ->
-                        database.execSQL("PRAGMA case_sensitive_like = ON")
-                        collectRows(
-                            database,
-                            "SELECT word, ipa FROM dictionary WHERE assonance_reversed LIKE ? ESCAPE '!' " +
-                                "ORDER BY assonance_reversed, word, ipa",
-                            arrayOf("${escapeLike(prefix)}%"), normalized, source.pronunciationSource, matches, ::enough,
-                        ) { ipa ->
-                            val candidate = IpaSearchKeys.fromIpa(ipa, language)?.assonance
-                            candidate == prefix || candidate?.startsWith("$prefix ") == true
-                        }
+                scanSources { database, source ->
+                    database.execSQL("PRAGMA case_sensitive_like = ON")
+                    collectRows(
+                        database,
+                        "SELECT word, ipa FROM dictionary WHERE assonance_reversed LIKE ? ESCAPE '!' " +
+                            "ORDER BY assonance_reversed, word, ipa",
+                        arrayOf("${escapeLike(prefix)}%"), normalized, source, matches, ::enough,
+                    ) { ipa ->
+                        val candidate = IpaSearchKeys.fromIpa(ipa, language)?.assonance
+                        candidate == prefix || candidate?.startsWith("$prefix ") == true
                     }
-                    if (enough()) break
                 }
                 if (enough()) break
             }
@@ -131,54 +137,46 @@ internal class DictionarySearch(
         }
         if (mode == DictionarySearchMode.WORD_SUFFIX) {
             for (searchPrefix in prefixes) {
-                for (source in DictionarySource.entries) {
-                    coroutineContext.ensureActive()
-                    installer.openReadOnly(language, source)?.use { database ->
-                        database.execSQL("PRAGMA case_sensitive_like = ON")
-                        val suffix = searchPrefix.tokens ?: return@use
-                        val pattern = suffix.asReversed().joinToString("%") { escapeLike(it) } + "%"
-                        collectRows(
-                            database,
-                            "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
-                                "ORDER BY ipa_reversed, word, ipa",
-                            arrayOf(pattern), normalized, source.pronunciationSource, matches, ::enough,
-                        ) { ipa ->
-                            val candidate = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
-                            IpaSearchKeys.phonemeTokens(candidate).takeLast(suffix.size) == suffix
-                        }
+                scanSources { database, source ->
+                    database.execSQL("PRAGMA case_sensitive_like = ON")
+                    val suffix = searchPrefix.tokens ?: return@scanSources
+                    val pattern = suffix.asReversed().joinToString("%") { escapeLike(it) } + "%"
+                    collectRows(
+                        database,
+                        "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
+                            "ORDER BY ipa_reversed, word, ipa",
+                        arrayOf(pattern), normalized, source, matches, ::enough,
+                    ) { ipa ->
+                        val candidate = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
+                        IpaSearchKeys.phonemeTokens(candidate).takeLast(suffix.size) == suffix
                     }
-                    if (enough()) break
                 }
                 if (enough()) break
             }
             return@withContext result()
         }
-        for (source in DictionarySource.entries) {
-            coroutineContext.ensureActive()
-            installer.openReadOnly(language, source)?.use { database ->
-                database.execSQL("PRAGMA case_sensitive_like = ON")
-                if (mode == DictionarySearchMode.WORD_PREFIX) {
-                    collectRows(
-                        database,
-                        "SELECT word, ipa FROM dictionary WHERE word LIKE ? ESCAPE '!' " +
-                            "ORDER BY word, ipa",
-                        arrayOf("${escapeLike(normalized)}%"), normalized, source.pronunciationSource, matches, ::enough,
-                    ) { true }
-                } else {
-                    for (searchPrefix in prefixes) {
-                        val prefix = searchPrefix.value
-                        val sql = "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
-                            "ORDER BY length(ipa_reversed), ipa_reversed, word, ipa"
-                        collectRows(database, sql, arrayOf("${escapeLike(prefix)}%"),
-                            normalized, source.pronunciationSource, matches, ::enough) { ipa ->
-                            val keys = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
-                            IpaSearchKeys.rimeTokens(keys, language) == searchPrefix.tokens
-                        }
-                        if (enough()) break
+        scanSources { database, source ->
+            database.execSQL("PRAGMA case_sensitive_like = ON")
+            if (mode == DictionarySearchMode.WORD_PREFIX) {
+                collectRows(
+                    database,
+                    "SELECT word, ipa FROM dictionary WHERE word LIKE ? ESCAPE '!' " +
+                        "ORDER BY word, ipa",
+                    arrayOf("${escapeLike(normalized)}%"), normalized, source, matches, ::enough,
+                ) { true }
+            } else {
+                for (searchPrefix in prefixes) {
+                    val prefix = searchPrefix.value
+                    val sql = "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
+                        "ORDER BY length(ipa_reversed), ipa_reversed, word, ipa"
+                    collectRows(database, sql, arrayOf("${escapeLike(prefix)}%"),
+                        normalized, source, matches, ::enough) { ipa ->
+                        val candidateKeys = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
+                        IpaSearchKeys.rimeTokens(candidateKeys, language) == searchPrefix.tokens
                     }
+                    if (enough()) break
                 }
             }
-            if (enough()) break
         }
         result()
     }
