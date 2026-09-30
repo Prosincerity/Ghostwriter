@@ -123,10 +123,16 @@ class LyricsNotepadTest {
         composeRule.runOnIdle { fontScale = 2f }
         val scaled = textLayout()
         assertEquals(2, scaled.lineCount)
-        assertTrue(scaled.size.height > normal.size.height * 1.8f)
+        assertTrue("Increasing font scale should increase text height", scaled.size.height > normal.size.height)
+        val normalFontSizePx = with(normal.layoutInput.density) { normal.layoutInput.style.fontSize.toPx() }
+        val scaledFontSizePx = with(scaled.layoutInput.density) { scaled.layoutInput.style.fontSize.toPx() }
         val normalBaselineGap = normal.getLineBaseline(1) - normal.getLineBaseline(0)
         val scaledBaselineGap = scaled.getLineBaseline(1) - scaled.getLineBaseline(0)
-        assertEquals(normalBaselineGap * 2f, scaledBaselineGap, 2f)
+        // Compare relative line height with the converted font size, including nonlinear scaling.
+        assertEquals("Normal line spacing", normalFontSizePx * 2f, normalBaselineGap, 2f)
+        assertEquals("Scaled line spacing", scaledFontSizePx * 2f, scaledBaselineGap, 2f)
+        assertEquals(1f, normal.layoutInput.density.fontScale, 0f)
+        assertEquals(2f, scaled.layoutInput.density.fontScale, 0f)
         assertEquals(20.sp, scaled.layoutInput.style.fontSize)
         composeRule.onNodeWithText("One\nTwo").assertExists()
     }

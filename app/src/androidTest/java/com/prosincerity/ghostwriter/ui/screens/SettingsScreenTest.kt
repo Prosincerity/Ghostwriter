@@ -6,13 +6,18 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.printToString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
@@ -56,6 +61,8 @@ class SettingsScreenTest {
     @SdkSuppress(minSdkVersion = 29)
     fun discoveredFont_canBeSelectedAndSurvivesPreferencesReload() {
         val font = SystemFontCatalog.availableFonts().filterIsInstance<SystemFontFile>().first()
+        Settings.setLyricTextSettings(testContext, LyricTextSettings(fontFamily = font))
+        assertEquals(font, Settings.getLyricTextSettings(testContext).fontFamily)
         composeRule.setContent {
             CompositionLocalProvider(LocalContext provides testContext) {
                 GhostwriterTheme {
@@ -63,20 +70,39 @@ class SettingsScreenTest {
                 }
             }
         }
+        select("Font family", "Serif")
+        composeRule.runOnIdle {
+            assertEquals(LyricFontFamily.SERIF, Settings.getLyricTextSettings(testContext).fontFamily)
+        }
+
         composeRule.onNodeWithContentDescription("Font family").performScrollTo().performClick()
-        composeRule.waitUntil(10_000) {
-            composeRule.onAllNodesWithText(font.label).fetchSemanticsNodes().isNotEmpty()
+        // Discovery runs on an external dispatcher, and offscreen lazy rows are not
+        // composed yet. Wait by scrolling the actual picker to the requested face.
+        var lastScrollFailure: AssertionError? = null
+        try {
+            composeRule.waitUntil(10_000) {
+                try {
+                    composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(font.label))
+                    true
+                } catch (failure: AssertionError) {
+                    lastScrollFailure = failure
+                    false
+                }
+            }
+        } catch (timeout: ComposeTimeoutException) {
+            val roots = composeRule.onAllNodes(isRoot(), useUnmergedTree = true)
+            val tree = roots.fetchSemanticsNodes().indices.joinToString("\n") { roots[it].printToString() }
+            throw AssertionError(
+                "Device font ${font.label} was not found in the picker. " +
+                    "Last scroll failure: ${lastScrollFailure?.message}\n$tree",
+                timeout,
+            )
         }
         composeRule.onNodeWithText(font.label).performClick()
         composeRule.runOnIdle {
             assertEquals(font, Settings.getLyricTextSettings(testContext).fontFamily)
         }
         composeRule.onNodeWithText(font.label).assertExists()
-
-        select("Font family", "Serif")
-        composeRule.runOnIdle {
-            assertEquals(LyricFontFamily.SERIF, Settings.getLyricTextSettings(testContext).fontFamily)
-        }
     }
 
     @Test
