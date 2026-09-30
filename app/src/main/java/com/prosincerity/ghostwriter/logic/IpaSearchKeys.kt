@@ -22,6 +22,9 @@ internal object IpaSearchKeys {
         (vowels.getValue(language) + consonants.getValue(language))
             .sortedWith(compareByDescending<String> { it.length }.thenBy { it })
     }
+    private val singleBases = candidates.mapValues { (_, inventory) ->
+        inventory.filter { it.length == 1 }.toSet()
+    }
     private val postfix = words(": ː ˑ ̆ ̯ ̃ ̥ ̬ ̩ ̪ ̺ ̻ ̝ ̞ ̘ ̙ ̚ ̰ ̤ ̹ ̜ ̟ ̠ ̼ ̽ ˀ ˔ ˭ ʰ ʱ ʲ ˠ ˤ ʴ ʷ ⁿ ˡ ˞ ʳ ʵ ʶ ˣ ˕ ˖ ᵈ ᵏ ᵐ ᵝ ᶦ ᶴ")
     private val prefix = words("ˀ ʰ ʱ ʲ ˠ ˤ ʷ ⁿ ˡ ᵈ ᵏ ᵐ")
     private val prosody = words("˥ ˦ ˧ ˨ ˩ ¹ ² ³ ⁴ ⁵ ⁻ ↗ ↘ ↑ ↓ ꜛ ꜜ")
@@ -34,7 +37,7 @@ internal object IpaSearchKeys {
         val inventory = candidates[language] ?: return null
         val input = Normalizer.normalize(ipa.trim(), Normalizer.Form.NFC)
         val tokens = mutableListOf<String>()
-        val singleBases = inventory.filter { it.length == 1 }.toSet()
+        val bases = singleBases.getValue(language)
         var position = 0
         var atBoundary = true
         while (position < input.length) {
@@ -61,7 +64,7 @@ internal object IpaSearchKeys {
                     val token = StringBuilder(modifiers).append(following)
                     while (position < input.length && isPostfix(input[position])) token.append(input[position++])
                     tokens += token.toString()
-                } else if (tokens.isNotEmpty() && tokens.last() !in stress && tokens.last() !in prosody) {
+                } else if (tokens.lastOrNull()?.let(::isPhoneme) == true) {
                     tokens[tokens.lastIndex] += modifiers
                 } else {
                     return null
@@ -72,7 +75,7 @@ internal object IpaSearchKeys {
             var match = inventory.firstOrNull { input.startsWith(it, position) }
             if (match == null) {
                 val decomposed = Normalizer.normalize(value, Normalizer.Form.NFD)
-                if (decomposed.length <= 1 || decomposed.take(1) !in singleBases ||
+                if (decomposed.length <= 1 || decomposed.take(1) !in bases ||
                     decomposed.drop(1).any { !isPostfix(it) }
                 ) return null
                 match = value
@@ -83,7 +86,7 @@ internal object IpaSearchKeys {
             tokens += token.toString()
             atBoundary = false
         }
-        if (tokens.none { it !in stress && it !in prosody }) return null
+        if (tokens.none(::isPhoneme)) return null
         return Keys(
             tokens = tokens,
             reversed = tokens.asReversed().joinToString(""),
@@ -111,18 +114,12 @@ internal object IpaSearchKeys {
         if (phonemes.size <= 4) {
             return listOf(phonemes)
         }
-        val lengths = mutableListOf<Int>()
-        var length = phonemes.size - 2
-        while (length > 2) {
-            lengths += length
-            length -= 2
-        }
-        return lengths.map(phonemes::takeLast)
+        return (phonemes.size - 2 downTo 3 step 2).map(phonemes::takeLast)
     }
 
     fun phonemeTokens(keys: Keys): List<String> = phonemeTokens(keys.tokens)
 
-    fun phonemeTokens(tokens: List<String>): List<String> = tokens.filter { it !in stress && it !in prosody }
+    fun phonemeTokens(tokens: List<String>): List<String> = tokens.filter(::isPhoneme)
 
     fun hasVowel(tokens: List<String>, language: String): Boolean =
         language in vowels && tokens.any { isVowel(it, language) }
@@ -146,6 +143,8 @@ internal object IpaSearchKeys {
     private fun isPostfix(character: Char): Boolean =
         character.toString() in postfix || Character.getType(character) == Character.NON_SPACING_MARK.toInt() ||
             Character.getType(character) == Character.ENCLOSING_MARK.toInt()
+
+    private fun isPhoneme(token: String): Boolean = token !in stress && token !in prosody
 
     private fun words(text: String): Set<String> = text.split(' ').filter { it.isNotEmpty() }.toSet()
 }
