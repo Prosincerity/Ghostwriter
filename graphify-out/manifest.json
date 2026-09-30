@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt": {
-    "mtime": 1790512167.0911229,
-    "seen": 1790512513.53744,
-    "ast_hash": "fd743c20ed8a54cb5defe7b85ed5504e",
+    "mtime": 1790768282.1959114,
+    "seen": 1790768311.6473114,
+    "ast_hash": "da11b167e27733fc83a9cf762fea4477",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/HomeScreen.kt": {
@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
-    "mtime": 1790512269.1818395,
-    "seen": 1790512513.537337,
-    "ast_hash": "5fdcf410213220bc4908deb860f693d5",
+    "mtime": 1790768343.8251364,
+    "seen": 1790768380.3809078,
+    "ast_hash": "9830c8c84890099a324256e368a27b89",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt": {
@@ -3969,6 +3969,12 @@
     "mtime": 1790698266.2058764,
     "seen": 1790698305.9674237,
     "ast_hash": "b23e12d1cb0a775727e480f2d44dee3f",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260930_113017_4b72241f_what_should_be_checked_before_merging_rhyme_detect.md": {
+    "mtime": 1790767817.9054763,
+    "seen": 1790768311.6483657,
+    "ast_hash": "d3fdb19a507546db719a0e2b4c460fd9",
     "semantic_hash": ""
   }
 }
