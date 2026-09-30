@@ -1,0 +1,184 @@
+package com.prosincerity.ghostwriter.ui.screens
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import com.prosincerity.ghostwriter.data.DictionaryDownloadProgress
+import com.prosincerity.ghostwriter.data.DictionaryInstaller
+import com.prosincerity.ghostwriter.data.DictionarySource
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DictionaryDownloadsScreen(onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
+    val context = LocalContext.current
+    val installer = remember(context) { DictionaryInstaller(context) }
+    Scaffold(topBar = {
+        TopAppBar(
+            title = { Text("Rhyme dictionary downloads") },
+            navigationIcon = {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+            },
+        )
+    }) { padding ->
+        DictionaryDownloads(
+            installer = installer,
+            modifier = Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        )
+    }
+}
+
+@Composable
+internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    val installed = remember(installer) {
+        mutableStateMapOf<Pair<String, DictionarySource>, Boolean>()
+    }
+    var checkingDictionaries by remember(installer) { mutableStateOf(true) }
+    LaunchedEffect(installer) {
+        val status = withContext(Dispatchers.IO) {
+            buildMap {
+                for (language in installer.release.languages.keys) {
+                    for (source in DictionarySource.entries) {
+                        put(language to source, installer.availableDatabase(language, source) != null)
+                    }
+                }
+            }
+        }
+        installed.putAll(status)
+        checkingDictionaries = false
+    }
+    var active by remember { mutableStateOf<Pair<String, DictionarySource>?>(null) }
+    var downloadJob by remember { mutableStateOf<Job?>(null) }
+    var progress by remember { mutableStateOf<DictionaryDownloadProgress?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    fun startDownload(language: String, source: DictionarySource) {
+        val key = language to source
+        val sourceLabel = downloadSourceLabel(source)
+        val languageLabel = dictionaryLanguageLabel(language)
+        active = key
+        progress = null
+        error = null
+        downloadJob = scope.launch {
+            try {
+                installer.install(language, source) { value ->
+                    withContext(Dispatchers.Main.immediate) { progress = value }
+                }
+                installed[key] = true
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                error = "Could not download $sourceLabel for $languageLabel: " +
+                    (failure.message ?: "unknown error")
+            } finally {
+                active = null
+                progress = null
+                downloadJob = null
+            }
+        }
+    }
+
+    Column(modifier) {
+        Text(
+            "These pronunciation dictionaries help find rhymes. Download only the languages and sources you want; installed dictionaries work offline.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Wiktionary Kaikki contains pronunciations from Wiktionary, extracted by Wiktextract and prepared for Ghostwriter. " +
+                "The separate eSpeak NG database contains pronunciations generated by the eSpeak NG speech engine.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Spacer(Modifier.height(12.dp))
+        if (checkingDictionaries) Text("Checking installed dictionaries…")
+        for ((language, assets) in installer.release.languages) {
+            val languageLabel = dictionaryLanguageLabel(language)
+            Text(languageLabel, style = MaterialTheme.typography.titleMedium)
+            for (source in DictionarySource.entries) {
+                val asset = assets.asset(source)
+                val key = language to source
+                val sourceLabel = downloadSourceLabel(source)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(sourceLabel, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "${(asset.sizeBytes + 999_999) / 1_000_000} MB download",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    if (installed[key] == true) {
+                        Icon(Icons.Default.Check, contentDescription = "$sourceLabel installed for $languageLabel")
+                    } else {
+                        IconButton(
+                            onClick = { startDownload(language, source) },
+                            enabled = !checkingDictionaries && active == null,
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = "Download $sourceLabel for $languageLabel")
+                        }
+                    }
+                }
+                if (active == key) {
+                    val percent = progress?.let { (100 * it.downloadedBytes / it.totalBytes).toInt() }
+                    Text("Downloading $sourceLabel${percent?.let { " $it%" } ?: "..."}")
+                    TextButton(onClick = { downloadJob?.cancel() }) { Text("Cancel download") }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    }
+}
+
+private fun downloadSourceLabel(source: DictionarySource): String = when (source) {
+    DictionarySource.WIKTIONARY -> "Wiktionary Kaikki"
+    DictionarySource.ESPEAK -> "eSpeak NG generated"
+}

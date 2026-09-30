@@ -28,11 +28,17 @@ internal const val GHOSTWRITER_LICENSE_URL =
     "https://github.com/Prosincerity/Ghostwriter/blob/main/LICENSE"
 internal const val DICTIONARY_REPOSITORY_URL =
     "https://github.com/Prosincerity/Ghostwriter-Dict"
+internal const val DICTIONARY_DATA_LICENSE_URL =
+    "https://github.com/Prosincerity/Ghostwriter-Dict/blob/main/LICENSE-DATA.md"
+internal const val THIRD_PARTY_LICENSES_URL =
+    "https://github.com/Prosincerity/Ghostwriter/blob/main/THIRD_PARTY_LICENSES.md"
 internal const val KAIKKI_URL = "https://kaikki.org/dictionary/"
 internal const val WIKTIONARY_COPYRIGHT_URL =
     "https://en.wiktionary.org/wiki/Wiktionary:Copyrights"
 internal const val CC_BY_SA_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
 internal const val GFDL_URL = "https://www.gnu.org/licenses/fdl-1.3.html"
+internal const val ESPEAK_SOURCE_URL = "https://github.com/espeak-ng/espeak-ng/tree/1.52.0"
+internal const val ESPEAK_LICENSE_URL = "https://github.com/espeak-ng/espeak-ng/blob/1.52.0/COPYING"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,31 +89,49 @@ fun AboutScreen(
             AboutSectionTitle("Open source")
             Text(
                 "Copyright © 2026 Ghostwriter contributors. Ghostwriter is released under " +
-                    "the GNU General Public License v3.0 only.",
+                    "the GNU General Public License v3.0 or later.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                "Ghostwriter comes with no warranty, to the extent permitted by law. " +
+                    "You may redistribute and modify it under the GNU General Public License " +
+                    "v3.0 or later. See the license below for the full terms.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             AboutLink("Source code", GHOSTWRITER_REPOSITORY_URL, onOpenLink)
-            AboutLink("GNU GPL v3.0", GHOSTWRITER_LICENSE_URL, onOpenLink)
+            AboutLink("GNU GPL v3.0 or later", GHOSTWRITER_LICENSE_URL, onOpenLink)
+            AboutLink("Third-party licenses", THIRD_PARTY_LICENSES_URL, onOpenLink)
 
             AboutSectionTitle("Dictionary attribution")
             Text(
-                "Dictionary datasets prepared for Ghostwriter are derived from Kaikki.org's " +
-                    "machine-readable dictionaries, extracted from Wiktionary with Wiktextract, " +
-                    "and modified for this project.",
+                "The Wiktionary dictionary data was prepared from Kaikki.org's machine-readable " +
+                    "Wiktionary extraction by Wiktextract. The separate eSpeak NG dictionary " +
+                    "contains generated pronunciations. Both were prepared for Ghostwriter.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "The source data is available under the same licenses as Wiktionary: Creative " +
-                    "Commons Attribution-ShareAlike 4.0 International and the GNU Free " +
-                    "Documentation License 1.1 or later.",
+                "The dictionary databases are distributed under Creative Commons " +
+                    "Attribution-ShareAlike 4.0 International. Wiktionary source material " +
+                    "also has GNU Free Documentation License terms; see the links below.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             AboutLink("Dictionary source files", DICTIONARY_REPOSITORY_URL, onOpenLink)
+            AboutLink("Dictionary data license and attribution", DICTIONARY_DATA_LICENSE_URL, onOpenLink)
             AboutLink("Kaikki.org data source", KAIKKI_URL, onOpenLink)
             AboutLink("Wiktionary copyright and licensing", WIKTIONARY_COPYRIGHT_URL, onOpenLink)
             AboutLink("CC BY-SA 4.0", CC_BY_SA_URL, onOpenLink)
             AboutLink("GNU Free Documentation License", GFDL_URL, onOpenLink)
+
+            AboutSectionTitle("Offline IPA generation")
+            Text(
+                "For words missing from both downloaded dictionaries, Ghostwriter uses " +
+                    "eSpeak NG 1.52.0 locally to generate IPA. Its source is available under " +
+                    "the GNU General Public License version 3 or later.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            AboutLink("eSpeak NG 1.52.0 source", ESPEAK_SOURCE_URL, onOpenLink)
+            AboutLink("eSpeak NG license", ESPEAK_LICENSE_URL, onOpenLink)
 
             Text(
                 "Ghostwriter is not affiliated with or endorsed by Kaikki.org, Wiktionary, " +

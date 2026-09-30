@@ -1,48 +1,54 @@
-# Feature Roadmap
+# Features and roadmap
 
-This document is the single source of truth for where Ghostwriter is headed. Keep it updated as features land.
+This is the authoritative feature status. Planned items are not commitments
+to a release date or implementation order.
 
-## Guiding rules
+## Implemented
 
-- No AI functionality. Ever.
-- No added bloat — every feature must earn its place for someone writing rap lyrics.
-- Works offline by default.
+- **Lyric projects:** create, rename, and delete projects; write in a
+  full-screen Material 3 editor with dark-theme support.
+- **Local persistence:** manual saves and configurable periodic autosave
+  with rotating backups.
+- **Project information:** musical key, tempo, time signature, notes,
+  beat references, and timestamps stored with each project.
+- **Offline beat playback:** import a beat into a project; play, pause,
+  restart, loop, and adjust volume from the editor.
+- **Background playback:** continue across screens and other apps, with
+  Android notification and lock-screen controls. Loop state stays in sync
+  with the editor, and audio interruptions pause playback.
+- **Waveform timeline:** seek, zoom, pan, and manage named markers.
+  Waveforms are cached; processing supports cancel and retry, with a warning
+  for long audio files.
+- **Rhyme dictionary:** download pronunciation sources independently and
+  search for rhymes, assonance, written prefixes, and phonetic suffixes.
+  Missing-word pronunciations can be generated locally. See
+  [Dictionaries](DICTIONARIES.md) for supported languages and search behavior.
+- **About and attribution:** project information, source links, licenses,
+  and dictionary-data notices.
 
-## Phase 1 — Barebones notepad (MVP)
+## Planned
 
-- [x] Single full-screen text editor
-- [x] Modern, clean, dark-friendly UI (Material 3)
-- [x] Create / delete lyric documents
-- [x] Rename lyric documents
-- [x] Basic local persistence (survives app restart)
-- [x] About screen with project, source, license, and dictionary-data attribution links
+| Feature | Intended scope |
+| --- | --- |
+| Editor gutters | Left syllable counts and right bar numbers, with independent toggles; bars group pairs of lyric lines |
+| Hyphenation | Optional word splitting with a configurable separator |
+| Rhyme coloring | Syllable analysis within a bar, with consistent colors for rhyme groups |
+| Instrumentals library | Browse reusable beats; assigned beats remain copied into each project |
+| Import and export | Plain text first; richer document formats may follow |
+| General dictionary | Word definitions alongside pronunciation search |
+| Android Auto | Browse project instrumentals using offline playback and the existing media session |
+| Optional cloud sync | A user-provided backend that does not require Google Play Services |
 
-## Phase 2 — Songwriting environment
-
-- [ ] **Editor gutters** — extend `LyricsNotepad` with optional IDE-style
-  columns while keeping persistence in `EditorScreen` unchanged:
-  - Left gutter: show the syllable count for the current lyric line.
-  - Right gutter: number bars, with one bar counted for every two lyric lines.
-  - Settings: independent **Syllable counter** and **Bar counter** toggles;
-    disabling either setting removes its corresponding gutter.
-- [ ] **Hyphenation** — auto-hyphenate every word, customizable separator character (e.g. `-` or space), toggle on/off
-- [ ] **Rhyme detection** — syllable-by-syllable analysis within a bar; syllables that rhyme with another syllable get a unique, consistent color per rhyme group
-- [x] **Autosave** — continuous autosave with a configurable interval, plus a rolling ring of `autosave1.txt`..`autosaveN.txt` backups (N configurable)
-- [x] **Offline beat / media player** — in-editor background audio player for instrumentals while songwriting. Built strictly using Android framework's built-in AOSP `MediaPlayer` (no heavy external libraries). Controls for play/pause, play from start, loop toggle, and volume.
-- [x] **Interactive waveform timeline** — actual decoded amplitude waveform replaces the seek slider. Includes tap/drag seeking, pinch zoom, dedicated zoom buttons, horizontal panning, a centered high-contrast playhead, and project-persistent named markers that can be added, moved, renamed, deleted, and tapped to seek.
-- [x] **Waveform processing safety** — extraction runs off the UI thread and is cached per project. Processing can be cancelled or retried without leaving partial cache/import files; editor navigation and save actions are guarded while processing; files at least five minutes long show a warning that processing can take a long time.
-- [ ] **Instrumentals library & project beat management** — importing a selected beat directly into its project is complete; a browsable global instrumentals library (e.g. `Music/Ghostwriter/Instrumentals/` or another user-accessible directory) remains to be built. Assigned beats are copied into the project directory so projects stay self-contained.
-- [x] **Project metadata (`project.json`)** — in-editor Project Info dialog and JSON file in each project directory storing musical key, BPM, time signature, notes, assigned beat references, and timestamps, using Android's built-in `org.json` (no third-party JSON libraries).
-- [ ] **Cloud sync** (optional, user-provided backend/account — AOSP-friendly, so avoid anything requiring Google Play Services)
-- [ ] **Import / export** — plain text at minimum; consider `.docx`/`.pdf` export later
-- [ ] **Dictionary** — word lookup while writing
-- [ ] **Rhyme dictionary** — look up rhymes on demand when stuck
-- [ ] **Testable code blocks** — keep syllable counting, bar counting, rhyme
-  detection, and hyphenation as pure logic with JVM tests; cover gutter
-  visibility and alignment with Compose tests.
+New syllable, bar, rhyme-coloring, and hyphenation logic should remain
+independently testable on the JVM. Extend `LyricsNotepad` for gutters while
+keeping persistence in `EditorScreen`. Gutter changes also need Compose
+coverage for visibility and alignment.
 
 ## Non-goals
 
-- AI-generated or AI-assisted lyric writing
-- Social features, accounts, or analytics beyond what's needed for optional cloud sync
-- Ads, telemetry, or monetization that compromises the software-freedom and open-source promise
+- AI-generated or AI-assisted writing.
+- Social features, analytics, or accounts beyond those needed for optional sync.
+- Ads, telemetry, or monetization that compromises software freedom.
+
+Architecture and known limitations are documented in the
+[documentation index](README.md).

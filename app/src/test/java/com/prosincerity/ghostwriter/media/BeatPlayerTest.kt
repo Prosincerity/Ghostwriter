@@ -25,6 +25,15 @@ import java.io.File
 class BeatPlayerTest {
 
     @Test
+    fun unpreparedPlayer_neverRequestsPlaybackServiceStart() {
+        var starts = 0
+        val player = BeatPlayer(beforePlay = { starts++; true })
+        player.play()
+        player.togglePlayPause()
+        assertEquals(0, starts)
+    }
+
+    @Test
     fun setVolume_ignoresNaNAndKeepsPreviousVolume() {
         val player = BeatPlayer()
         player.setVolume(0.5f)
@@ -102,6 +111,18 @@ class BeatPlayerTest {
     }
 
     // --- Loop toggle ---
+
+    @Test
+    fun toggleLoop_notifiesOwnerWithUpdatedState() {
+        val observed = mutableListOf<Boolean>()
+        lateinit var player: BeatPlayer
+        player = BeatPlayer(onStateChanged = { observed += player.isLooping })
+
+        player.toggleLoop()
+        player.toggleLoop()
+
+        assertEquals(listOf(false, true), observed)
+    }
 
     @Test
     fun toggleLoop_flipsFromTrueToFalse() {
