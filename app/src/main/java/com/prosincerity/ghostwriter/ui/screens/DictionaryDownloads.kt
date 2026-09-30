@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.DictionaryDownloadProgress
 import com.prosincerity.ghostwriter.data.DictionaryInstaller
 import com.prosincerity.ghostwriter.data.DictionarySource
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,7 +53,7 @@ fun DictionaryDownloadsScreen(onBack: () -> Unit) {
         TopAppBar(
             title = { Text("Rhyme dictionary downloads") },
             navigationIcon = {
-                IconButton(onClick = onBack) {
+                IconButton(shape = GhostButtonShape, onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
@@ -159,6 +160,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                         Icon(Icons.Default.Check, contentDescription = "$sourceLabel installed for $languageLabel")
                     } else {
                         IconButton(
+                            shape = GhostButtonShape,
                             onClick = { startDownload(language, source) },
                             enabled = !checkingDictionaries && active == null,
                         ) {
@@ -169,7 +171,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                 if (active == key) {
                     val percent = progress?.let { (100 * it.downloadedBytes / it.totalBytes).toInt() }
                     Text("Downloading $sourceLabel${percent?.let { " $it%" } ?: "..."}")
-                    TextButton(onClick = { downloadJob?.cancel() }) { Text("Cancel download") }
+                    TextButton(shape = GhostButtonShape, onClick = { downloadJob?.cancel() }) { Text("Cancel download") }
                 }
             }
             Spacer(Modifier.height(16.dp))

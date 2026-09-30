@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 
 /**
  * Autosave settings plus navigation to project information. Uses a plain
@@ -61,7 +62,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text("Settings") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(shape = GhostButtonShape, onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -102,6 +103,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(24.dp))
 
             OutlinedButton(
+                shape = GhostButtonShape,
                 onClick = onOpenDictionaryDownloads,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -111,6 +113,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(24.dp))
 
             OutlinedButton(
+                shape = GhostButtonShape,
                 onClick = onOpenAbout,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -141,6 +144,7 @@ private fun SettingsDropdownRow(
         )
         Box {
             OutlinedButton(
+                shape = GhostButtonShape,
                 onClick = { expanded = true },
                 modifier = Modifier.height(36.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp),

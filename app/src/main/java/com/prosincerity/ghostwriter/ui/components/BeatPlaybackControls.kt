@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.media.BeatPlayer
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 
 @Composable
 internal fun BeatPlaybackControls(
@@ -45,6 +46,7 @@ internal fun BeatPlaybackControls(
 
     Box(modifier = Modifier.fillMaxWidth()) {
         TextButton(
+            shape = GhostButtonShape,
             onClick = onReassignBeat,
             enabled = !isReassigningBeat,
             modifier = Modifier
@@ -58,19 +60,19 @@ internal fun BeatPlaybackControls(
             modifier = Modifier.align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onPlayFromStart) {
+            IconButton(shape = GhostButtonShape, onClick = onPlayFromStart) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
                     contentDescription = "Play from start",
                 )
             }
-            IconButton(onClick = onTogglePlayback) {
+            IconButton(shape = GhostButtonShape, onClick = onTogglePlayback) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
                 )
             }
-            IconButton(onClick = { beatPlayer.toggleLoop() }) {
+            IconButton(shape = GhostButtonShape, onClick = { beatPlayer.toggleLoop() }) {
                 Icon(
                     imageVector = Icons.Filled.Loop,
                     contentDescription = if (isLooping) "Disable loop" else "Enable loop",
@@ -87,6 +89,7 @@ internal fun BeatPlaybackControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
+                shape = GhostButtonShape,
                 onClick = {
                     beatPlayer.toggleMute()
                     volume = beatPlayer.volume

@@ -50,6 +50,7 @@ import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
 import com.prosincerity.ghostwriter.ui.components.LyricsNotepad
 import com.prosincerity.ghostwriter.ui.components.ReassignBeatDialog
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlin.time.Duration.Companion.seconds
@@ -411,24 +412,26 @@ fun EditorScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(shape = GhostButtonShape, onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     IconButton(
+                        shape = GhostButtonShape,
                         onClick = onOpenDictionary,
                         enabled = !isBeatProcessing,
                     ) {
                         Icon(Icons.Filled.Book, contentDescription = "Dictionary")
                     }
                     IconButton(
+                        shape = GhostButtonShape,
                         onClick = { showInfoDialog = true },
                         enabled = !isBeatProcessing,
                     ) {
                         Icon(Icons.Filled.Info, contentDescription = "Project Info")
                     }
-                    IconButton(onClick = {
+                    IconButton(shape = GhostButtonShape, onClick = {
                         val contentToSave = lyrics
                         coroutineScope.launch {
                             val saved = withContext(Dispatchers.IO) {
@@ -449,7 +452,7 @@ fun EditorScreen(
                             contentDescription = "Save",
                         )
                     }
-                    IconButton(onClick = onOpenSettings) {
+                    IconButton(shape = GhostButtonShape, onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },

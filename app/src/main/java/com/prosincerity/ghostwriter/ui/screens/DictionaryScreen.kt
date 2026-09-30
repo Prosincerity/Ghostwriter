@@ -45,6 +45,7 @@ import com.prosincerity.ghostwriter.data.DictionarySearch
 import com.prosincerity.ghostwriter.data.DictionarySearchMode
 import com.prosincerity.ghostwriter.data.DictionarySearchResult
 import com.prosincerity.ghostwriter.data.PronunciationSource
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -121,7 +122,7 @@ internal fun DictionaryScreen(
         TopAppBar(
             title = { Text("Rhyme Search") },
             navigationIcon = {
-                IconButton(onClick = onBack) {
+                IconButton(shape = GhostButtonShape, onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
@@ -143,7 +144,7 @@ internal fun DictionaryScreen(
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = onOpenDownloads) { Text("Download dictionaries") }
+                    Button(shape = GhostButtonShape, onClick = onOpenDownloads) { Text("Download dictionaries") }
                 }
             } else {
                 OutlinedTextField(
@@ -158,7 +159,7 @@ internal fun DictionaryScreen(
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box {
-                        TextButton(onClick = { languageMenu = true }) { Text("Language: ${dictionaryLanguageLabel(language)}") }
+                        TextButton(shape = GhostButtonShape, onClick = { languageMenu = true }) { Text("Language: ${dictionaryLanguageLabel(language)}") }
                         DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
                             availableLanguages.forEach { code ->
                                 DropdownMenuItem(
@@ -173,7 +174,7 @@ internal fun DictionaryScreen(
                         }
                     }
                     Box {
-                        TextButton(onClick = { modeMenu = true }) { Text("Mode: ${modeLabel(mode)}") }
+                        TextButton(shape = GhostButtonShape, onClick = { modeMenu = true }) { Text("Mode: ${modeLabel(mode)}") }
                         DropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
                             DictionarySearchMode.entries.forEach { option ->
                                 DropdownMenuItem(
@@ -188,7 +189,7 @@ internal fun DictionaryScreen(
                         }
                     }
                 }
-                Button(onClick = { submit() }, enabled = word.isNotBlank() && !loading) { Text("Search") }
+                Button(shape = GhostButtonShape, onClick = { submit() }, enabled = word.isNotBlank() && !loading) { Text("Search") }
                 Spacer(Modifier.height(12.dp))
                 if (loading) Text("Searching…")
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -220,9 +221,9 @@ internal fun DictionaryScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            TextButton(onClick = { submit(page - 1) }, enabled = page > 0) { Text("Previous") }
+                            TextButton(shape = GhostButtonShape, onClick = { submit(page - 1) }, enabled = page > 0) { Text("Previous") }
                             Text("Page ${page + 1}")
-                            TextButton(onClick = { submit(page + 1) }, enabled = found.hasNext) { Text("Next") }
+                            TextButton(shape = GhostButtonShape, onClick = { submit(page + 1) }, enabled = found.hasNext) { Text("Next") }
                         }
                     }
                 }
