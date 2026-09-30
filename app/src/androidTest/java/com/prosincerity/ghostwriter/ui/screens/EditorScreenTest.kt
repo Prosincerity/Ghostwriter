@@ -68,7 +68,7 @@ class EditorScreenTest {
             val token = notification.extras.getParcelable<MediaSession.Token>(Notification.EXTRA_MEDIA_SESSION)!!
             val controller = MediaController(context, token)
             controller.transportControls.seekTo(5_000)
-            composeRule.waitUntil(5_000) { controller.playbackState?.position ?: 0 >= 4_750 }
+            composeRule.waitUntil(5_000) { (controller.playbackState?.position ?: 0) >= 4_750 }
 
             composeRule.runOnIdle { visible.value = false }
             composeRule.waitForIdle()
@@ -273,7 +273,8 @@ class EditorScreenTest {
             waitUntilTextExists("Couldn't create waveform")
             composeRule.onNodeWithText("Remove beat").performClick()
             composeRule.onNodeWithText("Reassign beat?").assertExists()
-            clickLastNodeWithText("Reassign")
+            val reassignButtons = composeRule.onAllNodesWithText("Reassign")
+            reassignButtons[reassignButtons.fetchSemanticsNodes().lastIndex].performClick()
 
             waitUntilTextExists("No beat selected")
             composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -449,11 +450,6 @@ class EditorScreenTest {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
-    }
-
-    private fun clickLastNodeWithText(text: String) {
-        val matchingNodes = composeRule.onAllNodesWithText(text)
-        matchingNodes[matchingNodes.fetchSemanticsNodes().lastIndex].performClick()
     }
 
     private fun disposeEditorAndDeleteProject(
