@@ -5,6 +5,30 @@ import org.junit.Test
 
 class AssonanceFormFilterTest {
     @Test
+    fun equallyShortInfinitivesKeepTheFirstReturnedSpelling() {
+        val results = listOf(
+            AssonanceFormFilter.Entry("Kaufen", "/kaʊfən/"),
+            AssonanceFormFilter.Entry("kaufen", "/kaʊfən/"),
+            AssonanceFormFilter.Entry("kauf", "/kaʊf/"),
+        )
+
+        assertEquals(setOf("kaufen", "kauf"), AssonanceFormFilter.excludedWords(results, "de"))
+        assertEquals(setOf("Kaufen", "kauf"), AssonanceFormFilter.excludedWords(results.reversed(), "de"))
+    }
+
+    @Test
+    fun unsupportedLanguagesAndInvalidPronunciationsStayUnfiltered() {
+        val results = listOf(
+            AssonanceFormFilter.Entry("work", "/wɜrk/"),
+            AssonanceFormFilter.Entry("working", "/wɜrkɪŋ/"),
+            AssonanceFormFilter.Entry("works", "☃"),
+        )
+
+        assertEquals(setOf("working"), AssonanceFormFilter.excludedWords(results, "en"))
+        assertEquals(emptySet<String>(), AssonanceFormFilter.excludedWords(results, "tr"))
+    }
+
+    @Test
     fun keepsPronouncedBaseOfGermanPrefixFamilyRegardlessOfResultOrder() {
         val results = listOf(
             AssonanceFormFilter.Entry("erblondendem", "[ɛɐ̯ˈblɔndn̩dəm]"),
