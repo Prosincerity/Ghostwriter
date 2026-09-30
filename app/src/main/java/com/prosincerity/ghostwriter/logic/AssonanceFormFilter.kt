@@ -47,8 +47,7 @@ internal object AssonanceFormFilter {
                         base.spelling.length == candidate.spelling.length ||
                         !compatible(base, candidate, language)) continue
                     parents[representative(candidate.index)] = representative(base.index)
-                    if (candidate.phonemes.size > base.phonemes.size &&
-                        candidate.phonemes.take(base.phonemes.size) == base.phonemes) {
+                    if (candidate.extendsPronunciationOf(base)) {
                         exactExtensions[base.index]++
                     }
                 }
@@ -57,31 +56,42 @@ internal object AssonanceFormFilter {
         val families = pronounced.groupBy { representative(it.index) }
         val excluded = mutableSetOf<String>()
         for (family in families.values) {
-            val spellings = family.mapTo(mutableSetOf()) { it.spelling }
-            // A returned German stem plus -en or -n identifies an infinitive among the forms.
-            val germanInfinitives = if (language == "de") family.filter {
-                val stem = when {
-                    it.spelling.endsWith("en") -> it.spelling.dropLast(2)
-                    it.spelling.endsWith("n") -> it.spelling.dropLast(1)
-                    else -> null
-                }
-                stem != null && stem in spellings
-            } else emptyList()
-            // Prefer the form that actually starts the most returned pronunciations.
-            // A spelling-only shortest form can end in a different sound (erblond/erblonden).
-            val hasExactExtensions = family.any { exactExtensions[it.index] > 0 }
-            val kept = if (germanInfinitives.isNotEmpty()) {
-                germanInfinitives.minWith(compareBy<Pronounced> { it.spelling.length }.thenBy { it.index })
-            } else if (hasExactExtensions) {
-                family.maxWith(compareBy<Pronounced> { exactExtensions[it.index] }
-                    .thenBy { it.spelling.length }.thenByDescending { it.index })
-            } else {
-                family.minWith(compareBy<Pronounced> { it.spelling.length }.thenBy { it.index })
-            }
+            val kept = preferredForm(family, language, exactExtensions)
             family.filter { it !== kept }.forEach { excluded += it.entry.word }
         }
         return excluded
     }
+
+    private fun preferredForm(
+        family: List<Pronounced>,
+        language: String,
+        exactExtensions: IntArray,
+    ): Pronounced {
+        val shortestFirst = compareBy<Pronounced> { it.spelling.length }.thenBy { it.index }
+        if (language == "de") {
+            val spellings = family.mapTo(mutableSetOf()) { it.spelling }
+            // A returned German stem plus -en or -n identifies an infinitive among the forms.
+            val infinitive = family.filter { infinitiveStem(it.spelling) in spellings }
+                .minWithOrNull(shortestFirst)
+            if (infinitive != null) return infinitive
+        }
+        // Prefer the form that actually starts the most returned pronunciations.
+        // A spelling-only shortest form can end in a different sound (erblond/erblonden).
+        if (family.any { exactExtensions[it.index] > 0 }) {
+            return family.maxWith(compareBy<Pronounced> { exactExtensions[it.index] }
+                .thenBy { it.spelling.length }.thenByDescending { it.index })
+        }
+        return family.minWith(shortestFirst)
+    }
+
+    private fun infinitiveStem(spelling: String): String? = when {
+        spelling.endsWith("en") -> spelling.dropLast(2)
+        spelling.endsWith("n") -> spelling.dropLast(1)
+        else -> null
+    }
+
+    private fun Pronounced.extendsPronunciationOf(base: Pronounced): Boolean =
+        phonemes.size > base.phonemes.size && phonemes.take(base.phonemes.size) == base.phonemes
 
     private class PrefixNode {
         val children = mutableMapOf<Char, PrefixNode>()
@@ -90,10 +100,7 @@ internal object AssonanceFormFilter {
 
     private fun compatible(base: Pronounced, candidate: Pronounced, language: String): Boolean {
         if (base.assonance == candidate.assonance) return true
-        if (language == "en") {
-            return candidate.phonemes.size > base.phonemes.size &&
-                candidate.phonemes.take(base.phonemes.size) == base.phonemes
-        }
+        if (language == "en") return candidate.extendsPronunciationOf(base)
         if (base.assonance.isEmpty() || candidate.assonance.isEmpty()) return false
         if (base.assonance != "ə ${candidate.assonance}" &&
             candidate.assonance != "ə ${base.assonance}") return false
