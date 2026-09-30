@@ -12,7 +12,6 @@ import java.io.FilterInputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.zip.GZIPInputStream
 import kotlin.coroutines.coroutineContext
 
 internal data class DictionaryAsset(val file: String, val sizeBytes: Long, val url: String)
@@ -149,40 +148,7 @@ internal class DictionaryInstaller(
         check(versionDir.mkdirs() || versionDir.isDirectory) { "Cannot create version directory" }
         val staging = File(versionDir, ".${dictionarySource.fileName}-${System.nanoTime()}.part")
         try {
-            var received = 0L
-            source.open(asset.url).use { input ->
-                val counted = object : FilterInputStream(input) {
-                    override fun read(): Int {
-                        val value = super.read()
-                        if (value >= 0) received++
-                        return value
-                    }
-
-                    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
-                        val count = super.read(buffer, offset, length)
-                        if (count > 0) received += count
-                        return count
-                    }
-                }
-                GZIPInputStream(counted).use { archive ->
-                    staging.outputStream().buffered().use { output ->
-                        val buffer = ByteArray(64 * 1024)
-                        var lastReported = 0L
-                        while (true) {
-                            coroutineContext.ensureActive()
-                            val count = archive.read(buffer)
-                            if (count < 0) break
-                            output.write(buffer, 0, count)
-                            if (received - lastReported >= 256 * 1024) {
-                                onProgress(DictionaryDownloadProgress(
-                                    received.coerceAtMost(asset.sizeBytes), asset.sizeBytes,
-                                ))
-                                lastReported = received
-                            }
-                        }
-                    }
-                }
-            }
+            unpackDictionaryArchive(source, asset, staging, onProgress)
             coroutineContext.ensureActive()
             check(isUsableDatabase(staging)) { "Downloaded dictionary is invalid" }
             coroutineContext.ensureActive()
