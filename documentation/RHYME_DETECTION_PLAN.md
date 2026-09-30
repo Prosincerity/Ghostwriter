@@ -195,7 +195,7 @@ database miss and passed in the connected emulator suite.
   longer fallback tiers rank before shorter ones across both sources and
   all result pages. A word appears only once, at its strongest matching tier.
   With multiple input pronunciations, exact keys with fewer vowels are scanned
-  first so base forms can be found before their longer inflections.
+  first across both sources so base forms can be found before their longer inflections.
   German and English assonance results collapse returned spellings when one is
   a compatible prefix of another; they do not rely on a list of word endings.
   German endings
@@ -208,7 +208,9 @@ database miss and passed in the connected emulator suite.
   pronunciations, falling back
   to the shortest spelling. English families keep the uninflected base when
   present (`work` over `works` and `working`). Pagination counts the remaining
-  forms. The database has no lemma column, so retained forms come from results.
+  forms. Completed pages retain their chosen forms when later scan batches
+  contain another member of the same family, so page offsets remain stable.
+  The database has no lemma column, so retained forms come from results.
   Parameterize every query and escape literal `%`, `_`, and the chosen `LIKE`
   escape character. Benchmark suffix
   searches on realistic data. Keep searches off the main thread and bound

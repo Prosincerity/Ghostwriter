@@ -1,6 +1,5 @@
 package com.prosincerity.ghostwriter.data
 
-import android.database.sqlite.SQLiteDatabase
 import com.prosincerity.ghostwriter.logic.AssonanceFormFilter
 import com.prosincerity.ghostwriter.logic.CompoundRhymeFilter
 import com.prosincerity.ghostwriter.logic.DictionaryHeadword
@@ -26,9 +25,13 @@ internal data class DictionarySearchResult(
 
 /** Reads the producer's existing indexes; no database is modified. */
 internal class DictionarySearch(
-    private val installer: DictionaryInstaller,
-    private val pronunciations: DictionaryPronunciations = DictionaryPronunciations(installer),
+    private val data: DictionarySearchData,
 ) {
+    constructor(
+        installer: DictionaryInstaller,
+        pronunciations: DictionaryPronunciations = DictionaryPronunciations(installer),
+    ) : this(InstalledDictionarySearchData(installer, pronunciations))
+
     suspend fun search(
         word: String,
         language: String,
@@ -36,15 +39,16 @@ internal class DictionarySearch(
         page: Int = 0,
     ): DictionarySearchResult = withContext(Dispatchers.IO) {
         require(page >= 0)
-        require(language in installer.release.languages)
+        require(language in data.languages)
         val normalized = DictionaryHeadword.normalize(word.trim())
         if (normalized.isEmpty()) return@withContext DictionarySearchResult(null, emptyList())
         val firstIndex = page.toLong() * PAGE_SIZE
         require(firstIndex < Int.MAX_VALUE - PAGE_SIZE)
         val nextPageIndex = (firstIndex + PAGE_SIZE).toInt()
-        val pronunciation = pronunciations.lookup(normalized, language)
+        val pronunciation = data.lookup(normalized, language)
         val plan = DictionarySearchPlan.fromIpa(pronunciation?.ipa.orEmpty(), language, mode)
         val matches = linkedMapOf<String, DictionaryMatch>()
+        val earlierPageWords = mutableSetOf<String>()
         fun visibleMatches(): List<DictionaryMatch> {
             val collected = matches.values.toList()
             val excluded = when (mode) {
@@ -54,13 +58,23 @@ internal class DictionarySearch(
                     language,
                 )
                 DictionarySearchMode.ASSONANCE -> AssonanceFormFilter.excludedWords(
-                    collected.map { AssonanceFormFilter.Entry(it.word, it.ipa) }, language,
+                    collected.map { AssonanceFormFilter.Entry(it.word, it.ipa) }, language, earlierPageWords,
                 )
                 else -> emptySet()
             }
             return collected.filterNot { it.word in excluded }
         }
-        fun enough(): Boolean = visibleMatches().size > nextPageIndex
+        fun enough(): Boolean {
+            val visible = visibleMatches()
+            if (mode == DictionarySearchMode.ASSONANCE) {
+                // Finalize full pages at the same scan checkpoints on every request.
+                // A later family member must not replace an already paged form and
+                // shift the offsets used by following pages. Keep one lookahead match.
+                val fullPages = (visible.size - 1).coerceAtLeast(0) / PAGE_SIZE
+                visible.take(fullPages * PAGE_SIZE).forEach { earlierPageWords += it.word }
+            }
+            return visible.size > nextPageIndex
+        }
         fun result(): DictionarySearchResult {
             val visible = visibleMatches()
             return DictionarySearchResult(
@@ -71,10 +85,10 @@ internal class DictionarySearch(
         }
 
         // Every stage visits curated data first and closes each database before advancing.
-        suspend fun scanSources(scan: suspend (SQLiteDatabase, PronunciationSource) -> Unit) {
+        suspend fun scanSources(scan: suspend (DictionarySearchRows, PronunciationSource) -> Unit) {
             for (source in DictionarySource.entries) {
                 coroutineContext.ensureActive()
-                installer.openReadOnly(language, source)?.use { database ->
+                data.withSource(language, source) { database ->
                     scan(database, source.pronunciationSource)
                 }
                 if (enough()) break
@@ -82,16 +96,16 @@ internal class DictionarySearch(
         }
 
         if (mode == DictionarySearchMode.ASSONANCE) {
-            scanSources { database, source ->
-                for (key in plan.prefixes) {
+            for (key in plan.prefixes) {
+                scanSources { database, source ->
                     collectRows(
                         database,
                         "SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? " +
                             "ORDER BY word, ipa",
                         arrayOf(key.value), normalized, source, matches, ::enough,
                     ) { ipa -> IpaSearchKeys.fromIpa(ipa, language)?.assonance == key.value }
-                    if (enough()) break
                 }
+                if (enough()) break
             }
             if (enough()) return@withContext result()
 
@@ -99,7 +113,6 @@ internal class DictionarySearch(
             // Rebuild the same ordered sequence before slicing each requested page.
             for (prefix in plan.assonanceFallbacks) {
                 scanSources { database, source ->
-                    database.execSQL("PRAGMA case_sensitive_like = ON")
                     collectRows(
                         database,
                         "SELECT word, ipa FROM dictionary WHERE assonance_reversed LIKE ? ESCAPE '!' " +
@@ -117,7 +130,6 @@ internal class DictionarySearch(
         if (mode == DictionarySearchMode.WORD_SUFFIX) {
             for (searchPrefix in plan.prefixes) {
                 scanSources { database, source ->
-                    database.execSQL("PRAGMA case_sensitive_like = ON")
                     val suffix = searchPrefix.tokens ?: return@scanSources
                     val pattern = suffix.asReversed().joinToString("%") { escapeLike(it) } + "%"
                     collectRows(
@@ -135,7 +147,6 @@ internal class DictionarySearch(
             return@withContext result()
         }
         scanSources { database, source ->
-            database.execSQL("PRAGMA case_sensitive_like = ON")
             if (mode == DictionarySearchMode.WORD_PREFIX) {
                 collectRows(
                     database,
@@ -161,7 +172,7 @@ internal class DictionarySearch(
     }
 
     private suspend fun collectRows(
-        database: SQLiteDatabase,
+        database: DictionarySearchRows,
         sql: String,
         args: Array<String>,
         input: String,
@@ -172,10 +183,8 @@ internal class DictionarySearch(
     ) {
         var offset = 0
         while (!enough()) {
-            val rows = database.readDictionaryRows("$sql LIMIT $SCAN_LIMIT OFFSET $offset", args) { cursor ->
-                val candidate = cursor.getString(0)
+            val rows = database.read("$sql LIMIT $SCAN_LIMIT OFFSET $offset", args) { candidate, ipa ->
                 if (candidate != input && candidate !in matches) {
-                    val ipa = cursor.getString(1)
                     if (validIpa(ipa)) matches[candidate] = DictionaryMatch(candidate, ipa, source)
                 }
             }
