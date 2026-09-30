@@ -1,7 +1,5 @@
 package com.prosincerity.ghostwriter.data
 
-import android.content.Context
-import android.content.ContextWrapper
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -140,24 +138,20 @@ class DictionarySearchInstrumentedTest {
     fun assonanceAppendsShorterTiersAfterExactMatchesAcrossSources() = withDictionaryFixture { installer ->
         val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
         version.mkdirs()
-        fun row(word: String, ipa: String): Row {
-            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
-            return Row(word, ipa, keys.reversed, keys.assonance)
-        }
         database(File(version, "wiktionary.db"), listOf(
-            row("source", "/aeiou/"),
-            row("four", "/eiou/"),
-            row("partial", "/iou/"),
-            row("two", "/ou/"),
-            row("one", "/u/"),
-            row("oneExact", "/bu/"),
-            row("wrongBoundary", "/oːu/"),
-            row("absent", "/ɑeiou/"),
-            row("short", "/æɒ/"),
-            row("shortExact", "/bæɒ/"),
-            row("extended", "/uæɒ/"),
+            germanRow("source", "/aeiou/"),
+            germanRow("four", "/eiou/"),
+            germanRow("partial", "/iou/"),
+            germanRow("two", "/ou/"),
+            germanRow("one", "/u/"),
+            germanRow("oneExact", "/bu/"),
+            germanRow("wrongBoundary", "/oːu/"),
+            germanRow("absent", "/ɑeiou/"),
+            germanRow("short", "/æɒ/"),
+            germanRow("shortExact", "/bæɒ/"),
+            germanRow("extended", "/uæɒ/"),
         ))
-        database(File(version, "espeak.db"), listOf(row("exact", "/baeiosu/")))
+        database(File(version, "espeak.db"), listOf(germanRow("exact", "/baeiosu/")))
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
         val exact = runBlocking { search.search("source", "de", DictionarySearchMode.ASSONANCE) }
@@ -177,10 +171,6 @@ class DictionarySearchInstrumentedTest {
     fun assonanceKeepsTierOrderAcrossSourcesAndEveryPage() = withDictionaryFixture { installer ->
         val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
         version.mkdirs()
-        fun row(word: String, ipa: String): Row {
-            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
-            return Row(word, ipa, keys.reversed, keys.assonance)
-        }
         val tiers = listOf(
             "exact" to "/a.e.i.o.u/",
             "four" to "/æ.e.i.o.u/",
@@ -190,17 +180,17 @@ class DictionarySearchInstrumentedTest {
         fun rows(source: String) = buildList {
             for ((tier, ipa) in tiers) {
                 repeat(if (tier == "exact" && source == "wiki") 30 else 35) { index ->
-                    add(row("$tier$source${index.toString().padStart(3, '0')}", ipa))
+                    add(germanRow("$tier$source${index.toString().padStart(3, '0')}", ipa))
                 }
             }
         }
         database(File(version, "wiktionary.db"), rows("wiki") + listOf(
-            row("source", "/a.e.i.o.u/"),
-            row("single", "/u/"),
-            row("wrongBoundary", "/oː.u/"),
+            germanRow("source", "/a.e.i.o.u/"),
+            germanRow("single", "/u/"),
+            germanRow("wrongBoundary", "/oː.u/"),
         ))
         database(File(version, "espeak.db"), rows("espeak") + listOf(
-            row("exactwiki000", "/æ.i.o.u/"), // A weaker pronunciation must not replace the exact result.
+            germanRow("exactwiki000", "/æ.i.o.u/"), // A weaker pronunciation must not replace the exact result.
         ))
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
         val pages = (0..4).map { page ->
@@ -250,15 +240,11 @@ class DictionarySearchInstrumentedTest {
     fun assonanceChecksShorterExactKeyBeforeLargeLongerKey() = withDictionaryFixture { installer ->
         val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
         version.mkdirs()
-        fun row(word: String, ipa: String): Row {
-            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
-            return Row(word, ipa, keys.reversed, keys.assonance)
-        }
         database(File(version, "wiktionary.db"), buildList {
-            add(row("source", "/aeio/"))
-            add(row("source", "/eio/"))
-            add(row("base", "/beio/"))
-            repeat(70) { index -> add(row("form${index.toString().padStart(2, '0')}", "/baeio/")) }
+            add(germanRow("source", "/aeio/"))
+            add(germanRow("source", "/eio/"))
+            add(germanRow("base", "/beio/"))
+            repeat(70) { index -> add(germanRow("form${index.toString().padStart(2, '0')}", "/baeio/")) }
         })
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
@@ -271,39 +257,35 @@ class DictionarySearchInstrumentedTest {
     fun assonanceCollapsesReleasedGermanInflections() = withDictionaryFixture { installer ->
         val version = File(installer.appContext.filesDir, "dictionaries/de/${installer.release.tag}")
         version.mkdirs()
-        fun row(word: String, ipa: String): Row {
-            val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
-            return Row(word, ipa, keys.reversed, keys.assonance)
-        }
         database(File(version, "wiktionary.db"), listOf(
-            row("verfolgen", "/fɛɐ̯ˈfɔlɡən/"),
-            row("verfolgen", "[fɛɐ̯ˈfɔlɡn̩]"),
-            row("erblond", "[ɛɐ̯ˈblɔnt]"),
-            row("erblonde", "[ɛɐ̯ˈblɔndə]"),
-            row("erblonden", "[ɛɐ̯ˈblɔndn̩]"),
-            row("erblondende", "[ɛɐ̯ˈblɔndn̩də]"),
-            row("erblondendem", "[ɛɐ̯ˈblɔndn̩dəm]"),
-            row("erborg", "[ɛɐ̯ˈbɔʁk]"),
-            row("erborge", "[ɛɐ̯ˈbɔʁɡə]"),
-            row("erborgende", "[ɛɐ̯ˈbɔʁɡn̩də]"),
-            row("erborgendem", "[ɛɐ̯ˈbɔʁɡn̩dəm]"),
-            row("erborgte", "[ɛɐ̯ˈbɔʁktə]"),
-            row("erborgtem", "[ɛɐ̯ˈbɔʁktəm]"),
-            row("erborget", "[ɛɐ̯ˈbɔʁɡət]"),
-            row("erborgtet", "[ɛɐ̯ˈbɔʁktət]"),
-            row("erborgen", "[ɛɐ̯ˈbɔʁɡn̩]"),
-            row("erdrossel", "[ɛɐ̯ˈdʁɔsl̩]"),
-            row("erdrosseln", "[ɛɐ̯ˈdʁɔsl̩n]"),
-            row("erdrosselnde", "[ɛɐ̯ˈdʁɔsl̩ndə]"),
-            row("erdrosselte", "[ɛɐ̯ˈdʁɔsl̩tə]"),
-            row("verdoppel", "[fɛɐ̯ˈdɔpl̩]"),
-            row("verdoppeln", "[fɛɐ̯ˈdɔpl̩n]"),
-            row("verdoppelnde", "[fɛɐ̯ˈdɔpl̩ndə]"),
-            row("verborgen", "[fɛɐ̯ˈbɔʁɡn̩]"),
-            row("verborgenste", "[fɛɐ̯ˈbɔʁɡn̩stə]"),
-            row("erfolg", "[ɛɐ̯ˈfɔlk]"),
-            row("erfolgen", "[ɛɐ̯ˈfɔlɡn̩]"),
-            row("erfolgende", "[ɛɐ̯ˈfɔlɡn̩də]"),
+            germanRow("verfolgen", "/fɛɐ̯ˈfɔlɡən/"),
+            germanRow("verfolgen", "[fɛɐ̯ˈfɔlɡn̩]"),
+            germanRow("erblond", "[ɛɐ̯ˈblɔnt]"),
+            germanRow("erblonde", "[ɛɐ̯ˈblɔndə]"),
+            germanRow("erblonden", "[ɛɐ̯ˈblɔndn̩]"),
+            germanRow("erblondende", "[ɛɐ̯ˈblɔndn̩də]"),
+            germanRow("erblondendem", "[ɛɐ̯ˈblɔndn̩dəm]"),
+            germanRow("erborg", "[ɛɐ̯ˈbɔʁk]"),
+            germanRow("erborge", "[ɛɐ̯ˈbɔʁɡə]"),
+            germanRow("erborgende", "[ɛɐ̯ˈbɔʁɡn̩də]"),
+            germanRow("erborgendem", "[ɛɐ̯ˈbɔʁɡn̩dəm]"),
+            germanRow("erborgte", "[ɛɐ̯ˈbɔʁktə]"),
+            germanRow("erborgtem", "[ɛɐ̯ˈbɔʁktəm]"),
+            germanRow("erborget", "[ɛɐ̯ˈbɔʁɡət]"),
+            germanRow("erborgtet", "[ɛɐ̯ˈbɔʁktət]"),
+            germanRow("erborgen", "[ɛɐ̯ˈbɔʁɡn̩]"),
+            germanRow("erdrossel", "[ɛɐ̯ˈdʁɔsl̩]"),
+            germanRow("erdrosseln", "[ɛɐ̯ˈdʁɔsl̩n]"),
+            germanRow("erdrosselnde", "[ɛɐ̯ˈdʁɔsl̩ndə]"),
+            germanRow("erdrosselte", "[ɛɐ̯ˈdʁɔsl̩tə]"),
+            germanRow("verdoppel", "[fɛɐ̯ˈdɔpl̩]"),
+            germanRow("verdoppeln", "[fɛɐ̯ˈdɔpl̩n]"),
+            germanRow("verdoppelnde", "[fɛɐ̯ˈdɔpl̩ndə]"),
+            germanRow("verborgen", "[fɛɐ̯ˈbɔʁɡn̩]"),
+            germanRow("verborgenste", "[fɛɐ̯ˈbɔʁɡn̩stə]"),
+            germanRow("erfolg", "[ɛɐ̯ˈfɔlk]"),
+            germanRow("erfolgen", "[ɛɐ̯ˈfɔlɡn̩]"),
+            germanRow("erfolgende", "[ɛɐ̯ˈfɔlɡn̩də]"),
         ))
         val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
 
@@ -388,47 +370,42 @@ class DictionarySearchInstrumentedTest {
         assertEquals(listOf("information"), actionEnding.matches.map { it.word })
     }
 
-    private fun withDictionaryFixture(block: (DictionaryInstaller) -> Unit) {
-        val base = InstrumentationRegistry.getInstrumentation().targetContext
-        val root = File(base.cacheDir, "dictionary-search-${System.nanoTime()}")
-        val context = object : ContextWrapper(base) {
-            override fun getApplicationContext(): Context = this
-            override fun getFilesDir(): File = File(root, "files").apply { mkdirs() }
-        }
-        try {
-            val installer = DictionaryInstaller(context)
-            val version = File(context.filesDir, "dictionaries/en/${installer.release.tag}")
-            version.mkdirs()
-            database(File(version, "wiktionary.db"), listOf(
-                Row("cat", "/ˈkæt/", "tækˈ", "æ"),
-                Row("cat", "/ˈkɑt/", "tɑkˈ", "ɑ"),
-                Row("kat", "/ˈkæt/", "tækˈ", "æ"),
-                Row("bat", "/ˈbæt/", "tæbˈ", "æ"),
-                Row("flat", "/ˈflæt/", "tælfˈ", "æ"),
-                Row("cot", "/ˈkɑt/", "tɑkˈ", "ɑ"),
-                Row("cut", "/ˈkʌt/", "tʌkˈ", "ʌ"),
-                Row("writing", "/ˈɹaɪtɪŋ/", "ŋɪtaɪɹˈ", "ɪ aɪ"),
-                Row("lighting", "/ˈlaɪtɪŋ/", "ŋɪtaɪlˈ", "ɪ aɪ"),
-                Row("sing", "/ˈsɪŋ/", "ŋɪsˈ", "ɪ"),
-                Row("baiting", "/ˈbeɪtɪŋ/", "ŋɪteɪbˈ", "ɪ eɪ"),
-                Row("suffixlong", "/ˈkatɪŋab/", "baŋɪtakˈ", "a ɪ a"),
-                Row("stressshift", "/katɪˈŋab/", "baŋˈɪtak", "a ɪ a"),
-                Row("joint", "/ˈdʒɔɪnt/", "tnɔɪdʒˈ", "ɔɪ"),
-                Row("point", "/ˈpɔɪnt/", "tnɔɪpˈ", "ɔɪ"),
-                Row("checkpoint", "/ˈtʃɛkpɔɪnt/", "tnɔɪpkɛtʃˈ", "ɔɪ ɛ"),
-                Row("outpoint", "/aʊtˈpɔɪnt/", "tnɔɪpˈtaʊ", "ɔɪ aʊ"),
-                Row("a%mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
-                Row("a_mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
-                Row("a!mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
-            ))
-            database(File(version, "espeak.db"), listOf(
-                Row("bat", "/ˈbæt/", "tæbˈ", "æ"),
-                Row("mat", "/ˈmæt/", "tæmˈ", "æ"),
-            ))
-            block(installer)
-        } finally {
-            root.deleteRecursively()
-        }
+    private fun withDictionaryFixture(block: (DictionaryInstaller) -> Unit) = withDictionaryTestContext { context ->
+        val installer = DictionaryInstaller(context)
+        val version = File(context.filesDir, "dictionaries/en/${installer.release.tag}")
+        version.mkdirs()
+        database(File(version, "wiktionary.db"), listOf(
+            Row("cat", "/ˈkæt/", "tækˈ", "æ"),
+            Row("cat", "/ˈkɑt/", "tɑkˈ", "ɑ"),
+            Row("kat", "/ˈkæt/", "tækˈ", "æ"),
+            Row("bat", "/ˈbæt/", "tæbˈ", "æ"),
+            Row("flat", "/ˈflæt/", "tælfˈ", "æ"),
+            Row("cot", "/ˈkɑt/", "tɑkˈ", "ɑ"),
+            Row("cut", "/ˈkʌt/", "tʌkˈ", "ʌ"),
+            Row("writing", "/ˈɹaɪtɪŋ/", "ŋɪtaɪɹˈ", "ɪ aɪ"),
+            Row("lighting", "/ˈlaɪtɪŋ/", "ŋɪtaɪlˈ", "ɪ aɪ"),
+            Row("sing", "/ˈsɪŋ/", "ŋɪsˈ", "ɪ"),
+            Row("baiting", "/ˈbeɪtɪŋ/", "ŋɪteɪbˈ", "ɪ eɪ"),
+            Row("suffixlong", "/ˈkatɪŋab/", "baŋɪtakˈ", "a ɪ a"),
+            Row("stressshift", "/katɪˈŋab/", "baŋˈɪtak", "a ɪ a"),
+            Row("joint", "/ˈdʒɔɪnt/", "tnɔɪdʒˈ", "ɔɪ"),
+            Row("point", "/ˈpɔɪnt/", "tnɔɪpˈ", "ɔɪ"),
+            Row("checkpoint", "/ˈtʃɛkpɔɪnt/", "tnɔɪpkɛtʃˈ", "ɔɪ ɛ"),
+            Row("outpoint", "/aʊtˈpɔɪnt/", "tnɔɪpˈtaʊ", "ɔɪ aʊ"),
+            Row("a%mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
+            Row("a_mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
+            Row("a!mazing", "/əˈmeɪzɪŋ/", "ŋɪzeɪmˈə", "ɪ eɪ ə"),
+        ))
+        database(File(version, "espeak.db"), listOf(
+            Row("bat", "/ˈbæt/", "tæbˈ", "æ"),
+            Row("mat", "/ˈmæt/", "tæmˈ", "æ"),
+        ))
+        block(installer)
+    }
+
+    private fun germanRow(word: String, ipa: String): Row {
+        val keys = IpaSearchKeys.fromIpa(ipa, "de")!!
+        return Row(word, ipa, keys.reversed, keys.assonance)
     }
 
     private fun database(file: File, rows: List<Row>) {

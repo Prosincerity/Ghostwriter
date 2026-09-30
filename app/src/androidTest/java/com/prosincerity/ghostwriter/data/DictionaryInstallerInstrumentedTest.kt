@@ -1,6 +1,5 @@
 package com.prosincerity.ghostwriter.data
 
-import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -23,10 +22,10 @@ import java.util.zip.GZIPOutputStream
 @RunWith(AndroidJUnit4::class)
 class DictionaryInstallerInstrumentedTest {
     @Test
-    fun installsSourcesSeparatelyAndUsesWiktionaryFirst() = withTestContext { context ->
-        val wiki = archive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/",
+    fun installsSourcesSeparatelyAndUsesWiktionaryFirst() = withDictionaryTestContext { context ->
+        val wiki = dictionaryArchive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/",
             "d'accord" to "/dakɔʁ/"))
-        val espeak = archive(context, listOf("hammer" to "/hamɚ/", "fallback" to "/fɔlbæk/"))
+        val espeak = dictionaryArchive(context, listOf("hammer" to "/hamɚ/", "fallback" to "/fɔlbæk/"))
         var opens = 0
         val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
             opens++
@@ -73,8 +72,8 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
-    fun failedArchiveDoesNotRemoveInstalledOtherSource() = withTestContext { context ->
-        val wiki = archive(context, listOf("word" to "/wɜːd/"))
+    fun failedArchiveDoesNotRemoveInstalledOtherSource() = withDictionaryTestContext { context ->
+        val wiki = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
             if ("_espeak_" in url) throw IOException("interrupted download")
             ByteArrayInputStream(wiki)
@@ -92,8 +91,8 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
-    fun invalidDatabaseArchiveIsRejectedAndCanBeRetried() = withTestContext { context ->
-        val valid = archive(context, listOf("word" to "/wɜːd/"))
+    fun invalidDatabaseArchiveIsRejectedAndCanBeRetried() = withDictionaryTestContext { context ->
+        val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         val invalid = ByteArrayOutputStream().use { output ->
             GZIPOutputStream(output).use { it.write("not a SQLite database".toByteArray()) }
             output.toByteArray()
@@ -116,8 +115,8 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
-    fun corruptInstalledDatabaseCanBeReplaced() = withTestContext { context ->
-        val valid = archive(context, listOf("word" to "/wɜːd/"))
+    fun corruptInstalledDatabaseCanBeReplaced() = withDictionaryTestContext { context ->
+        val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         var opens = 0
         val installer = DictionaryInstaller(context, DictionaryArchiveSource {
             opens++
@@ -135,8 +134,8 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
-    fun cancellationAfterReadingArchiveDoesNotActivateDictionary() = withTestContext { context ->
-        val valid = archive(context, listOf("word" to "/wɜːd/"))
+    fun cancellationAfterReadingArchiveDoesNotActivateDictionary() = withDictionaryTestContext { context ->
+        val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         var cancelDownload: () -> Unit = {}
         val installer = DictionaryInstaller(context, DictionaryArchiveSource {
             object : ByteArrayInputStream(valid) {
@@ -166,8 +165,8 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
-    fun installationWaitsForProgressDelivery() = withTestContext { context ->
-        val valid = archive(context, listOf("word" to "/wɜːd/"))
+    fun installationWaitsForProgressDelivery() = withDictionaryTestContext { context ->
+        val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         val installer = DictionaryInstaller(context, DictionaryArchiveSource { ByteArrayInputStream(valid) })
 
         runBlocking {
@@ -194,7 +193,7 @@ class DictionaryInstallerInstrumentedTest {
     }
 
     @Test
-    fun generatedIpaIsUsedOnlyAfterBothDatabasesMiss() = withTestContext { context ->
+    fun generatedIpaIsUsedOnlyAfterBothDatabasesMiss() = withDictionaryTestContext { context ->
         val installer = DictionaryInstaller(context)
         val generated = DictionaryPronunciations(installer, IpaGenerator { _, _ -> "ˈɪpa" })
         assertEquals(
@@ -207,8 +206,4 @@ class DictionaryInstallerInstrumentedTest {
         runBlocking {
             DictionaryPronunciations(installer, IpaGenerator { _, _ -> null }).lookup(word, language)
         }
-
-    private fun archive(context: Context, entries: List<Pair<String, String>>) = dictionaryArchive(context, entries)
-
-    private fun withTestContext(block: (Context) -> Unit) = withDictionaryTestContext(block)
 }
