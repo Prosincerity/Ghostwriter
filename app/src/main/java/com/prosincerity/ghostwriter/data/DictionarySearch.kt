@@ -1,10 +1,10 @@
 package com.prosincerity.ghostwriter.data
 
 import android.database.sqlite.SQLiteDatabase
-import com.prosincerity.ghostwriter.logic.IpaSearchKeys
-import com.prosincerity.ghostwriter.logic.DictionaryHeadword
-import com.prosincerity.ghostwriter.logic.CompoundRhymeFilter
 import com.prosincerity.ghostwriter.logic.AssonanceFormFilter
+import com.prosincerity.ghostwriter.logic.CompoundRhymeFilter
+import com.prosincerity.ghostwriter.logic.DictionaryHeadword
+import com.prosincerity.ghostwriter.logic.IpaSearchKeys
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -43,26 +43,7 @@ internal class DictionarySearch(
         require(firstIndex < Int.MAX_VALUE - PAGE_SIZE)
         val nextPageIndex = (firstIndex + PAGE_SIZE).toInt()
         val pronunciation = pronunciations.lookup(normalized, language)
-        val keys = pronunciation?.ipa.orEmpty().mapNotNull { IpaSearchKeys.fromIpa(it, language) }
-        val prefixes = when (mode) {
-            DictionarySearchMode.RHYME -> keys.mapNotNull { key ->
-                val rime = IpaSearchKeys.rimeTokens(key, language) ?: return@mapNotNull null
-                SearchPrefix(rime.asReversed().joinToString(""), rime.size, rime)
-            }
-            DictionarySearchMode.WORD_SUFFIX -> keys.flatMap { key ->
-                IpaSearchKeys.phonemeSuffixes(key).map { suffix ->
-                    SearchPrefix(suffix.asReversed().joinToString(""), suffix.size, suffix)
-                }
-            }
-            DictionarySearchMode.ASSONANCE -> keys.filter { it.assonance.isNotEmpty() }
-                .map { key -> SearchPrefix(key.assonance, key.assonance.split(' ').size) }
-            DictionarySearchMode.WORD_PREFIX -> emptyList()
-        }.sortedWith(if (mode == DictionarySearchMode.ASSONANCE) {
-            compareBy<SearchPrefix> { it.tokenCount }.thenBy { it.value.length }
-        } else {
-            compareByDescending<SearchPrefix> { it.tokenCount }.thenByDescending { it.value.length }
-        })
-            .distinctBy { it.tokens ?: it.value }
+        val plan = DictionarySearchPlan.fromIpa(pronunciation?.ipa.orEmpty(), language, mode)
         val matches = linkedMapOf<String, DictionaryMatch>()
         fun visibleMatches(): List<DictionaryMatch> {
             val collected = matches.values.toList()
@@ -102,7 +83,7 @@ internal class DictionarySearch(
 
         if (mode == DictionarySearchMode.ASSONANCE) {
             scanSources { database, source ->
-                for (key in prefixes) {
+                for (key in plan.prefixes) {
                     collectRows(
                         database,
                         "SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? " +
@@ -116,9 +97,7 @@ internal class DictionarySearch(
 
             // Finish exact matches across both sources before appending shorter vowel tiers.
             // Rebuild the same ordered sequence before slicing each requested page.
-            val fallbacks = keys.flatMap(IpaSearchKeys::assonanceFallbacks).distinct()
-                .sortedByDescending { it.split(' ').size }
-            for (prefix in fallbacks) {
+            for (prefix in plan.assonanceFallbacks) {
                 scanSources { database, source ->
                     database.execSQL("PRAGMA case_sensitive_like = ON")
                     collectRows(
@@ -136,7 +115,7 @@ internal class DictionarySearch(
             return@withContext result()
         }
         if (mode == DictionarySearchMode.WORD_SUFFIX) {
-            for (searchPrefix in prefixes) {
+            for (searchPrefix in plan.prefixes) {
                 scanSources { database, source ->
                     database.execSQL("PRAGMA case_sensitive_like = ON")
                     val suffix = searchPrefix.tokens ?: return@scanSources
@@ -165,7 +144,7 @@ internal class DictionarySearch(
                     arrayOf("${escapeLike(normalized)}%"), normalized, source, matches, ::enough,
                 ) { true }
             } else {
-                for (searchPrefix in prefixes) {
+                for (searchPrefix in plan.prefixes) {
                     val prefix = searchPrefix.value
                     val sql = "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
                         "ORDER BY length(ipa_reversed), ipa_reversed, word, ipa"
@@ -216,6 +195,4 @@ internal class DictionarySearch(
             }
         }
     }
-
-    private data class SearchPrefix(val value: String, val tokenCount: Int, val tokens: List<String>? = null)
 }
