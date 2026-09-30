@@ -63,3 +63,26 @@ with real release dictionaries. A timed
 realistic-database performance benchmark remains open.
 Cancellation is checked between cursor rows and database scans; it does not
 interrupt a single SQLite call or native phonemization already in progress.
+
+## Readability pass before merge
+
+Reviewed the branch's application additions against `dev`, including dictionary
+installation and search, IPA tokenization and filtering, download/search screens,
+playback integration, the JNI adapter, and native build setup. Applied focused
+cleanup on `rhyme-detection`:
+
+- Share dictionary search's source traversal, cancellation check, and database
+  closing while retaining each mode's source and tier ordering.
+- Separate assonance family selection from grouping, reuse the pronunciation
+  extension check, and simplify suffix stages and headword punctuation checks.
+- Cache the tokenizer's fixed single-character inventory once per language.
+- Name download startup, audio-focus requests, notification action construction,
+  and the editor's shared beat-processing guard.
+- Reuse dictionary test contexts and German row fixtures, remove forwarding
+  wrappers, and simplify file paths and repeated property reads.
+
+`./gradlew test lint assembleDebugAndroidTest` passed: 182 JVM tests, no failures
+or skips, and lint with no errors (14 warnings). Added JVM regressions for
+infinitive selection ties, invalid pronunciations/unsupported languages, and
+odd/even suffix lengths. Instrumented tests were compiled, and the maintainer
+subsequently reported that the emulator tests passed.
