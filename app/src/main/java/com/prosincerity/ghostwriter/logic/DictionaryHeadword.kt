@@ -40,16 +40,13 @@ internal object DictionaryHeadword {
             val after = word.getOrNull(position + 1)
             when {
                 character in LETTERS || character in DIGITS -> Unit
-                character in ".-&" -> {
+                character in ".-&/" -> {
                     if (!isLetter(before) || !isLetter(after)) return false
                 }
                 character == '\'' -> {
                     if (before == '\'' || after == '\'' ||
                         !isAlphanumeric(before) && !isAlphanumeric(after)
                     ) return false
-                }
-                character == '/' -> {
-                    if (!isLetter(before) || !isLetter(after)) return false
                 }
                 character == '%' -> {
                     if (position != word.lastIndex || before == null || before !in DIGITS) return false
