@@ -43,6 +43,7 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import androidx.compose.ui.semantics.stateDescription
 import com.prosincerity.ghostwriter.logic.WaveformViewport
+import com.prosincerity.ghostwriter.logic.waveformMarkerHitBounds
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
 import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
 import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
@@ -208,14 +209,21 @@ fun WaveformView(
 
         // Each marker gets a transparent hit target. This keeps its gestures
         // separate from the waveform's seek and pan gestures underneath.
+        val markerXs = markers.map {
+            viewport.positionToX(it.positionMs, durationMs, viewportWidthPx)
+        }
         markers.forEach { marker ->
             // Keep this target at the marker's pre-drag position. Moving the
             // target under an active pointer changes its local coordinates and
             // makes the marker lag or jump.
             val markerX = viewport.positionToX(marker.positionMs, durationMs, viewportWidthPx)
             val labelSize = textMeasurer.measure(marker.label, markerLabelStyle).size
-            val overlayLeftPx = markerX - markerHitRadiusPx
-            val overlayWidthPx = maxOf(markerHitRadiusPx * 2f, markerHitRadiusPx + markerLabelPaddingPx + labelSize.width)
+            val hitBounds = waveformMarkerHitBounds(
+                markerX, markerHitRadiusPx, labelSize.width.toFloat(), markerLabelPaddingPx, markerXs,
+            )
+            val overlayLeftPx = hitBounds.start.roundToInt().toFloat()
+            val overlayWidthPx = (hitBounds.endInclusive.roundToInt() - overlayLeftPx).coerceAtLeast(1f)
+            val labelLeftPx = markerX - overlayLeftPx + markerLabelPaddingPx
             val overlayWidth = with(density) { overlayWidthPx.toDp() }
 
             if (markerX in -overlayWidthPx..viewportWidthPx) {
@@ -243,11 +251,11 @@ fun WaveformView(
                         .fillMaxHeight()
                         .width(overlayWidth)
                         .offset { IntOffset(overlayLeftPx.roundToInt(), 0) }
-                        .pointerInput(marker, durationMs, viewportWidthPx) {
+                        .pointerInput(marker, durationMs, viewportWidthPx, overlayLeftPx, labelLeftPx, labelSize) {
                             detectTapGestures(
                                 onTap = { offset ->
-                                    val isLabelTap = offset.x >= markerHitRadiusPx + markerLabelPaddingPx &&
-                                        offset.x <= markerHitRadiusPx + markerLabelPaddingPx + labelSize.width &&
+                                    val isLabelTap = offset.x >= labelLeftPx &&
+                                        offset.x <= labelLeftPx + labelSize.width &&
                                         offset.y <= labelSize.height
                                     if (isLabelTap) onMarkerClick(marker)
                                     else onSeekFinished(marker.positionMs)
@@ -255,7 +263,7 @@ fun WaveformView(
                                 onLongPress = { onMarkerClick(marker) },
                             )
                         }
-                        .pointerInput(marker, durationMs, viewportWidthPx) {
+                        .pointerInput(marker, durationMs, viewportWidthPx, overlayLeftPx) {
                             var dragStartPointerX = 0f
                             var dragStartMarkerX = 0f
                             detectDragGestures(

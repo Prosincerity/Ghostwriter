@@ -32,7 +32,11 @@ data class WaveformMarker(
     fun withSampleRate(rate: Int): WaveformMarker {
         if (rate <= 0) return this
         val frame = frameAt(rate)
-        return copy(positionMs = frameToMs(frame, rate), frameIndex = frame, sampleRate = rate)
+        val position = frameToMs(frame, rate)
+        // Unchanged pointerInput keys retain their marker reference. Preserve it
+        // when normalizing a list after another marker is added, edited or moved.
+        if (sampleRate == rate && frameIndex == frame && positionMs == position) return this
+        return copy(positionMs = position, frameIndex = frame, sampleRate = rate)
     }
 
     fun atPositionMs(position: Long, rate: Int): WaveformMarker =
