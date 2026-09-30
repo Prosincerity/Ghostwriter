@@ -1,10 +1,19 @@
 package com.prosincerity.ghostwriter.ui.screens
 
+import android.app.Notification
+import android.app.NotificationManager
+import android.content.Intent
+import android.media.session.MediaController
+import android.media.session.MediaSession
+import android.media.session.PlaybackState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -19,6 +28,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
+import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -29,21 +39,67 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class EditorScreenTest {
 
     @get:Rule
-    val composeRule = createComposeRule()
+    // Queue resumptions after IO instead of running recomposition on the IO worker.
+    val composeRule = createComposeRule(StandardTestDispatcher())
 
     private val context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test
+    fun leavingAndReturningToEditor_keepsBeatPlaying_andSystemControlsStopIt() {
+        val title = uniqueProjectTitle("Background beat")
+        val visible = mutableStateOf(true)
+        createAssignedBeat(title, durationMs = 30_000, cacheWaveform = true)
+        try {
+            setEditorContent(title, visible)
+            waitUntilTextExists("editor-fixture")
+            composeRule.onNodeWithContentDescription("Play").performClick()
+            composeRule.waitUntil(5_000) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications.isNotEmpty()
+            }
+            val notification = context.getSystemService(NotificationManager::class.java)
+                .activeNotifications.single().notification
+            @Suppress("DEPRECATION")
+            val token = notification.extras.getParcelable<MediaSession.Token>(Notification.EXTRA_MEDIA_SESSION)!!
+            val controller = MediaController(context, token)
+            controller.transportControls.seekTo(5_000)
+            composeRule.waitUntil(5_000) { (controller.playbackState?.position ?: 0) >= 4_750 }
+
+            composeRule.runOnIdle { visible.value = false }
+            composeRule.waitForIdle()
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
+            composeRule.runOnIdle { visible.value = true }
+            waitUntilTextExists("editor-fixture")
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
+            assertTrue(controller.playbackState!!.position >= 4_750)
+
+            controller.transportControls.pause()
+            composeRule.waitUntil(5_000) { controller.playbackState?.state == PlaybackState.STATE_PAUSED }
+            controller.transportControls.play()
+            composeRule.waitUntil(5_000) { controller.playbackState?.state == PlaybackState.STATE_PLAYING }
+            controller.transportControls.stop()
+            composeRule.waitUntil(5_000) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty()
+            }
+            assertEquals(PlaybackState.STATE_PAUSED, controller.playbackState!!.state)
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
 
     @Test
     fun emptyEditor_showsCoreControlsAndInvokesNavigation() {
         val projectTitle = uniqueProjectTitle("Editor controls")
         val showEditor = mutableStateOf(true)
         var openedSettings = false
+        var openedDictionary = false
 
         try {
             composeRule.setContent {
@@ -53,16 +109,20 @@ class EditorScreenTest {
                             projectTitle = projectTitle,
                             onBack = { showEditor.value = false },
                             onOpenSettings = { openedSettings = true },
+                            onOpenDictionary = { openedDictionary = true },
                         )
                     }
                 }
             }
 
+            waitUntilTextExists(projectTitle)
             composeRule.onNodeWithText(projectTitle).assertExists()
             composeRule.onNodeWithText("Import beat").assertExists()
             composeRule.onNodeWithText("Start writing...").assertExists()
             composeRule.onNodeWithContentDescription("Project Info").assertExists()
             composeRule.onNodeWithContentDescription("Save").assertExists()
+            composeRule.onNodeWithContentDescription("Dictionary").performClick()
+            composeRule.runOnIdle { assertTrue(openedDictionary) }
 
             composeRule.onNodeWithContentDescription("Settings").performClick()
             composeRule.runOnIdle { assertTrue(openedSettings) }
@@ -95,6 +155,7 @@ class EditorScreenTest {
                 }
             }
 
+            waitUntilTextExists(projectTitle)
             composeRule.onNodeWithContentDescription("Project Info").performClick()
             composeRule.onNodeWithText("Project Information").assertExists()
             composeRule.onNodeWithText("Title: $projectTitle").assertExists()
@@ -214,7 +275,8 @@ class EditorScreenTest {
             waitUntilTextExists("Couldn't create waveform")
             composeRule.onNodeWithText("Remove beat").performClick()
             composeRule.onNodeWithText("Reassign beat?").assertExists()
-            clickLastNodeWithText("Reassign")
+            val reassignButtons = composeRule.onAllNodesWithText("Reassign")
+            reassignButtons[reassignButtons.fetchSemanticsNodes().lastIndex].performClick()
 
             waitUntilTextExists("No beat selected")
             composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -223,6 +285,56 @@ class EditorScreenTest {
                     metadata.beatFile == null && metadata.beatOriginalName == null
             }
         } finally {
+            disposeEditorAndDeleteProject(showEditor, projectTitle)
+        }
+    }
+
+    @Test
+    fun processingBeat_disablesDictionaryUntilWaveformIsReady() {
+        val projectTitle = uniqueProjectTitle("Editor dictionary processing")
+        val showEditor = mutableStateOf(true)
+        var openedDictionary = false
+        val storageLocked = CountDownLatch(1)
+        val releaseStorage = CountDownLatch(1)
+        var storageThread: Thread? = null
+        val projectDir = createAssignedBeat(
+            projectTitle, LONG_TEST_BEAT_DURATION_MS, cacheWaveform = false,
+        )
+
+        try {
+            setEditorContent(projectTitle, showEditor) { openedDictionary = true }
+            waitUntilTextExists("Long audio file")
+
+            // Hold the storage monitor used at extraction startup so the loading
+            // state can be checked without racing the decoder on faster devices.
+            storageThread = Thread {
+                synchronized(ProjectStorage) {
+                    storageLocked.countDown()
+                    if (releaseStorage.await(30, TimeUnit.SECONDS)) {
+                        // Supply the cache before extraction resumes to keep this
+                        // navigation test independent of decoder speed.
+                        ProjectStorage.saveCachedWaveform(
+                            projectDir,
+                            WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+                            cachedWaveform(),
+                        )
+                    }
+                }
+            }.apply { start() }
+            assertTrue(storageLocked.await(5, TimeUnit.SECONDS))
+            composeRule.onNodeWithText("Process anyway").performClick()
+            composeRule.onNodeWithContentDescription("Dictionary").assertIsNotEnabled()
+                .performClick()
+            composeRule.runOnIdle { assertFalse(openedDictionary) }
+
+            releaseStorage.countDown()
+            waitUntilTextExists("editor-fixture")
+            composeRule.onNodeWithContentDescription("Dictionary").assertIsEnabled()
+                .performClick()
+            composeRule.runOnIdle { assertTrue(openedDictionary) }
+        } finally {
+            releaseStorage.countDown()
+            storageThread?.join(5_000)
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }
     }
@@ -265,6 +377,7 @@ class EditorScreenTest {
     private fun setEditorContent(
         projectTitle: String,
         showEditor: MutableState<Boolean>,
+        onOpenDictionary: () -> Unit = {},
     ) {
         composeRule.setContent {
             if (showEditor.value) {
@@ -273,6 +386,7 @@ class EditorScreenTest {
                         projectTitle = projectTitle,
                         onBack = { showEditor.value = false },
                         onOpenSettings = {},
+                        onOpenDictionary = onOpenDictionary,
                     )
                 }
             }
@@ -340,17 +454,13 @@ class EditorScreenTest {
         }
     }
 
-    private fun clickLastNodeWithText(text: String) {
-        val matchingNodes = composeRule.onAllNodesWithText(text)
-        matchingNodes[matchingNodes.fetchSemanticsNodes().lastIndex].performClick()
-    }
-
     private fun disposeEditorAndDeleteProject(
         showEditor: MutableState<Boolean>,
         projectTitle: String,
     ) {
         composeRule.runOnIdle { showEditor.value = false }
         composeRule.waitForIdle()
+        context.stopService(Intent(context, BeatPlaybackService::class.java))
         ProjectStorage.deleteProject(context, projectTitle)
     }
 

@@ -15,11 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,7 +45,7 @@ import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
-import com.prosincerity.ghostwriter.media.BeatPlayer
+import com.prosincerity.ghostwriter.media.rememberBeatPlayback
 import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
 import com.prosincerity.ghostwriter.ui.components.LyricsNotepad
@@ -85,8 +85,10 @@ fun EditorScreen(
     projectTitle: String,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenDictionary: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
+    val playback = rememberBeatPlayback(projectTitle) ?: return
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -104,7 +106,7 @@ fun EditorScreen(
     }
     var showInfoDialog by rememberSaveable { mutableStateOf(false) }
 
-    val beatPlayer = remember(projectTitle) { BeatPlayer() }
+    val beatPlayer = playback.player
     var isBeatReady by remember(projectTitle) { mutableStateOf(false) }
     var beatFile by remember(projectTitle) {
         mutableStateOf(ProjectStorage.getProjectBeatFile(projectDir, metadata))
@@ -264,7 +266,8 @@ fun EditorScreen(
                 return@LaunchedEffect
             }
 
-            isBeatReady = beatPlayer.load(currentBeat)
+            playback.setBeatTitle(metadata.beatOriginalName ?: currentBeat.nameWithoutExtension)
+            isBeatReady = beatPlayer.ensureLoaded(currentBeat)
             if (isBeatReady && autoPlayWhenWaveformReady) beatPlayer.play()
             autoPlayWhenWaveformReady = false
             isImportedBeatPreparation = false
@@ -353,12 +356,6 @@ fun EditorScreen(
         }
     }
 
-    // MediaPlayer owns native audio resources, so it must be released when
-    // this editor is left or a different project is opened.
-    DisposableEffect(beatPlayer) {
-        onDispose { beatPlayer.release() }
-    }
-
     // Background autosave loop. Settings are re-read every cycle so a
     // change made in the Settings screen takes effect from the next tick
     // onward (the cycle already in progress finishes on its old interval).
@@ -402,6 +399,7 @@ fun EditorScreen(
         )
     }
 
+    val isBeatProcessing = isImporting || isReassigningBeat || isWaveformLoading
     Scaffold(
         topBar = {
             TopAppBar(
@@ -419,8 +417,14 @@ fun EditorScreen(
                 },
                 actions = {
                     IconButton(
+                        onClick = onOpenDictionary,
+                        enabled = !isBeatProcessing,
+                    ) {
+                        Icon(Icons.Filled.Book, contentDescription = "Dictionary")
+                    }
+                    IconButton(
                         onClick = { showInfoDialog = true },
-                        enabled = !isImporting && !isReassigningBeat && !isWaveformLoading,
+                        enabled = !isBeatProcessing,
                     ) {
                         Icon(Icons.Filled.Info, contentDescription = "Project Info")
                     }

@@ -108,6 +108,27 @@ class BeatPlayerInstrumentedTest {
 
     private fun createPlayer(): BeatPlayer = BeatPlayer().also { beatPlayer = it }
 
+    @Test
+    fun ensureLoaded_sameBeat_keepsPlaybackAndPosition() {
+        val player = createPlayer()
+        val file = createPcm16Wav("beat-player-reattach.wav", durationMs = 10_000)
+        assertTrue(player.ensureLoaded(file))
+        player.seekTo(3_000)
+        waitUntil("Seek did not finish") { player.currentPositionMs >= 2_750 }
+        player.play()
+        assertTrue(player.ensureLoaded(file))
+        assertTrue(player.isPlaying)
+        assertTrue(player.currentPositionMs >= 2_750)
+    }
+
+    @Test
+    fun play_whenAudioFocusDenied_doesNotStart() {
+        val player = BeatPlayer(beforePlay = { false }).also { beatPlayer = it }
+        assertTrue(player.load(createPcm16Wav("beat-player-denied.wav", 1_000)))
+        player.play()
+        assertFalse(player.isPlaying)
+    }
+
     private fun waitUntil(
         message: String,
         timeoutMs: Long = 2_000,

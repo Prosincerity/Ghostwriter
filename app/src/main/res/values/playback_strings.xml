@@ -1,0 +1,9 @@
+<resources>
+    <string name="beat_playback_channel">Beat playback</string>
+    <string name="beat_play">Play</string>
+    <string name="beat_pause">Pause</string>
+    <string name="beat_restart">Restart</string>
+    <string name="beat_enable_loop">Enable loop</string>
+    <string name="beat_disable_loop">Disable loop</string>
+    <string name="beat_playback_source">[Ghostwriter]</string>
+</resources>

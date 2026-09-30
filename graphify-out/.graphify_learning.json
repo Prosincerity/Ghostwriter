@@ -1,0 +1,70 @@
+{
+  "generated_at": "2026-09-30T11:45:03.147187+00:00",
+  "nodes": {
+    "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
+      "code_fingerprint": "caf9bf5587c8ff98bbc72e955022710c5342e8a88e0874088070ac0910248c4a",
+      "label": "DictionarySearch",
+      "last": "2026-09-29T13:28:38.102761+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-29T13:28:38.102761+00:00",
+          "outcome": "useful",
+          "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
+        }
+      ],
+      "score": 0.978785349,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_mainactivity_dictionary": {
+      "code_fingerprint": "dd444b1a03eb82e56688b6224ae09d17898441473be6a010e0c07a46a1924abd",
+      "label": "Dictionary",
+      "last": "2026-09-30T11:30:17.905058+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-30T11:30:17.905058+00:00",
+          "outcome": "useful",
+          "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
+        }
+      ],
+      "score": 0.999763298,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_media_beatplaybackservice_beatplaybackservice": {
+      "code_fingerprint": "7338a0b022aed982273f544126195a193e784bf34e32eb9f9abb4a2281f2a58c",
+      "label": "BeatPlaybackService",
+      "last": "2026-09-30T11:30:17.905058+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-30T11:30:17.905058+00:00",
+          "outcome": "useful",
+          "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
+        }
+      ],
+      "score": 0.999763298,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_media_playbackfocusstate_playbackfocusstate": {
+      "code_fingerprint": "f84ca2bf8200a8b2a1cb92234a8e3a832c86a1e903987d05a1018c8a444e3473",
+      "label": "PlaybackFocusState",
+      "last": "2026-09-30T11:30:17.905058+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-30T11:30:17.905058+00:00",
+          "outcome": "useful",
+          "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
+        }
+      ],
+      "score": 0.999763298,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

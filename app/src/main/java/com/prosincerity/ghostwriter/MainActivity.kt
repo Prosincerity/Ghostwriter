@@ -16,8 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.screens.AboutScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
+import com.prosincerity.ghostwriter.ui.screens.DictionaryDownloadsScreen
+import com.prosincerity.ghostwriter.ui.screens.DictionaryScreen
 import com.prosincerity.ghostwriter.ui.screens.HomeScreen
 import com.prosincerity.ghostwriter.ui.screens.SettingsScreen
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
@@ -42,6 +45,8 @@ private sealed class Screen {
     data class Editor(val projectTitle: String) : Screen()
     data class Settings(val returnTo: Screen) : Screen()
     data class About(val returnTo: Settings) : Screen()
+    data class DictionaryDownloads(val returnTo: Screen) : Screen()
+    data class Dictionary(val projectTitle: String) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -93,6 +98,7 @@ private fun GhostwriterApp(
             },
             onOpenProject = { title -> screen = Screen.Editor(title) },
             onDeleteProject = { title ->
+                BeatPlaybackService.forgetProject(context, title)
                 coroutineScope.launch {
                     val deleted = withContext(Dispatchers.IO) {
                         ProjectStorage.deleteProject(context, title)
@@ -107,6 +113,7 @@ private fun GhostwriterApp(
                 }
             },
             onRenameProject = { currentTitle, renamedTitle ->
+                BeatPlaybackService.forgetProject(context, currentTitle)
                 coroutineScope.launch {
                     val renamed = withContext(Dispatchers.IO) {
                         ProjectStorage.renameProject(context, currentTitle, renamedTitle)
@@ -130,11 +137,22 @@ private fun GhostwriterApp(
                 screen = Screen.Home
             },
             onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Editor(current.projectTitle)) },
+            onOpenDictionary = { screen = Screen.Dictionary(current.projectTitle) },
+        )
+
+        is Screen.Dictionary -> DictionaryScreen(
+            onBack = { screen = Screen.Editor(current.projectTitle) },
+            onOpenDownloads = { screen = Screen.DictionaryDownloads(returnTo = current) },
         )
 
         is Screen.Settings -> SettingsScreen(
             onBack = { screen = current.returnTo },
             onOpenAbout = { screen = Screen.About(returnTo = current) },
+            onOpenDictionaryDownloads = { screen = Screen.DictionaryDownloads(returnTo = current) },
+        )
+
+        is Screen.DictionaryDownloads -> DictionaryDownloadsScreen(
+            onBack = { screen = current.returnTo },
         )
 
         is Screen.About -> AboutScreen(

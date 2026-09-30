@@ -1,134 +1,74 @@
-# Testing and coverage
+# Testing
 
-Ghostwriter has local JVM tests and Android instrumented tests. Debug builds
-have JaCoCo coverage enabled for both test types, and Gradle can combine their
-results into one HTML report.
+## Checks without a device
 
-## Test stack
+Run from the repository root:
 
-- Local tests use JUnit 4 and live in `app/src/test/`.
-- Instrumented tests use `AndroidJUnitRunner`, Espresso, and Compose UI testing
-  and live in `app/src/androidTest/`.
-- Coverage uses the JaCoCo support built into the Android Gradle Plugin.
-- Instrumented tests can run on an AOSP emulator; Google Play Services are not
-  required.
-
-## Regular verification
-
-Run the local tests, lint, and compile the instrumented-test APK with:
-
-```bash
+```sh
 ./gradlew test lint assembleDebugAndroidTest
 ```
 
-Local test result pages are written below:
+This runs JVM tests and lint, then builds the instrumented test APK without
+running it. JVM reports are under `app/build/reports/tests/`; lint reports are
+under `app/build/reports/`. Use the generated reports for current results
+rather than maintaining test or warning totals in documentation.
 
-```text
-app/build/reports/tests/
+## Android tests
+
+The maintainer runs instrumented tests from Android Studio on an emulator or
+device. Agent work should compile these tests and leave execution to the
+maintainer, as required by [AGENTS.md](../AGENTS.md).
+
+The equivalent terminal command for the maintainer is:
+
+```sh
+./gradlew connectedDebugAndroidTest
 ```
 
-After a connected instrumented-test run, its result pages are written below:
+Tests use AndroidJUnitRunner, Espresso, and Compose UI testing and can run
+without Google Play Services. Reports appear under
+`app/build/reports/androidTests/connected/`. For a filtered run, confirm the
+expected classes appear in the generated XML before accepting the result.
 
-```text
-app/build/reports/androidTests/connected/
-```
+## Coverage and regression guidance
+
+- **JVM tests** (`app/src/test/`) cover project storage, metadata, playback
+  state, waveform calculations, input normalization, IPA keys, search-stage
+  ordering, filtering, and pagination. Dictionary search tests exercise the
+  production loop through an offline row adapter. Archive tests cover gzip
+  output, progress, failures, and cancellation.
+- **Android tests** (`app/src/androidTest/`) cover SQLite installation and
+  lookup, staging cleanup, real native IPA, playback, and Compose screens.
+  Dictionary UI tests cover input changes, stale errors, and superseded
+  searches. An integration test exercises real JNI after a database miss.
+
+Use small, deterministic fixtures for matching and ordering regressions.
+Keep pure logic testable on the JVM, and reserve Android tests for framework,
+native, and UI behavior. Test coroutine ordering with controlled dispatchers
+and explicit synchronization rather than timing sleeps. Compose test
+resumptions must respect the UI thread.
+
+The maintainer has confirmed the Android suite passes with airplane mode
+enabled. This includes SQLite fixtures, native IPA checks for supported
+languages, the fallback integration, and About notices. It does not replace
+full release-dictionary smoke tests, a timed search benchmark, or native
+page-size compatibility checks. Repeat the [release checks](RELEASING.md)
+for each distributed build.
 
 ## Coverage reports
 
-### Unified report
+Debug builds enable JaCoCo for JVM and instrumented tests.
 
-Start an AVD and wait until Android Studio reports that it is online. Then run
-this task from the project root:
+| Report | Command | HTML output |
+| --- | --- | --- |
+| JVM | `./gradlew :app:createDebugUnitTestCoverageReport` | `app/build/reports/coverage/test/debug/index.html` |
+| Android | `./gradlew :app:createDebugAndroidTestCoverageReport` | `app/build/reports/coverage/androidTest/debug/connected/index.html` |
+| Combined | `./gradlew :app:createCoverageReport` | `app/build/reports/code_coverage_html_report/global/index.html` |
 
-```bash
-./gradlew :app:createCoverageReport
-```
+Android and combined coverage require a running emulator or connected device
+and are maintainer tasks. The combined task reruns both suites. No minimum
+coverage threshold is enforced.
 
-This task runs the debug local tests and connected debug instrumented tests,
-then combines both coverage data sets. Open the resulting report at:
-
-```text
-app/build/reports/code_coverage_html_report/global/index.html
-```
-
-Unified report aggregation is currently an experimental Android Gradle Plugin
-feature. The warning printed by Gradle for
-`android.experimental.reportAggregationSupport=true` is therefore expected.
-
-### Local-test-only report
-
-This report does not require an emulator:
-
-```bash
-./gradlew :app:createDebugUnitTestCoverageReport
-```
-
-Open:
-
-```text
-app/build/reports/coverage/test/debug/index.html
-```
-
-### Instrumented-test-only report
-
-With an AVD or device connected, run:
-
-```bash
-./gradlew :app:createDebugAndroidTestCoverageReport
-```
-
-Open:
-
-```text
-app/build/reports/coverage/androidTest/debug/connected/index.html
-```
-
-## Running the unified report from Android Studio
-
-1. Start the AVD from **Tools > Device Manager** and wait for it to finish
-   booting.
-2. Open **View > Tool Windows > Gradle**.
-3. Use **Execute Gradle Task** in the Gradle tool window and enter
-   `:app:createCoverageReport`. The integrated terminal can run the same
-   command when it has access to the Android SDK and the AVD's ADB server.
-4. Wait for both the local and connected tests to finish. A previous successful
-   test run is not reused; the coverage task runs the tests again with coverage
-   collection enabled.
-5. In the Project tool window, switch from the **Android** view to the
-   **Project** view and open
-   `app/build/reports/code_coverage_html_report/global/index.html`. If Android
-   Studio does not preview it, use **Open In > Browser** or open that file
-   directly in a web browser.
-
-The unified report lets you drill down from packages to classes and source
-lines. Green lines were executed, red lines were missed, and yellow lines were
-only partially covered. Compose and Kotlin compiler-generated code can add
-noise, so source-level line and branch coverage are more useful than treating
-the overall percentage as a target. No minimum coverage threshold is currently
-enforced.
-
-## ADB and container troubleshooting
-
-The coverage task must run in an environment that can see the emulator. If an
-AVD is visible to Android Studio but not inside Distrobox, run the Gradle task
-through Android Studio's Gradle tool window or from a host terminal instead.
-Confirm device visibility with:
-
-```bash
-adb devices
-```
-
-The emulator should appear with the state `device`. If the coverage task fails,
-fix the failing test or device connection first; Gradle will not create a
-complete unified report after a failed test run.
-
-On newer JDKs, Gradle may also print a warning that
-`com.google.protobuf.UnsafeUtil` called a terminally deprecated
-`sun.misc.Unsafe` method. This originates in protobuf used by the Android/Gradle
-toolchain, not Ghostwriter's application code. It does not invalidate a report
-when the build finishes successfully. Prefer updating Android Studio and the
-Android Gradle Plugin when an upstream fix becomes available instead of adding
-or forcing a protobuf application dependency solely to hide the warning.
-
-All generated test and coverage pages are under `app/build/`. They are ignored
-by Git, can be regenerated at any time, and are removed by `./gradlew clean`.
+If Gradle cannot see the emulator, check `adb devices` or launch the task from
+Android Studio's Gradle tool window. Failed runs do not produce complete
+combined reports. Generated reports stay in `app/build/` and can be recreated.
