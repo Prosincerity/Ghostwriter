@@ -229,6 +229,11 @@ fun WaveformView(
             if (markerX in -overlayWidthPx..viewportWidthPx) {
                 Box(
                     modifier = Modifier
+                        .fillMaxHeight()
+                        .width(overlayWidth)
+                        .offset { IntOffset(overlayLeftPx.roundToInt(), 0) }
+                        // Report semantics at the same position as the pointer
+                        // handlers, after applying the marker's layout offset.
                         .testTag("Waveform marker ${marker.label}")
                         .semantics {
                             stateDescription = "Looping: ${marker.loopRole.displayName}"
@@ -248,9 +253,6 @@ fun WaveformView(
                                 true
                             }
                         }
-                        .fillMaxHeight()
-                        .width(overlayWidth)
-                        .offset { IntOffset(overlayLeftPx.roundToInt(), 0) }
                         .pointerInput(marker, durationMs, viewportWidthPx, overlayLeftPx, labelLeftPx, labelSize) {
                             detectTapGestures(
                                 onTap = { offset ->

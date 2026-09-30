@@ -103,6 +103,81 @@ class BeatPlayerInstrumentedTest {
         assertTrue(player.durationMs in 900..1100)
     }
 
+    @Test
+    fun failedLoopPreparation_keepsPlayerReadyAndExplicitPlayRetriesAfterRepair() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val player = BeatPlayer(context).also { beatPlayer = it }
+        val file = createPcm16Wav("beat-loop-retry.wav", 2000)
+        val original = file.readBytes()
+        val cacheBefore = context.cacheDir.listFiles()?.filter { it.name.startsWith("beat-loop-") }?.map { it.name }?.toSet()
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            assertTrue(file.delete())
+            player.setMarkers(listOf(WaveformMarker("End", 600, MarkerLoopRole.END)))
+            assertTrue(player.isPreparingLoop)
+        }
+        waitUntil("Failed preparation remained pending", 10000) { !player.isPreparingLoop }
+        assertTrue(player.isReady)
+        assertFalse(player.isPlaying)
+        assertEquals(cacheBefore?.minus(file.name), context.cacheDir.listFiles()
+            ?.filter { it.name.startsWith("beat-loop-") }?.map { it.name }?.toSet())
+        file.writeBytes(original)
+        instrumentation.runOnMainSync { player.play() }
+        waitUntil("Retry did not prepare loop audio", 10000) { !player.isPreparingLoop }
+        waitUntil("Retry did not resume playback", 5000) { player.isPlaying && player.currentPositionMs > 50 }
+        instrumentation.runOnMainSync { player.setVolume(0.25f); player.pause() }
+        assertEquals(0.25f, player.volume)
+        assertFalse(player.isPlaying)
+    }
+
+    @Test
+    fun seekAndPauseDuringPreparation_preserveLatestTransportIntent() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val file = createPcm16Wav("beat-player-preparation-intent.wav", 2000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.setMarkers(listOf(WaveformMarker("End", 1500, MarkerLoopRole.END)))
+            player.play()
+            player.seekTo(700)
+            player.pause()
+            assertTrue(player.isPreparingLoop)
+            assertEquals(700, player.currentPositionMs)
+            assertFalse(player.isPlaying)
+        }
+        waitUntil("PCM preparation did not finish", 10000) { !player.isPreparingLoop }
+        assertFalse(player.isPlaying)
+        waitUntil("Prepared player lost latest seek") { player.currentPositionMs in 650..750 }
+    }
+
+    @Test
+    fun streamingPcmFailure_releasesPlayerAndDeletesTemporaryAudio() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val directory = instrumentation.targetContext.cacheDir
+        val before = directory.listFiles()!!.filter { it.extension == "pcm" }.toSet()
+        val player = BeatPlayer(instrumentation.targetContext).also { beatPlayer = it }
+        // Exceed the memory limit so playback depends on the prefetch worker.
+        val file = createPcm16Wav("beat-player-disk-failure.wav", 550000)
+        assertTrue("Fixture must exceed the PCM memory limit", file.length() - WAV_HEADER_SIZE > PcmSources.MEMORY_LIMIT_BYTES)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.toggleLoop()
+            player.setMarkers(listOf(WaveformMarker("End", 2000, MarkerLoopRole.END)))
+        }
+        waitUntil("Disk-backed preparation did not finish", 20000) { !player.isPreparingLoop }
+        assertTrue(player.isReady)
+        val pcm = directory.listFiles()!!.filter { it.extension == "pcm" && it !in before }.single()
+        assertTrue(pcm.length() > PcmSources.MEMORY_LIMIT_BYTES)
+        java.io.RandomAccessFile(pcm, "rw").use { it.setLength(0) }
+        instrumentation.runOnMainSync { player.seekTo(400000); player.play() }
+        waitUntil("Streaming failure did not release playback", 10000) { !player.isReady }
+        assertFalse(player.isPlaying)
+        assertEquals(0, player.currentPositionMs)
+        assertEquals(0, player.durationMs)
+        waitUntil("Failed stream retained its PCM file") { !pcm.exists() }
+    }
+
     private val generatedFiles = mutableListOf<File>()
     private var beatPlayer: BeatPlayer? = null
 
@@ -231,7 +306,7 @@ class BeatPlayerInstrumentedTest {
         val sampleRate = 8_000
         val channelCount = 1
         val bytesPerSample = 2
-        val sampleCount = sampleRate * durationMs / 1_000
+        val sampleCount = (sampleRate.toLong() * durationMs / 1_000).toInt()
         val dataSize = sampleCount * channelCount * bytesPerSample
         val wav = ByteBuffer.allocate(WAV_HEADER_SIZE + dataSize).order(ByteOrder.LITTLE_ENDIAN)
 

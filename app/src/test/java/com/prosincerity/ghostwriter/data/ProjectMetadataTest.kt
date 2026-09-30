@@ -5,6 +5,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -72,6 +73,71 @@ class ProjectMetadataTest {
         entries.getJSONObject(0).remove("loopRole")
         entries.getJSONObject(1).put("loopRole", "future-role")
         assertTrue(ProjectMetadata.fromJsonObject(json, "Fallback").markers.all { it.loopRole == MarkerLoopRole.NONE })
+    }
+
+    @Test
+    fun framePositions_rejectInvalidTargetRatesAndFallBackForIncompleteSavedFrames() {
+        val marker = WaveformMarker("Start", 1500, MarkerLoopRole.START)
+        for (rate in listOf(0, -1)) {
+            assertThrows(IllegalArgumentException::class.java) { marker.frameAt(rate) }
+        }
+        for (incomplete in listOf(
+            marker.copy(frameIndex = 99),
+            marker.copy(sampleRate = 44100),
+            marker.copy(frameIndex = 99, sampleRate = 0),
+            marker.copy(frameIndex = 99, sampleRate = -1),
+        )) {
+            assertEquals(72000L, incomplete.frameAt(48000))
+            val normalized = incomplete.withSampleRate(48000)
+            assertEquals(72000L, normalized.frameIndex)
+            assertEquals(1500L, normalized.positionMs)
+            assertEquals(MarkerLoopRole.START, normalized.loopRole)
+        }
+    }
+
+    @Test
+    fun frameNormalization_repairsStaleMillisecondsWithoutChangingExactFrames() {
+        val marker = WaveformMarker("End", 99, MarkerLoopRole.END, 48001, 48000)
+        val normalized = marker.withSampleRate(48000)
+        assertEquals(1000L, normalized.positionMs)
+        assertEquals(48001L, normalized.frameIndex)
+        assertSame(normalized, normalized.withSampleRate(48000))
+        val movedWithoutRate = normalized.atPositionMs(2000, 0)
+        assertEquals(2000L, movedWithoutRate.positionMs)
+        assertNull(movedWithoutRate.frameIndex)
+        assertNull(movedWithoutRate.sampleRate)
+    }
+
+    @Test
+    fun incompleteFrameMetadata_roundTripsAsLegacyPositions() {
+        val marker = WaveformMarker("End", 1500, MarkerLoopRole.END)
+        val incomplete = listOf(
+            marker.copy(frameIndex = 42), marker.copy(sampleRate = 48000),
+            marker.copy(frameIndex = 42, sampleRate = 0),
+        )
+        val json = ProjectMetadata("Legacy", markers = incomplete).toJsonObject()
+        val stored = json.getJSONArray("markers")
+        repeat(stored.length()) { index ->
+            assertEquals(1500L, stored.getJSONObject(index).getLong("positionMs"))
+            assertTrue(!stored.getJSONObject(index).has("frameIndex"))
+        }
+        assertEquals(List(3) { marker }, ProjectMetadata.fromJsonObject(json, "Fallback").markers)
+    }
+
+    @Test
+    fun incompleteSavedFrames_useLegacyPositionAndSkipEntriesWithNoUsablePosition() {
+        val entries = JSONArray()
+        for (fields in listOf(
+            JSONObject().put("frameIndex", 42),
+            JSONObject().put("sampleRate", 48000),
+            JSONObject().put("frameIndex", 42).put("sampleRate", 0),
+            JSONObject().put("frameIndex", -1).put("sampleRate", 48000),
+        )) {
+            entries.put(JSONObject(fields.toString()).put("label", "Legacy").put("positionMs", 1500))
+            entries.put(JSONObject(fields.toString()).put("label", "Missing position"))
+        }
+        val metadata = ProjectMetadata.fromJsonObject(JSONObject().put("markers", entries), "Fallback")
+        assertEquals(List(4) { WaveformMarker("Legacy", 1500) }, metadata.markers)
     }
 
     @get:Rule
