@@ -92,6 +92,12 @@ fun AboutScreen(
                     "the GNU General Public License v3.0 or later.",
                 style = MaterialTheme.typography.bodyMedium,
             )
+            Text(
+                "Ghostwriter comes with no warranty, to the extent permitted by law. " +
+                    "You may redistribute and modify it under the GNU General Public License " +
+                    "v3.0 or later. See the license below for the full terms.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
             AboutLink("Source code", GHOSTWRITER_REPOSITORY_URL, onOpenLink)
             AboutLink("GNU GPL v3.0 or later", GHOSTWRITER_LICENSE_URL, onOpenLink)
             AboutLink("Third-party licenses", THIRD_PARTY_LICENSES_URL, onOpenLink)

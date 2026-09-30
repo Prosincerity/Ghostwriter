@@ -73,3 +73,5 @@ source revision when distributing the APK and corresponding source. The
 downloaded pronunciation databases have separate data attribution and
 licensing, also linked from About.
 The combined project notice is [THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md).
+Publish matching app and native source alongside distributed APKs using the
+procedure in [RELEASING.md](RELEASING.md).

@@ -2,8 +2,8 @@
 
 Ghostwriter's own license is [GPL-3.0-or-later](LICENSE). The notices below
 identify material that has its own authors and license terms. Copies of this
-notice, the GPL text, the Unicode notice, and the Ghostwriter Dictionary MIT
-notice are packaged in the APK's
+notice, the GPL text, the Unicode notice, the Ghostwriter Dictionary MIT
+notice, and its complete dictionary-data attribution notice are packaged in the APK's
 `assets/licenses/` directory. The downloadable dictionary databases are data,
 separate from the app's source code license.
 
@@ -13,7 +13,8 @@ The IPA tokenizer and search-key rules in `IpaSearchKeys.kt` and headword
 normalization in `DictionaryHeadword.kt` are adapted from Ghostwriter Dictionary's
 `scripts/generate_rhyme_db.py` and `scripts/clean_rhyme_wordlist.py`. Copyright (c) 2026
 Ghostwriter Dictionary contributors. That source code is under the **MIT
-License**; its complete notice is packaged in `Ghostwriter-Dict-MIT.txt`.
+License**; its complete notice is packaged in
+[`Ghostwriter-Dict-MIT.txt`](app/src/main/assets/licenses/Ghostwriter-Dict-MIT.txt).
 Ghostwriter's Kotlin adaptation is distributed as part of this GPL-3.0-or-later
 app. The downloadable databases retain their separate CC BY-SA 4.0 terms.
 
@@ -44,6 +45,8 @@ The six databases in the
 are offered under **Creative Commons Attribution-ShareAlike 4.0 International
 (CC BY-SA 4.0)**. Their authoritative attribution and modification notice is
 [Ghostwriter Dictionary's LICENSE-DATA.md](https://github.com/Prosincerity/Ghostwriter-Dict/blob/main/LICENSE-DATA.md).
+An unmodified copy is packaged as `assets/licenses/Ghostwriter-Dict-LICENSE-DATA.md`
+so the complete attribution and modification statement accompanies the app.
 The [CC BY-SA 4.0 legal text](https://creativecommons.org/licenses/by-sa/4.0/legalcode)
 governs redistribution of these databases.
 

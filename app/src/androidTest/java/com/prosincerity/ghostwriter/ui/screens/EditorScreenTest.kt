@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -45,7 +46,8 @@ import java.util.concurrent.TimeUnit
 class EditorScreenTest {
 
     @get:Rule
-    val composeRule = createComposeRule()
+    // Queue resumptions after IO instead of running recomposition on the IO worker.
+    val composeRule = createComposeRule(StandardTestDispatcher())
 
     private val context
         get() = InstrumentationRegistry.getInstrumentation().targetContext

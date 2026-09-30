@@ -266,6 +266,10 @@ keeps compounds because it searches the exact phoneme suffix at each length.
 
 ### 7. Licensing, attribution, and release verification
 
+Status: repository licensing and build checks verified; maintainer device
+verification is pending. Do not mark this step complete until the offline
+exit check below passes on the updated branch.
+
 - Ghostwriter's project grant is `GPL-3.0-or-later`, matching eSpeak NG's
   `GPL-3.0-or-later` grant. Keep the repository and in-app notices consistent.
   This does not change the dictionary databases' CC BY-SA 4.0 attribution and
@@ -288,6 +292,39 @@ keeps compounds because it searches the exact phoneme suffix at each length.
 
 Exit check: a clean release build can be reproduced, all attribution is
 visible, and the offline device verification passes.
+
+Verification on 2026-09-30:
+
+- [x] About includes the project copyright, GPL-3.0-or-later grant, no-warranty
+  statement, and redistribution/modification terms. Its Compose test checks
+  the added notices and scrolls to the dictionary link before clicking it.
+- [x] The APK carries the GPL, Unicode, MIT, combined third-party notice, and
+  an unmodified copy of the producer's complete `LICENSE-DATA.md`. The
+  downloaded dictionary data remains CC BY-SA 4.0. App/native corresponding
+  source distribution is documented in [RELEASING.md](RELEASING.md).
+- [x] `./gradlew test lint assembleRelease assembleDebugAndroidTest` succeeds:
+  202 JVM tests, no failures; lint has 14 existing warnings and no errors.
+- [x] `./gradlew assembleRelease --no-build-cache` succeeds from a fresh source
+  snapshot with no build outputs, including the complete pinned eSpeak source.
+  Its packaged notices and ten language-data files match the workspace build.
+  The workspace unsigned release APK is 13,715,029 bytes (about 13.08 MiB),
+  includes both native ABIs, and has no downloaded SQLite databases.
+  The fresh-source APK passes `zipalign -c -P 16 4`.
+- [ ] Rerun the device suite after the test-dispatcher fix. The maintainer's
+  current report has 89 passing tests and two `CalledFromWrongThreadException`
+  failures: `DictionaryDownloadsTest.showsProgressUntilDownloadIsCanceled`
+  and `EditorScreenTest.corruptBeat_retryThenRemove_clearsBeatAndMetadata`.
+  Both affected classes now use `StandardTestDispatcher` to queue Compose
+  resumptions after IO; the updated test APK compiles. Device success has not
+  yet been confirmed.
+- [ ] With installed real dictionaries and airplane mode enabled, verify
+  English/German/Turkish searches and out-of-vocabulary eSpeak fallback, and
+  scroll through About to confirm attribution is visible.
+
+Before publishing an APK, merge the notices into `main`, verify the About
+links, and publish the matching combined source archive alongside the APK.
+16 KB page-size device compatibility also remains a maintainer device check;
+the alignment check alone does not establish runtime compatibility.
 
 Device verification note: the maintainer tested the app on a physical Android
 device with real dictionary data downloaded from GitHub releases
