@@ -81,8 +81,9 @@ internal fun openDictionaryArchive(connection: HttpURLConnection): InputStream {
     connection.readTimeout = 30_000
     connection.instanceFollowRedirects = true
     try {
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-            error("Dictionary download failed: HTTP ${connection.responseCode}")
+        val responseCode = connection.responseCode
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            error("Dictionary download failed: HTTP $responseCode")
         }
         return object : FilterInputStream(connection.inputStream) {
             override fun close() {
@@ -115,7 +116,7 @@ internal class DictionaryInstaller(
 
     fun installedDatabase(language: String, source: DictionarySource): File? {
         require(language in release.languages)
-        return File(File(File(root, language), release.tag), source.fileName)
+        return File(root, "$language/${release.tag}/${source.fileName}")
             .takeIf(::isUsableDatabase)
     }
 
@@ -127,8 +128,7 @@ internal class DictionaryInstaller(
             ?.filter { it.isDirectory && !it.name.startsWith(".") }
             ?.sortedByDescending { it.name }
             ?.map { File(it, source.fileName) }
-            ?.filter(::isUsableDatabase)
-            ?.firstOrNull()
+            ?.firstOrNull(::isUsableDatabase)
     }
 
     fun availableLanguages(): List<String> = release.languages.keys.filter { language ->

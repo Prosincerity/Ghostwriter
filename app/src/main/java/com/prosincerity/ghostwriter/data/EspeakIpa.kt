@@ -58,7 +58,8 @@ internal class EspeakIpa(context: Context) : IpaGenerator {
         try {
             for (relativePath in DATA_FILES) {
                 val destination = File(staging, "espeak-ng-data/$relativePath")
-                check(destination.parentFile!!.mkdirs() || destination.parentFile!!.isDirectory)
+                val directory = checkNotNull(destination.parentFile)
+                check(directory.mkdirs() || directory.isDirectory)
                 appContext.assets.open("espeak-ng-1.52/espeak-ng-data/$relativePath").use { input ->
                     destination.outputStream().use { output -> input.copyTo(output) }
                 }
