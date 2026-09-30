@@ -30,10 +30,12 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.GZIPOutputStream
 import kotlin.random.Random
+import kotlinx.coroutines.test.StandardTestDispatcher
 
 @RunWith(AndroidJUnit4::class)
 class DictionaryDownloadsTest {
-    @get:Rule val composeRule = createComposeRule()
+    // Queue resumptions after IO instead of running recomposition on the IO worker.
+    @get:Rule val composeRule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun failedDownloadCanBeRetriedAndMarksInstalledSource() = withDictionaryTestContext { context ->
@@ -82,6 +84,7 @@ class DictionaryDownloadsTest {
         try {
             waitForDownloadButton()
             composeRule.onNodeWithContentDescription(DOWNLOAD_ENGLISH_WIKTIONARY).performClick()
+            composeRule.waitForIdle()
             assertTrue(started.await(5, TimeUnit.SECONDS))
             composeRule.onNodeWithText("Downloading Wiktionary Kaikki...").assertExists()
             composeRule.onNodeWithContentDescription("Download eSpeak NG generated for English")
@@ -134,6 +137,7 @@ class DictionaryDownloadsTest {
         try {
             waitForDownloadButton()
             composeRule.onNodeWithContentDescription(DOWNLOAD_ENGLISH_WIKTIONARY).performClick()
+            composeRule.waitForIdle()
             assertTrue(paused.await(5, TimeUnit.SECONDS))
             composeRule.waitUntil(5_000) {
                 composeRule.onAllNodesWithText("%", substring = true).fetchSemanticsNodes().isNotEmpty()

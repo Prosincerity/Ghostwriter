@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790690830.2363591,
-    "seen": 1790690849.5552213,
-    "ast_hash": "01c5c817041220e1c8c571c2ec86d51b",
+    "mtime": 1790774518.292513,
+    "seen": 1790774679.4814792,
+    "ast_hash": "b490aa6fa3e36abcbbc2bbf281330fee",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -384,15 +384,15 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/AboutScreenTest.kt": {
-    "mtime": 1790193920.2113292,
-    "seen": 1790194097.3930066,
-    "ast_hash": "8509260b726f9f3f29adc4f419bdef6e",
+    "mtime": 1790773809.78342,
+    "seen": 1790774679.4810636,
+    "ast_hash": "5655632122ac6cdb838f0119e30a646f",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/AboutScreen.kt": {
-    "mtime": 1790193920.210329,
-    "seen": 1790194097.3930562,
-    "ast_hash": "ea17308ef622993a65600774b55f9768",
+    "mtime": 1790773809.628422,
+    "seen": 1790774679.4811428,
+    "ast_hash": "5a91242d84d466e4926679aa07b316a3",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {
@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
-    "mtime": 1790772728.5240135,
-    "seen": 1790772760.4929924,
-    "ast_hash": "22c89d602a8db32f9b67d76dac7798d9",
+    "mtime": 1790774518.0805156,
+    "seen": 1790774679.4810739,
+    "ast_hash": "0264768a97e3fa0f1afec85cd5d8e5ed",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt": {
@@ -510,9 +510,9 @@
     "semantic_hash": ""
   },
   "documentation/RHYME_DETECTION_PLAN.md": {
-    "mtime": 1790772102.9068785,
-    "seen": 1790772421.3828368,
-    "ast_hash": "c00e73683a72935282ac018a47016c64",
+    "mtime": 1790774670.5225992,
+    "seen": 1790774679.4814858,
+    "ast_hash": "162112da77cfaf21ad7c421aca43bd8d",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
@@ -1560,9 +1560,9 @@
     "semantic_hash": ""
   },
   "documentation/ESPEAK_NATIVE.md": {
-    "mtime": 1790193920.210329,
-    "seen": 1790194097.3933895,
-    "ast_hash": "d92bd85eb970734b5e6e1d0410c8eaee",
+    "mtime": 1790774518.4035115,
+    "seen": 1790774679.4814754,
+    "ast_hash": "0c98baeab7164dcedbf188039ef2fc46",
     "semantic_hash": ""
   },
   "third_party/espeak-ng/.github/dependabot.yml": {
@@ -3786,9 +3786,9 @@
     "semantic_hash": ""
   },
   "THIRD_PARTY_LICENSES.md": {
-    "mtime": 1790357798.0406396,
-    "seen": 1790358451.8152196,
-    "ast_hash": "dc18b32ce6571e2c1e918054cae15f08",
+    "mtime": 1790774057.5623052,
+    "seen": 1790774679.4814599,
+    "ast_hash": "efb788a528da147c04d024735093cb67",
     "semantic_hash": ""
   },
   "app/src/main/assets/licenses/GPL-3.0-or-later.txt": {
@@ -3798,9 +3798,9 @@
     "semantic_hash": ""
   },
   "app/src/main/assets/licenses/THIRD_PARTY_LICENSES.md": {
-    "mtime": 1790357798.0286398,
-    "seen": 1790358451.815228,
-    "ast_hash": "5d3714e2b9bc40ca4117e90a282fe084",
+    "mtime": 1790774057.7723024,
+    "seen": 1790774679.4814715,
+    "ast_hash": "efb788a528da147c04d024735093cb67",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionarySearchInstrumentedTest.kt": {
@@ -3906,9 +3906,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloadsTest.kt": {
-    "mtime": 1790425443.4926736,
-    "seen": 1790425626.2606192,
-    "ast_hash": "c4f1a232b4c4994f2a7d8c27f4a6b794",
+    "mtime": 1790774414.5018177,
+    "seen": 1790774679.4810684,
+    "ast_hash": "9cceacb99b16264ee61472b3cbb99888",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlaybackServiceTest.kt": {
@@ -4017,6 +4017,18 @@
     "mtime": 1790772212.5844996,
     "seen": 1790772421.3825805,
     "ast_hash": "bf138e6883e1f2a0efc0cdaf1d08651c",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/Ghostwriter-Dict-LICENSE-DATA.md": {
+    "mtime": 1790774007.5097096,
+    "seen": 1790774679.4814668,
+    "ast_hash": "0c5f2ed625cdcdce60e31503d2f690d5",
+    "semantic_hash": ""
+  },
+  "documentation/RELEASING.md": {
+    "mtime": 1790774670.4136004,
+    "seen": 1790774679.481482,
+    "ast_hash": "350cd0be1bff698110942dc1dd6c1c79",
     "semantic_hash": ""
   }
 }

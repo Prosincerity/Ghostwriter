@@ -3,6 +3,7 @@
 - [FEATURES.md](FEATURES.md): implemented features and roadmap.
 - [TESTING.md](TESTING.md): test, lint, and coverage commands.
 - [SETUP_NOTES.md](SETUP_NOTES.md): build requirements.
+- [RELEASING.md](RELEASING.md): release checks and matching source distribution.
 - [RHYME_DETECTION_PLAN.md](RHYME_DETECTION_PLAN.md): dictionary and rhyme work in progress.
 - [RHYME_BRANCH_REVIEW.md](RHYME_BRANCH_REVIEW.md): staged branch cleanup and validation.
 
