@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.media.BeatPlayer
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -96,6 +97,7 @@ internal fun BeatPlayerPanel(
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 Button(
+                    shape = GhostButtonShape,
                     onClick = onCancelWaveformPreparation,
                     modifier = Modifier.padding(top = 8.dp),
                 ) {
@@ -113,6 +115,7 @@ internal fun BeatPlayerPanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Button(
+                    shape = GhostButtonShape,
                     onClick = onRetryWaveformPreparation,
                     modifier = Modifier.padding(top = 8.dp),
                 ) {
@@ -133,10 +136,10 @@ internal fun BeatPlayerPanel(
                     modifier = Modifier.padding(top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Button(onClick = onRetryWaveformPreparation) {
+                    Button(shape = GhostButtonShape, onClick = onRetryWaveformPreparation) {
                         Text("Retry")
                     }
-                    TextButton(onClick = onReassignBeat) {
+                    TextButton(shape = GhostButtonShape, onClick = onReassignBeat) {
                         Text("Remove beat")
                     }
                 }
@@ -152,6 +155,7 @@ internal fun BeatPlayerPanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Button(
+                    shape = GhostButtonShape,
                     onClick = onImportBeat,
                     enabled = !isImporting && !isReassigningBeat,
                     modifier = Modifier.padding(top = 4.dp),
@@ -286,6 +290,7 @@ private fun WaveformZoomButton(
     onClick: () -> Unit,
 ) {
     IconButton(
+        shape = GhostButtonShape,
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier.size(32.dp),

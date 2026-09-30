@@ -22,6 +22,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 
 internal const val GHOSTWRITER_REPOSITORY_URL = "https://github.com/Prosincerity/Ghostwriter"
 internal const val GHOSTWRITER_LICENSE_URL =
@@ -54,7 +55,7 @@ fun AboutScreen(
             TopAppBar(
                 title = { Text("About") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(shape = GhostButtonShape, onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -162,6 +163,7 @@ private fun AboutLink(
     onOpenLink: (String) -> Unit,
 ) {
     TextButton(
+        shape = GhostButtonShape,
         onClick = { onOpenLink(url) },
         modifier = Modifier.fillMaxWidth(),
     ) {

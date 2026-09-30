@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 
 @Composable
 internal fun ReassignBeatDialog(
@@ -31,10 +32,10 @@ internal fun ReassignBeatDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Reassign") }
+            TextButton(shape = GhostButtonShape, onClick = onConfirm) { Text("Reassign") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(shape = GhostButtonShape, onClick = onDismiss) { Text("Cancel") }
         },
     )
 }
@@ -56,10 +57,10 @@ internal fun LongBeatWarningDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = onProcess) { Text("Process anyway") }
+            TextButton(shape = GhostButtonShape, onClick = onProcess) { Text("Process anyway") }
         },
         dismissButton = {
-            TextButton(onClick = onCancel) {
+            TextButton(shape = GhostButtonShape, onClick = onCancel) {
                 Text(if (cancelRemovesImportedBeat) "Cancel import" else "Cancel preparation")
             }
         },
@@ -98,6 +99,7 @@ internal fun WaveformMarkerDialog(
                 )
                 if (onDelete != null) {
                     TextButton(
+                        shape = GhostButtonShape,
                         onClick = onDelete,
                         modifier = Modifier.padding(top = 8.dp),
                     ) {
@@ -108,6 +110,7 @@ internal fun WaveformMarkerDialog(
         },
         confirmButton = {
             TextButton(
+                shape = GhostButtonShape,
                 onClick = { onSave(trimmedLabel) },
                 enabled = trimmedLabel.isNotEmpty(),
             ) {
@@ -115,7 +118,7 @@ internal fun WaveformMarkerDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(shape = GhostButtonShape, onClick = onDismiss) { Text("Cancel") }
         },
     )
 }

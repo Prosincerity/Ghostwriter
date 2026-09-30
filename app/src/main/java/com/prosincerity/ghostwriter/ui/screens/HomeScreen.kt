@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 
 /**
  * Phase 1's screen becomes the editor; this is the new entry point.
@@ -79,7 +80,7 @@ fun HomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onOpenSettings) {
+                    IconButton(shape = GhostButtonShape, onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
@@ -95,7 +96,7 @@ fun HomeScreen(
         ) {
             Spacer(Modifier.height(32.dp))
 
-            Button(onClick = { showTitleDialog = true }, modifier = Modifier.fillMaxWidth()) {
+            Button(shape = GhostButtonShape, onClick = { showTitleDialog = true }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Add, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("New file")
@@ -104,6 +105,7 @@ fun HomeScreen(
             Spacer(Modifier.height(12.dp))
 
             OutlinedButton(
+                shape = GhostButtonShape,
                 onClick = { /* Import — implemented in a later phase */ },
                 enabled = false,
                 modifier = Modifier.fillMaxWidth(),
@@ -125,7 +127,7 @@ fun HomeScreen(
                             headlineContent = { Text(title) },
                             trailingContent = {
                                 Box {
-                                    IconButton(onClick = { projectMenuFor = title }) {
+                                    IconButton(shape = GhostButtonShape, onClick = { projectMenuFor = title }) {
                                         Icon(
                                             Icons.Filled.MoreVert,
                                             contentDescription = "Project options for $title",
@@ -196,6 +198,7 @@ fun HomeScreen(
             },
             confirmButton = {
                 TextButton(
+                    shape = GhostButtonShape,
                     onClick = {
                         onDeleteProject(title)
                         projectToDelete = null
@@ -205,7 +208,7 @@ fun HomeScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { projectToDelete = null }) {
+                TextButton(shape = GhostButtonShape, onClick = { projectToDelete = null }) {
                     Text("Cancel")
                 }
             },
@@ -244,12 +247,12 @@ private fun RenameProjectDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(candidate) }, enabled = !alreadyExists) {
+            TextButton(shape = GhostButtonShape, onClick = { onConfirm(candidate) }, enabled = !alreadyExists) {
                 Text("Rename")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(shape = GhostButtonShape, onClick = onDismiss) { Text("Cancel") }
         },
     )
 }
@@ -283,12 +286,12 @@ private fun NewProjectDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(candidate) }) {
+            TextButton(shape = GhostButtonShape, onClick = { onConfirm(candidate) }) {
                 Text(if (isDuplicate) "Open" else "Create")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(shape = GhostButtonShape, onClick = onDismiss) { Text("Cancel") }
         },
     )
 }
