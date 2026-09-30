@@ -93,6 +93,32 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
     var progress by remember { mutableStateOf<DictionaryDownloadProgress?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    fun startDownload(language: String, source: DictionarySource) {
+        val key = language to source
+        val sourceLabel = downloadSourceLabel(source)
+        val languageLabel = dictionaryLanguageLabel(language)
+        active = key
+        progress = null
+        error = null
+        downloadJob = scope.launch {
+            try {
+                installer.install(language, source) { value ->
+                    withContext(Dispatchers.Main.immediate) { progress = value }
+                }
+                installed[key] = true
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                error = "Could not download $sourceLabel for $languageLabel: " +
+                    (failure.message ?: "unknown error")
+            } finally {
+                active = null
+                progress = null
+                downloadJob = null
+            }
+        }
+    }
+
     Column(modifier) {
         Text(
             "These pronunciation dictionaries help find rhymes. Download only the languages and sources you want; installed dictionaries work offline.",
@@ -117,10 +143,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
             for (source in DictionarySource.entries) {
                 val asset = assets.asset(source)
                 val key = language to source
-                val sourceLabel = when (source) {
-                    DictionarySource.WIKTIONARY -> "Wiktionary Kaikki"
-                    DictionarySource.ESPEAK -> "eSpeak NG generated"
-                }
+                val sourceLabel = downloadSourceLabel(source)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -136,28 +159,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                         Icon(Icons.Default.Check, contentDescription = "$sourceLabel installed for $languageLabel")
                     } else {
                         IconButton(
-                            onClick = {
-                                active = key
-                                progress = null
-                                error = null
-                                downloadJob = scope.launch {
-                                    try {
-                                        installer.install(language, source) { value ->
-                                            withContext(Dispatchers.Main.immediate) { progress = value }
-                                        }
-                                        installed[key] = true
-                                    } catch (cancelled: CancellationException) {
-                                        throw cancelled
-                                    } catch (failure: Exception) {
-                                        error = "Could not download $sourceLabel for $languageLabel: " +
-                                            (failure.message ?: "unknown error")
-                                    } finally {
-                                        active = null
-                                        progress = null
-                                        downloadJob = null
-                                    }
-                                }
-                            },
+                            onClick = { startDownload(language, source) },
                             enabled = !checkingDictionaries && active == null,
                         ) {
                             Icon(Icons.Default.Download, contentDescription = "Download $sourceLabel for $languageLabel")
@@ -174,4 +176,9 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
+}
+
+private fun downloadSourceLabel(source: DictionarySource): String = when (source) {
+    DictionarySource.WIKTIONARY -> "Wiktionary Kaikki"
+    DictionarySource.ESPEAK -> "eSpeak NG generated"
 }
