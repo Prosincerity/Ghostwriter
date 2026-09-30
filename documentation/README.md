@@ -16,6 +16,9 @@ It works offline by default, has no AI features or Google Play Services,
 and favors Android framework APIs and small implementations. SDK levels,
 toolchain versions, and dependencies are defined in the Gradle configuration.
 
+UI typography uses bundled Roboto regular, medium, and bold faces, including
+waveform marker labels. The lyric editor keeps its independently selected font.
+
 Application sources are under
 [`app/src/main/java/com/prosincerity/ghostwriter/`](../app/src/main/java/com/prosincerity/ghostwriter/).
 

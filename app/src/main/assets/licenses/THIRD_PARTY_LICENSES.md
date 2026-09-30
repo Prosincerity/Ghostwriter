@@ -7,6 +7,15 @@ notice, and its complete dictionary-data attribution notice are packaged in the 
 `assets/licenses/` directory. The downloadable dictionary databases are data,
 separate from the app's source code license.
 
+## Roboto UI fonts
+
+Ghostwriter bundles unmodified Roboto regular, medium, and bold font files
+(version 2.001047, 2015) from
+[`googlefonts/roboto-2/src/hinted`](https://github.com/googlefonts/roboto-2/tree/main/src/hinted).
+Copyright 2015 Google Inc. All Rights Reserved. These fonts are licensed under
+the **Apache License 2.0**. The complete upstream license is packaged in
+[`Roboto-Apache-2.0.txt`](app/src/main/assets/licenses/Roboto-Apache-2.0.txt).
+
 ## Ghostwriter Dictionary index code
 
 The IPA tokenizer and search-key rules in `IpaSearchKeys.kt` and headword
