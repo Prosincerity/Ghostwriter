@@ -400,6 +400,7 @@ fun EditorScreen(
         )
     }
 
+    val isBeatProcessing = isImporting || isReassigningBeat || isWaveformLoading
     Scaffold(
         topBar = {
             TopAppBar(
@@ -418,13 +419,13 @@ fun EditorScreen(
                 actions = {
                     IconButton(
                         onClick = onOpenDictionary,
-                        enabled = !isImporting && !isReassigningBeat && !isWaveformLoading,
+                        enabled = !isBeatProcessing,
                     ) {
                         Icon(Icons.Filled.Book, contentDescription = "Dictionary")
                     }
                     IconButton(
                         onClick = { showInfoDialog = true },
-                        enabled = !isImporting && !isReassigningBeat && !isWaveformLoading,
+                        enabled = !isBeatProcessing,
                     ) {
                         Icon(Icons.Filled.Info, contentDescription = "Project Info")
                     }
