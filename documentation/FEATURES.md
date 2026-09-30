@@ -22,6 +22,15 @@ to a release date or implementation order.
   Android notification and lock-screen controls. Loop state stays in sync
   with the editor, and audio interruptions pause playback.
 - **Waveform timeline:** seek, zoom, pan, and manage named markers.
+  Marker dialogs offer **Looping: None / Start / End**, with one start and one
+  end per beat. Setting a role transfers it from the previous marker. The Loop
+  button enables marker looping: a missing start uses 0:00, and a missing end
+  uses the end of the beat. Start markers use a brighter shade of purple and
+  end markers a darker shade. Loop audio is prepared locally and streamed
+  with memory caching, worker prefetch for long beats, live loop boundaries,
+  and a 3 ms overlapping crossfade to reduce clicks. Crossfades overlap samples,
+  so each repeat is up to 3 ms shorter. Marker positions are saved as audio
+  frames; old projects migrate when opened.
   Waveforms are cached; processing supports cancel and retry, with a warning
   for long audio files.
 - **Rhyme dictionary:** download pronunciation sources independently and

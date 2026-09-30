@@ -1,19 +1,56 @@
 {
-  "generated_at": "2026-09-30T11:45:03.147187+00:00",
+  "generated_at": "2026-09-30T17:44:57.080764+00:00",
   "nodes": {
     "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
-      "code_fingerprint": "caf9bf5587c8ff98bbc72e955022710c5342e8a88e0874088070ac0910248c4a",
+      "code_fingerprint": "2be4f15177599f28fa7cc6cfb78f15aeb02403d2783ebab525dfe6507cbb1ac9",
       "label": "DictionarySearch",
-      "last": "2026-09-29T13:28:38.102761+00:00",
+      "last": "2026-09-30T11:58:55.887296+00:00",
       "provenance": [
+        {
+          "date": "2026-09-30T11:58:55.887296+00:00",
+          "outcome": "useful",
+          "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
+        },
         {
           "date": "2026-09-29T13:28:38.102761+00:00",
           "outcome": "useful",
           "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
         }
       ],
-      "score": 0.978785349,
+      "score": 1.967613008,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
+      "status": "preferred",
+      "uses": 2
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_logic_assonanceformfilter_assonanceformfilter": {
+      "code_fingerprint": "c8790fc725f490decf1fc441f3587126f8fc7e71111394b0ed4ad80d2aecb9c8",
+      "label": "AssonanceFormFilter",
+      "last": "2026-09-30T11:58:55.887296+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-30T11:58:55.887296+00:00",
+          "outcome": "useful",
+          "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
+        }
+      ],
+      "score": 0.994463469,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilter.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_logic_ipasearchkeys_ipasearchkeys": {
+      "code_fingerprint": "d083ad8ae60198f8d2d181e862d99f898662234292463d0be2b977dc0a740c9a",
+      "label": "IpaSearchKeys",
+      "last": "2026-09-30T11:58:55.887296+00:00",
+      "provenance": [
+        {
+          "date": "2026-09-30T11:58:55.887296+00:00",
+          "outcome": "useful",
+          "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
+        }
+      ],
+      "score": 0.994463469,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt",
       "status": "tentative",
       "uses": 1
     },
@@ -28,26 +65,31 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.999763298,
+      "score": 0.994006698,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
     },
     "app_src_main_java_com_prosincerity_ghostwriter_media_beatplaybackservice_beatplaybackservice": {
-      "code_fingerprint": "7338a0b022aed982273f544126195a193e784bf34e32eb9f9abb4a2281f2a58c",
+      "code_fingerprint": "2499ae34dd344ac482aa4602f5ae30d06789d00ac7f3d3d423721f9c0b5c1d75",
       "label": "BeatPlaybackService",
-      "last": "2026-09-30T11:30:17.905058+00:00",
+      "last": "2026-09-30T11:58:55.887296+00:00",
       "provenance": [
+        {
+          "date": "2026-09-30T11:58:55.887296+00:00",
+          "outcome": "useful",
+          "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
+        },
         {
           "date": "2026-09-30T11:30:17.905058+00:00",
           "outcome": "useful",
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.999763298,
+      "score": 1.988470167,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "app_src_main_java_com_prosincerity_ghostwriter_media_playbackfocusstate_playbackfocusstate": {
       "code_fingerprint": "f84ca2bf8200a8b2a1cb92234a8e3a832c86a1e903987d05a1018c8a444e3473",
@@ -60,7 +102,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.999763298,
+      "score": 0.994006698,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt",
       "status": "tentative",
       "uses": 1

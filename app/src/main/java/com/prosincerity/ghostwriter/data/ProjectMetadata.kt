@@ -3,11 +3,45 @@ package com.prosincerity.ghostwriter.data
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** A named point in a beat, stored as a non-negative playback position in milliseconds. */
+enum class MarkerLoopRole(val jsonValue: String, val displayName: String) {
+    NONE("none", "None"), START("start", "Start"), END("end", "End");
+
+    companion object {
+        fun fromJson(value: String): MarkerLoopRole =
+            entries.firstOrNull { it.jsonValue == value } ?: NONE
+    }
+}
+
+/** Frame position is authoritative once the beat's sample rate is known; milliseconds are a UI/legacy adapter. */
 data class WaveformMarker(
     val label: String,
     val positionMs: Long,
-)
+    val loopRole: MarkerLoopRole = MarkerLoopRole.NONE,
+    val frameIndex: Long? = null,
+    val sampleRate: Int? = null,
+) {
+    fun frameAt(rate: Int): Long {
+        require(rate > 0)
+        val frame = frameIndex
+        val savedRate = sampleRate
+        return if (frame != null && savedRate != null && savedRate > 0)
+            if (savedRate == rate) frame else (frame.toDouble() * rate / savedRate).toLong()
+        else (positionMs.toDouble() * rate / 1000).toLong()
+    }
+
+    fun withSampleRate(rate: Int): WaveformMarker {
+        if (rate <= 0) return this
+        val frame = frameAt(rate)
+        return copy(positionMs = frameToMs(frame, rate), frameIndex = frame, sampleRate = rate)
+    }
+
+    fun atPositionMs(position: Long, rate: Int): WaveformMarker =
+        copy(positionMs = position, frameIndex = null, sampleRate = null).withSampleRate(rate)
+
+    companion object {
+        fun frameToMs(frame: Long, rate: Int): Long = Math.round(frame.toDouble() * 1000 / rate)
+    }
+}
 
 /**
  * Metadata for a lyric project, stored in project.json.
@@ -40,7 +74,11 @@ data class ProjectMetadata(
                 markers.forEach { marker ->
                     put(JSONObject().apply {
                         put("label", marker.label)
-                        put("positionMs", marker.positionMs)
+                        if (marker.frameIndex != null && marker.sampleRate != null && marker.sampleRate > 0) {
+                            put("frameIndex", marker.frameIndex)
+                            put("sampleRate", marker.sampleRate)
+                        } else put("positionMs", marker.positionMs) // Legacy metadata until a beat is opened.
+                        put("loopRole", marker.loopRole.jsonValue)
                     })
                 }
             })
@@ -50,7 +88,7 @@ data class ProjectMetadata(
     }
 
     companion object {
-        const val CURRENT_VERSION = 2
+        const val CURRENT_VERSION = 4
 
         private fun JSONObject.optionalString(name: String): String? =
             if (isNull(name)) null else optString(name).ifBlank { null }
@@ -68,8 +106,15 @@ data class ProjectMetadata(
                     for (index in 0 until markerArray.length()) {
                         val markerJson = markerArray.optJSONObject(index) ?: continue
                         val label = markerJson.optionalString("label") ?: continue
-                        val positionMs = markerJson.optLong("positionMs", -1L)
-                        if (positionMs >= 0L) add(WaveformMarker(label, positionMs))
+                        val frame = markerJson.optLong("frameIndex", -1L).takeIf { it >= 0 }
+                        val rate = markerJson.optInt("sampleRate", 0).takeIf { it > 0 }
+                        val hasFrame = frame != null && rate != null
+                        val positionMs = if (hasFrame) WaveformMarker.frameToMs(frame!!, rate!!)
+                            else markerJson.optLong("positionMs", -1L)
+                        if (positionMs >= 0L) add(WaveformMarker(
+                            label, positionMs, MarkerLoopRole.fromJson(markerJson.optString("loopRole")),
+                            if (hasFrame) frame else null, if (hasFrame) rate else null,
+                        ))
                     }
                 }
             } ?: emptyList()

@@ -68,6 +68,28 @@ Opening another project, changing its beat, or deleting or renaming the
 playing project releases playback. Process death does not restart audio.
 Volume, loop, and playback position are session state.
 
+Marker loop roles and exact frame indices (with their sample rate) are persisted
+in project metadata. Old millisecond markers migrate when the beat is opened;
+milliseconds remain a UI adapter. `MarkerLoop.kt` resolves the start/end range. A missing
+start defaults to zero; a missing end defaults to beat duration. The editor
+rejects empty or reversed ranges and transfers duplicate roles to the newly
+selected marker. With loop markers, `BeatPlayer` prepares a temporary,
+disk-backed PCM copy using `MediaExtractor`/`MediaCodec` off the UI thread.
+Short beats up to 8 MiB of PCM are loaded into a `ShortArray`. Longer beats use
+`PcmRingBuffer`: a separate worker fills a bounded circular page buffer,
+prefetches loop head/tail pages, and retains loop regions up to 8 MiB in memory.
+`SmoothLoopPlayback` feeds one AOSP `AudioTrack`. Its `PcmLoopRenderer` uses
+preallocated scratch arrays and atomic boundary snapshots, with no allocation,
+monitor locks, file I/O or decoding in render calls. Marker edits apply to upcoming
+buffers without pausing/flushing playback. Explicit seeks still flush queued audio.
+`PlaybackFrameLedger` maps consumed output frames to the beat, including live edits.
+Loop joins use an overlapping 3 ms crossfade, capped for short regions. The
+overlapped head frames are skipped on wrap, shortening a repeat by up to 3 ms.
+Playback, seeking, focus interruptions, media controls, and wake
+locks remain owned by the service. Preparation is cancelled on replacement;
+PCM files are deleted after loading into memory or on release. Beats without
+loop markers use `MediaPlayer`.
+
 `WaveformExtractor.kt` decodes audio with `MediaExtractor` and `MediaCodec`
 off the UI thread. `WaveformCache.kt` validates cached peaks, and
 `WaveformViewport.kt` handles zoom and seek calculations. Compose Canvas and
