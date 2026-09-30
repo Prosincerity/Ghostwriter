@@ -13,6 +13,49 @@ import java.io.File
 
 class ProjectMetadataTest {
 
+    @Test
+    fun frameMarkers_persistExactSamplesWithoutMillisecondRounding() {
+        val marker = WaveformMarker("Start", 0, MarkerLoopRole.START, frameIndex = 44144, sampleRate = 44100)
+            .withSampleRate(44100)
+        val json = ProjectMetadata("Frames", markers = listOf(marker)).toJsonObject()
+        val stored = json.getJSONArray("markers").getJSONObject(0)
+        assertTrue(!stored.has("positionMs"))
+        assertEquals(44144L, stored.getLong("frameIndex"))
+        assertEquals(44100, stored.getInt("sampleRate"))
+        val loaded = ProjectMetadata.fromJsonObject(json, "Fallback").markers.single()
+        assertEquals(marker, loaded)
+        assertEquals(44144L, loaded.frameAt(44100))
+        assertEquals(1001L, loaded.positionMs)
+    }
+
+    @Test
+    fun legacyMarkers_migrateAndDraggingUpdatesTheAuthoritativeFrame() {
+        val legacy = WaveformMarker("End", 1001, MarkerLoopRole.END)
+        val migrated = legacy.withSampleRate(44100)
+        assertEquals(44144L, migrated.frameIndex)
+        assertEquals(1001L, migrated.positionMs)
+        assertEquals(48047L, migrated.withSampleRate(48000).frameIndex)
+        val moved = migrated.atPositionMs(2000, 44100)
+        assertEquals(88200L, moved.frameIndex)
+        assertEquals(MarkerLoopRole.END, moved.loopRole)
+    }
+
+    @Test
+    fun markerLoopRoles_roundTripAndOldOrUnknownRolesRemainOrdinary() {
+        val markers = listOf(
+            WaveformMarker("Start", 1000, MarkerLoopRole.START),
+            WaveformMarker("End", 2000, MarkerLoopRole.END),
+            WaveformMarker("Verse", 1500),
+        )
+        val json = ProjectMetadata("Loop", markers = markers).toJsonObject()
+        assertEquals(markers, ProjectMetadata.fromJsonObject(json, "Fallback").markers)
+        val entries = json.getJSONArray("markers")
+        assertEquals("start", entries.getJSONObject(0).getString("loopRole"))
+        entries.getJSONObject(0).remove("loopRole")
+        entries.getJSONObject(1).put("loopRole", "future-role")
+        assertTrue(ProjectMetadata.fromJsonObject(json, "Fallback").markers.all { it.loopRole == MarkerLoopRole.NONE })
+    }
+
     @get:Rule
     val tempFolder = TemporaryFolder()
 

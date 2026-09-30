@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.media.BeatPlayer
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -81,7 +82,7 @@ class BeatComponentsTest {
                     title = "Add marker",
                     initialLabel = "",
                     positionMs = 65_000L,
-                    onSave = { savedLabel = it },
+                    onSave = { label, _ -> savedLabel = label },
                     onDelete = null,
                     onDismiss = {},
                 )
@@ -94,6 +95,27 @@ class BeatComponentsTest {
         composeRule.onNodeWithText("Add").assertIsEnabled().performClick()
 
         composeRule.runOnIdle { assertEquals("Hook", savedLabel) }
+    }
+
+    @Test
+    fun markerDialog_loopDropdownSavesEachRole() {
+        var savedRole: MarkerLoopRole? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                WaveformMarkerDialog(
+                    title = "Edit marker", initialLabel = "Hook", positionMs = 1000,
+                    initialLoopRole = MarkerLoopRole.START,
+                    onSave = { _, role -> savedRole = role }, onDelete = {}, onDismiss = {},
+                )
+            }
+        }
+        composeRule.onNodeWithText("Start").assertExists()
+        for (role in listOf(MarkerLoopRole.END, MarkerLoopRole.NONE, MarkerLoopRole.START)) {
+            composeRule.onNodeWithText("Looping").performClick()
+            composeRule.onNodeWithText(role.displayName).performClick()
+            composeRule.onNodeWithText("Save").performClick()
+            composeRule.runOnIdle { assertEquals(role, savedRole) }
+        }
     }
 
     @Test

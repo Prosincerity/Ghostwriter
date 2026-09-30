@@ -78,7 +78,7 @@ internal fun BeatPlayerPanel(
             currentPositionMs = beatPlayer.currentPositionMs
             durationMs = beatPlayer.durationMs
             isPlaying = beatPlayer.isPlaying
-            delay(250.milliseconds)
+            delay(if (isPlaying) 33.milliseconds else 250.milliseconds)
         }
     }
 
@@ -243,8 +243,8 @@ internal fun BeatPlayerPanel(
                     .weight(1f),
             )
             Text(
-                text = "${formatPlaybackTime(currentPositionMs.toLong())}/" +
-                    formatPlaybackTime(durationMs.toLong()),
+                text = if (beatPlayer.isPreparingLoop) "Preparing loop audio…" else
+                    "${formatPlaybackTime(currentPositionMs.toLong())}/" + formatPlaybackTime(durationMs.toLong()),
                 maxLines = 1,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

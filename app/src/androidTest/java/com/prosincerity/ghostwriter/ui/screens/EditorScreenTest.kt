@@ -220,6 +220,9 @@ class EditorScreenTest {
             }
             val originalPosition = ProjectStorage.loadMetadata(projectDir, projectTitle)
                 .markers.single().positionMs
+            val storedMarker = ProjectStorage.loadMetadata(projectDir, projectTitle).markers.single()
+            assertEquals(8000, storedMarker.sampleRate)
+            assertEquals(originalPosition * 8, storedMarker.frameIndex)
 
             composeRule.onNodeWithTag("Waveform marker Hook").performSemanticsAction(
                 SemanticsActions.SetProgress,
@@ -238,7 +241,7 @@ class EditorScreenTest {
             }
             waitUntilTextExists("Edit marker")
             composeRule.onNodeWithText("Marker name").performTextReplacement("Chorus")
-            composeRule.onNodeWithText("Rename").performClick()
+            composeRule.onNodeWithText("Save").performClick()
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 ProjectStorage.loadMetadata(projectDir, projectTitle).markers.singleOrNull()?.label == "Chorus"
             }

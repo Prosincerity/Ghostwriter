@@ -8,6 +8,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
 
 @Composable
 internal fun ReassignBeatDialog(
@@ -67,16 +73,20 @@ internal fun LongBeatWarningDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun WaveformMarkerDialog(
     title: String,
     initialLabel: String,
     positionMs: Long,
-    onSave: (String) -> Unit,
+    onSave: (String, MarkerLoopRole) -> Unit,
     onDelete: (() -> Unit)?,
     onDismiss: () -> Unit,
+    initialLoopRole: MarkerLoopRole = MarkerLoopRole.NONE,
 ) {
     var label by remember(title, initialLabel, positionMs) { mutableStateOf(initialLabel) }
+    var loopRole by remember(title, initialLabel, positionMs, initialLoopRole) { mutableStateOf(initialLoopRole) }
+    var loopExpanded by remember { mutableStateOf(false) }
     val trimmedLabel = label.trim()
 
     AlertDialog(
@@ -91,6 +101,29 @@ internal fun WaveformMarkerDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                ExposedDropdownMenuBox(
+                    expanded = loopExpanded,
+                    onExpandedChange = { loopExpanded = it },
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    OutlinedTextField(
+                        value = loopRole.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Looping") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(loopExpanded) },
+                        modifier = Modifier.fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(expanded = loopExpanded, onDismissRequest = { loopExpanded = false }) {
+                        MarkerLoopRole.entries.forEach { role ->
+                            DropdownMenuItem(
+                                text = { Text(role.displayName) },
+                                onClick = { loopRole = role; loopExpanded = false },
+                            )
+                        }
+                    }
+                }
                 Text(
                     text = "Position: ${formatPlaybackTime(positionMs)}",
                     style = MaterialTheme.typography.labelSmall,
@@ -111,10 +144,10 @@ internal fun WaveformMarkerDialog(
         confirmButton = {
             TextButton(
                 shape = GhostButtonShape,
-                onClick = { onSave(trimmedLabel) },
+                onClick = { onSave(trimmedLabel, loopRole) },
                 enabled = trimmedLabel.isNotEmpty(),
             ) {
-                Text(if (onDelete == null) "Add" else "Rename")
+                Text(if (onDelete == null) "Add" else "Save")
             }
         },
         dismissButton = {

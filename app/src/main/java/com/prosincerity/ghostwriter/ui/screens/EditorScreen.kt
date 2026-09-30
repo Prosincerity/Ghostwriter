@@ -43,6 +43,9 @@ import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
+import com.prosincerity.ghostwriter.logic.MarkerLoopRange
+import com.prosincerity.ghostwriter.logic.MarkerLoopFrames
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.rememberBeatPlayback
@@ -153,6 +156,7 @@ fun EditorScreen(
         // Update Compose state immediately so a following marker operation is
         // based on this change rather than an older metadata snapshot.
         metadata = updatedMetadata
+        if (isBeatReady) beatPlayer.setMarkers(updatedMetadata.markers)
         val revision = projectMutationRevision.incrementAndGet()
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             val saved = projectMutationMutex.withLock {
@@ -182,8 +186,15 @@ fun EditorScreen(
         successMessage: String?,
         failureMessage: String,
     ) {
+        val valid = if (beatPlayer.sampleRate > 0) MarkerLoopFrames.fromMarkers(
+            markers, beatPlayer.sampleRate, beatPlayer.durationMs.toLong() * beatPlayer.sampleRate / 1000,
+        ) != null else MarkerLoopRange.fromMarkers(markers, beatPlayer.durationMs.toLong()) != null
+        if (markers.any { it.loopRole != MarkerLoopRole.NONE } && !valid) {
+            Toast.makeText(context, "Loop start must be before loop end", Toast.LENGTH_SHORT).show()
+            return
+        }
         persistMetadataUpdate(
-            updatedMetadata = metadata.copy(markers = markers),
+            updatedMetadata = metadata.copy(markers = markers.map { it.withSampleRate(beatPlayer.sampleRate) }),
             successMessage = successMessage,
             failureMessage = failureMessage,
         )
@@ -270,6 +281,7 @@ fun EditorScreen(
 
             playback.setBeatTitle(metadata.beatOriginalName ?: currentBeat.nameWithoutExtension)
             isBeatReady = beatPlayer.ensureLoaded(currentBeat)
+            if (isBeatReady) beatPlayer.setMarkers(metadata.markers)
             if (isBeatReady && autoPlayWhenWaveformReady) beatPlayer.play()
             autoPlayWhenWaveformReady = false
             isImportedBeatPreparation = false
@@ -299,6 +311,15 @@ fun EditorScreen(
                 waveformCancellation = null
                 isWaveformLoading = false
             }
+        }
+    }
+
+    LaunchedEffect(beatPlayer, metadata.markers, isBeatReady, beatPlayer.sampleRate) {
+        if (isBeatReady) {
+            val frameMarkers = metadata.markers.map { it.withSampleRate(beatPlayer.sampleRate) }
+            if (frameMarkers != metadata.markers) persistMetadataUpdate(
+                metadata.copy(markers = frameMarkers), null, "Couldn't save frame marker positions",
+            ) else beatPlayer.setMarkers(metadata.markers)
         }
     }
 
@@ -498,7 +519,7 @@ fun EditorScreen(
                     val markerIndex = metadata.markers.indexOfFirst { it === marker }
                     if (markerIndex >= 0 && marker.positionMs != positionMs) {
                         val updatedMarkers = metadata.markers.toMutableList().apply {
-                            this[markerIndex] = marker.copy(positionMs = positionMs)
+                            this[markerIndex] = marker.atPositionMs(positionMs, beatPlayer.sampleRate)
                         }
                         persistMarkers(
                             markers = updatedMarkers,
@@ -533,6 +554,7 @@ fun EditorScreen(
     }
 
     EditorMarkerDialogs(
+        sampleRate = beatPlayer.sampleRate,
         markers = metadata.markers,
         positionToAdd = markerPositionToAdd,
         markerToEdit = markerToEdit,

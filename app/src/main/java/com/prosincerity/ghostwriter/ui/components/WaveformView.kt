@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -38,6 +40,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.prosincerity.ghostwriter.data.WaveformMarker
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
+import androidx.compose.ui.semantics.stateDescription
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
 import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
@@ -163,17 +167,22 @@ fun WaveformView(
             }
 
             markers.forEach { marker ->
+                val markerColor = when (marker.loopRole) {
+                    MarkerLoopRole.NONE -> GhostSecondary
+                    MarkerLoopRole.START -> lerp(GhostSecondary, Color.White, 0.35f)
+                    MarkerLoopRole.END -> lerp(GhostSecondary, Color.Black, 0.25f)
+                }
                 val displayPositionMs = if (marker === draggedMarker) pendingMarkerPositionMs else marker.positionMs
                 val markerX = drawingViewport.positionToX(displayPositionMs, durationMs, size.width)
                 if (markerX in -48.dp.toPx()..size.width) {
                     drawLine(
-                        color = GhostSecondary,
+                        color = markerColor,
                         start = Offset(markerX, 0f),
                         end = Offset(markerX, size.height),
                         strokeWidth = 1.dp.toPx(),
                     )
                     drawLine(
-                        color = GhostSecondary,
+                        color = markerColor,
                         start = Offset(markerX, markerAreaHeight - 2.dp.toPx()),
                         end = Offset(markerX + 8.dp.toPx(), markerAreaHeight - 2.dp.toPx()),
                         strokeWidth = 3.dp.toPx(),
@@ -183,7 +192,7 @@ fun WaveformView(
                         textMeasurer = textMeasurer,
                         text = marker.label,
                         topLeft = Offset(markerX + 4.dp.toPx(), 0f),
-                        style = markerLabelStyle,
+                        style = markerLabelStyle.copy(color = markerColor),
                     )
                 }
             }
@@ -214,6 +223,7 @@ fun WaveformView(
                     modifier = Modifier
                         .testTag("Waveform marker ${marker.label}")
                         .semantics {
+                            stateDescription = "Looping: ${marker.loopRole.displayName}"
                             onClick(label = "Edit marker") {
                                 onMarkerClick(marker)
                                 true

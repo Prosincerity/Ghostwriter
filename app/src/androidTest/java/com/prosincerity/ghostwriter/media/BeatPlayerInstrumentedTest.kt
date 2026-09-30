@@ -3,6 +3,8 @@ package com.prosincerity.ghostwriter.media
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
+import com.prosincerity.ghostwriter.data.WaveformMarker
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,6 +18,90 @@ import java.nio.ByteOrder
 
 @RunWith(AndroidJUnit4::class)
 class BeatPlayerInstrumentedTest {
+
+    @Test
+    fun pcmDecoder_preservesWavFramesAndCleansUpCancelledPreparation() {
+        val source = createPcm16Wav("beat-loop-decode.wav", 1000)
+        val directory = source.parentFile!!
+        val decoded = PcmBeatDecoder.decode(source, directory) { false }
+        try {
+            assertEquals(8000, decoded.sampleRate)
+            assertEquals(1, decoded.channels)
+            assertEquals(8000L, decoded.frames)
+            org.junit.Assert.assertArrayEquals(source.readBytes().copyOfRange(44, source.length().toInt()), decoded.file.readBytes())
+        } finally {
+            decoded.file.delete()
+        }
+        val filesBefore = directory.listFiles()?.map { it.name }?.toSet()
+        try {
+            PcmBeatDecoder.decode(source, directory) { true }
+            fail("Cancelled decoding should throw")
+        } catch (_: java.util.concurrent.CancellationException) {
+            assertEquals(filesBefore, directory.listFiles()?.map { it.name }?.toSet())
+        }
+    }
+
+    @Test
+    fun markerLoops_repeatRegionAndHonorToggleAndMissingBoundaries() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val source = createPcm16Wav("beat-player-marker-loop.wav", 2000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(source))
+            player.setMarkers(listOf(
+                WaveformMarker("Start", 200, MarkerLoopRole.START),
+                WaveformMarker("End", 600, MarkerLoopRole.END),
+            ))
+        }
+        waitUntil("PCM preparation did not finish", timeoutMs = 10000) { !player.isPreparingLoop }
+        instrumentation.runOnMainSync { player.seekTo(500); player.play() }
+        waitUntil("End marker did not wrap to start") { player.isPlaying && player.currentPositionMs in 200..350 }
+        instrumentation.runOnMainSync {
+            player.setMarkers(listOf(
+                WaveformMarker("Start", 100, MarkerLoopRole.START).withSampleRate(8000),
+                WaveformMarker("End", 250, MarkerLoopRole.END).withSampleRate(8000),
+            ))
+        }
+        waitUntil("Live end-marker edit did not select the new loop") { player.isPlaying && player.currentPositionMs in 100..180 }
+        instrumentation.runOnMainSync { player.toggleLoop() }
+        waitUntil("Disabled loop did not play beyond end marker") { player.currentPositionMs > 700 }
+
+        instrumentation.runOnMainSync {
+            player.setMarkers(listOf(WaveformMarker("Start", 200, MarkerLoopRole.START)))
+            player.toggleLoop()
+            player.seekTo(1900)
+        }
+        waitUntil("Missing end did not wrap at beat end") { player.isPlaying && player.currentPositionMs in 200..350 }
+        instrumentation.runOnMainSync {
+            player.setMarkers(listOf(WaveformMarker("End", 600, MarkerLoopRole.END)))
+            player.seekTo(500)
+        }
+        waitUntil("Missing start did not wrap to zero") { player.isPlaying && player.currentPositionMs in 0..150 }
+        instrumentation.runOnMainSync { player.pause() }
+        assertFalse(player.isPlaying)
+        instrumentation.runOnMainSync { player.toggleLoop(); player.seekTo(1990); player.play() }
+        waitUntil("A short final tail did not complete") { !player.isPlaying }
+        assertTrue(player.currentPositionMs >= 1990)
+    }
+
+    @Test
+    fun releaseDuringLoopPreparation_cannotAttachOrRestartTheOldBeat() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val source = createPcm16Wav("beat-player-cancel-loop.wav", 2000)
+        val replacement = createPcm16Wav("beat-player-replacement.wav", 1000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(source))
+            player.setMarkers(listOf(WaveformMarker("End", 600, MarkerLoopRole.END)))
+            player.play()
+            player.release()
+            assertTrue(player.load(replacement))
+        }
+        instrumentation.waitForIdleSync()
+        assertFalse(player.isPreparingLoop)
+        assertFalse(player.isPlaying)
+        assertTrue(player.durationMs in 900..1100)
+    }
 
     private val generatedFiles = mutableListOf<File>()
     private var beatPlayer: BeatPlayer? = null

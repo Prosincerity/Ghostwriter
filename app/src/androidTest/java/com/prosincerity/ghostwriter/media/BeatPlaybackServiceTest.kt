@@ -18,6 +18,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.MainActivity
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
+import com.prosincerity.ghostwriter.data.WaveformMarker
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -31,6 +33,40 @@ class BeatPlaybackServiceTest {
     @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
+
+    @Test
+    fun markerLoop_survivesUnbindingAndFocusInterruptionsAndKeepsMediaControls() {
+        withService { service, unbind ->
+            val player = service.player
+            onMain {
+                player.setMarkers(listOf(
+                    WaveformMarker("Start", 200, MarkerLoopRole.START),
+                    WaveformMarker("End", 800, MarkerLoopRole.END),
+                ))
+            }
+            waitUntil { !player.isPreparingLoop }
+            onMain { player.seekTo(700); player.play() }
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
+            unbind()
+            composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+            try {
+                waitUntil { player.isPlaying && player.currentPositionMs in 200..400 }
+                onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) }
+                waitUntil { !player.isPlaying }
+                onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN) }
+                waitUntil { player.isPlaying }
+                controller.transportControls.sendCustomAction(
+                    controller.playbackState!!.customActions.first { it.name.toString() == "Disable loop" }.action, null,
+                )
+                waitUntil { !player.isLooping && player.currentPositionMs > 900 }
+                controller.transportControls.pause()
+                waitUntil { !player.isPlaying }
+                waitForMediaNotification("Play", "Restart", "Enable loop")
+            } finally {
+                composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            }
+        }
+    }
 
     @Test
     fun mediaPresentation_includesArtworkBrandingAndPlaybackActions() {
