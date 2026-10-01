@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt": {
-    "mtime": 1790787626.122755,
-    "seen": 1790787646.3394196,
-    "ast_hash": "33ff703292ab94d02a09ae775b546a89",
+    "mtime": 1790880648.2706962,
+    "seen": 1790880802.3792193,
+    "ast_hash": "427888326516edec76d035059973b129",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
-    "mtime": 1790879042.057889,
-    "seen": 1790879062.8644953,
-    "ast_hash": "fe8e9a24389c74cdf5929ab99bf10607",
+    "mtime": 1790880772.06314,
+    "seen": 1790880802.3796983,
+    "ast_hash": "26f99ba44d92f1c520dba767af7d7dc6",
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790879041.9588902,
-    "seen": 1790879062.8644981,
-    "ast_hash": "b2f0b5a9aedf441203fa523a617d9458",
+    "mtime": 1790880771.9581413,
+    "seen": 1790880802.3797016,
+    "ast_hash": "77c353b3c55713c595f0c490e74943be",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -396,9 +396,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {
-    "mtime": 1790871718.9729526,
-    "seen": 1790871768.5790906,
-    "ast_hash": "99c7f2d988265e3a6e50a3141d0b8ee4",
+    "mtime": 1790880771.7521439,
+    "seen": 1790880802.3789814,
+    "ast_hash": "22a67b209e1d257571334605dd570e0d",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepad.kt": {
@@ -4032,9 +4032,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreenTest.kt": {
-    "mtime": 1790871718.9754019,
-    "seen": 1790871768.5791125,
-    "ast_hash": "b4e02baf8ffdbff8d77f96e89b7e4f5e",
+    "mtime": 1790880771.8551426,
+    "seen": 1790880802.3790038,
+    "ast_hash": "eea5ba12a74527c38db9de9a806e342a",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/LyricTextSettings.kt": {
@@ -4044,9 +4044,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricTextStyle.kt": {
-    "mtime": 1790787313.93268,
-    "seen": 1790787507.3771408,
-    "ast_hash": "5ccbef160f39f336af100b34ea1b7c28",
+    "mtime": 1790880648.1656976,
+    "seen": 1790880802.3791938,
+    "ast_hash": "f51dbeb15e312b436353bfedca5858c9",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/LyricTextSettingsTest.kt": {
@@ -4056,9 +4056,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/ui/LyricTextStyleTest.kt": {
-    "mtime": 1790788604.8894503,
-    "seen": 1790788686.5331028,
-    "ast_hash": "cf994b3a488256ffe8d027a3f0710925",
+    "mtime": 1790880648.372695,
+    "seen": 1790880802.3792896,
+    "ast_hash": "a25eff9a824635b9f6a2049c0d6beb18",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/SystemFontCatalogTest.kt": {
@@ -4377,6 +4377,12 @@
     "mtime": 1790878860.5231712,
     "seen": 1790879062.8640413,
     "ast_hash": "551a6b7741d228aecac0ab411c290e1c",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261001_184108_949d82f5_why_do_waveform_markers_lag_behind_the_pointer_whi.md": {
+    "mtime": 1790880068.7829814,
+    "seen": 1790880802.379719,
+    "ast_hash": "22192b8dee5f518bf4d6de8a75536e59",
     "semantic_hash": ""
   }
 }

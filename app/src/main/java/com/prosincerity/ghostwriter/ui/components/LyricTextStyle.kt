@@ -32,7 +32,11 @@ internal fun LyricTextSettings.toTextStyle(
         fontSize = settings.fontSizeSp.sp,
         // Relative line height follows the scaled font, including Android's nonlinear scaling.
         lineHeight = settings.lineHeightMultiplier.em,
-        letterSpacing = settings.letterSpacingSp.sp,
+        // Android's inter-word justification can reset letter spacing while drawing,
+        // after measuring with it. Negative spacing then packs words beyond the edge.
+        // Use the same zero spacing for measurement and drawing; keep the saved choice.
+        letterSpacing = if (settings.alignment == LyricTextAlignment.JUSTIFY) 0.sp
+            else settings.letterSpacingSp.sp,
         textAlign = when (settings.alignment) {
             LyricTextAlignment.START -> TextAlign.Start
             LyricTextAlignment.CENTER -> TextAlign.Center

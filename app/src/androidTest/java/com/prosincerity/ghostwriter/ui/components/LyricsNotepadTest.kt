@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -135,6 +137,54 @@ class LyricsNotepadTest {
         assertEquals(2f, scaled.layoutInput.density.fontScale, 0f)
         assertEquals(20.sp, scaled.layoutInput.style.fontSize)
         composeRule.onNodeWithText("One\nTwo").assertExists()
+    }
+
+    @Test
+    fun justifiedNotepad_keepsWrappedWordsInsideTheFieldWithTightAndWideSpacing() {
+        val lyrics = "Find the rhythm in the words and let the next line carry the beat. ".repeat(6) +
+            "\nA final line"
+        var settings by mutableStateOf(
+            LyricTextSettings(fontSizeSp = 20, letterSpacingSp = -2f, alignment = LyricTextAlignment.JUSTIFY),
+        )
+        var fontScale by mutableStateOf(1f)
+        composeRule.setContent {
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale)) {
+                GhostwriterTheme {
+                    LyricsNotepad(
+                        lyrics = lyrics,
+                        onLyricsChange = {},
+                        modifier = Modifier.width(220.dp),
+                        textSettings = settings,
+                    )
+                }
+            }
+        }
+
+        for (scale in listOf(1f, 2f)) {
+            for (spacing in listOf(-2f, 0f, 5f)) {
+                composeRule.runOnIdle {
+                    fontScale = scale
+                    settings = settings.copy(letterSpacingSp = spacing)
+                }
+                val layout = textLayout()
+                assertEquals(TextAlign.Justify, layout.layoutInput.style.textAlign)
+                assertEquals(0.sp, layout.layoutInput.style.letterSpacing)
+                assertTrue("Fixture must wrap", layout.lineCount > 2)
+                for (offset in lyrics.indices.filter { !lyrics[it].isWhitespace() }) {
+                    val bounds = layout.getBoundingBox(offset)
+                    assertTrue("Character $offset overflows left: $bounds", bounds.left >= -1f)
+                    assertTrue(
+                        "Character $offset overflows right: $bounds (width ${layout.size.width})",
+                        bounds.right <= layout.size.width + 1f,
+                    )
+                }
+            }
+        }
+
+        composeRule.runOnIdle { settings = settings.copy(alignment = LyricTextAlignment.START, letterSpacingSp = -2f) }
+        assertEquals((-2).sp, textLayout().layoutInput.style.letterSpacing)
+        composeRule.onNodeWithText(lyrics).assertExists()
     }
 
     private fun textLayout(): TextLayoutResult {

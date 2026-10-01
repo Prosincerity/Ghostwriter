@@ -32,6 +32,8 @@ release schedule.
   relative line height, letter spacing, and alignment in Settings, with a live
   preview. Line height (0.5–4×) and letter spacing (−2–10 sp) use sliders.
   Choices apply across projects and follow Android's font scaling.
+  Justified alignment uses normal letter spacing to keep wrapped words inside
+  the pad; the chosen spacing is retained for other alignments.
 - [x] **Project information** — musical key, tempo, time signature, notes,
   beat references, and timestamps stored with each project.
 - [ ] **Syllable counter column** — left-hand gutter with one count per lyric

@@ -46,6 +46,9 @@ indices and variation settings in SharedPreferences. Generic platform families
 remain available on older Android versions; unavailable saved files fall back to
 monospace. Sizes and letter spacing use scaled pixels, and line height is relative
 to the scaled font size.
+Justified text uses zero letter spacing in the editor and Settings preview to avoid
+Android measuring and drawing justified words at different widths. The saved
+letter spacing is retained for other alignments.
 
 `EditorScreen.kt` owns persistence; `LyricsNotepad.kt` owns the editing surface.
 Lyrics are saved manually, periodically, and on editor exit. Loading selects
