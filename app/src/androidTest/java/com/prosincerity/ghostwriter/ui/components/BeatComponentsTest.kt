@@ -1,6 +1,10 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsEnabled
@@ -28,6 +32,46 @@ class BeatComponentsTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun playbackButtons_clickOncePerActionAndStateUpdatesAreSilent() {
+        val feedback = mutableListOf<HapticFeedbackType>()
+        val playing = mutableStateOf(false)
+        val player = BeatPlayer()
+        val haptics = object : HapticFeedback {
+            override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
+                feedback += hapticFeedbackType
+            }
+        }
+        composeRule.setContent {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                GhostwriterTheme {
+                    BeatPlaybackControls(
+                        beatPlayer = player,
+                        isPlaying = playing.value,
+                        onPlayFromStart = {},
+                        onTogglePlayback = { playing.value = !playing.value },
+                        onReassignBeat = {},
+                        isReassigningBeat = false,
+                    )
+                }
+            }
+        }
+        composeRule.runOnIdle { playing.value = true }
+        composeRule.runOnIdle { assertTrue(feedback.isEmpty()) }
+        composeRule.onNodeWithContentDescription("Pause").performClick()
+        composeRule.onNodeWithContentDescription("Play").performClick()
+        composeRule.onNodeWithContentDescription("Disable loop").performClick()
+        composeRule.runOnIdle { assertTrue(!player.isLooping) }
+        composeRule.onNodeWithContentDescription("Enable loop").performClick()
+        composeRule.runOnIdle { assertTrue(player.isLooping) }
+        composeRule.onNodeWithContentDescription("Play from start").performClick()
+        composeRule.onNodeWithContentDescription("Mute").performClick()
+        composeRule.runOnIdle { assertEquals(List(6) { HapticFeedbackType.ContextClick }, feedback) }
+        composeRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(player.volume, 0f..1f)))
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(0.5f) }
+        composeRule.runOnIdle { assertEquals(6, feedback.size) }
+    }
 
     @Test
     fun reassignDialog_warnsAboutDataLossAndInvokesConfirmation() {

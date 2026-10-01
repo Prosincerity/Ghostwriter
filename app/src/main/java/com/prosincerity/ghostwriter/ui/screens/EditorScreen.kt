@@ -35,6 +35,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -94,6 +96,7 @@ fun EditorScreen(
     val playback = rememberBeatPlayback(projectTitle) ?: return
 
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val lyricTextSettings = remember(context) { AppSettings.getLyricTextSettings(context) }
     val coroutineScope = rememberCoroutineScope()
     val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
@@ -151,6 +154,7 @@ fun EditorScreen(
         updatedMetadata: ProjectMetadata,
         successMessage: String?,
         failureMessage: String,
+        successHaptic: HapticFeedbackType? = null,
     ) {
         // Update Compose state immediately so a following marker operation is
         // based on this change rather than an older metadata snapshot.
@@ -167,6 +171,7 @@ fun EditorScreen(
             withContext(Dispatchers.Main.immediate) {
                 if (revision != projectMutationRevision.get()) return@withContext
                 if (saved) {
+                    successHaptic?.let { haptics.performHapticFeedback(it) }
                     successMessage?.let { message ->
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     }
@@ -184,6 +189,7 @@ fun EditorScreen(
         markers: List<WaveformMarker>,
         successMessage: String?,
         failureMessage: String,
+        successHaptic: HapticFeedbackType? = null,
     ) {
         val valid = beatPlayer.hasValidMarkerLoop(markers)
         if (markers.any { it.loopRole != MarkerLoopRole.NONE } && !valid) {
@@ -194,20 +200,31 @@ fun EditorScreen(
             updatedMetadata = metadata.copy(markers = markers.map { it.withSampleRate(beatPlayer.sampleRate) }),
             successMessage = successMessage,
             failureMessage = failureMessage,
+            successHaptic = successHaptic,
         )
     }
 
-    fun removeBeatFromEditor(onRemoved: () -> Unit = {}) {
+    fun removeBeatFromEditor(
+        successHaptic: HapticFeedbackType? = null,
+        onRemoved: () -> Unit = {},
+    ) {
         isReassigningBeat = true
         val removalRevision = projectMutationRevision.incrementAndGet()
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
                 val updatedMetadata = removeBeatAndLoadMetadata()
-                if (removalRevision == projectMutationRevision.get()) {
-                    metadata = updatedMetadata
-                    beatFile = null
-                    approvedLongBeatPath = null
-                    onRemoved()
+                val removed = successHaptic != null && withContext(Dispatchers.IO) {
+                    updatedMetadata.beatFile == null &&
+                        ProjectStorage.getProjectBeatFile(projectDir, updatedMetadata) == null
+                }
+                withContext(Dispatchers.Main.immediate) {
+                    if (removalRevision == projectMutationRevision.get()) {
+                        metadata = updatedMetadata
+                        beatFile = null
+                        approvedLongBeatPath = null
+                        if (removed) haptics.performHapticFeedback(successHaptic)
+                        onRemoved()
+                    }
                 }
             } finally {
                 isReassigningBeat = false
@@ -556,8 +573,8 @@ fun EditorScreen(
         markers = metadata.markers,
         positionToAdd = markerPositionToAdd,
         markerToEdit = markerToEdit,
-        onMarkersChange = { markers, successMessage, failureMessage ->
-            persistMarkers(markers, successMessage, failureMessage)
+        onMarkersChange = { markers, successMessage, failureMessage, successHaptic ->
+            persistMarkers(markers, successMessage, failureMessage, successHaptic)
         },
         onAddDismiss = { markerPositionToAdd = null },
         onEditDismiss = { markerToEdit = null },
@@ -569,7 +586,7 @@ fun EditorScreen(
                 showReassignConfirmation = false
                 beatPlayer.release()
                 isBeatReady = false
-                removeBeatFromEditor { waveformRevision++ }
+                removeBeatFromEditor(successHaptic = HapticFeedbackType.LongPress) { waveformRevision++ }
             },
             onDismiss = { showReassignConfirmation = false },
         )

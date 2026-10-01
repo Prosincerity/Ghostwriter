@@ -24,9 +24,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.onClick
@@ -43,6 +45,7 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import androidx.compose.ui.semantics.stateDescription
 import com.prosincerity.ghostwriter.logic.WaveformViewport
+import com.prosincerity.ghostwriter.logic.crossesWaveformMarker
 import com.prosincerity.ghostwriter.logic.waveformMarkerHitBounds
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
 import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
@@ -75,6 +78,9 @@ fun WaveformView(
     var viewportWidthPx by remember { mutableFloatStateOf(0f) }
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
+    val latestHaptics = rememberUpdatedState(haptics)
+    val latestMarkers = rememberUpdatedState(markers)
     val markerHitRadiusPx = with(density) { 24.dp.toPx() }
     val markerLabelPaddingPx = with(density) { 4.dp.toPx() }
     val markerLabelStyle = TextStyle(
@@ -107,7 +113,10 @@ fun WaveformView(
                 .pointerInput(durationMs, markers, viewportWidthPx) {
                     detectTapGestures(
                         onTap = { offset -> onSeekFinished(seekAt(offset.x)) },
-                        onLongPress = { offset -> onAddMarker(seekAt(offset.x)) },
+                        onLongPress = { offset ->
+                            latestHaptics.value.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            onAddMarker(seekAt(offset.x))
+                        },
                     )
                 }
                 .pointerInput(viewportWidthPx) {
@@ -119,7 +128,14 @@ fun WaveformView(
                         ) {
                             // At the full-beat view, a one-finger drag keeps
                             // the old seek-slider feel instead of panning.
-                            onSeekFinished(seekAt(centroid.x))
+                            // The detector reports the previous centroid; pan
+                            // takes us to the current finger/playhead position.
+                            val fromMs = seekAt(centroid.x)
+                            val toMs = seekAt(centroid.x + pan.x)
+                            if (crossesWaveformMarker(fromMs, toMs, latestMarkers.value)) {
+                                latestHaptics.value.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            }
+                            onSeekFinished(toMs)
                         } else {
                             onViewportChange(
                                 currentViewport

@@ -56,6 +56,12 @@ release schedule.
 - [x] **Background playback** — continue across screens and other apps, with
   Android notification and lock-screen controls. Loop state stays in sync
   with the editor, and audio interruptions pause playback.
+- [x] **Interaction haptics** — ticks when starting marker placement and saving
+  a new marker, light ticks when manually scrubbing across markers, clicks on
+  play/pause, restart, loop, and mute, and stronger feedback after project,
+  marker, or beat deletion succeeds. Uses native Android feedback with system
+  settings and device support respected. Typing, autosaves, normal playback,
+  waveform panning/zooming, and volume changes remain silent.
 - [x] **Waveform timeline and loop markers** — seek, zoom, pan, and manage named markers.
   Marker dialogs offer **Looping: None / Start / End**, with one start and one
   end per beat. Setting a role transfers it from the previous marker. The Loop
