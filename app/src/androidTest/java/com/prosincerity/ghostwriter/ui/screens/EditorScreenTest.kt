@@ -193,6 +193,9 @@ class EditorScreenTest {
         try {
             setEditorContent(projectTitle, showEditor)
 
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().size == 1
+            }
             composeRule.onNode(hasSetTextAction()).performTextInput(lyrics)
             composeRule.onNodeWithContentDescription("Save").performClick()
 
