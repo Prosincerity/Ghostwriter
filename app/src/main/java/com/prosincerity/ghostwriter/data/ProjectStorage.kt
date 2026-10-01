@@ -82,9 +82,9 @@ object ProjectStorage {
         val renamedProjectDir = File(projectDir.parentFile ?: return null, renamedTitle)
         if (renamedProjectDir.exists()) return null
 
-        val originalManualSave = File(projectDir, "${projectDir.name}.txt")
-        val renamedManualSave = File(projectDir, "$renamedTitle.txt")
-        val manualSaveWasRenamed = originalManualSave.isFile
+        val originalManualSave = File(projectDir, ProjectLyricsStorage.manualFileName(projectDir.name))
+        val renamedManualSave = File(projectDir, ProjectLyricsStorage.manualFileName(renamedTitle))
+        val manualSaveWasRenamed = originalManualSave.isFile && originalManualSave != renamedManualSave
         if (manualSaveWasRenamed && renamedManualSave.exists()) return null
         if (manualSaveWasRenamed && !originalManualSave.renameTo(renamedManualSave)) return null
 
@@ -97,7 +97,7 @@ object ProjectStorage {
         if (!saveMetadata(renamedProjectDir, renamedMetadata)) {
             // Keep the old project intact if its metadata cannot be updated.
             if (renamedProjectDir.renameTo(projectDir) && manualSaveWasRenamed) {
-                File(projectDir, "$renamedTitle.txt").renameTo(originalManualSave)
+                File(projectDir, renamedManualSave.name).renameTo(originalManualSave)
             }
             return null
         }
@@ -113,10 +113,13 @@ object ProjectStorage {
     fun saveManual(projectDir: File, title: String, content: String, keepCount: Int): Boolean =
         ProjectLyricsStorage.saveManual(
             projectDir,
-            "${sanitizeTitle(title)}.txt",
+            manualSaveFileName(title),
             content,
             keepCount,
         )
+
+    fun manualSaveFileName(title: String): String =
+        ProjectLyricsStorage.manualFileName(sanitizeTitle(title))
 
     /** Rotates the backup ring only when the lyrics have changed. */
     @Synchronized

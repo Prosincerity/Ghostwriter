@@ -51,6 +51,11 @@ to the scaled font size.
 Lyrics are saved manually, periodically, and on editor exit. Loading selects
 the newest readable manual or autosave snapshot. Storage mutations are
 synchronized, and staged writes replace files through a temporary file.
+Manual snapshots use `<title>.txt`; titles reserved for backup slots
+(`autosave1` through `autosave10`, ignoring case) use `<title>.manual.txt`.
+Legacy snapshots remain readable. Failed older backup copies do not prevent
+the newest autosave, and count reductions prune backups only after that save
+succeeds.
 Replacing a beat invalidates its waveform cache and markers.
 
 Future import and export should use the Storage Access Framework to let users
