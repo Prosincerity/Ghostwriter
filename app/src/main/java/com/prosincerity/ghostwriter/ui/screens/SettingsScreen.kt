@@ -165,10 +165,13 @@ fun SettingsScreen(
             )
             SettingsSliderRow(
                 description = "Letter spacing",
-                value = lyricTextSettings.letterSpacingSp,
+                value = if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) 0f
+                    else lyricTextSettings.letterSpacingSp,
                 valueRange = LyricTextSettings.LETTER_SPACING_RANGE,
-                valueLabel = "${formatTypographyNumber(lyricTextSettings.letterSpacingSp)} sp",
+                valueLabel = if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) "0 sp"
+                    else "${formatTypographyNumber(lyricTextSettings.letterSpacingSp)} sp",
                 onValueChange = { updateLyricTextSettings(lyricTextSettings.copy(letterSpacingSp = it)) },
+                enabled = lyricTextSettings.alignment != LyricTextAlignment.JUSTIFY,
             )
             SettingsDropdownRow(
                 description = "Text alignment",
@@ -177,6 +180,13 @@ fun SettingsScreen(
                 label = { it.label },
                 onSelect = { updateLyricTextSettings(lyricTextSettings.copy(alignment = it)) },
             )
+            if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) {
+                Text(
+                    "Justified text uses normal letter spacing. Your spacing is kept for other alignments.",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
             Text("Preview", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
             Surface(
                 shape = GhostButtonShape,
@@ -221,6 +231,7 @@ private fun SettingsSliderRow(
     valueRange: ClosedFloatingPointRange<Float>,
     valueLabel: String,
     onValueChange: (Float) -> Unit,
+    enabled: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Row(
@@ -240,6 +251,7 @@ private fun SettingsSliderRow(
         }
         Slider(
             value = value,
+            enabled = enabled,
             onValueChange = { onValueChange((it * 100).roundToInt() / 100f) },
             valueRange = valueRange,
             interactionSource = interactionSource,
@@ -247,11 +259,13 @@ private fun SettingsSliderRow(
                 SliderDefaults.Thumb(
                     interactionSource = interactionSource,
                     thumbSize = DpSize(12.dp, 12.dp),
+                    enabled = enabled,
                 )
             },
             track = { state ->
                 SliderDefaults.Track(
                     sliderState = state,
+                    enabled = enabled,
                     modifier = Modifier.height(4.dp),
                     drawStopIndicator = null,
                     thumbTrackGapSize = 2.dp,

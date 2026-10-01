@@ -49,6 +49,22 @@ class LyricTextStyleTest {
     }
 
     @Test
+    fun justifiedText_usesMatchingZeroSpacingWithoutDiscardingSavedSpacing() {
+        for (spacing in listOf(-2f, -0.25f, 0f, 0.5f, 10f)) {
+            val settings = LyricTextSettings(letterSpacingSp = spacing, alignment = LyricTextAlignment.JUSTIFY)
+            val justified = settings.toTextStyle(TextStyle(letterSpacing = 1.sp))
+            assertEquals(TextAlign.Justify, justified.textAlign)
+            assertEquals(0.sp, justified.letterSpacing)
+            assertEquals(spacing, settings.letterSpacingSp, 0f)
+
+            for (alignment in LyricTextAlignment.entries.filter { it != LyricTextAlignment.JUSTIFY }) {
+                val restored = settings.copy(alignment = alignment).toTextStyle(TextStyle())
+                assertEquals("Spacing for $alignment", spacing.sp, restored.letterSpacing)
+            }
+        }
+    }
+
+    @Test
     fun fontChoices_resolveToPlatformFamilies() {
         val expected = mapOf(
             LyricFontFamily.SYSTEM_DEFAULT to FontFamily.Default,

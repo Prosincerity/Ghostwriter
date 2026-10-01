@@ -7,6 +7,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -18,6 +20,9 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.printToString
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
@@ -170,6 +175,47 @@ class SettingsScreenTest {
             LyricTextSettings(fontSizeSp = 12, letterSpacingSp = -2f),
             Settings.getLyricTextSettings(testContext),
         )
+    }
+
+    @Test
+    fun justifiedAlignment_usesSafePreviewSpacingAndRestoresTheSavedSpacing() {
+        Settings.setLyricTextSettings(
+            testContext,
+            LyricTextSettings(letterSpacingSp = -2f, alignment = LyricTextAlignment.JUSTIFY),
+        )
+        composeRule.setContent {
+            CompositionLocalProvider(LocalContext provides testContext) {
+                GhostwriterTheme {
+                    SettingsScreen(onBack = {}, onOpenAbout = {}, onOpenDictionaryDownloads = {})
+                }
+            }
+        }
+        composeRule.onNodeWithContentDescription("Letter spacing").performScrollTo().assertIsNotEnabled()
+        val spacing = composeRule.onNodeWithContentDescription("Letter spacing").fetchSemanticsNode()
+            .config[SemanticsProperties.ProgressBarRangeInfo]
+        assertEquals(0f, spacing.current, 0f)
+        composeRule.onNodeWithText(
+            "Justified text uses normal letter spacing. Your spacing is kept for other alignments.",
+        ).performScrollTo().assertExists()
+
+        val preview = composeRule.onNodeWithText("Find the rhythm in the words\nLet the next line carry the beat")
+        val results = mutableListOf<TextLayoutResult>()
+        preview.performScrollTo().performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+        assertEquals(TextAlign.Justify, results.single().layoutInput.style.textAlign)
+        assertEquals(0.sp, results.single().layoutInput.style.letterSpacing)
+        composeRule.runOnIdle {
+            assertEquals(-2f, Settings.getLyricTextSettings(testContext).letterSpacingSp, 0f)
+        }
+
+        select("Text alignment", "Start")
+        composeRule.onNodeWithContentDescription("Letter spacing").performScrollTo().assertIsEnabled()
+        val restored = composeRule.onNodeWithContentDescription("Letter spacing").fetchSemanticsNode()
+            .config[SemanticsProperties.ProgressBarRangeInfo]
+        assertEquals(-2f, restored.current, 0f)
+        composeRule.runOnIdle {
+            assertEquals(-2f, Settings.getLyricTextSettings(testContext).letterSpacingSp, 0f)
+            assertEquals(LyricTextAlignment.START, Settings.getLyricTextSettings(testContext).alignment)
+        }
     }
 
     private fun select(control: String, option: String) {
