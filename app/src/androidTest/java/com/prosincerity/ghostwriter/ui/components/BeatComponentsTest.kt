@@ -1,6 +1,10 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -14,6 +18,7 @@ import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
@@ -26,12 +31,49 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.math.abs
 
 @RunWith(AndroidJUnit4::class)
 class BeatComponentsTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun playbackControls_evenlySpaceActionsAndShortVolumeSliderOnOneRow() {
+        val player = BeatPlayer()
+        composeRule.setContent {
+            GhostwriterTheme {
+                Box(Modifier.width(320.dp)) {
+                    BeatPlaybackControls(
+                        beatPlayer = player, isPlaying = false,
+                        onPlayFromStart = {}, onTogglePlayback = {}, onReassignBeat = {},
+                        isReassigningBeat = false,
+                    )
+                }
+            }
+        }
+        val controls = composeRule.onNodeWithTag("Beat playback controls").fetchSemanticsNode().boundsInRoot
+        val volume = composeRule.onNodeWithContentDescription("Beat volume").fetchSemanticsNode().boundsInRoot
+        val buttons = listOf(
+            composeRule.onNodeWithText("Reassign"),
+            composeRule.onNodeWithContentDescription("Play from start"),
+            composeRule.onNodeWithContentDescription("Play"),
+            composeRule.onNodeWithContentDescription(if (player.isLooping) "Disable loop" else "Enable loop"),
+            composeRule.onNodeWithContentDescription("Mute"),
+        )
+        // Material sliders extend their accessibility bounds beyond the visible track.
+        // Measure button gaps and containment separately from those expanded bounds.
+        val bounds = buttons.map { it.fetchSemanticsNode().boundsInRoot }
+        for (control in bounds) {
+            assertTrue("All controls should share the volume slider's row", abs(control.center.y - volume.center.y) < 2f)
+            assertTrue("Button $control should fit inside row $controls", control.left >= controls.left && control.right <= controls.right)
+        }
+        val gaps = bounds.zipWithNext { left, right -> right.left - left.right }
+        assertTrue("Controls should have space between them", gaps.all { it > 0f })
+        assertTrue("All button gaps should be equal: $gaps", gaps.max() - gaps.min() < 2f)
+        assertTrue("Volume slider should stay short", volume.width < controls.width / 4f)
+    }
 
     @Test
     fun playbackButtons_clickOncePerActionAndStateUpdatesAreSilent() {
@@ -400,7 +442,7 @@ class BeatComponentsTest {
         }
 
         composeRule.onNodeWithText("Midnight instrumental").assertExists()
-        composeRule.onNodeWithText("0:00/0:00").assertExists()
+        composeRule.onNodeWithText("0:00 / 0:00").assertExists()
         composeRule.onNodeWithContentDescription("Play from start").performClick()
         composeRule.onNodeWithContentDescription("Play").performClick()
 

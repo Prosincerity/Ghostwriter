@@ -1,5 +1,10 @@
 package com.prosincerity.ghostwriter.ui.screens
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -28,6 +33,39 @@ import kotlin.coroutines.suspendCoroutine
 @RunWith(AndroidJUnit4::class)
 class DictionaryScreenTest {
     @get:Rule val composeRule = createComposeRule()
+
+    @Test
+    fun selectorsShareOneRowAndSearchButtonStaysCompact() {
+        composeRule.setContent {
+            GhostwriterTheme {
+                Box(Modifier.width(320.dp)) {
+                    DictionaryScreen(
+                        onBack = {}, onOpenDownloads = {}, installedLanguages = listOf("en", "de"),
+                    )
+                }
+            }
+        }
+        val language = composeRule.onNodeWithText("Language: English").fetchSemanticsNode().boundsInRoot
+        val mode = composeRule.onNodeWithText("Mode: Rhyme").fetchSemanticsNode().boundsInRoot
+        val search = composeRule.onNodeWithText("Search").fetchSemanticsNode().boundsInRoot
+        val card = composeRule.onNodeWithTag("Dictionary search options").fetchSemanticsNode().boundsInRoot
+        composeRule.onNodeWithText("Search options").assertExists()
+        assertTrue(abs(language.center.y - mode.center.y) < 2f)
+        assertTrue("Selectors should have equal widths", abs(language.width - mode.width) < 2f)
+        assertTrue("Selectors should have a gap", language.right < mode.left)
+        for (control in listOf(language, mode, search)) {
+            assertTrue("Search controls should sit inside the section card", card.contains(control.topLeft) && card.contains(control.bottomRight))
+        }
+        assertTrue("Search should stay compact", search.width < card.width / 2f)
+        composeRule.onNodeWithText("Mode: Rhyme").performClick()
+        composeRule.onNodeWithText("Assonance").performClick()
+        composeRule.onNodeWithText("Mode: Assonance").assertExists()
+        composeRule.onNodeWithText("Mode: Assonance").performClick()
+        composeRule.onNodeWithText("Word suffix").performClick()
+        val longMode = composeRule.onNodeWithText("Mode: Word suffix").fetchSemanticsNode().boundsInRoot
+        assertTrue("Long mode labels should stay on the selector row", abs(language.center.y - longMode.center.y) < 2f)
+        assertTrue("Long mode labels should keep the same button height", abs(mode.height - longMode.height) < 2f)
+    }
 
     @Test
     fun changingWordLanguageOrModeClearsPreviousError() {
@@ -128,6 +166,7 @@ class DictionaryScreenTest {
 
         composeRule.onNodeWithText("Word").performTextInput("cat")
         composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNodeWithText("Pronunciation").assertExists()
         composeRule.onNodeWithText("Matches (1)").assertExists()
         composeRule.onNodeWithText("bat").assertExists()
         composeRule.runOnIdle { assertEquals(Triple("cat", "en", DictionarySearchMode.RHYME), searched) }

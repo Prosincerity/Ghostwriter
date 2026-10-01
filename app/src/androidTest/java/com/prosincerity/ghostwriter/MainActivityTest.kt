@@ -38,7 +38,7 @@ class MainActivityTest {
 
     @Test
     fun navigation_homeToAboutAndBack_returnsHome() {
-        composeRule.onNodeWithText("New file").assertExists()
+        composeRule.onNodeWithText("New project").assertExists()
 
         composeRule.onNodeWithContentDescription("Settings").performClick()
         composeRule.onNodeWithText("Settings").assertExists()
@@ -60,7 +60,7 @@ class MainActivityTest {
         composeRule.onNodeWithText("Settings").assertExists()
 
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("New file").assertExists()
+        composeRule.onNodeWithText("New project").assertExists()
     }
 
     @Test
@@ -215,7 +215,7 @@ class MainActivityTest {
     }
 
     private fun createProject(projectTitle: String) {
-        composeRule.onNodeWithText("New file").performClick()
+        composeRule.onNodeWithText("New project").performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput(projectTitle)
         composeRule.onNodeWithText("Create").performClick()
         composeRule.onNodeWithText(projectTitle).assertExists()

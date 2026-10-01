@@ -1,9 +1,10 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -26,8 +30,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,24 +43,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.LyricFont
 import com.prosincerity.ghostwriter.data.LyricFontFamily
 import com.prosincerity.ghostwriter.data.LyricTextAlignment
 import com.prosincerity.ghostwriter.data.LyricTextSettings
+import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.data.SystemFontCatalog
+import com.prosincerity.ghostwriter.ui.components.SlimSlider
 import com.prosincerity.ghostwriter.ui.components.toTextStyle
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.prosincerity.ghostwriter.data.Settings as AppSettings
 
 /**
  * Autosave and lyric typography settings. Uses a plain
@@ -109,116 +112,104 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
-            SettingsDropdownRow(
-                description = "Autosave interval",
-                options = AppSettings.INTERVAL_OPTIONS_SECONDS,
-                selected = intervalSeconds,
-                label = ::formatInterval,
-                onSelect = {
-                    intervalSeconds = it
-                    AppSettings.setAutosaveIntervalSeconds(context, it)
-                },
-            )
+            SettingsSection("Saving") {
+                SettingsDropdownRow(
+                    description = "Autosave interval",
+                    options = AppSettings.INTERVAL_OPTIONS_SECONDS,
+                    selected = intervalSeconds,
+                    label = ::formatInterval,
+                    onSelect = {
+                        intervalSeconds = it
+                        AppSettings.setAutosaveIntervalSeconds(context, it)
+                    },
+                )
 
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
 
-            SettingsDropdownRow(
-                description = "Autosave backups",
-                options = AppSettings.COUNT_OPTIONS,
-                selected = autosaveCount,
-                label = { it.toString() },
-                onSelect = {
-                    autosaveCount = it
-                    AppSettings.setAutosaveCount(context, it)
-                },
-            )
+                SettingsDropdownRow(
+                    description = "Autosave backups",
+                    options = AppSettings.COUNT_OPTIONS,
+                    selected = autosaveCount,
+                    label = { it.toString() },
+                    onSelect = {
+                        autosaveCount = it
+                        AppSettings.setAutosaveCount(context, it)
+                    },
+                )
+            }
 
             Spacer(Modifier.height(24.dp))
 
-            Text("Lyric pad", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "Applies to all projects. Uses fonts built into your device. Text size follows Android's font size setting.",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-            )
-            SettingsDropdownRow(
-                description = "Font family",
-                options = fontOptions,
-                selected = lyricTextSettings.fontFamily,
-                label = { if (it in fontOptions) it.label else "${it.label} (unavailable)" },
-                onSelect = { updateLyricTextSettings(lyricTextSettings.copy(fontFamily = it)) },
-                useDialog = true,
-            )
-            SettingsDropdownRow(
-                description = "Font size",
-                options = LyricTextSettings.FONT_SIZE_OPTIONS,
-                selected = lyricTextSettings.fontSizeSp,
-                label = { "$it sp" },
-                onSelect = { updateLyricTextSettings(lyricTextSettings.copy(fontSizeSp = it)) },
-            )
-            SettingsSliderRow(
-                description = "Line height",
-                value = lyricTextSettings.lineHeightMultiplier,
-                valueRange = LyricTextSettings.LINE_HEIGHT_RANGE,
-                valueLabel = "${formatTypographyNumber(lyricTextSettings.lineHeightMultiplier)}×",
-                onValueChange = { updateLyricTextSettings(lyricTextSettings.copy(lineHeightMultiplier = it)) },
-            )
-            SettingsSliderRow(
-                description = "Letter spacing",
-                value = if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) 0f
-                    else lyricTextSettings.letterSpacingSp,
-                valueRange = LyricTextSettings.LETTER_SPACING_RANGE,
-                valueLabel = if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) "0 sp"
-                    else "${formatTypographyNumber(lyricTextSettings.letterSpacingSp)} sp",
-                onValueChange = { updateLyricTextSettings(lyricTextSettings.copy(letterSpacingSp = it)) },
-                enabled = lyricTextSettings.alignment != LyricTextAlignment.JUSTIFY,
-            )
-            SettingsDropdownRow(
-                description = "Text alignment",
-                options = LyricTextAlignment.entries,
-                selected = lyricTextSettings.alignment,
-                label = { it.label },
-                onSelect = { updateLyricTextSettings(lyricTextSettings.copy(alignment = it)) },
-            )
-            if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) {
+            SettingsSection("Lyric appearance") {
                 Text(
-                    "Justified text uses normal letter spacing. Your spacing is kept for other alignments.",
+                    "Applies to all projects. Uses fonts built into your device. Text size follows Android's font size setting.",
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
-            }
-            Text("Preview", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
-            Surface(
-                shape = GhostButtonShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            ) {
-                Text(
-                    "Find the rhythm in the words\nLet the next line carry the beat",
-                    style = lyricTextSettings.toTextStyle(MaterialTheme.typography.bodyLarge),
-                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                SettingsDropdownRow(
+                    description = "Font family",
+                    options = fontOptions,
+                    selected = lyricTextSettings.fontFamily,
+                    label = { if (it in fontOptions) it.label else "${it.label} (unavailable)" },
+                    onSelect = { updateLyricTextSettings(lyricTextSettings.copy(fontFamily = it)) },
+                    useDialog = true,
                 )
+                SettingsDropdownRow(
+                    description = "Font size",
+                    options = LyricTextSettings.FONT_SIZE_OPTIONS,
+                    selected = lyricTextSettings.fontSizeSp,
+                    label = { "$it sp" },
+                    onSelect = { updateLyricTextSettings(lyricTextSettings.copy(fontSizeSp = it)) },
+                )
+                SettingsSliderRow(
+                    description = "Line height",
+                    value = lyricTextSettings.lineHeightMultiplier,
+                    valueRange = LyricTextSettings.LINE_HEIGHT_RANGE,
+                    valueLabel = "${formatTypographyNumber(lyricTextSettings.lineHeightMultiplier)}×",
+                    onValueChange = { updateLyricTextSettings(lyricTextSettings.copy(lineHeightMultiplier = it)) },
+                )
+                SettingsSliderRow(
+                    description = "Letter spacing",
+                    value = if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) 0f
+                        else lyricTextSettings.letterSpacingSp,
+                    valueRange = LyricTextSettings.LETTER_SPACING_RANGE,
+                    valueLabel = if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) "0 sp"
+                        else "${formatTypographyNumber(lyricTextSettings.letterSpacingSp)} sp",
+                    onValueChange = { updateLyricTextSettings(lyricTextSettings.copy(letterSpacingSp = it)) },
+                    enabled = lyricTextSettings.alignment != LyricTextAlignment.JUSTIFY,
+                )
+                SettingsDropdownRow(
+                    description = "Text alignment",
+                    options = LyricTextAlignment.entries,
+                    selected = lyricTextSettings.alignment,
+                    label = { it.label },
+                    onSelect = { updateLyricTextSettings(lyricTextSettings.copy(alignment = it)) },
+                )
+                if (lyricTextSettings.alignment == LyricTextAlignment.JUSTIFY) {
+                    Text(
+                        "Justified text uses normal letter spacing. Your spacing is kept for other alignments.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+                Text("Preview", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 8.dp))
+                Surface(
+                    shape = GhostButtonShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                ) {
+                    Text(
+                        "Find the rhythm in the words\nLet the next line carry the beat",
+                        style = lyricTextSettings.toTextStyle(MaterialTheme.typography.bodyLarge),
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                    )
+                }
             }
 
             Spacer(Modifier.height(24.dp))
-
-            OutlinedButton(
-                shape = GhostButtonShape,
-                onClick = onOpenDictionaryDownloads,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Download Dictionaries")
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            OutlinedButton(
-                shape = GhostButtonShape,
-                onClick = onOpenAbout,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("About Ghostwriter")
-            }
+            SettingsNavigationRow("Download Dictionaries", Icons.Filled.Book, onOpenDictionaryDownloads)
+            SettingsNavigationRow("About Ghostwriter", Icons.Filled.Info, onOpenAbout)
         }
     }
 }
@@ -233,7 +224,6 @@ private fun SettingsSliderRow(
     onValueChange: (Float) -> Unit,
     enabled: Boolean = true,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -249,31 +239,40 @@ private fun SettingsSliderRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Slider(
+        SlimSlider(
             value = value,
             enabled = enabled,
             onValueChange = { onValueChange((it * 100).roundToInt() / 100f) },
             valueRange = valueRange,
-            interactionSource = interactionSource,
-            thumb = {
-                SliderDefaults.Thumb(
-                    interactionSource = interactionSource,
-                    thumbSize = DpSize(12.dp, 12.dp),
-                    enabled = enabled,
-                )
-            },
-            track = { state ->
-                SliderDefaults.Track(
-                    sliderState = state,
-                    enabled = enabled,
-                    modifier = Modifier.height(4.dp),
-                    drawStopIndicator = null,
-                    thumbTrackGapSize = 2.dp,
-                    trackInsideCornerSize = 2.dp,
-                )
-            },
             modifier = Modifier.weight(0.6f).semantics { contentDescription = description },
         )
+    }
+}
+
+@Composable
+private fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Text(
+        title, style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(bottom = 12.dp),
+    )
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), content = content)
+    }
+}
+
+@Composable
+private fun SettingsNavigationRow(label: String, icon: ImageVector, onClick: () -> Unit) {
+    Surface(onClick = onClick, shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.background) {
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 16.dp, horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 
@@ -321,6 +320,7 @@ private fun <T> SettingsDropdownRow(
                         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
                             items(options) { option ->
                                 TextButton(
+                                    shape = GhostButtonShape,
                                     onClick = {
                                         onSelect(option)
                                         expanded = false
@@ -333,7 +333,7 @@ private fun <T> SettingsDropdownRow(
                         }
                     },
                     confirmButton = {
-                        TextButton(onClick = { expanded = false }) { Text("Close") }
+                        TextButton(shape = GhostButtonShape, onClick = { expanded = false }) { Text("Close") }
                     },
                 )
             }

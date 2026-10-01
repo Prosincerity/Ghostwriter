@@ -22,8 +22,14 @@ val GhostTypography = Typography(
     displayMedium = defaultTypography.displayMedium.copy(fontFamily = RobotoFontFamily),
     displaySmall = defaultTypography.displaySmall.copy(fontFamily = RobotoFontFamily),
     headlineLarge = defaultTypography.headlineLarge.copy(fontFamily = RobotoFontFamily),
-    headlineMedium = defaultTypography.headlineMedium.copy(fontFamily = RobotoFontFamily),
-    headlineSmall = defaultTypography.headlineSmall.copy(fontFamily = RobotoFontFamily),
+    headlineMedium = defaultTypography.headlineMedium.copy(
+        fontFamily = RobotoFontFamily, fontWeight = FontWeight.Bold,
+        fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.4).sp,
+    ),
+    headlineSmall = defaultTypography.headlineSmall.copy(
+        fontFamily = RobotoFontFamily, fontWeight = FontWeight.Bold,
+        fontSize = 24.sp, lineHeight = 30.sp, letterSpacing = (-0.2).sp,
+    ),
     bodyLarge = TextStyle(
         fontFamily = RobotoFontFamily,
         fontWeight = FontWeight.Normal,
@@ -35,9 +41,13 @@ val GhostTypography = Typography(
     titleLarge = TextStyle(
         fontFamily = RobotoFontFamily,
         fontWeight = FontWeight.Bold,
-        fontSize = 20.sp,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = (-0.2).sp,
     ),
-    titleMedium = defaultTypography.titleMedium.copy(fontFamily = RobotoFontFamily),
+    titleMedium = defaultTypography.titleMedium.copy(
+        fontFamily = RobotoFontFamily, fontWeight = FontWeight.Medium, letterSpacing = 0.sp,
+    ),
     titleSmall = defaultTypography.titleSmall.copy(fontFamily = RobotoFontFamily),
     labelLarge = defaultTypography.labelLarge.copy(fontFamily = RobotoFontFamily),
     labelMedium = defaultTypography.labelMedium.copy(fontFamily = RobotoFontFamily),

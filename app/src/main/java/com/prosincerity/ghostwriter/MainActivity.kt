@@ -10,22 +10,25 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.core.net.toUri
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.ProjectSummary
 import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.screens.AboutScreen
-import com.prosincerity.ghostwriter.ui.screens.EditorScreen
 import com.prosincerity.ghostwriter.ui.screens.DictionaryDownloadsScreen
 import com.prosincerity.ghostwriter.ui.screens.DictionaryScreen
+import com.prosincerity.ghostwriter.ui.screens.EditorScreen
 import com.prosincerity.ghostwriter.ui.screens.HomeScreen
 import com.prosincerity.ghostwriter.ui.screens.SettingsScreen
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -78,6 +81,16 @@ private fun GhostwriterApp(
     val coroutineScope = rememberCoroutineScope()
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var projects by remember { mutableStateOf(ProjectStorage.listProjects(context)) }
+    val projectSummaries by produceState<Map<String, ProjectSummary>>(
+        initialValue = emptyMap(), key1 = screen, key2 = projects,
+    ) {
+        if (screen == Screen.Home) {
+            value = withContext(Dispatchers.IO) {
+                val root = ProjectStorage.rootDir(context)
+                projects.associateWith { title -> ProjectSummary.fromDirectory(File(root, title)) }
+            }
+        }
+    }
     val versionName = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -93,6 +106,7 @@ private fun GhostwriterApp(
     when (val current = screen) {
         is Screen.Home -> HomeScreen(
             existingProjects = projects,
+            projectSummaries = projectSummaries,
             onCreateProject = { title ->
                 val cleanTitle = ProjectStorage.resolveProjectTitle(title, projects)
                 ProjectStorage.projectDir(context, cleanTitle) // creates the folder immediately
