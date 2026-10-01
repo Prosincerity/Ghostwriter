@@ -9,10 +9,12 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.dp
@@ -79,6 +81,81 @@ class WaveformViewTest {
     }
 
     @Test
+    fun drag_includesTheMovementThatFirstCrossesTouchSlop() {
+        val markers = mutableStateOf(listOf(marker("Marker", 3000, MarkerLoopRole.NONE)))
+        renderWaveform(markers)
+
+        composeRule.onNodeWithTag("Waveform").performTouchInput {
+            down(Offset(width * 0.3f, height * 0.75f))
+            // A single large first move must not become the drag's anchor.
+            moveTo(Offset(width * 0.6f, height * 0.75f))
+        }
+        assertMarkerPreviewPosition(6000f)
+        composeRule.runOnIdle { assertEquals(3000L, markers.value.single().positionMs) }
+        composeRule.onNodeWithTag("Waveform").performTouchInput { up() }
+
+        composeRule.runOnIdle { assertEquals(6000f, markers.value.single().positionMs.toFloat(), 2f) }
+    }
+
+    @Test
+    fun mouseDrag_preservesGrabOffsetThroughDirectionChanges() {
+        val markers = mutableStateOf(listOf(marker("Marker", 3000, MarkerLoopRole.NONE)))
+        renderWaveform(markers)
+
+        composeRule.onNodeWithTag("Waveform").performMouseInput {
+            val grabOffsetPx = 12f
+            moveTo(Offset(width * 0.3f + grabOffsetPx, height * 0.75f))
+            press()
+            moveTo(Offset(width * 0.7f + grabOffsetPx, height * 0.75f))
+        }
+        assertMarkerPreviewPosition(7000f)
+        composeRule.onNodeWithTag("Waveform").performMouseInput {
+            val grabOffsetPx = 12f
+            moveTo(Offset(width * 0.5f + grabOffsetPx, height * 0.75f))
+        }
+        assertMarkerPreviewPosition(5000f)
+        composeRule.onNodeWithTag("Waveform").performMouseInput { release() }
+
+        composeRule.runOnIdle { assertEquals(5000f, markers.value.single().positionMs.toFloat(), 2f) }
+    }
+
+    @Test
+    fun zoomedDrag_tracksThePointerAfterMovingBeyondBeatStartAndBack() {
+        val markers = mutableStateOf(listOf(marker("Marker", 3000, MarkerLoopRole.NONE)))
+        renderWaveform(markers, initialViewport = WaveformViewport(zoom = 2f))
+
+        composeRule.onNodeWithTag("Waveform").performTouchInput {
+            down(Offset(width * 0.6f, height * 0.75f))
+            moveTo(Offset(width * 0.8f, height * 0.75f))
+            moveTo(Offset(-width * 0.1f, height * 0.75f))
+        }
+        assertMarkerPreviewPosition(0f)
+        composeRule.onNodeWithTag("Waveform").performTouchInput {
+            moveTo(Offset(width * 0.4f, height * 0.75f))
+        }
+        assertMarkerPreviewPosition(2000f)
+        composeRule.onNodeWithTag("Waveform").performTouchInput { up() }
+
+        composeRule.runOnIdle { assertEquals(2000f, markers.value.single().positionMs.toFloat(), 2f) }
+    }
+
+    @Test
+    fun cancelledDrag_discardsThePreviewWithoutMovingTheMarker() {
+        val markers = mutableStateOf(listOf(marker("Marker", 3000, MarkerLoopRole.NONE)))
+        renderWaveform(markers)
+
+        composeRule.onNodeWithTag("Waveform").performTouchInput {
+            down(Offset(width * 0.3f, height * 0.75f))
+            moveTo(Offset(width * 0.6f, height * 0.75f))
+        }
+        assertMarkerPreviewPosition(6000f)
+        composeRule.onNodeWithTag("Waveform").performTouchInput { cancel() }
+
+        assertMarkerPreviewPosition(3000f)
+        composeRule.runOnIdle { assertEquals(3000L, markers.value.single().positionMs) }
+    }
+
+    @Test
     fun labelTap_editsWhileTapBelowLabelSeeksToMarker() {
         val marker = marker("Long marker label", 3000, MarkerLoopRole.START)
         val markers = mutableStateOf(listOf(marker))
@@ -118,6 +195,12 @@ class WaveformViewTest {
         composeRule.runOnIdle { assertSame(end, clicked) }
     }
 
+    private fun assertMarkerPreviewPosition(expectedPositionMs: Float) {
+        val rangeInfo = composeRule.onNodeWithTag("Waveform marker Marker")
+            .fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo]
+        assertEquals(expectedPositionMs, rangeInfo.current, 2f)
+    }
+
     private fun assertMarkerBoundsContainLine(marker: WaveformMarker) {
         val waveformBounds = composeRule.onNodeWithTag("Waveform").fetchSemanticsNode().boundsInRoot
         val markerBounds = composeRule.onNodeWithTag("Waveform marker ${marker.label}")
@@ -132,9 +215,10 @@ class WaveformViewTest {
     private fun renderWaveform(
         markers: MutableState<List<WaveformMarker>>,
         onSeek: (Long) -> Unit = {},
+        initialViewport: WaveformViewport = WaveformViewport(),
         onClick: (WaveformMarker) -> Unit = {},
     ) {
-        val viewport = mutableStateOf(WaveformViewport())
+        val viewport = mutableStateOf(initialViewport)
         composeRule.setContent {
             GhostwriterTheme {
                 // Keep the label at the top of the waveform below system bars
