@@ -459,7 +459,7 @@ fun EditorScreen(
                             withContext(Dispatchers.Main.immediate) {
                                 Toast.makeText(
                                     context,
-                                    if (saved) "Saved ${ProjectStorage.sanitizeTitle(projectTitle)}.txt"
+                                    if (saved) "Saved ${ProjectStorage.manualSaveFileName(projectTitle)}"
                                     else "Couldn't save lyrics",
                                     Toast.LENGTH_SHORT,
                                 ).show()

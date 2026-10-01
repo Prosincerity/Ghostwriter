@@ -14,6 +14,107 @@ import kotlin.text.Charsets.UTF_8
 class ProjectStorageTest {
 
     @Test
+    fun autosaveNamedProject_keepsManualSnapshotAndBackupHistorySeparate() {
+        for (title in listOf("autosave1", "autosave2", "autosave5", "autosave10", "AUTOSAVE1")) {
+            val project = tempFolder.newFolder(title)
+            ProjectStorage.rotateAndSave(project, "first", 3)
+            assertTrue(ProjectStorage.saveManual(project, title, "manual", 3))
+            assertEquals("first", File(project, "autosave2.txt").readText())
+            assertTrue(File(project, "$title.manual.txt").setLastModified(1_000L))
+            ProjectStorage.rotateAndSave(project, "latest", 3)
+            assertEquals("manual", File(project, "$title.manual.txt").readText())
+            assertEquals("manual", File(project, "autosave2.txt").readText())
+            assertEquals("first", File(project, "autosave3.txt").readText())
+            assertEquals("latest", ProjectStorage.loadLatest(project))
+        }
+    }
+
+    @Test
+    fun renameToAndFromAutosaveName_preservesManualSaveAndBackupRing() {
+        val project = tempFolder.newFolder("track")
+        assertTrue(ProjectStorage.saveManual(project, "track", "manual", 3))
+        ProjectStorage.rotateAndSave(project, "latest", 3)
+
+        val reserved = ProjectStorage.renameProjectDirectory(project, "autosave2")!!
+        assertEquals("manual", File(reserved, "autosave2.manual.txt").readText())
+        assertEquals("latest", File(reserved, "autosave1.txt").readText())
+        assertEquals("manual", File(reserved, "autosave2.txt").readText())
+
+        val renamed = ProjectStorage.renameProjectDirectory(reserved, "renamed")!!
+        assertEquals("manual", File(renamed, "renamed.txt").readText())
+        assertEquals("latest", File(renamed, "autosave1.txt").readText())
+        assertEquals("manual", File(renamed, "autosave2.txt").readText())
+    }
+
+    @Test
+    fun legacyAutosaveNamedProject_remainsReadableAndRenameKeepsBackups() {
+        val project = tempFolder.newFolder("autosave2")
+        File(project, "autosave1.txt").apply { writeText("latest"); assertTrue(setLastModified(2_000L)) }
+        File(project, "autosave2.txt").apply { writeText("older"); assertTrue(setLastModified(1_000L)) }
+        assertEquals("latest", ProjectStorage.loadLatest(project))
+
+        val renamed = ProjectStorage.renameProjectDirectory(project, "legacy")!!
+        assertEquals("older", File(renamed, "autosave2.txt").readText())
+        assertEquals("latest", ProjectStorage.loadLatest(renamed))
+    }
+
+    @Test
+    fun blockedOlderBackup_doesNotPreventSavingTheLatestLyrics() {
+        val project = tempFolder.newFolder("blocked_backup")
+        ProjectStorage.rotateAndSave(project, "first", 3)
+        ProjectStorage.rotateAndSave(project, "second", 3)
+        assertTrue(File(project, "autosave3.txt").mkdir())
+        File(project, "autosave3.txt/keep").writeText("unrelated file")
+
+        ProjectStorage.rotateAndSave(project, "latest", 3)
+
+        assertEquals("latest", File(project, "autosave1.txt").readText())
+        assertEquals("second", File(project, "autosave2.txt").readText())
+        assertEquals("latest", ProjectStorage.loadLatest(project))
+        assertFalse(project.list()!!.any { it.endsWith(".tmp") })
+    }
+
+    @Test
+    fun failedNewestSave_preservesBackupsOutsideTheReducedCount() {
+        val project = tempFolder.newFolder("failed_newest")
+        File(project, "autosave1.txt").mkdir()
+        File(project, "autosave1.txt/keep").writeText("unrelated file")
+        File(project, "autosave4.txt").writeText("recoverable lyrics")
+        File(project, "autosave5.txt").writeText("older lyrics")
+
+        ProjectStorage.rotateAndSave(project, "unsaved lyrics", 3)
+
+        assertEquals("recoverable lyrics", File(project, "autosave4.txt").readText())
+        assertEquals("older lyrics", File(project, "autosave5.txt").readText())
+        assertEquals("recoverable lyrics", ProjectStorage.loadLatest(project))
+        assertFalse(project.list()!!.any { it.endsWith(".tmp") })
+    }
+
+    @Test
+    fun reservedTitle_recoversDedicatedManualSaveWhenAutosavesAreUnreadable() {
+        val project = tempFolder.newFolder("autosave1")
+        assertTrue(ProjectStorage.saveManual(project, "autosave1", "manual", 3))
+        val newest = File(project, "autosave1.txt")
+        assertTrue(newest.delete())
+        assertTrue(newest.mkdir())
+
+        assertEquals("manual", ProjectStorage.loadLatest(project))
+        assertEquals("autosave1.manual.txt", ProjectStorage.manualSaveFileName("autosave1"))
+        assertEquals("song.txt", ProjectStorage.manualSaveFileName("song"))
+    }
+
+    @Test
+    fun renameWithTheSameManualFilename_preservesContentsInBothDirections() {
+        val project = tempFolder.newFolder("autosave1")
+        assertTrue(ProjectStorage.saveManual(project, "autosave1", "manual", 3))
+
+        val renamed = ProjectStorage.renameProjectDirectory(project, "autosave1.manual")!!
+        assertEquals("manual", File(renamed, "autosave1.manual.txt").readText())
+        val restored = ProjectStorage.renameProjectDirectory(renamed, "autosave1")!!
+        assertEquals("manual", File(restored, "autosave1.manual.txt").readText())
+    }
+
+    @Test
     fun resolveProjectTitle_reusesExistingCasingAndSanitizedName() {
         assertEquals("My_Track", ProjectStorage.resolveProjectTitle("my/track", listOf("My_Track")))
         assertEquals("New_Track", ProjectStorage.resolveProjectTitle("New/Track", emptyList()))
