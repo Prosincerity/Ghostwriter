@@ -85,6 +85,26 @@ class BeatPlayerInstrumentedTest {
     }
 
     @Test
+    fun fractionalDuration_acceptsTailStartBeforeAndAfterPcmPreparation() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val source = createPcm16Wav("beat-fractional-duration.wav", 1000, extraFrames = 4)
+        assertEquals(Pair(8000, 1_000_500L), PcmBeatDecoder.audioTiming(source))
+        val markers = listOf(WaveformMarker("Start", 1000, MarkerLoopRole.START, 8002, 8000))
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(source))
+            assertTrue(player.hasValidMarkerLoop(markers))
+            player.setMarkers(markers)
+            assertTrue(player.isPreparingLoop)
+        }
+        waitUntil("Tail marker did not prepare PCM", 10000) { !player.isPreparingLoop }
+        instrumentation.runOnMainSync {
+            assertTrue(player.hasValidMarkerLoop(markers))
+            assertFalse(player.hasValidMarkerLoop(listOf(markers[0].copy(frameIndex = 8004))))
+        }
+    }
+
+    @Test
     fun releaseDuringLoopPreparation_cannotAttachOrRestartTheOldBeat() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val player = createPlayer()
@@ -302,11 +322,11 @@ class BeatPlayerInstrumentedTest {
         if (!condition()) fail(message)
     }
 
-    private fun createPcm16Wav(fileName: String, durationMs: Int): File {
+    private fun createPcm16Wav(fileName: String, durationMs: Int, extraFrames: Int = 0): File {
         val sampleRate = 8_000
         val channelCount = 1
         val bytesPerSample = 2
-        val sampleCount = (sampleRate.toLong() * durationMs / 1_000).toInt()
+        val sampleCount = (sampleRate.toLong() * durationMs / 1_000).toInt() + extraFrames
         val dataSize = sampleCount * channelCount * bytesPerSample
         val wav = ByteBuffer.allocate(WAV_HEADER_SIZE + dataSize).order(ByteOrder.LITTLE_ENDIAN)
 

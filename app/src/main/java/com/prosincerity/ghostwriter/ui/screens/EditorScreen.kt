@@ -44,8 +44,7 @@ import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.MarkerLoopRole
-import com.prosincerity.ghostwriter.logic.MarkerLoopRange
-import com.prosincerity.ghostwriter.logic.MarkerLoopFrames
+import com.prosincerity.ghostwriter.logic.indexOfSelectedMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.rememberBeatPlayback
@@ -186,9 +185,7 @@ fun EditorScreen(
         successMessage: String?,
         failureMessage: String,
     ) {
-        val valid = if (beatPlayer.sampleRate > 0) MarkerLoopFrames.fromMarkers(
-            markers, beatPlayer.sampleRate, beatPlayer.durationMs.toLong() * beatPlayer.sampleRate / 1000,
-        ) != null else MarkerLoopRange.fromMarkers(markers, beatPlayer.durationMs.toLong()) != null
+        val valid = beatPlayer.hasValidMarkerLoop(markers)
         if (markers.any { it.loopRole != MarkerLoopRole.NONE } && !valid) {
             Toast.makeText(context, "Loop start must be before loop end", Toast.LENGTH_SHORT).show()
             return
@@ -516,7 +513,7 @@ fun EditorScreen(
                 onAddMarker = { positionMs -> markerPositionToAdd = positionMs },
                 onMarkerClick = { marker -> markerToEdit = marker },
                 onMarkerMove = { marker, positionMs ->
-                    val markerIndex = metadata.markers.indexOfFirst { it === marker }
+                    val markerIndex = indexOfSelectedMarker(metadata.markers, marker)
                     if (markerIndex >= 0 && marker.positionMs != positionMs) {
                         val updatedMarkers = metadata.markers.toMutableList().apply {
                             this[markerIndex] = marker.atPositionMs(positionMs, beatPlayer.sampleRate)

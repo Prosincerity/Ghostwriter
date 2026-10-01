@@ -18,14 +18,21 @@ internal data class PcmBeat(val file: File, val sampleRate: Int, val channels: I
 /** Temporary, disk-backed PCM keeps long beats out of the Java heap. Run off the UI thread. */
 internal object PcmBeatDecoder {
     fun sampleRate(source: File): Int {
+        return audioTiming(source)?.first ?: 0
+    }
+
+    /** Sample rate and microsecond duration from the same audio track. */
+    fun audioTiming(source: File): Pair<Int, Long>? {
         val extractor = MediaExtractor()
         return try {
             extractor.setDataSource(source.absolutePath)
             val track = (0 until extractor.trackCount).firstOrNull {
                 extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true
-            } ?: return 0
-            extractor.getTrackFormat(track).getInteger(MediaFormat.KEY_SAMPLE_RATE)
-        } catch (_: Exception) { 0 } finally { extractor.release() }
+            } ?: return null
+            val format = extractor.getTrackFormat(track)
+            Pair(format.getInteger(MediaFormat.KEY_SAMPLE_RATE),
+                if (format.containsKey(MediaFormat.KEY_DURATION)) format.getLong(MediaFormat.KEY_DURATION) else 0L)
+        } catch (_: Exception) { null } finally { extractor.release() }
     }
 
     fun decode(source: File, cacheDirectory: File, cancelled: () -> Boolean): PcmBeat {
