@@ -49,7 +49,7 @@ class SystemFontCatalogTest {
                 font.ttcIndex,
                 font.style.weight,
                 font.style.slant == FontStyle.FONT_SLANT_ITALIC,
-                FontVariationAxis.toFontVariationSettings(font.axes) ?: "",
+                FontVariationAxis.toFontVariationSettings(font.axes),
             )
         }.toSet()
         val actual = SystemFontCatalog.availableFonts().filterIsInstance<SystemFontFile>()

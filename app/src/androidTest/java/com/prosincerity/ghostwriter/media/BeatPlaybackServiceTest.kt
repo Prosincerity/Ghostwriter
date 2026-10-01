@@ -13,7 +13,7 @@ import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.IBinder
 import androidx.compose.ui.test.ComposeTimeoutException
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
