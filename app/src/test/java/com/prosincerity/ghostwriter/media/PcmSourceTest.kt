@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.media
 
 import java.io.EOFException
+import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.CancellationException
@@ -56,6 +57,19 @@ class PcmSourceTest {
             PcmSources.prepare(PcmBeat(file, 48000, 2, 10)) { false }
         }
         assertFalse(file.exists())
+    }
+
+    @Test fun cancelledDiskPreparation_throwsAndRemovesTemporaryPcm() {
+        val file = folder.newFile()
+        val bytes = PcmSources.MEMORY_LIMIT_BYTES + 4
+        RandomAccessFile(file, "rw").use { it.setLength(bytes) }
+        var unexpected: PcmSource? = null
+        try {
+            assertThrows(CancellationException::class.java) {
+                unexpected = PcmSources.prepare(PcmBeat(file, 48000, 2, bytes / 4)) { true }
+            }
+            assertFalse(file.exists())
+        } finally { unexpected?.close() }
     }
 
     private fun audio(samples: ShortArray) = folder.newFile().apply {
