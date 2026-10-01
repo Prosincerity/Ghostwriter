@@ -34,6 +34,38 @@ release/
 # Log files
 *.log
 
+# Editor and tool backups
+*.bak
+*.bak-*
+*.backup
+*~
+*.swp
+*.swo
+
+# Agent caches and machine-specific settings (skill instructions are shared)
+/.agents/**/cache/
+/.agents/**/.cache/
+/.agents/**/__pycache__/
+/.agents/**/*.pyc
+/.agents/*.local.*
+/.agents/settings.json
+/.agents/config.toml
+/.agents/.env*
+/.codex/**/cache/
+/.codex/**/.cache/
+/.codex/**/__pycache__/
+/.codex/**/*.pyc
+/.codex/*.local.*
+/.codex/settings.json
+/.codex/config.toml
+/.codex/auth.json
+/.codex/.env*
+
+# The profiler skill needs its portable launcher, not downloaded binaries.
+!/.agents/skills/android-profiler/references/perfetto/bin/
+/.agents/skills/android-profiler/references/perfetto/bin/*
+!/.agents/skills/android-profiler/references/perfetto/bin/trace_processor
+
 # Graphify local cache and in-progress build state
 /graphify-out/cache/
 /graphify-out/memory/
