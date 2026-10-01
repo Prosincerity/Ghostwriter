@@ -10,6 +10,23 @@ import org.junit.Test
 /** Runs the production search loop with offline rows in place of Android SQLite. */
 class DictionarySearchTest {
     @Test
+    fun equallySupportedGermanFormsKeepTheShorterSpellingAcrossSources() = runBlocking {
+        val data = AssonanceData(listOf("/ɛɐbɔʁk/", "/ɛɐbɔʁɡə/"), mapOf(
+            DictionarySource.WIKTIONARY to listOf(
+                row("erborg", "/ɛɐbɔʁk/"), row("erborgte", "/ɛɐbɔʁktə/"),
+            ),
+            DictionarySource.ESPEAK to listOf(
+                row("erborge", "/ɛɐbɔʁɡə/"), row("erborget", "/ɛɐbɔʁɡət/"),
+            ),
+        ))
+
+        val result = DictionarySearch(data).search("query", "de", DictionarySearchMode.ASSONANCE)
+
+        assertEquals(listOf(DictionaryMatch("erborg", "/ɛɐbɔʁk/", PronunciationSource.WIKTIONARY)), result.matches)
+        assertFalse(result.hasNext)
+    }
+
+    @Test
     fun shorterExactAssonanceFromEspeakPrecedesLongerWiktionaryMatches() = runBlocking {
         val data = AssonanceData(listOf("/aʊ/", "/aʊ.ə/"), mapOf(
             DictionarySource.WIKTIONARY to (0 until 200).map {
@@ -105,7 +122,7 @@ class DictionarySearchTest {
 
     private fun row(word: String, ipa: String) = DictionaryMatch(word, ipa, PronunciationSource.WIKTIONARY)
 
-    /** Supplies exact-key fixture rows; production still decides tiers, batches, filtering, and pages. */
+    /** Supplies vowel-key fixture rows; production still decides tiers, batches, filtering, and pages. */
     private class AssonanceData(
         private val ipa: List<String>,
         private val rows: Map<DictionarySource, List<DictionaryMatch>>,
@@ -121,11 +138,18 @@ class DictionarySearchTest {
             scan: suspend (DictionarySearchRows) -> Unit,
         ) {
             scan(DictionarySearchRows { sql, args, onRow ->
-                check(sql.startsWith("SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? ORDER BY word, ipa"))
+                val exact = sql.startsWith("SELECT word, ipa FROM dictionary WHERE assonance_reversed = ? ORDER BY word, ipa")
+                check(exact || sql.startsWith("SELECT word, ipa FROM dictionary WHERE assonance_reversed LIKE ? ESCAPE '!' ORDER BY assonance_reversed, word, ipa"))
                 val bounds = Regex("LIMIT (\\d+) OFFSET (\\d+)$").find(sql)!!.groupValues
+                val ordering = if (exact) compareBy<DictionaryMatch> { it.word }.thenBy { it.ipa }
+                    else compareBy<DictionaryMatch> { IpaSearchKeys.fromIpa(it.ipa, language)?.assonance }
+                        .thenBy { it.word }.thenBy { it.ipa }
                 val batch = rows[source].orEmpty()
-                    .filter { IpaSearchKeys.fromIpa(it.ipa, language)?.assonance == args.single() }
-                    .sortedWith(compareBy<DictionaryMatch> { it.word }.thenBy { it.ipa })
+                    .filter {
+                        val key = IpaSearchKeys.fromIpa(it.ipa, language)?.assonance
+                        if (exact) key == args.single() else key?.startsWith(args.single().removeSuffix("%")) == true
+                    }
+                    .sortedWith(ordering)
                     .drop(bounds[2].toInt()).take(bounds[1].toInt())
                 batch.forEach { onRow(it.word, it.ipa) }
                 batch.size
