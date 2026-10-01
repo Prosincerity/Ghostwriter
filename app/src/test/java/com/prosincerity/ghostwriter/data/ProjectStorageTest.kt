@@ -186,6 +186,60 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun loadLatest_recoversTheNewestReadableBackupWhenSlotAgesAreOutOfOrder() {
+        val project = tempFolder.newFolder("out_of_order")
+        assertTrue(File(project, "autosave1.txt").mkdir())
+        File(project, "autosave2.txt").apply {
+            writeText("stale backup")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "out_of_order.txt").apply {
+            writeText("manual save")
+            assertTrue(setLastModified(2_000L))
+        }
+        File(project, "autosave3.txt").apply {
+            writeText("latest recoverable lyrics")
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertEquals("latest recoverable lyrics", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun loadLatest_recoversLegacyBackupsBeyondTheCurrentCountOptions() {
+        for (slot in 6..10) {
+            val project = tempFolder.newFolder("legacy_backup_$slot")
+            File(project, "${project.name}.txt").apply {
+                writeText("old manual save")
+                assertTrue(setLastModified(1_000L))
+            }
+            File(project, "autosave$slot.txt").apply {
+                writeText("recoverable backup $slot")
+                assertTrue(setLastModified(2_000L))
+            }
+
+            assertEquals("recoverable backup $slot", ProjectStorage.loadLatest(project))
+        }
+    }
+
+    @Test
+    fun loadLatest_equalBackupTimestampsPreferTheEarlierSlotAndManualSaveWinsTies() {
+        val project = tempFolder.newFolder("equal_ages")
+        for (slot in 1..3) {
+            File(project, "autosave$slot.txt").apply {
+                writeText("backup $slot")
+                assertTrue(setLastModified(2_000L))
+            }
+        }
+        assertEquals("backup 1", ProjectStorage.loadLatest(project))
+        File(project, "equal_ages.txt").apply {
+            writeText("manual save")
+            assertTrue(setLastModified(2_000L))
+        }
+        assertEquals("manual save", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
     fun saveFailures_areReportedToCaller() {
         val missing = File(tempFolder.root, "missing")
         assertFalse(ProjectStorage.saveManual(missing, "song", "lyrics", 3))
@@ -276,7 +330,10 @@ class ProjectStorageTest {
     fun renameProjectDirectory_movesContentsAndUpdatesTitleBasedFiles() {
         val projectDir = tempFolder.newFolder("Old Track")
         assertTrue(ProjectStorage.saveManual(projectDir, "Old Track", "saved lyrics", 3))
-        File(projectDir, "autosave2.txt").writeText("older lyrics")
+        File(projectDir, "autosave2.txt").apply {
+            writeText("older lyrics")
+            assertTrue(setLastModified(1_000L))
+        }
         File(projectDir, "beat.mp3").writeText("beat data")
         assertTrue(
             ProjectStorage.saveMetadata(
