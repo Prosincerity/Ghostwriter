@@ -89,7 +89,7 @@ internal object AssonanceFormFilter {
         // A spelling-only shortest form can end in a different sound (erblond/erblonden).
         if (family.any { exactExtensions[it.index] > 0 }) {
             return family.maxWith(compareBy<Pronounced> { exactExtensions[it.index] }
-                .thenBy { it.spelling.length }.thenByDescending { it.index })
+                .thenByDescending { it.spelling.length }.thenByDescending { it.index })
         }
         return family.minWith(shortestFirst)
     }

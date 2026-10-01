@@ -5,6 +5,22 @@ import org.junit.Test
 
 class AssonanceFormFilterTest {
     @Test
+    fun equallySupportedGermanPronunciationPrefixesPreferTheShortestSpelling() {
+        val results = listOf(
+            AssonanceFormFilter.Entry("erborg", "/ɛɐbɔʁk/"),
+            AssonanceFormFilter.Entry("erborge", "/ɛɐbɔʁɡə/"),
+            AssonanceFormFilter.Entry("erborgte", "/ɛɐbɔʁktə/"),
+            AssonanceFormFilter.Entry("erborget", "/ɛɐbɔʁɡət/"),
+        )
+        // Both erborg and erborge start one other returned pronunciation.
+        // With no returned infinitive, the shorter spelling breaks that tie.
+        val excluded = setOf("erborge", "erborgte", "erborget")
+
+        assertEquals(excluded, AssonanceFormFilter.excludedWords(results, "de"))
+        assertEquals(excluded, AssonanceFormFilter.excludedWords(results.reversed(), "de"))
+    }
+
+    @Test
     fun equallyShortInfinitivesKeepTheFirstReturnedSpelling() {
         val results = listOf(
             AssonanceFormFilter.Entry("Kaufen", "/kaʊfən/"),
