@@ -6,9 +6,9 @@
     "semantic_hash": "005ac71c84af2cae38e255e2b9de2411"
   },
   "app/build.gradle.kts": {
-    "mtime": 1790777396.1523333,
-    "seen": 1790784015.4227285,
-    "ast_hash": "09b77dfa29c3f6cc5f6247e7ef4c114b",
+    "mtime": 1790859575.4886706,
+    "seen": 1790859601.2334409,
+    "ast_hash": "ef214e8c5382e8109a4e8626c30bd62f",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ExampleInstrumentedTest.kt": {
@@ -168,56 +168,56 @@
     "semantic_hash": "0e975564b1e23536a54768c68771d517"
   },
   ".codex/skills/graphify/SKILL.md": {
-    "mtime": 1790855190.7638447,
-    "seen": 1790856449.2962835,
+    "mtime": 1790863698.6943963,
+    "seen": 1790866156.8412209,
     "ast_hash": "0f57b61141afe7b743273aec47c49dcc",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/add-watch.md": {
-    "mtime": 1790804022.976152,
-    "seen": 1790856449.2962904,
+    "mtime": 1790863647.702742,
+    "seen": 1790866156.8412232,
     "ast_hash": "c1f65eb4102ad515149303c7f296b718",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/exports.md": {
-    "mtime": 1790804022.9762614,
-    "seen": 1790856449.2962954,
+    "mtime": 1790863647.7028623,
+    "seen": 1790866156.841226,
     "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/extraction-spec.md": {
-    "mtime": 1790804022.9763696,
-    "seen": 1790856449.2963,
+    "mtime": 1790863647.7029858,
+    "seen": 1790866156.8412282,
     "ast_hash": "bf895ec4d4e40f5f66f7d31c2a9bd4a7",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/github-and-merge.md": {
-    "mtime": 1790804022.9764838,
-    "seen": 1790856449.296305,
+    "mtime": 1790863647.7031064,
+    "seen": 1790866156.841231,
     "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/hooks.md": {
-    "mtime": 1790804022.9765863,
-    "seen": 1790856449.2963092,
+    "mtime": 1790863647.7032206,
+    "seen": 1790866156.8412333,
     "ast_hash": "3f545db6ce646650bb9de588f5512a27",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/query.md": {
-    "mtime": 1790804022.9767075,
-    "seen": 1790856449.2963138,
+    "mtime": 1790863647.7033603,
+    "seen": 1790866156.8412359,
     "ast_hash": "3c46f8ad006874260614ed8657d02307",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/transcribe.md": {
-    "mtime": 1790804022.9768393,
-    "seen": 1790856449.2963185,
+    "mtime": 1790863647.7035046,
+    "seen": 1790866156.8412385,
     "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/update.md": {
-    "mtime": 1790804022.9769619,
-    "seen": 1790856449.296323,
+    "mtime": 1790863647.7036407,
+    "seen": 1790866156.841241,
     "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
     "semantic_hash": ""
   },
@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
-    "mtime": 1790799834.6232736,
-    "seen": 1790799856.9549809,
-    "ast_hash": "f68a6b67168156c6c520964e0766fcf9",
+    "mtime": 1790859702.562073,
+    "seen": 1790859762.0669496,
+    "ast_hash": "98c8e37e936a20441b9879190760371b",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt": {
@@ -4203,6 +4203,156 @@
     "mtime": 1790798578.5460646,
     "seen": 1790799711.3929825,
     "ast_hash": "4c7bb9075cb0d6465ba41ac23c167492",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/perfetto/bin/trace_processor": {
+    "mtime": 1790863551.1523356,
+    "seen": 1790866156.8407388,
+    "ast_hash": "974bfa40b9e6818cdd20a788e565149e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-cli/SKILL.md": {
+    "mtime": 1790866218.7959301,
+    "seen": 1790867076.5647614,
+    "ast_hash": "0429f7bd54c44d11bf0c10cd84ba2350",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-cli/references/interact.md": {
+    "mtime": 1790863549.0103626,
+    "seen": 1790866156.841163,
+    "ast_hash": "3d65dc86efd1b2806e22c0e46ebb563c",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-cli/references/journeys.md": {
+    "mtime": 1790866218.796246,
+    "seen": 1790867076.5647664,
+    "ast_hash": "4c20f04d4ecd683b77db1dad030c41a7",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/SKILL.md": {
+    "mtime": 1790863551.1413357,
+    "seen": 1790866156.841168,
+    "ast_hash": "38ae52edb2bf33a9887ac9722afe4825",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/analysis_orchestrator.md": {
+    "mtime": 1790863551.1433358,
+    "seen": 1790866156.84117,
+    "ast_hash": "95a3b0dd594f00b7ab9c8300bf85415c",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-sql/perfetto_sql.md": {
+    "mtime": 1790863551.1433358,
+    "seen": 1790866156.841173,
+    "ast_hash": "a46e394a289b4ffa17c183ffe7378015",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/perfetto_trace_analysis.md": {
+    "mtime": 1790863551.1443357,
+    "seen": 1790866156.841175,
+    "ast_hash": "33bf854811c2e0b7915117be9a7280a3",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/guiding_principles.md": {
+    "mtime": 1790863551.1453357,
+    "seen": 1790866156.8411772,
+    "ast_hash": "1c92e142034432279c43550f68ae6af9",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/domain_hints_template.md": {
+    "mtime": 1790863551.1453357,
+    "seen": 1790866156.8411798,
+    "ast_hash": "63c8fffd7384343808834f72bebc9afd",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_cpu.md": {
+    "mtime": 1790863551.1463356,
+    "seen": 1790866156.8411822,
+    "ast_hash": "c7dbfa12ff2d3ad5bf0516c5bc01d758",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_graphics.md": {
+    "mtime": 1790863551.1463356,
+    "seen": 1790866156.841185,
+    "ast_hash": "d10dadf7c83f31a46c52bc2b4b88575b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_io.md": {
+    "mtime": 1790863551.1463356,
+    "seen": 1790866156.8411882,
+    "ast_hash": "62365a421617bd898d9e150684a19697",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_ipc.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411903,
+    "ast_hash": "30d5ea023fa05f77283a784408e7047e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_memory.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411932,
+    "ast_hash": "a33bc87400c3307fff6958a20d0a3a7f",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_power.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411956,
+    "ast_hash": "5707104d8204e30c7a724b86266a2533",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/per_candidate_analysis.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411977,
+    "ast_hash": "5e43ed33fd95dd7061b3e04ae3f41c3b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/triage.md": {
+    "mtime": 1790863551.1483357,
+    "seen": 1790866156.8412006,
+    "ast_hash": "7842cf98c1b555033e1f9bbc289dbb6f",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/recording/recording_orchestrator.md": {
+    "mtime": 1790863551.1483357,
+    "seen": 1790866156.8412032,
+    "ast_hash": "5437cda98618ba1d3eb9646dc064648e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/recording/workflows/perfetto-trace-recording/perfetto_trace_recording.md": {
+    "mtime": 1790863551.1493356,
+    "seen": 1790866156.8412056,
+    "ast_hash": "858c948c48ecdc5b2404247654d840a5",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/recording/workflows/perfetto-trace-recording/references/trace_config_reference.md": {
+    "mtime": 1790863551.1513357,
+    "seen": 1790866156.8412077,
+    "ast_hash": "801e49bca31e96feac62dd79c924ca9f",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/env_setup.md": {
+    "mtime": 1790863551.1513357,
+    "seen": 1790866156.84121,
+    "ast_hash": "8963b8bf29a89fe1b99e05b822c2f640",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/perfetto/setup.md": {
+    "mtime": 1790863551.1523356,
+    "seen": 1790866156.8412125,
+    "ast_hash": "175b124ee45689f07fe3eb515867c4de",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/perfetto/sql.md": {
+    "mtime": 1790863551.1523356,
+    "seen": 1790866156.8412151,
+    "ast_hash": "b62d2593e8195caaca124149e5088b62",
+    "semantic_hash": ""
+  },
+  ".agents/skills/edge-to-edge/SKILL.md": {
+    "mtime": 1790863550.089349,
+    "seen": 1790866156.8412175,
+    "ast_hash": "e536ec1a83db6370752722b5311b186b",
     "semantic_hash": ""
   }
 }
