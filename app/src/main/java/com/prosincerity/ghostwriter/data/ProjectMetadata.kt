@@ -113,7 +113,7 @@ data class ProjectMetadata(
                         val frame = markerJson.optLong("frameIndex", -1L).takeIf { it >= 0 }
                         val rate = markerJson.optInt("sampleRate", 0).takeIf { it > 0 }
                         val hasFrame = frame != null && rate != null
-                        val positionMs = if (hasFrame) WaveformMarker.frameToMs(frame!!, rate!!)
+                        val positionMs = if (hasFrame) WaveformMarker.frameToMs(frame, rate)
                             else markerJson.optLong("positionMs", -1L)
                         if (positionMs >= 0L) add(WaveformMarker(
                             label, positionMs, MarkerLoopRole.fromJson(markerJson.optString("loopRole")),

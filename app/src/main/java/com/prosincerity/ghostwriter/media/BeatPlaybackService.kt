@@ -10,7 +10,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Icon
 import android.media.AudioAttributes
@@ -26,6 +25,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import com.prosincerity.ghostwriter.MainActivity
 import com.prosincerity.ghostwriter.R
 
@@ -55,7 +55,7 @@ class BeatPlaybackService : Service() {
     )
     private val artwork by lazy {
         val icon = applicationInfo.loadIcon(packageManager)
-        Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888).also { bitmap ->
+        createBitmap(256, 256).also { bitmap ->
             icon.setBounds(0, 0, bitmap.width, bitmap.height)
             val canvas = Canvas(bitmap)
             canvas.scale(0.75f, 0.75f, bitmap.width / 2f, bitmap.height / 2f)

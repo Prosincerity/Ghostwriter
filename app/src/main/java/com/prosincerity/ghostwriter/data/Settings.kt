@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.data
 
 import android.content.Context
+import androidx.core.content.edit
 
 /**
  * Thin wrapper around SharedPreferences for the app's settings.
@@ -35,14 +36,14 @@ object Settings {
         prefs(context).getInt(KEY_AUTOSAVE_INTERVAL_SECONDS, DEFAULT_INTERVAL_SECONDS)
 
     fun setAutosaveIntervalSeconds(context: Context, seconds: Int) {
-        prefs(context).edit().putInt(KEY_AUTOSAVE_INTERVAL_SECONDS, seconds).apply()
+        prefs(context).edit { putInt(KEY_AUTOSAVE_INTERVAL_SECONDS, seconds) }
     }
 
     fun getAutosaveCount(context: Context): Int =
         prefs(context).getInt(KEY_AUTOSAVE_COUNT, DEFAULT_AUTOSAVE_COUNT)
 
     fun setAutosaveCount(context: Context, count: Int) {
-        prefs(context).edit().putInt(KEY_AUTOSAVE_COUNT, count).apply()
+        prefs(context).edit { putInt(KEY_AUTOSAVE_COUNT, count) }
     }
 
     fun getLyricTextSettings(context: Context): LyricTextSettings {
@@ -61,12 +62,12 @@ object Settings {
 
     fun setLyricTextSettings(context: Context, settings: LyricTextSettings) {
         val normalized = settings.normalized()
-        prefs(context).edit()
-            .putString(KEY_LYRIC_FONT_FAMILY, normalized.fontFamily.toPreferenceValue())
-            .putInt(KEY_LYRIC_FONT_SIZE, normalized.fontSizeSp)
-            .putFloat(KEY_LYRIC_LINE_HEIGHT, normalized.lineHeightMultiplier)
-            .putFloat(KEY_LYRIC_LETTER_SPACING, normalized.letterSpacingSp)
-            .putString(KEY_LYRIC_ALIGNMENT, normalized.alignment.name)
-            .apply()
+        prefs(context).edit {
+            putString(KEY_LYRIC_FONT_FAMILY, normalized.fontFamily.toPreferenceValue())
+            putInt(KEY_LYRIC_FONT_SIZE, normalized.fontSizeSp)
+            putFloat(KEY_LYRIC_LINE_HEIGHT, normalized.lineHeightMultiplier)
+            putFloat(KEY_LYRIC_LETTER_SPACING, normalized.letterSpacingSp)
+            putString(KEY_LYRIC_ALIGNMENT, normalized.alignment.name)
+        }
     }
 }
