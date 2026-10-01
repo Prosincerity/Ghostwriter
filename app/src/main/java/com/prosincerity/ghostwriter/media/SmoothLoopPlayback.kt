@@ -9,6 +9,7 @@ import android.os.Process
 import com.prosincerity.ghostwriter.logic.MarkerLoopFrames
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /** AOSP push output with a lock-free render path and a separate disk-prefetch worker. */
@@ -21,26 +22,33 @@ internal class SmoothLoopPlayback(
     initialVolume: Float,
     private val onStateChanged: () -> Unit,
     private val onFailure: (Exception) -> Unit,
+    initialPositionFrame: Long = initialPositionMs.toLong() * pcm.sampleRate / 1000,
+    continueFromCurrentPosition: Boolean = false,
+    private val onPrimed: (Long) -> Unit = {},
+    private val onOutputStarted: () -> Unit = {},
 ) {
     private class Transport(
         val frame: Long, val seekVersion: Long, val playing: Boolean,
         val finished: Boolean, val completion: Transport?,
+        val priming: Boolean, val continuation: Boolean,
     ) {
         companion object {
             // Both objects are allocated on the control thread; EOF only publishes one.
-            fun create(frame: Long, version: Long, playing: Boolean): Transport {
-                val completion = Transport(frame, version, false, true, null)
-                return Transport(frame, version, playing, false, completion)
+            fun create(frame: Long, version: Long, playing: Boolean, priming: Boolean = false,
+                continuation: Boolean = false): Transport {
+                val completion = Transport(frame, version, false, true, null, false, false)
+                return Transport(frame, version, playing, false, completion, priming, continuation)
             }
         }
     }
-    private val transport = AtomicReference(Transport.create(msToFrame(initialPositionMs), 0, false))
+    private val transport = AtomicReference(Transport.create(initialPositionFrame, 0, false, continuation = continueFromCurrentPosition))
     private val bounds = AtomicReference(makeBounds(range, looping))
     private val closed = AtomicBoolean(false)
     private val notifications = AtomicInteger(0)
+    private val primedVersion = AtomicLong(-1)
     @Volatile private var failure: Exception? = null
     @Volatile private var volume = initialVolume
-    @Volatile var currentPositionMs = initialPositionMs
+    @Volatile var currentPositionMs = (initialPositionFrame * 1000 / pcm.sampleRate).toInt()
         private set
     val isPlaying: Boolean get() = transport.get().playing && !closed.get() && failure == null
     private val main = Handler(Looper.getMainLooper())
@@ -49,7 +57,7 @@ internal class SmoothLoopPlayback(
             if (closed.get()) return
             val events = notifications.getAndSet(0)
             if (events and FAILED != 0) failure?.let(onFailure)
-            else if (events and CHANGED != 0) { source.setPlaying(isPlaying); onStateChanged() }
+            else if (events and CHANGED != 0) { source.setPlaying(isPlaying || transport.get().priming); onStateChanged() }
             if (!closed.get()) main.postDelayed(this, if (isPlaying) 33 else 250)
         }
     }
@@ -57,9 +65,28 @@ internal class SmoothLoopPlayback(
     init {
         val initial = bounds.get()
         source.prepareLoop(initial.start, initial.end, initial.enabled)
-        source.requestFrame(msToFrame(initialPositionMs))
+        source.requestFrame(initialPositionFrame)
         main.post(publish)
         Thread(::stream, "Beat loop audio").apply { isDaemon = true; start() }
+    }
+
+    /** Fill the paused output before a timed handoff; the old player stays audible. */
+    fun prepareContinuation(positionMs: Int): Long {
+        val old = transport.get()
+        source.setPlaying(true)
+        val next = Transport.create(msToFrame(positionMs), old.seekVersion + 1, false,
+            priming = true, continuation = true)
+        transport.set(next)
+        return next.seekVersion
+    }
+
+    /** Start already-buffered output without seeking or flushing it again. */
+    fun startPrepared(version: Long): Boolean {
+        val old = transport.get()
+        if (closed.get() || failure != null || primedVersion.get() != version ||
+            old.seekVersion != version || !old.priming) return false
+        return transport.compareAndSet(old, Transport.create(old.frame, version, true,
+            continuation = true))
     }
 
     fun play() {
@@ -67,19 +94,21 @@ internal class SmoothLoopPlayback(
         val old = transport.get()
         val restart = old.finished || msToFrame(currentPositionMs) >= pcm.frames
         val start = if (bounds.get().enabled) bounds.get().start else 0
-        transport.set(Transport.create(if (restart) start else old.frame, old.seekVersion + if (restart) 1 else 0, true))
+        transport.set(Transport.create(if (restart) start else old.frame, old.seekVersion + if (restart) 1 else 0, true,
+            continuation = !restart && old.continuation))
     }
 
     fun pause() {
         source.setPlaying(false)
         val old = transport.get()
-        if (!old.finished) transport.set(Transport.create(old.frame, old.seekVersion, false))
+        if (!old.finished) transport.set(Transport.create(old.frame, old.seekVersion, false, continuation = old.continuation))
     }
 
-    fun seekTo(positionMs: Int) {
+    fun seekTo(positionMs: Int, continueFromCurrentPosition: Boolean = false) {
         val old = transport.get()
         currentPositionMs = positionMs
-        transport.set(Transport.create(msToFrame(positionMs), old.seekVersion + 1, old.playing))
+        transport.set(Transport.create(msToFrame(positionMs), old.seekVersion + 1, old.playing,
+            continuation = continueFromCurrentPosition))
     }
 
     fun configure(range: MarkerLoopFrames?, looping: Boolean) {
@@ -131,6 +160,7 @@ internal class SmoothLoopPlayback(
             var previousHead = 0L
             var previousPosition = 0L
             var playing = false
+            var startedVersion = -1L
             var primed = false
             var queuedFrames = 0L
             var pendingSamples = 0
@@ -142,7 +172,7 @@ internal class SmoothLoopPlayback(
                 if (command.seekVersion != seekVersion) {
                     output.pause()
                     output.flush()
-                    renderer.seek(command.frame)
+                    renderer.seek(command.frame, command.continuation)
                     ledger.reset(renderer.position)
                     seekVersion = command.seekVersion
                     consumed = 0
@@ -150,6 +180,7 @@ internal class SmoothLoopPlayback(
                     previousPosition = renderer.position
                     playing = false
                     primed = false
+                    primedVersion.set(-1)
                     queuedFrames = 0
                     pendingSamples = 0
                     pendingOffset = 0
@@ -159,12 +190,23 @@ internal class SmoothLoopPlayback(
                 val head = output.playbackHeadPosition.toLong() and 0xffffffffL
                 consumed += (head - previousHead) and 0xffffffffL
                 previousHead = head
+                if (playing && head > 0 && startedVersion != seekVersion) {
+                    startedVersion = seekVersion
+                    val version = seekVersion
+                    main.post {
+                        if (!closed.get() && failure == null && transport.get().playing && transport.get().seekVersion == version)
+                            onOutputStarted()
+                    }
+                }
                 val position = ledger.positionAt(consumed)
                 if (transport.get().seekVersion == seekVersion) currentPositionMs = (position * 1000 / pcm.sampleRate).toInt()
                 if (position < previousPosition) signal(CHANGED)
                 previousPosition = position
-                if (!command.playing) { Thread.sleep(10); continue }
-                if (primed && !playing) { output.play(); playing = true }
+                if (!command.playing && !command.priming) { Thread.sleep(10); continue }
+                if (primed && !playing) {
+                    if (command.playing) { output.play(); playing = true }
+                    else { Thread.sleep(2); continue }
+                }
                 (source as? PcmRingBuffer)?.failure?.let { throw it }
                 if (pendingOffset == pendingSamples) {
                     pendingSamples = renderer.render(samples) * pcm.channels
@@ -184,15 +226,26 @@ internal class SmoothLoopPlayback(
                     samples.fill(0)
                     pendingSamples = samples.size
                 }
-                val written = output.write(samples, pendingOffset, pendingSamples - pendingOffset, AudioTrack.WRITE_BLOCKING)
+                // A paused track cannot drain an oversized final priming chunk.
+                val written = output.write(samples, pendingOffset, pendingSamples - pendingOffset,
+                    if (primed) AudioTrack.WRITE_BLOCKING else AudioTrack.WRITE_NON_BLOCKING)
                 check(written >= 0) { "AudioTrack write failed: $written" }
                 pendingOffset += written
                 queuedFrames += written / pcm.channels
-                if (!primed && queuedFrames >= output.bufferSizeInFrames && transport.get().playing &&
+                if (!primed && queuedFrames >= output.bufferSizeInFrames &&
                     transport.get().seekVersion == seekVersion) {
                     primed = true
-                    output.play()
-                    playing = true
+                    primedVersion.set(seekVersion)
+                    if (command.priming) {
+                        val version = seekVersion
+                        main.post {
+                            if (!closed.get() && transport.get().priming && transport.get().seekVersion == version)
+                                onPrimed(version)
+                        }
+                    } else if (transport.get().playing) {
+                        output.play()
+                        playing = true
+                    }
                 }
                 if (written == 0) Thread.sleep(2)
             }

@@ -6,6 +6,7 @@ import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.getValue
@@ -42,12 +43,20 @@ class BeatPlayer(
     private var loadedFile: File? = null
     private var markers: List<WaveformMarker> = emptyList()
     private var smoothPlayback: SmoothLoopPlayback? = null
+    private var pendingPlayback: SmoothLoopPlayback? = null
+    private var handoffPlan: PlaybackHandoff? = null
+    private var handoffVersion = -1L
+    private var handoffHandler: Handler? = null
+    private var handoffTask: Runnable? = null
+    private var handoffFadeStartMs: Long? = null
     private var loopPcm: PcmBeat? = null
     private var sourceDurationUs = 0L
     private var loopPreparation: AtomicBoolean? = null
-    private var preparationPositionMs = 0
-    private var resumeAfterPreparation = false
     private var loopWakeLock: PowerManager.WakeLock? = null
+
+    internal val isHandingOff: Boolean get() = pendingPlayback != null
+
+    internal var decodeLoopAudio: (File, File, () -> Boolean) -> PcmBeat = PcmBeatDecoder::decode
 
     var isPreparingLoop: Boolean by mutableStateOf(false)
         private set
@@ -62,8 +71,7 @@ class BeatPlayer(
     val isReady: Boolean get() = prepared
 
     /** True if the player is currently playing audio. */
-    val isPlaying: Boolean get() = if (isPreparingLoop) resumeAfterPreparation
-        else smoothPlayback?.isPlaying ?: (player?.isPlaying == true)
+    val isPlaying: Boolean get() = smoothPlayback?.isPlaying ?: (player?.isPlaying == true)
 
     /** Whether playback repeats between marker boundaries, or the whole beat without markers. */
     var isLooping: Boolean by mutableStateOf(true)
@@ -80,8 +88,8 @@ class BeatPlayer(
      * Returns 0 when not prepared.
      */
     val currentPositionMs: Int
-        get() = if (!prepared) 0 else if (isPreparingLoop) preparationPositionMs
-            else smoothPlayback?.currentPositionMs ?: (player?.currentPosition ?: 0)
+        get() = if (!prepared) 0 else
+            smoothPlayback?.currentPositionMs ?: (player?.currentPosition ?: 0)
 
     /**
      * Total beat duration in milliseconds.
@@ -106,7 +114,10 @@ class BeatPlayer(
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
             context?.let { mp.setWakeMode(it, PowerManager.PARTIAL_WAKE_LOCK) }
-            mp.setOnCompletionListener { onStateChanged() }
+            mp.setOnCompletionListener {
+                if (pendingPlayback != null) completeHandoff(playing = false)
+                onStateChanged()
+            }
             mp.setOnSeekCompleteListener { onStateChanged() }
             mp.setOnErrorListener { _, _, _ -> release(); true }
             mp.setDataSource(beatFile.absolutePath)
@@ -132,7 +143,6 @@ class BeatPlayer(
         // An explicit play retries preparation after a transient decoder/storage failure.
         if (smoothPlayback == null && !isPreparingLoop && hasMarkerLoop()) setMarkers(markers)
         when {
-            isPreparingLoop -> resumeAfterPreparation = true
             smoothPlayback != null -> smoothPlayback?.play()
             else -> player?.start()
         }
@@ -143,7 +153,7 @@ class BeatPlayer(
     /** Pauses playback. No-op if not playing. */
     fun pause() {
         onPauseRequested()
-        resumeAfterPreparation = false
+        if (pendingPlayback != null) completeHandoff(playing = false)
         smoothPlayback?.pause()
         player?.takeIf { it.isPlaying }?.pause()
         updateLoopWakeLock()
@@ -163,7 +173,7 @@ class BeatPlayer(
         if (!prepared) return
         val clamped = positionMs.coerceIn(0, durationMs)
         when {
-            isPreparingLoop -> preparationPositionMs = clamped
+            pendingPlayback != null -> completeHandoff(isPlaying, clamped, continuation = false)
             smoothPlayback != null -> smoothPlayback?.seekTo(clamped)
             else -> player?.seekTo(clamped)
         }
@@ -178,6 +188,10 @@ class BeatPlayer(
         isLooping = !isLooping
         player?.isLooping = isLooping
         smoothPlayback?.configure(markerFrames(), isLooping)
+        pendingPlayback?.let {
+            it.configure(markerFrames(), isLooping)
+            if (handoffFadeStartMs == null) planHandoff(it)
+        }
         onStateChanged()
         return isLooping
     }
@@ -190,7 +204,7 @@ class BeatPlayer(
         if (volume.isNaN()) return
         this.volume = volume.coerceIn(0f, 1f)
         if (this.volume > 0f) lastAudibleVolume = this.volume
-        player?.setVolume(this.volume, this.volume)
+        applyVolume()
         smoothPlayback?.setVolume(this.volume)
     }
 
@@ -213,21 +227,23 @@ class BeatPlayer(
         if (!prepared) return
         markers = value.toList()
         smoothPlayback?.let { it.configure(markerFrames(), isLooping); return }
+        pendingPlayback?.let {
+            it.configure(markerFrames(), isLooping)
+            if (handoffFadeStartMs == null) planHandoff(it)
+            return
+        }
         if (!hasMarkerLoop() || isPreparingLoop) return
         val source = loadedFile ?: return
         val directory = context?.cacheDir ?: source.parentFile ?: return
         val cancelled = AtomicBoolean(false)
         loopPreparation = cancelled
-        preparationPositionMs = currentPositionMs
-        resumeAfterPreparation = isPlaying
-        player?.takeIf { it.isPlaying }?.pause()
         isPreparingLoop = true
         updateLoopWakeLock()
         onStateChanged()
-        val main = Handler(Looper.getMainLooper())
+        val main = Handler(Looper.getMainLooper()).also { handoffHandler = it }
         Thread({
             val decoded = runCatching {
-                val pcm = PcmBeatDecoder.decode(source, directory, cancelled::get)
+                val pcm = decodeLoopAudio(source, directory, cancelled::get)
                 try { Pair(pcm, PcmSources.prepare(pcm, cancelled::get)) }
                 catch (problem: Exception) { pcm.file.delete(); throw problem }
             }
@@ -236,30 +252,49 @@ class BeatPlayer(
                     decoded.getOrNull()?.second?.close()
                     return@post
                 }
-                isPreparingLoop = false
                 decoded.onSuccess { (pcm, audio) ->
+                    val playing = isPlaying
+                    val positionMs = currentPositionMs
                     loopPcm = pcm
                     sampleRate = pcm.sampleRate
-                    smoothPlayback = SmoothLoopPlayback(
-                        pcm, audio, preparationPositionMs, markerFrames(), isLooping, volume,
+                    lateinit var next: SmoothLoopPlayback
+                    next = SmoothLoopPlayback(
+                        pcm, audio, positionMs, markerFrames(), isLooping, if (playing) 0f else volume,
+                        continueFromCurrentPosition = true,
+                        onPrimed = { version -> scheduleHandoff(next, version) },
+                        onOutputStarted = { beginHandoffBlend(next) },
                         onStateChanged = {
                             if (!cancelled.get() && loopPreparation === cancelled) { updateLoopWakeLock(); onStateChanged() }
                         },
                         onFailure = { failure ->
                             if (!cancelled.get() && loopPreparation === cancelled) {
                                 Log.e(TAG, "Smooth loop playback failed", failure)
-                                release()
+                                if (pendingPlayback === next) {
+                                    cancelHandoffCallbacks()
+                                    next.close()
+                                    pendingPlayback = null
+                                    loopPcm = null
+                                    loopPreparation = null
+                                    isPreparingLoop = false
+                                    applyVolume()
+                                    onStateChanged()
+                                } else release()
                                 context?.let { Toast.makeText(it, "Couldn't play loop audio", Toast.LENGTH_LONG).show() }
                             }
                         },
                     )
-                    if (resumeAfterPreparation) smoothPlayback?.play()
+                    if (playing) {
+                        pendingPlayback = next
+                        planHandoff(next)
+                    } else {
+                        smoothPlayback = next
+                        isPreparingLoop = false
+                    }
                 }.onFailure { failure ->
                     loopPreparation = null
-                    resumeAfterPreparation = false
+                    isPreparingLoop = false
                     Log.e(TAG, "Couldn't prepare loop audio", failure)
                     context?.let { Toast.makeText(it, "Couldn't prepare smooth loop audio", Toast.LENGTH_LONG).show() }
-                    player?.seekTo(preparationPositionMs)
                 }
                 updateLoopWakeLock()
                 onStateChanged()
@@ -267,8 +302,95 @@ class BeatPlayer(
         }, "Beat loop decoder").apply { isDaemon = true; start() }
     }
 
+    private fun cancelHandoffCallbacks() {
+        handoffTask?.let { handoffHandler?.removeCallbacks(it) }
+        handoffTask = null
+        handoffFadeStartMs = null
+    }
+
+    private fun planHandoff(next: SmoothLoopPlayback) {
+        if (pendingPlayback !== next) return
+        cancelHandoffCallbacks()
+        if (player?.isPlaying != true) { completeHandoff(playing = false); return }
+        val plan = PlaybackHandoff.plan(currentPositionMs, durationMs, isLooping, SystemClock.uptimeMillis())
+        handoffPlan = plan
+        handoffVersion = next.prepareContinuation(plan.positionMs)
+    }
+
+    private fun scheduleHandoff(next: SmoothLoopPlayback, version: Long) {
+        if (pendingPlayback !== next || version != handoffVersion) return
+        val plan = handoffPlan ?: return
+        val task = Runnable {
+            if (pendingPlayback !== next || version != handoffVersion) return@Runnable
+            if (player?.isPlaying != true) { completeHandoff(playing = false); onStateChanged(); return@Runnable }
+            if (!plan.isAligned(currentPositionMs, durationMs, isLooping, SystemClock.uptimeMillis()) ||
+                !next.startPrepared(version)) {
+                planHandoff(next) // A slow prefetch or delayed callback must not replay stale audio.
+            }
+        }
+        handoffTask = task
+        handoffHandler?.postAtTime(task, plan.startAtMs)
+    }
+
+    private fun beginHandoffBlend(next: SmoothLoopPlayback) {
+        if (pendingPlayback !== next || handoffFadeStartMs != null || !next.isPlaying) return
+        if (player?.isPlaying != true) { completeHandoff(playing = false); onStateChanged(); return }
+        handoffFadeStartMs = SystemClock.uptimeMillis()
+        val task = object : Runnable {
+            override fun run() {
+                if (pendingPlayback !== next) return
+                if (!next.isPlaying) {
+                    // Restore the audible player immediately while the output's
+                    // completion/failure callback resolves the pending handoff.
+                    cancelHandoffCallbacks()
+                    applyVolume()
+                    return
+                }
+                applyVolume()
+                if (handoffProgress() >= 1f) {
+                    completeHandoff(playing = true)
+                    updateLoopWakeLock()
+                    onStateChanged()
+                } else handoffHandler?.postDelayed(this, 5)
+            }
+        }
+        handoffTask = task
+        task.run()
+    }
+
+    private fun handoffProgress(): Float = handoffFadeStartMs?.let {
+        ((SystemClock.uptimeMillis() - it) / 30f).coerceIn(0f, 1f)
+    } ?: 0f
+
+    private fun applyVolume() {
+        val progress = if (pendingPlayback != null) handoffProgress() else 0f
+        val oldVolume = volume * (1f - progress)
+        player?.setVolume(oldVolume, oldVolume)
+        pendingPlayback?.setVolume(volume * progress)
+    }
+
+    /** Pause/seek cancels the blend; normal completion preserves the primed output. */
+    private fun completeHandoff(playing: Boolean, positionMs: Int? = null, continuation: Boolean = true) {
+        val next = pendingPlayback ?: return
+        val position = positionMs ?: currentPositionMs
+        cancelHandoffCallbacks()
+        if (!playing || positionMs != null) {
+            next.pause()
+            next.seekTo(position, continueFromCurrentPosition = continuation)
+        }
+        player?.takeIf { it.isPlaying }?.pause()
+        player?.setVolume(volume, volume)
+        next.setVolume(volume)
+        smoothPlayback = next
+        pendingPlayback = null
+        handoffPlan = null
+        isPreparingLoop = false
+        if (playing && positionMs != null) next.play()
+        updateLoopWakeLock()
+    }
+
     private fun updateLoopWakeLock() {
-        if (isPlaying && (isPreparingLoop || smoothPlayback != null)) {
+        if (isPlaying && smoothPlayback != null) {
             if (loopWakeLock == null) loopWakeLock = context?.getSystemService(PowerManager::class.java)
                 ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Ghostwriter:marker-loop")
                 ?.apply { setReferenceCounted(false) }
@@ -293,8 +415,11 @@ class BeatPlayer(
         loopPreparation?.set(true)
         loopPreparation = null
         isPreparingLoop = false
-        resumeAfterPreparation = false
         markers = emptyList()
+        cancelHandoffCallbacks()
+        pendingPlayback?.close()
+        pendingPlayback = null
+        handoffPlan = null
         smoothPlayback?.close()
         smoothPlayback = null
         loopPcm = null

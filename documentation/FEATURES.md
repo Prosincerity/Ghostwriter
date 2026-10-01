@@ -65,7 +65,9 @@ release schedule.
   so each repeat is up to 3 ms shorter. Marker positions are saved as audio
   frames; old projects migrate when opened.
   Waveforms are cached; processing supports cancel and retry, with a warning
-  for long audio files.
+  for long audio files. Playback and controls remain available during waveform
+  and loop-audio preparation. PCM playback continues from the live beat position
+  using silent buffering and a short volume blend; a user pause remains paused.
 - [ ] **Instrumentals library** — browse and reuse beats across projects;
   assigned beats remain copied into each project.
 - [ ] **Android Auto** — browse project instrumentals using offline playback

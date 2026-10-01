@@ -15,6 +15,8 @@ import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class BeatPlayerInstrumentedTest {
@@ -152,23 +154,166 @@ class BeatPlayerInstrumentedTest {
     }
 
     @Test
+    fun playingDuringPreparation_continuesAtLivePositionWithoutRestartingAtLoopStart() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val finishDecode = holdLoopDecode(player)
+        val file = createPcm16Wav("beat-player-continuous-preparation.wav", 10000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.play()
+            player.setMarkers(listOf(WaveformMarker("Start", 4000, MarkerLoopRole.START)))
+            assertTrue(player.isPlaying)
+            assertTrue(player.isPreparingLoop)
+        }
+        waitUntil("MediaPlayer stopped advancing during preparation") { player.currentPositionMs > 100 }
+        instrumentation.runOnMainSync {
+            player.setMarkers(listOf(WaveformMarker("Start", 3000, MarkerLoopRole.START)))
+            finishDecode.countDown()
+        }
+        waitUntil("PCM preparation did not finish", 10000) { !player.isPreparingLoop }
+        assertTrue(player.isPlaying)
+        assertTrue("PCM handoff restarted at the loop start", player.currentPositionMs in 100..2500)
+        val position = player.currentPositionMs
+        waitUntil("PCM playback did not continue advancing") { player.currentPositionMs > position + 100 }
+    }
+
+    @Test
+    fun handoffPastLoopEnd_continuesCurrentPassWithoutJumpingBack() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val finishDecode = holdLoopDecode(player)
+        val file = createPcm16Wav("beat-player-continuation-tail.wav", 10000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.setMarkers(listOf(
+                WaveformMarker("Start", 1000, MarkerLoopRole.START),
+                WaveformMarker("End", 3000, MarkerLoopRole.END),
+            ))
+            player.seekTo(5000)
+        }
+        waitUntil("Seek did not finish") { player.currentPositionMs in 4900..5100 }
+        instrumentation.runOnMainSync { player.play() }
+        waitUntil("Playback did not advance") { player.currentPositionMs > 5100 }
+        finishDecode.countDown()
+        waitUntil("Handoff did not finish", 10000) { !player.isPreparingLoop }
+        assertTrue(player.isPlaying)
+        assertTrue("Handoff jumped to a loop boundary", player.currentPositionMs in 5100..8000)
+    }
+
+    @Test
+    fun pauseWhilePcmIsPriming_cancelsScheduledStart() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val finishDecode = holdLoopDecode(player)
+        val file = createPcm16Wav("beat-player-handoff-pause.wav", 10000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.setMarkers(listOf(WaveformMarker("Start", 3000, MarkerLoopRole.START)))
+            player.play()
+        }
+        finishDecode.countDown()
+        waitUntil("PCM did not start priming", 10000) { player.isHandingOff }
+        instrumentation.runOnMainSync { player.pause() }
+        assertFalse(player.isPlaying)
+        assertFalse(player.isPreparingLoop)
+        val position = player.currentPositionMs
+        // Run beyond the scheduled start to catch a stale timer or output callback.
+        val barrier = CountDownLatch(1)
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ barrier.countDown() }, 300)
+        assertTrue(barrier.await(2, TimeUnit.SECONDS))
+        assertFalse(player.isPlaying)
+        assertTrue(kotlin.math.abs(player.currentPositionMs - position) < 50)
+    }
+
+    @Test
     fun seekAndPauseDuringPreparation_preserveLatestTransportIntent() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val player = createPlayer()
+        val finishDecode = holdLoopDecode(player)
         val file = createPcm16Wav("beat-player-preparation-intent.wav", 2000)
         instrumentation.runOnMainSync {
             assertTrue(player.load(file))
             player.setMarkers(listOf(WaveformMarker("End", 1500, MarkerLoopRole.END)))
             player.play()
-            player.seekTo(700)
             player.pause()
+            player.seekTo(700)
             assertTrue(player.isPreparingLoop)
-            assertEquals(700, player.currentPositionMs)
             assertFalse(player.isPlaying)
         }
+        waitUntil("MediaPlayer lost seek during preparation") { player.currentPositionMs in 650..750 }
+        finishDecode.countDown()
         waitUntil("PCM preparation did not finish", 10000) { !player.isPreparingLoop }
         assertFalse(player.isPlaying)
         waitUntil("Prepared player lost latest seek") { player.currentPositionMs in 650..750 }
+    }
+
+    @Test
+    fun disablingLoopDuringPreparation_keepsCurrentPositionAtHandoff() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val finishDecode = holdLoopDecode(player)
+        val file = createPcm16Wav("beat-player-preparation-disable-loop.wav", 10000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.setMarkers(listOf(WaveformMarker("Start", 4000, MarkerLoopRole.START)))
+            player.toggleLoop()
+            player.play()
+        }
+        waitUntil("Playback did not advance during decoding") { player.currentPositionMs > 100 }
+        finishDecode.countDown()
+        waitUntil("PCM preparation did not finish", 10000) { !player.isPreparingLoop }
+        assertTrue(player.isPlaying)
+        assertTrue("Disabled loop restarted at a marker", player.currentPositionMs < 4000)
+    }
+
+    @Test
+    fun failedPreparation_keepsAudiblePlaybackRunning() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val finishDecode = holdLoopDecode(player, fail = true)
+        val file = createPcm16Wav("beat-player-preparation-failure.wav", 10000)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.play()
+            player.setMarkers(listOf(WaveformMarker("Start", 4000, MarkerLoopRole.START)))
+        }
+        waitUntil("Playback did not advance during decoding") { player.currentPositionMs > 100 }
+        finishDecode.countDown()
+        waitUntil("Failed decoding stayed pending", 10000) { !player.isPreparingLoop }
+        assertTrue(player.isReady)
+        assertTrue(player.isPlaying)
+        val position = player.currentPositionMs
+        waitUntil("Failure stopped playback") { player.currentPositionMs > position + 100 }
+    }
+
+    @Test
+    fun completionDuringPreparation_doesNotRestartPlayback() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val finishDecode = holdLoopDecode(player)
+        val file = createPcm16Wav("beat-player-preparation-completion.wav", 500)
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(file))
+            player.toggleLoop()
+            player.setMarkers(listOf(WaveformMarker("End", 400, MarkerLoopRole.END)))
+            player.play()
+        }
+        waitUntil("Nonlooping playback did not finish") { !player.isPlaying }
+        finishDecode.countDown()
+        waitUntil("PCM preparation did not finish", 10000) { !player.isPreparingLoop }
+        assertFalse(player.isPlaying)
+    }
+
+    /** Hold decoding off the UI thread so transport assertions do not race fast fixtures. */
+    private fun holdLoopDecode(player: BeatPlayer, fail: Boolean = false): CountDownLatch {
+        val finish = CountDownLatch(1).also { pendingDecodes += it }
+        player.decodeLoopAudio = { source, directory, cancelled ->
+            check(finish.await(15, TimeUnit.SECONDS)) { "Test never released decoding" }
+            if (fail) error("Decoder failure for test")
+            PcmBeatDecoder.decode(source, directory, cancelled)
+        }
+        return finish
     }
 
     @Test
@@ -198,6 +343,7 @@ class BeatPlayerInstrumentedTest {
         waitUntil("Failed stream retained its PCM file") { !pcm.exists() }
     }
 
+    private val pendingDecodes = mutableListOf<CountDownLatch>()
     private val generatedFiles = mutableListOf<File>()
     private var beatPlayer: BeatPlayer? = null
 
@@ -205,6 +351,8 @@ class BeatPlayerInstrumentedTest {
     fun releasePlayerAndDeleteGeneratedAudio() {
         beatPlayer?.release()
         beatPlayer = null
+        pendingDecodes.forEach { it.countDown() }
+        pendingDecodes.clear()
         generatedFiles.forEach(File::delete)
         generatedFiles.clear()
     }

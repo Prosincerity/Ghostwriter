@@ -124,7 +124,7 @@ fun EditorScreen(
     var cancellationRequested by remember(projectTitle) { mutableStateOf(false) }
     var waveformPreparationCancelled by remember(projectTitle) { mutableStateOf(false) }
     var waveformPreparationFailed by remember(projectTitle) { mutableStateOf(false) }
-    var autoPlayWhenWaveformReady by remember(projectTitle) { mutableStateOf(false) }
+    var autoPlayWhenBeatReady by remember(projectTitle) { mutableStateOf(false) }
     var isImportedBeatPreparation by remember(projectTitle) { mutableStateOf(false) }
     var approvedLongBeatPath by remember(projectTitle) { mutableStateOf<String?>(null) }
     var pendingLongBeatPreparation by remember(projectTitle) {
@@ -216,15 +216,15 @@ fun EditorScreen(
     }
 
     // Decoding a full beat can take noticeable time, so it happens once for
-    // each assigned/reassigned beat on IO. Playback waits for this work so the
-    // player never appears before waveform.dat has been written.
+    // each assigned/reassigned beat on IO. Playback is loaded independently so
+    // waveform preparation, cancellation and retry never interrupt the beat.
     LaunchedEffect(beatFile, waveformRevision) {
         val currentBeat = beatFile
         if (currentBeat == null) {
             waveformAmplitudes = IntArray(0)
             isWaveformLoading = false
             isBeatReady = false
-            autoPlayWhenWaveformReady = false
+            autoPlayWhenBeatReady = false
             isImportedBeatPreparation = false
             waveformPreparationCancelled = false
             waveformPreparationFailed = false
@@ -239,7 +239,14 @@ fun EditorScreen(
         waveformPreparationCancelled = false
         waveformPreparationFailed = false
         isWaveformLoading = true
-        isBeatReady = false
+        playback.setBeatTitle(metadata.beatOriginalName ?: currentBeat.nameWithoutExtension)
+        isBeatReady = beatPlayer.ensureLoaded(currentBeat)
+        if (isBeatReady) beatPlayer.setMarkers(metadata.markers)
+        else Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
+        // Consume import autoplay before any suspension so a later user pause
+        // cannot be overridden by waveform loading or warning approval.
+        if (isBeatReady && autoPlayWhenBeatReady) beatPlayer.play()
+        autoPlayWhenBeatReady = false
         try {
             val cachedWaveform = withContext(Dispatchers.IO) {
                 ProjectStorage.loadCachedWaveform(
@@ -271,24 +278,18 @@ fun EditorScreen(
             if (cancellation.get()) throw CancellationException()
             if (waveformAmplitudes.isEmpty()) {
                 waveformPreparationFailed = true
-                autoPlayWhenWaveformReady = false
+                autoPlayWhenBeatReady = false
                 isImportedBeatPreparation = false
                 return@LaunchedEffect
             }
 
-            playback.setBeatTitle(metadata.beatOriginalName ?: currentBeat.nameWithoutExtension)
-            isBeatReady = beatPlayer.ensureLoaded(currentBeat)
-            if (isBeatReady) beatPlayer.setMarkers(metadata.markers)
-            if (isBeatReady && autoPlayWhenWaveformReady) beatPlayer.play()
-            autoPlayWhenWaveformReady = false
             isImportedBeatPreparation = false
-            if (!isBeatReady) {
-                Toast.makeText(context, "Couldn't play the selected audio file", Toast.LENGTH_SHORT).show()
-            }
         } catch (cancellation: CancellationException) {
             if (!cancellationRequested) throw cancellation
             if (beatFile == currentBeat) {
                 if (removeBeatOnCancellation) {
+                    beatPlayer.release()
+                    isBeatReady = false
                     val removalRevision = projectMutationRevision.incrementAndGet()
                     val updatedMetadata = removeBeatAndLoadMetadata()
                     if (removalRevision == projectMutationRevision.get()) {
@@ -301,7 +302,7 @@ fun EditorScreen(
                     waveformPreparationCancelled = true
                 }
                 waveformAmplitudes = IntArray(0)
-                autoPlayWhenWaveformReady = false
+                autoPlayWhenBeatReady = false
             }
         } finally {
             if (waveformCancellation === cancellation) {
@@ -358,7 +359,7 @@ fun EditorScreen(
                 imported.onSuccess { (assigned, updatedMetadata) ->
                     metadata = updatedMetadata
                     approvedLongBeatPath = null
-                    autoPlayWhenWaveformReady = true
+                    autoPlayWhenBeatReady = true
                     isImportedBeatPreparation = true
                     beatFile = assigned
                     waveformRevision++
@@ -580,7 +581,6 @@ fun EditorScreen(
             cancelRemovesImportedBeat = pendingBeat.removeBeatOnCancel,
             onProcess = {
                 approvedLongBeatPath = pendingBeat.file.absolutePath
-                autoPlayWhenWaveformReady = true
                 isImportedBeatPreparation = pendingBeat.removeBeatOnCancel
                 beatFile = pendingBeat.file
                 waveformRevision++
@@ -591,6 +591,9 @@ fun EditorScreen(
                 if (!pendingBeat.removeBeatOnCancel) {
                     waveformPreparationCancelled = true
                 } else {
+                    beatPlayer.release()
+                    isBeatReady = false
+                    autoPlayWhenBeatReady = false
                     removeBeatFromEditor {
                         Toast.makeText(context, "Beat import cancelled", Toast.LENGTH_SHORT).show()
                     }
