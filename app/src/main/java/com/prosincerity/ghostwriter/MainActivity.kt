@@ -14,6 +14,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.core.net.toUri
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.media.BeatPlaybackService
@@ -72,6 +74,7 @@ private fun GhostwriterApp(
     onOpenExternalLink: (Context, String) -> Boolean,
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var projects by remember { mutableStateOf(ProjectStorage.listProjects(context)) }
@@ -104,6 +107,7 @@ private fun GhostwriterApp(
                         ProjectStorage.deleteProject(context, title)
                     }
                     if (deleted) {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         refreshProjects()
                     } else {
                         withContext(Dispatchers.Main.immediate) {

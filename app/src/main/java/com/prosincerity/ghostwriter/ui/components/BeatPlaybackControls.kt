@@ -27,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.media.BeatPlayer
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
@@ -40,6 +42,7 @@ internal fun BeatPlaybackControls(
     onReassignBeat: () -> Unit,
     isReassigningBeat: Boolean,
 ) {
+    val haptics = LocalHapticFeedback.current
     var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
     val isMuted = volume == 0f
     val isLooping = beatPlayer.isLooping
@@ -60,19 +63,28 @@ internal fun BeatPlaybackControls(
             modifier = Modifier.align(Alignment.Center),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(shape = GhostButtonShape, onClick = onPlayFromStart) {
+            IconButton(shape = GhostButtonShape, onClick = {
+                onPlayFromStart()
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+            }) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
                     contentDescription = "Play from start",
                 )
             }
-            IconButton(shape = GhostButtonShape, onClick = onTogglePlayback) {
+            IconButton(shape = GhostButtonShape, onClick = {
+                onTogglePlayback()
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+            }) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
                 )
             }
-            IconButton(shape = GhostButtonShape, onClick = { beatPlayer.toggleLoop() }) {
+            IconButton(shape = GhostButtonShape, onClick = {
+                beatPlayer.toggleLoop()
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+            }) {
                 Icon(
                     imageVector = Icons.Filled.Loop,
                     contentDescription = if (isLooping) "Disable loop" else "Enable loop",
@@ -93,6 +105,7 @@ internal fun BeatPlaybackControls(
                 onClick = {
                     beatPlayer.toggleMute()
                     volume = beatPlayer.volume
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                 },
                 modifier = Modifier.size(32.dp),
             ) {

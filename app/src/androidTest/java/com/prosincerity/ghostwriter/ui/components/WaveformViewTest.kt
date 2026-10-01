@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.click
@@ -35,6 +39,53 @@ import org.junit.runner.RunWith
 class WaveformViewTest {
     @get:Rule
     val composeRule = createComposeRule()
+
+    private val feedback = mutableListOf<HapticFeedbackType>()
+    private val haptics = object : HapticFeedback {
+        override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
+            feedback += hapticFeedbackType
+        }
+    }
+
+    @Test fun waveformLongPress_ticksOnceAndRequestsMarker() {
+        var addedAt: Long? = null
+        renderWaveform(mutableStateOf(emptyList()), onAdd = { addedAt = it })
+        composeRule.onNodeWithTag("Waveform").performTouchInput {
+            longClick(Offset(width * 0.5f, height * 0.75f))
+        }
+        composeRule.runOnIdle {
+            assertEquals(5000f, addedAt!!.toFloat(), 2f)
+            assertEquals(listOf(HapticFeedbackType.SegmentTick), feedback)
+        }
+    }
+
+    @Test fun scrubbingAcrossMarker_ticksInBothDirections() {
+        val markers = mutableStateOf(listOf(marker("Middle", 5000, MarkerLoopRole.NONE)))
+        renderWaveform(markers)
+        drag(0.1f, 0.9f)
+        drag(0.9f, 0.1f)
+        composeRule.runOnIdle {
+            assertEquals(List(2) { HapticFeedbackType.SegmentFrequentTick }, feedback)
+        }
+    }
+
+    @Test fun playbackUpdatesTapsAndZoomedPanningAreSilent() {
+        val position = mutableStateOf(0L)
+        val markers = mutableStateOf(listOf(marker("Middle", 3000, MarkerLoopRole.NONE)))
+        renderWaveform(markers, initialViewport = WaveformViewport(zoom = 2f), position = position)
+        composeRule.runOnIdle { position.value = 6000 }
+        composeRule.onNodeWithTag("Waveform").performTouchInput {
+            click(Offset(width * 0.2f, height * 0.75f))
+        }
+        drag(0.1f, 0.9f)
+        composeRule.runOnIdle { assertTrue(feedback.isEmpty()) }
+    }
+
+    @Test fun scrubWithoutCrossingMarker_isSilent() {
+        renderWaveform(mutableStateOf(listOf(marker("End", 9000, MarkerLoopRole.NONE))))
+        drag(0.1f, 0.6f)
+        composeRule.runOnIdle { assertTrue(feedback.isEmpty()) }
+    }
 
     @Test
     fun startMarker_remainsDraggableAndEditableAfterAddingAndMovingEnd() {
@@ -216,35 +267,39 @@ class WaveformViewTest {
         markers: MutableState<List<WaveformMarker>>,
         onSeek: (Long) -> Unit = {},
         initialViewport: WaveformViewport = WaveformViewport(),
+        position: MutableState<Long> = mutableStateOf(0L),
+        onAdd: (Long) -> Unit = {},
         onClick: (WaveformMarker) -> Unit = {},
     ) {
         val viewport = mutableStateOf(initialViewport)
         composeRule.setContent {
-            GhostwriterTheme {
-                // Keep the label at the top of the waveform below system bars
-                // in the edge-to-edge test activity, as in the editor's Scaffold.
-                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
-                    WaveformView(
-                        amplitudes = intArrayOf(1000, 2000, 1000),
-                        durationMs = DURATION_MS,
-                        currentPositionMs = 0,
-                        markers = markers.value,
-                        onSeekFinished = onSeek,
-                        onAddMarker = {},
-                        onMarkerClick = onClick,
-                        onMarkerMoveFinished = { marker, position ->
-                            // Use the editor's reference lookup and list normalization.
-                            val index = markers.value.indexOfFirst { it === marker }
-                            if (index >= 0) {
-                                markers.value = markers.value.toMutableList().apply {
-                                    this[index] = marker.atPositionMs(position, SAMPLE_RATE)
-                                }.map { it.withSampleRate(SAMPLE_RATE) }
-                            }
-                        },
-                        viewport = viewport.value,
-                        onViewportChange = { viewport.value = it },
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                    )
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                GhostwriterTheme {
+                    // Keep the label at the top of the waveform below system bars
+                    // in the edge-to-edge test activity, as in the editor's Scaffold.
+                    Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                        WaveformView(
+                            amplitudes = intArrayOf(1000, 2000, 1000),
+                            durationMs = DURATION_MS,
+                            currentPositionMs = position.value,
+                            markers = markers.value,
+                            onSeekFinished = onSeek,
+                            onAddMarker = onAdd,
+                            onMarkerClick = onClick,
+                            onMarkerMoveFinished = { marker, position ->
+                                // Use the editor's reference lookup and list normalization.
+                                val index = markers.value.indexOfFirst { it === marker }
+                                if (index >= 0) {
+                                    markers.value = markers.value.toMutableList().apply {
+                                        this[index] = marker.atPositionMs(position, SAMPLE_RATE)
+                                    }.map { it.withSampleRate(SAMPLE_RATE) }
+                                }
+                            },
+                            viewport = viewport.value,
+                            onViewportChange = { viewport.value = it },
+                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                        )
+                    }
                 }
             }
         }

@@ -7,7 +7,11 @@ import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assert
@@ -53,6 +57,13 @@ class EditorScreenTest {
     @get:Rule
     // Queue resumptions after IO instead of running recomposition on the IO worker.
     val composeRule = createComposeRule(StandardTestDispatcher())
+
+    private val feedback = mutableListOf<HapticFeedbackType>()
+    private val haptics = object : HapticFeedback {
+        override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
+            feedback += hapticFeedbackType
+        }
+    }
 
     private val context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -202,6 +213,7 @@ class EditorScreenTest {
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 ProjectStorage.loadLatest(projectDir) == lyrics
             }
+            composeRule.runOnIdle { assertTrue(feedback.isEmpty()) }
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }
@@ -228,6 +240,10 @@ class EditorScreenTest {
             }
             val originalPosition = ProjectStorage.loadMetadata(projectDir, projectTitle)
                 .markers.single().positionMs
+            composeRule.waitUntil(5_000) { feedback.size == 2 }
+            composeRule.runOnIdle {
+                assertEquals(List(2) { HapticFeedbackType.SegmentTick }, feedback)
+            }
             val storedMarker = ProjectStorage.loadMetadata(projectDir, projectTitle).markers.single()
             assertEquals(8000, storedMarker.sampleRate)
             assertEquals(originalPosition * 8, storedMarker.frameIndex)
@@ -253,6 +269,7 @@ class EditorScreenTest {
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 ProjectStorage.loadMetadata(projectDir, projectTitle).markers.singleOrNull()?.label == "Chorus"
             }
+            composeRule.runOnIdle { assertEquals(2, feedback.size) }
 
             composeRule.onNodeWithTag("Waveform marker Chorus").performSemanticsAction(
                 SemanticsActions.OnClick,
@@ -264,6 +281,8 @@ class EditorScreenTest {
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 ProjectStorage.loadMetadata(projectDir, projectTitle).markers.isEmpty()
             }
+            composeRule.waitUntil(5_000) { feedback.size == 3 }
+            composeRule.runOnIdle { assertEquals(HapticFeedbackType.LongPress, feedback.last()) }
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }
@@ -336,6 +355,8 @@ class EditorScreenTest {
                 ProjectStorage.getProjectBeatFile(projectDir, metadata) == null &&
                     metadata.beatFile == null && metadata.beatOriginalName == null
             }
+            composeRule.waitUntil(5_000) { feedback.isNotEmpty() }
+            composeRule.runOnIdle { assertEquals(listOf(HapticFeedbackType.LongPress), feedback) }
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }
@@ -436,14 +457,16 @@ class EditorScreenTest {
         onOpenDictionary: () -> Unit = {},
     ) {
         composeRule.setContent {
-            if (showEditor.value) {
-                GhostwriterTheme {
-                    EditorScreen(
-                        projectTitle = projectTitle,
-                        onBack = { showEditor.value = false },
-                        onOpenSettings = {},
-                        onOpenDictionary = onOpenDictionary,
-                    )
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                if (showEditor.value) {
+                    GhostwriterTheme {
+                        EditorScreen(
+                            projectTitle = projectTitle,
+                            onBack = { showEditor.value = false },
+                            onOpenSettings = {},
+                            onOpenDictionary = onOpenDictionary,
+                        )
+                    }
                 }
             }
         }
