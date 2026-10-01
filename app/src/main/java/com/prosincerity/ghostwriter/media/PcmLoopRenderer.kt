@@ -31,11 +31,13 @@ internal class PcmLoopRenderer(
     var loops = 0L
         private set
     private var active = bounds.get()
+    private var finishInitialTail = false
 
-    fun seek(frame: Long) {
+    fun seek(frame: Long, continueFromCurrentPosition: Boolean = false) {
         active = bounds.get()
         position = frame.coerceIn(0, source.frames)
-        if (active.enabled && position >= active.end) position = active.start
+        finishInitialTail = continueFromCurrentPosition && active.enabled && position >= active.end && position < source.frames
+        if (active.enabled && position >= active.end && !finishInitialTail) position = active.start
         outputFrames = 0
         loops = 0
         source.requestFrame(position)
@@ -45,6 +47,7 @@ internal class PcmLoopRenderer(
         val updated = bounds.get()
         if (updated !== active) {
             active = updated
+            finishInitialTail = false
             if (active.enabled && position >= active.end) position = active.start
         }
         val channels = source.channels
@@ -53,17 +56,19 @@ internal class PcmLoopRenderer(
         events.record(outputFrames, position)
         source.requestFrame(position)
         while (written < capacity) {
-            val end = if (active.enabled) active.end else source.frames
+            val end = if (active.enabled && !finishInitialTail) active.end else source.frames
             if (position >= end) {
                 if (!active.enabled) break
                 position = active.start + active.crossfade
+                finishInitialTail = false
                 loops++
                 events.record(outputFrames + written, position)
                 source.requestFrame(position)
             }
-            val fadeStart = active.end - active.crossfade
+            val playbackEnd = if (active.enabled && !finishInitialTail) active.end else source.frames
+            val fadeStart = playbackEnd - active.crossfade
             val mixing = active.enabled && active.crossfade > 0 && position >= fadeStart
-            val limit = if (mixing) active.end else if (active.enabled && active.crossfade > 0) fadeStart else end
+            val limit = if (mixing) playbackEnd else if (active.enabled && active.crossfade > 0) fadeStart else playbackEnd
             val count = minOf((capacity - written).toLong(), limit - position, (head.size / channels).toLong()).toInt()
             if (count <= 0) break
             var copied = source.copyFrames(position, destination, written, count)

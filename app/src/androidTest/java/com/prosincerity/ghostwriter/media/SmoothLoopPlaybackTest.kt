@@ -132,6 +132,49 @@ class SmoothLoopPlaybackTest {
         }
     }
 
+    @Test fun continuation_primesSilentlyAndStartsOnlyWhenAuthorized() {
+        val source = ObservedSource(MemoryPcmSource(ShortArray(16000) { 1000 }, 1))
+        val primed = CountDownLatch(1)
+        val started = CountDownLatch(1)
+        val failure = AtomicReference<Exception?>()
+        val callbackThread = AtomicReference<Thread?>()
+        lateinit var playback: SmoothLoopPlayback
+        var version = -1L
+        instrumentation.runOnMainSync {
+            playback = SmoothLoopPlayback(
+                pcm = PcmBeat(File(instrumentation.targetContext.cacheDir, "priming-only.pcm"), 8000, 1, 16000),
+                source = source,
+                initialPositionMs = 0,
+                range = null,
+                looping = false,
+                initialVolume = 0f,
+                onStateChanged = {},
+                onFailure = { failure.set(it) },
+                onPrimed = { callbackThread.set(Thread.currentThread()); primed.countDown() },
+                onOutputStarted = { started.countDown() },
+            )
+            version = playback.prepareContinuation(700)
+        }
+        try {
+            assertTrue("Output never primed", primed.await(5, TimeUnit.SECONDS))
+            assertNull(failure.get())
+            assertFalse(playback.isPlaying)
+            assertEquals(1L, started.count)
+            assertSame(android.os.Looper.getMainLooper().thread, callbackThread.get())
+            instrumentation.runOnMainSync {
+                assertFalse(playback.startPrepared(version - 1))
+                assertTrue(playback.startPrepared(version))
+            }
+            assertTrue("Output never started", started.await(5, TimeUnit.SECONDS))
+            assertTrue(playback.isPlaying)
+            assertTrue(playback.currentPositionMs >= 700)
+            assertNull(failure.get())
+        } finally {
+            instrumentation.runOnMainSync { playback.close() }
+            assertTrue(source.closed.await(5, TimeUnit.SECONDS))
+        }
+    }
+
     private fun playback(
         source: PcmSource,
         range: MarkerLoopFrames?,

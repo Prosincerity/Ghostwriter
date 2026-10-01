@@ -1,17 +1,17 @@
 # Graph Report - Gh0stwrit3r  (2026-10-01)
 
 ## Corpus Check
-- 366 files · ~579,515 words
+- 368 files · ~581,666 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 2065 file(s) not represented in the graph (top: (none) 1892, .xml 82, .test 17)
 
 ## Summary
-- 4563 nodes · 11042 edges · 236 communities (144 shown, 92 thin omitted)
-- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 1439 edges (avg confidence: 0.85)
+- 4600 nodes · 11189 edges · 234 communities (141 shown, 93 thin omitted)
+- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 1449 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `fb968bfe`
+- Built from commit: `71934c7f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,7 +23,7 @@
 - ProjectStorageTest
 - WaveformViewport
 - edge-to-edge/SKILL.md
-- assertequals
+- androidjunit4
 - WaveformExtractor
 - android.content.Context
 - VoiceSettingsTest
@@ -31,8 +31,8 @@
 - WaveformView.kt
 - What You Must Do When Invoked
 - PcmBeatDecoderTest
-- event.c
-- TextToSpeechTestCase
+- ProjectMetadata
+- TextToSpeechTestCase.java
 - graphify reference: extra exports and benchmark
 - Investigation Protocol
 - graphify reference: query, path, explain
@@ -42,7 +42,7 @@
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
 - extraction-spec.md
-- Android
+- .setMarkers
 - EditorScreen
 - dictionary.c
 - compiledata.c
@@ -52,9 +52,8 @@
 - tests/readclause.c
 - WaveformMarker
 - SpeechSynthesis
-- speech.c
 - tests/encoding.c
-- espeak_ng_Initialize
+- Synthesize
 - TestConnection
 - EditorScreen.kt
 - Text to Phoneme Translation
@@ -63,28 +62,29 @@
 - eSpeakActivity
 - ucd_script_
 - ttsengine.cpp
-- LyricsNotepadTest.kt
+- LyricTextStyleTest.kt
 - ucd_properties
 - mbrowrap.c
 - EditorScreenTest.kt
 - Android Profiler Orchestrator
 - espeak_Initialize
-- Diacritics
+- Phoneme Features and the International Phonetic Alphabet
 - VoiceVariantPreference.java
-- compiledict.c
+- translate.c
 - WaveformViewTest.kt
-- SelectPhonemeTable
+- BeatPlayerInstrumentedTest
 - Phoneme Model
 - eSpeakService.c
-- LyricsNotepad
-- DictionaryInstaller.kt
+- LyricsNotepadTest.kt
+- event.c
 - Querying Perfetto traces
 - PlaybackFocusState
 - FrameManagerImpl
 - Synthesizing Perfetto Trace Configs (Mix & Match)
-- SystemFontFile
+- .availableFonts
 - Diacritics
-- tr_languages.c
+- compiledict.c
+- PcmBeat
 - speechPlayer.cpp
 - TtsService
 - .excludedWords
@@ -94,7 +94,7 @@
 - SSML (Speech Synthesis Markup Language)
 - DictionarySearch
 - ucd_category_
-- DictionaryArchiveSource
+- DictionaryDownloadsTest.kt
 - speechWaveGenerator.cpp
 - VoiceVariant
 - klatt.c
@@ -111,7 +111,7 @@
 - unpackDictionaryArchive
 - printdata.py
 - ucd.py
-- CheckVoiceDataTest
+- BeatPlaybackServiceTest
 - Tune Definitions
 - Diacritics
 - SpeechWaveGeneratorImpl
@@ -121,41 +121,43 @@
 - utils.h
 - uprintf
 - Analysis Orchestrator
-- ProjectInfoBpmTest.kt
+- BeatPlaybackServiceTest.kt
 - espeak_api.c
 - EditorMarkerDialogsTest.kt
 - uprintf
 - Resonator
 - Change Log
 - System-Wide Triage
-- ProjectStorage
+- MainActivityTest
 - Getting `trace_processor` working
 - lb.md
 - MBROLA Voices
 - Kirshenbaum (ASCII-IPA) Transcription Scheme
 - CascadeFormantGenerator
-- eSpeakNGWorker
+- main
+- SettingsScreen.kt
 - Third-party software and dictionary data
+- BeatPlaybackService.kt
 - perfetto_sql.md
 - printucddata_cpp.cpp
 - Vowels
 - guiding_principles.md
 - Q: Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability.
-- Configuration Files
-- DownloadVoiceData.java
+- MemoryPcmSource
+- ImportVoicePreference.java
 - ProcessSsmlTag
-- .fromIpa
+- .excludedWords
 - WaveformCache
-- DictionaryHeadword
+- tr_languages.c
 - Android CLI Specialist
 - eSpeak NG user guide
 - hints_cpu.md
 - PcmLoopRenderer
-- .excludedWords
+- DictionaryHeadword
 - hints_graphics.md
 - Dictionaries
-- numbers.md
-- Voice Attributes
+- .parse
+- LoadSpectSeq
 - Using eSpeak NG as a library
 - espeak-ng
 - Q: Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?
@@ -174,8 +176,8 @@
 - Third-party software and dictionary data
 - hints_ipc.md
 - Feature roadmap
-- DictionaryScreen
-- IpaSearchKeys
+- DictionaryScreenTest.kt
+- SystemFontFile
 - PlaybackFrameLedger
 - Releasing
 - Ghostwriter
@@ -183,45 +185,45 @@
 - Dictionary data license and attribution
 - LyricTextSettings
 - hints_memory.md
-- .parse
-- AssonanceFormFilter
+- Configuration Files
+- LyricTextAlignment
 - sPlayer.c
 - hints_power.md
+- DictionaryInstaller
 - GhostwriterTheme
-- main
+- espeak_ng_PrintStatusCodeMessage
 - Language Attributes
 - MainActivity.kt
 - .writeText
-- ReadClause
+- ProjectStorage
 - PlaybackNotificationUpdater
-- ExampleInstrumentedTest.kt
-- Synthesize
+- Diacritics
+- void
 - Build setup
 - Java_com_prosincerity_ghostwriter_data_EspeakIpa_nativePhonemize
-- espeak-ng.c
-- ContextWrapper
-- EspeakIpa
-- .plan
+- eSpeakNGWorker
+- getopt.c
+- DictionaryInstaller.kt
+- ParallelFormantGenerator
 - Settings
-- SettingsFormatTest.kt
-- voices.c
+- SettingsScreen
+- LoadVoice
 - AssonanceData
 - Contribution Guide
-- DictionaryDownloads
-- SettingsScreen
+- espeak_SetUriCallback
 - Translation fuzzers
+- EspeakIpa
+- SynthCallback
 - WaveformWarningTest.kt
-- InputStream
-- FramePositionEvents
-- Playback and waveforms
-- ProjectInfoDialog.kt
+- espeak_callback
+- ProjectInfoDialog
 
 ## God Nodes (most connected - your core abstractions)
 1. `ucd_script_` - 186 edges
 2. `script` - 186 edges
-3. `WaveformMarker` - 68 edges
-4. `BeatPlayer` - 62 edges
-5. `GhostwriterTheme()` - 56 edges
+3. `WaveformMarker` - 74 edges
+4. `BeatPlayer` - 73 edges
+5. `GhostwriterTheme()` - 57 edges
 6. `SpeechSynthesis` - 49 edges
 7. `ProjectStorageTest` - 42 edges
 8. `ucd_properties()` - 38 edges
@@ -237,33 +239,33 @@
   documentation/README.md → app/src/main/java/com/prosincerity/ghostwriter/media/PcmLoopRenderer.kt
 - `Playback and waveforms` --references--> `PcmRingBuffer`  [INFERRED]
   documentation/README.md → app/src/main/java/com/prosincerity/ghostwriter/media/PcmRingBuffer.kt
-- `Playback and waveforms` --references--> `PlaybackFrameLedger`  [INFERRED]
-  documentation/README.md → app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFrameLedger.kt
+- `Playback and waveforms` --references--> `SmoothLoopPlayback`  [INFERRED]
+  documentation/README.md → app/src/main/java/com/prosincerity/ghostwriter/media/SmoothLoopPlayback.kt
 
 ## Import Cycles
 - None detected.
 
-## Communities (236 total, 92 thin omitted)
+## Communities (234 total, 93 thin omitted)
 
 ### Community 1 - ".configure"
-Cohesion: 0.16
-Nodes (13): Building, Cross Compilation, eSpeak NG Feature Configuration, Extended Dictionary Configuration, LLVM Fuzzer Support, Sanitizer Flag Configuration, Bugs, Build Dependencies (+5 more)
+Cohesion: 0.08
+Nodes (27): Android, Building, Building, Building eSpeak NG, Building with Gradle, Cross Compilation, Dependencies, Dependencies (+19 more)
 
 ### Community 2 - "synthesize.c"
 Cohesion: 0.06
-Nodes (48): CalcLengths(), DoEmbedded2(), SetSpeed(), SetSpeedFactors(), SetSpeedMods(), SetSpeedMultiplier(), GetMbrName(), MbrolaGenerate() (+40 more)
+Nodes (49): CalcLengths(), DoEmbedded2(), SetSpeed(), SetSpeedFactors(), SetSpeedMods(), SetSpeedMultiplier(), GetMbrName(), MbrolaGenerate() (+41 more)
 
 ### Community 6 - "edge-to-edge/SKILL.md"
 Cohesion: 0.12
 Nodes (16): Adaptive Scaffolds, Checklist, Dialogs, IME, IMEs with Scaffolds code patterns, IMEs without Scaffolds code patterns, Lists, Navigation Bar Contrast \& System Bar Icons (+8 more)
 
 ### Community 8 - "WaveformExtractor"
-Cohesion: 0.11
-Nodes (4): WaveformExtractorInstrumentedTest, DecoderProgressGuard, WaveformExtractor, WaveformExtractorTest
+Cohesion: 0.08
+Nodes (6): WaveformExtractorInstrumentedTest, DecoderProgressGuard, WaveformExtractor, PlaybackHandoff, WaveformExtractorTest, PlaybackHandoffTest
 
 ### Community 9 - "android.content.Context"
-Cohesion: 0.07
-Nodes (5): EspeakApp, ImportVoicePreference, SpeakPunctuationPreference, PrefsEspeakFragment, TtsSettingsActivity
+Cohesion: 0.08
+Nodes (4): EspeakApp, SpeakPunctuationPreference, PrefsEspeakFragment, TtsSettingsActivity
 
 ### Community 12 - "script"
 Cohesion: 0.01
@@ -277,12 +279,8 @@ Nodes (24): For /graphify add and --watch, For /graphify query, For the commit h
 Cohesion: 0.11
 Nodes (3): PcmBeatDecoderTest, PcmBeatDecoder, PcmBeatDecoderTest
 
-### Community 19 - "event.c"
-Cohesion: 0.10
-Nodes (24): add_time_in_ms(), clock_gettime2(), event_clear_all(), event_copy(), event_declare(), event_delete(), event_init(), event_notify() (+16 more)
-
-### Community 20 - "TextToSpeechTestCase"
-Cohesion: 0.16
+### Community 20 - "TextToSpeechTestCase.java"
+Cohesion: 0.15
 Nodes (5): TextToSpeechTest, TextToSpeechTestCase, Exception, Voice, VoiceData
 
 ### Community 21 - "graphify reference: extra exports and benchmark"
@@ -309,73 +307,61 @@ Nodes (3): For git commit hook, For native CLAUDE.md integration, graphify refer
 Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
-### Community 30 - "Android"
-Cohesion: 0.14
-Nodes (14): Android, Building, Building eSpeak NG, Building with Gradle, Dependencies, Dependencies, Dependencies, Installing (+6 more)
-
-### Community 31 - "EditorScreen"
-Cohesion: 0.24
-Nodes (3): EditorScreenTest, EditorScreen(), PendingBeatPreparation
-
 ### Community 32 - "dictionary.c"
-Cohesion: 0.10
-Nodes (49): AppendPhonemes(), DecodePhonemes(), DollarRule(), GetVowelStress(), HashDictionary(), InitGroups(), IsLetter(), IsLetterGroup() (+41 more)
+Cohesion: 0.07
+Nodes (63): is_str_totally_null(), IsAlpha(), IsBracket(), utf8_out(), AppendPhonemes(), DecodePhonemes(), DollarRule(), GetTranslatedPhonemeString() (+55 more)
 
 ### Community 33 - "compiledata.c"
-Cohesion: 0.07
-Nodes (64): Read4Bytes(), StringToWord(), CalculateSample(), CallPhoneme(), CheckNextChar(), clean_context(), CompileElif(), CompileElse() (+56 more)
+Cohesion: 0.08
+Nodes (58): Read4Bytes(), StringToWord(), CalculateSample(), CallPhoneme(), CheckNextChar(), clean_context(), CompileElif(), CompileElse() (+50 more)
 
 ### Community 34 - "HomeScreen.kt"
 Cohesion: 0.14
 Nodes (3): HomeScreen(), NewProjectDialog(), RenameProjectDialog()
 
 ### Community 35 - "PcmRingBuffer"
-Cohesion: 0.06
-Nodes (13): ObservedSource, SmoothLoopPlaybackTest, PcmSource, PcmBeat, Loop, Page, PcmRingBuffer, Region (+5 more)
+Cohesion: 0.14
+Nodes (5): Loop, Page, PcmRingBuffer, Region, PcmRingBufferTest
 
 ### Community 36 - "Recording Perfetto Traces on Android (Helper Scripts)"
 Cohesion: 0.20
 Nodes (9): 0. Download the Helper Scripts, 1. Memory Tracing, 2. Stack Sampling / Callstack Profiling (traced_perf), 3. System Tracing (CPU, Scheduling, & ATrace), 4. Custom Configs (Mix & Match Data Sources), A. Java Heap Dump (ART), B. Native C/C++ Heap Profiling (heapprofd), C. System-wide Memory Counters (+1 more)
 
 ### Community 38 - "tests/readclause.c"
-Cohesion: 0.15
-Nodes (23): clause_type_from_codepoint(), main(), set_text(), test_arabic(), test_armenian(), test_devanagari(), test_ethiopic(), test_fullwidth() (+15 more)
+Cohesion: 0.12
+Nodes (32): AnnouncePunctuation(), CheckPhonemeMode(), clause_type_from_codepoint(), Eof(), GetC(), IsRomanU(), ReadClause(), RemoveChar() (+24 more)
 
 ### Community 39 - "WaveformMarker"
-Cohesion: 0.07
-Nodes (10): BeatPlayerInstrumentedTest, ProjectMetadata, WaveformMarker, indexOfSelectedMarker(), MarkerLoopFrames, MarkerLoopRange, replaceLoopMarker(), EditorMarkerDialogs() (+2 more)
+Cohesion: 0.17
+Nodes (8): WaveformMarker, indexOfSelectedMarker(), MarkerLoopFrames, MarkerLoopRange, replaceLoopMarker(), WaveformMarkerDialog(), EditorMarkerDialogs(), MarkerLoopTest
 
 ### Community 40 - "SpeechSynthesis"
 Cohesion: 0.08
 Nodes (3): SpeechSynthesisTest, SpeechSynthesis, SynthReadyCallback
 
-### Community 41 - "speech.c"
-Cohesion: 0.09
-Nodes (5): ieee_extended_to_double(), espeak_SetUriCallback(), espeak_callback(), main(), SynthCallback()
-
 ### Community 42 - "tests/encoding.c"
-Cohesion: 0.20
-Nodes (45): create_text_decoder(), destroy_text_decoder(), espeak_ng_EncodingFromName(), null_decoder_getc(), string_decoder_getc_auto(), string_decoder_getc_codepage(), string_decoder_getc_iso_10646_ucs_2(), string_decoder_getc_us_ascii() (+37 more)
+Cohesion: 0.19
+Nodes (46): create_text_decoder(), destroy_text_decoder(), espeak_ng_EncodingFromName(), null_decoder_getc(), string_decoder_getc_auto(), string_decoder_getc_codepage(), string_decoder_getc_iso_10646_ucs_2(), string_decoder_getc_us_ascii() (+38 more)
 
-### Community 43 - "espeak_ng_Initialize"
-Cohesion: 0.08
-Nodes (30): create_espeak_char(), create_espeak_key(), create_espeak_mark(), create_espeak_parameter(), create_espeak_punctuation_list(), create_espeak_terminated_msg(), create_espeak_text(), create_espeak_voice_name() (+22 more)
+### Community 43 - "Synthesize"
+Cohesion: 0.09
+Nodes (35): create_espeak_char(), create_espeak_key(), create_espeak_mark(), create_espeak_parameter(), create_espeak_punctuation_list(), create_espeak_terminated_msg(), create_espeak_text(), create_espeak_voice_name() (+27 more)
 
 ### Community 44 - "TestConnection"
 Cohesion: 0.12
 Nodes (7): openDictionaryArchive(), FilterInputStream, DictionaryArchiveSourceTest, ByteArrayInputStream, InputStream, ByteArrayInputStream, TestConnection
 
 ### Community 45 - "EditorScreen.kt"
-Cohesion: 0.09
-Nodes (3): rememberBeatPlayback(), ServiceConnection, displayNameFor()
+Cohesion: 0.08
+Nodes (4): rememberBeatPlayback(), ServiceConnection, displayNameFor(), PendingBeatPreparation
 
 ### Community 46 - "Text to Phoneme Translation"
 Cohesion: 0.10
 Nodes (21): Character Substitution, Conditional Rules, Flags, Letter groups, Letter names, Multiple Words, Numbers, Numbers and Character Names (+13 more)
 
 ### Community 47 - "wavegen.c"
-Cohesion: 0.10
-Nodes (31): GetFrameRms(), MarkerEvent(), MbrolaFill(), WritePitch(), AdvanceParameters(), ApplyBreath(), espeak_ng_SetConstF0(), espeak_ng_SetOutputHooks() (+23 more)
+Cohesion: 0.08
+Nodes (36): espeak_ng_SetRandSeed(), espeak_rand(), espeak_srand(), GetFrameRms(), MarkerEvent(), MbrolaFill(), MbrolaReset(), WritePitch() (+28 more)
 
 ### Community 48 - "demo.js"
 Cohesion: 0.06
@@ -390,12 +376,8 @@ Cohesion: 0.01
 Nodes (184): ucd_script_, UCD_SCRIPT_Adlm, UCD_SCRIPT_Afak, UCD_SCRIPT_Aghb, UCD_SCRIPT_Ahom, UCD_SCRIPT_Arab, UCD_SCRIPT_Armi, UCD_SCRIPT_Armn (+176 more)
 
 ### Community 51 - "ttsengine.cpp"
-Cohesion: 0.10
-Nodes (17): espeak_callback(), espeak_status_to_hresult(), TtsEngine, AddRef, TtsEngine_CreateInstance(), GetObjectToken, GetOutputFormat, GetStringValue (+9 more)
-
-### Community 52 - "LyricsNotepadTest.kt"
 Cohesion: 0.09
-Nodes (15): LyricFontFamily, CURSIVE, MONOSPACE, SANS_SERIF, SERIF, SYSTEM_DEFAULT, LyricTextAlignment, CENTER (+7 more)
+Nodes (16): espeak_callback(), espeak_status_to_hresult(), TtsEngine, AddRef, TtsEngine_CreateInstance(), GetObjectToken, GetOutputFormat, GetStringValue (+8 more)
 
 ### Community 53 - "ucd_properties"
 Cohesion: 0.23
@@ -405,37 +387,29 @@ Nodes (29): properties_Cc(), properties_Cf(), properties_Cn(), properties_Ll(), 
 Cohesion: 0.11
 Nodes (20): close_mbrola(), close_pipes(), create_pipes(), err(), flush_mbrola(), free_pending_data(), init_mbrola(), lastErrorStr_mbrola() (+12 more)
 
-### Community 55 - "EditorScreenTest.kt"
-Cohesion: 0.07
-Nodes (3): AboutScreenTest, HomeScreenTest, ProjectInfoDialogTest
-
 ### Community 56 - "Android Profiler Orchestrator"
 Cohesion: 0.22
 Nodes (7): Environment setup, Set `$SKILL_ROOT`, Analysis, Android Profiler Orchestrator, Intent Disambiguation, Prerequisites and Setup, Recording
 
 ### Community 57 - "espeak_Initialize"
-Cohesion: 0.19
-Nodes (24): espeak_Initialize(), espeak_Synth(), espeak_ng_InitializePath(), espeak_ng_Synthesize(), main(), test_espeak_initialize(), test_espeak_ng_phoneme_events(), _test_espeak_ng_phoneme_events_cb() (+16 more)
+Cohesion: 0.18
+Nodes (23): espeak_Initialize(), espeak_SetVoiceByName(), espeak_SetVoiceByProperties(), espeak_Synth(), main(), test_espeak_initialize(), _test_espeak_ng_phoneme_events_cb(), test_espeak_ng_synthesize() (+15 more)
 
-### Community 58 - "Diacritics"
-Cohesion: 0.07
-Nodes (30): Air Flow, Articulation, Backness, Co-articulation, Consonant Release, Consonants, Diacritics, Fortis and Lenis (+22 more)
+### Community 58 - "Phoneme Features and the International Phonetic Alphabet"
+Cohesion: 0.10
+Nodes (20): Backness, Consonants, Gemination, Height, Intonation, Length, Manner of Articulation, Other Symbols (+12 more)
 
 ### Community 59 - "VoiceVariantPreference.java"
-Cohesion: 0.13
-Nodes (9): FileListAdapter, ViewHolder, InformationListAdapter, ViewHolder, VariantDataListAdapter, ViewHolder, VoiceVariantPreference, ResourceIdListAdapter (+1 more)
+Cohesion: 0.11
+Nodes (10): FileListAdapter, ViewHolder, InformationListAdapter, ViewHolder, VariantData, VariantDataListAdapter, ViewHolder, VoiceVariantPreference (+2 more)
 
-### Community 60 - "compiledict.c"
-Cohesion: 0.06
-Nodes (60): espeak_ng_SetRandSeed(), espeak_rand(), espeak_srand(), is_str_totally_null(), IsAlpha(), IsBracket(), IsDigit(), IsDigit09() (+52 more)
+### Community 60 - "translate.c"
+Cohesion: 0.11
+Nodes (32): IsSpace(), towlower2(), utf8_in(), utf8_in2(), MakePhonemeList(), ReInterpretPhoneme(), SetRegressiveVoicing(), SubstitutePhonemes() (+24 more)
 
 ### Community 61 - "WaveformViewTest.kt"
-Cohesion: 0.14
+Cohesion: 0.12
 Nodes (5): WaveformViewTest, MarkerLoopRole, END, NONE, START
-
-### Community 62 - "SelectPhonemeTable"
-Cohesion: 0.20
-Nodes (9): MakePhonemeList(), ReInterpretPhoneme(), SetRegressiveVoicing(), SubstitutePhonemes(), LookupPhonemeTable(), SelectPhonemeTable(), SelectPhonemeTableName(), SetUpPhonemeTable() (+1 more)
 
 ### Community 63 - "Phoneme Model"
 Cohesion: 0.07
@@ -445,9 +419,9 @@ Nodes (28): Active Articulators, Air Flow, Co-articulation, Co-articulation, Con
 Cohesion: 0.20
 Nodes (16): getJniEnv(), Java_com_reecedunn_espeak_SpeechSynthesis_nativeClassInit(), Java_com_reecedunn_espeak_SpeechSynthesis_nativeCreate(), Java_com_reecedunn_espeak_SpeechSynthesis_nativeGetAvailableVoices(), Java_com_reecedunn_espeak_SpeechSynthesis_nativeGetParameter(), Java_com_reecedunn_espeak_SpeechSynthesis_nativeGetVersion(), Java_com_reecedunn_espeak_SpeechSynthesis_nativeSetParameter(), Java_com_reecedunn_espeak_SpeechSynthesis_nativeSetPunctuationCharacters() (+8 more)
 
-### Community 66 - "DictionaryInstaller.kt"
-Cohesion: 0.11
-Nodes (10): DictionaryAsset, DictionaryInstaller, DictionaryLanguage, DictionaryRelease, DictionarySource, ESPEAK, WIKTIONARY, DictionarySearchData (+2 more)
+### Community 66 - "event.c"
+Cohesion: 0.17
+Nodes (18): add_time_in_ms(), clock_gettime2(), event_clear_all(), event_copy(), event_declare(), event_delete(), event_init(), event_notify() (+10 more)
 
 ### Community 67 - "Querying Perfetto traces"
 Cohesion: 0.22
@@ -461,24 +435,24 @@ Nodes (15): FrameManagerImpl, curFrame, curFrameIsNULL, frameRequestQueue, lastU
 Cohesion: 0.29
 Nodes (6): Data sources at a glance, Exemplar configs, Pitfalls, Shape of a config, Synthesizing Perfetto Trace Configs (Mix & Match), Top-level knobs
 
-### Community 71 - "SystemFontFile"
-Cohesion: 0.13
-Nodes (7): SystemFontCatalogTest, LyricFont, lyricFontFromPreference(), SystemFontFile, systemFontOptions(), SystemFontCatalog, LyricFontTest
-
 ### Community 72 - "Diacritics"
 Cohesion: 0.09
 Nodes (22): Articulation, Co-articulation, Conlang X-SAMPA Transcription Scheme, Consonant Release, Consonants, Diacritics, Intonation, Length (+14 more)
 
-### Community 74 - "tr_languages.c"
-Cohesion: 0.33
-Nodes (15): (Re)definition of character groups, SetLengthMods(), NewTranslator(), ProcessLanguageOptions(), ResetLetterBits(), SelectTranslator(), SetArabicLetters(), SetCyrillicLetters() (+7 more)
+### Community 73 - "compiledict.c"
+Cohesion: 0.08
+Nodes (31): CloseWavFile(), OpenWavFile(), SynthCallback(), Write4Bytes(), IsDigit(), IsDigit09(), isspace2(), clean_context() (+23 more)
+
+### Community 74 - "PcmBeat"
+Cohesion: 0.31
+Nodes (3): PcmBeat, PcmSources, PcmSourceTest
 
 ### Community 75 - "speechPlayer.cpp"
 Cohesion: 0.15
 Nodes (10): create, speechPlayer_getLastIndex(), speechPlayer_initialize(), speechPlayer_queueFrame(), speechPlayer_synthesize(), SpeechWaveGenerator, create, setFrameManager (+2 more)
 
 ### Community 76 - "TtsService"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (4): TextToSpeechServiceTest, TtsServiceTest, TtsService, Voice
 
 ### Community 77 - ".excludedWords"
@@ -493,41 +467,41 @@ Nodes (32): category, Cc, Cf, Cn, Co, Cs, Ii, Ll (+24 more)
 Cohesion: 0.33
 Nodes (5): Perfetto Trace Analysis, Step 1: Identify what to investigate first, Step 2: Run a system-wide triage, Step 3: Investigate each branch in parallel, Step 4: Final report and consolidation
 
+### Community 80 - "index.md"
+Cohesion: 0.20
+Nodes (4): eSpeak NG online documentation, Languages, Language Options, Numbers
+
 ### Community 81 - "SSML (Speech Synthesis Markup Language)"
 Cohesion: 0.11
 Nodes (18): audio, break, emphasis, HTML, HTML, mark, p, prosody (+10 more)
 
 ### Community 83 - "DictionarySearch"
-Cohesion: 0.32
+Cohesion: 0.42
 Nodes (4): DictionarySearchInstrumentedTest, Row, DictionaryPronunciations, DictionarySearch
 
 ### Community 84 - "ucd_category_"
 Cohesion: 0.06
 Nodes (32): ucd_category_, UCD_CATEGORY_Cc, UCD_CATEGORY_Cf, UCD_CATEGORY_Cn, UCD_CATEGORY_Co, UCD_CATEGORY_Cs, UCD_CATEGORY_Ii, UCD_CATEGORY_Ll (+24 more)
 
-### Community 85 - "DictionaryArchiveSource"
-Cohesion: 0.17
-Nodes (7): DictionaryInstallerInstrumentedTest, ByteArrayInputStream, dictionaryArchive(), withDictionaryTestContext(), DictionaryDownloadsTest, DictionaryArchiveSource, IpaGenerator
+### Community 85 - "DictionaryDownloadsTest.kt"
+Cohesion: 0.11
+Nodes (9): DictionaryInstallerInstrumentedTest, ByteArrayInputStream, dictionaryArchive(), withDictionaryTestContext(), ContextWrapper, DictionaryDownloadsTest, InputStream, DictionaryArchiveSource (+1 more)
 
 ### Community 86 - "speechWaveGenerator.cpp"
 Cohesion: 0.12
 Nodes (10): FrequencyGenerator, lastCyclePos, sampleRate, NoiseGenerator, lastValue, VoiceGenerator, aspirationGen, glottisOpen (+2 more)
 
-### Community 87 - "VoiceVariant"
-Cohesion: 0.17
-Nodes (3): VoiceVariantTest, VariantData, VoiceVariant
-
 ### Community 88 - "klatt.c"
-Cohesion: 0.19
-Nodes (18): antiresonator(), DBtoLIN(), flutter(), frame_init(), gen_noise(), impulsive_source(), KlattInit(), KlattReset() (+10 more)
+Cohesion: 0.16
+Nodes (17): antiresonator(), DBtoLIN(), flutter(), frame_init(), gen_noise(), impulsive_source(), KlattFini(), natural_source() (+9 more)
 
 ### Community 89 - "ucd_category_group_"
 Cohesion: 0.10
 Nodes (22): ucd_get_category_group_for_category(), ucd_lookup_category_group(), category_group, C, I, M, N, P (+14 more)
 
 ### Community 91 - "intonation.c"
-Cohesion: 0.27
-Nodes (11): calc_pitch_segment(), calc_pitches(), calc_pitches2(), CalcPitches(), CalcPitches_Tone(), count_increments(), count_pitch_vowels(), CountUnstressed() (+3 more)
+Cohesion: 0.21
+Nodes (14): calc_pitch_segment(), calc_pitches(), calc_pitches2(), CalcPitches(), CalcPitches_Tone(), count_increments(), count_pitch_vowels(), CountUnstressed() (+6 more)
 
 ### Community 92 - "Recording Orchestrator"
 Cohesion: 0.40
@@ -565,10 +539,6 @@ Nodes (22): Articulation, Co-articulation, Consonant Release, Consonants, Diacri
 Cohesion: 0.15
 Nodes (11): FrameManager, getCurrentFrame, getLastIndex, queueFrame, SpeechWaveGeneratorImpl, cascade, frameManager, fricGenerator (+3 more)
 
-### Community 106 - "BeatPlaybackService"
-Cohesion: 0.05
-Nodes (5): BeatPlaybackServiceTest, ServiceConnection, BeatPlaybackService, Callback, LocalBinder
-
 ### Community 107 - "comentrypoints.c"
 Cohesion: 0.27
 Nodes (6): ClassFactory_AddRef(), ClassFactory_LockServer(), ClassFactory_QueryInterface(), ClassFactory_Release(), DllCanUnloadNow(), DllGetClassObject()
@@ -590,16 +560,16 @@ Cohesion: 0.50
 Nodes (3): Analysis Orchestrator, Handling Composite Requests, Workflow Discovery and Routing
 
 ### Community 114 - "espeak_api.c"
-Cohesion: 0.15
-Nodes (11): espeak_Char(), espeak_CompileDictionary(), espeak_Key(), espeak_SetParameter(), espeak_SetPunctuationList(), espeak_SetVoiceByFile(), espeak_SetVoiceByName(), espeak_SetVoiceByProperties() (+3 more)
+Cohesion: 0.17
+Nodes (9): espeak_Char(), espeak_CompileDictionary(), espeak_Key(), espeak_SetParameter(), espeak_SetPunctuationList(), espeak_SetVoiceByFile(), espeak_Synth_Mark(), status_to_espeak_error() (+1 more)
 
 ### Community 116 - "uprintf"
 Cohesion: 0.23
 Nodes (10): ucd_tolower(), ucd_totitle(), ucd_toupper(), ucd_lookup_script(), fget_utf8c(), fput_utf8c(), main(), print_file() (+2 more)
 
 ### Community 117 - "Resonator"
-Cohesion: 0.10
-Nodes (19): ParallelFormantGenerator, r1, r2, r3, r4, r5, r6, sampleRate (+11 more)
+Cohesion: 0.17
+Nodes (11): Resonator, a, anti, b, bandwidth, c, frequency, p1 (+3 more)
 
 ### Community 118 - "Change Log"
 Cohesion: 0.17
@@ -625,9 +595,9 @@ Nodes (11): Consonants, Diacritics, Kirshenbaum (ASCII-IPA) Transcription Scheme
 Cohesion: 0.18
 Nodes (10): CascadeFormantGenerator, r1, r2, r3, r4, r5, r6, rN0 (+2 more)
 
-### Community 126 - "eSpeakNGWorker"
-Cohesion: 0.11
-Nodes (10): eSpeakNGWorker, current_voice, pitch, rate, samplerate, voices, event_set_callback(), espeak_GetParameter() (+2 more)
+### Community 126 - "main"
+Cohesion: 0.10
+Nodes (20): DisplayVoices(), main(), PrintVersion(), event_set_callback(), fifo_is_busy(), LoadConfig(), espeak_GetParameter(), espeak_Info() (+12 more)
 
 ### Community 128 - "Third-party software and dictionary data"
 Cohesion: 0.33
@@ -645,37 +615,45 @@ Nodes (8): Diphthongs, English, Long Vowels, Reduced Vowels, References, Rhotic 
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability., Source Nodes
 
-### Community 135 - "Configuration Files"
-Cohesion: 0.12
-Nodes (16): Accent (optional), Adding or Improving a Language, Adding tests, Building Phonemes, Compiling Rules File for Debugging, Configuration Files, Considerations Before Preparation, Dictionary Files (+8 more)
+### Community 135 - "MemoryPcmSource"
+Cohesion: 0.16
+Nodes (5): ObservedSource, SmoothLoopPlaybackTest, PcmSource, MemoryPcmSource, PcmSource
 
-### Community 137 - "DownloadVoiceData.java"
-Cohesion: 0.11
-Nodes (5): CheckVoiceData, AsyncExtract, DownloadVoiceData, ExtractProgress, FileUtils
+### Community 137 - "ImportVoicePreference.java"
+Cohesion: 0.07
+Nodes (6): CheckVoiceData, AsyncExtract, DownloadVoiceData, ExtractProgress, FileUtils, ImportVoicePreference
 
 ### Community 138 - "ProcessSsmlTag"
-Cohesion: 0.20
-Nodes (16): LookupMnem(), AddNameData(), attr_prosody_value(), attrcmp(), attrlookup(), attrnumber(), GetSsmlAttribute(), GetVoiceAttributes() (+8 more)
+Cohesion: 0.18
+Nodes (18): LookupEnvelopeName(), LookupMnem(), AddNameData(), attr_prosody_value(), attrcmp(), attrcopy_utf8(), attrlookup(), attrnumber() (+10 more)
+
+### Community 139 - ".excludedWords"
+Cohesion: 0.06
+Nodes (17): DictionarySearchMode, ASSONANCE, RHYME, WORD_PREFIX, WORD_SUFFIX, DictionarySearchPlan, Prefix, AssonanceFormFilter (+9 more)
+
+### Community 141 - "tr_languages.c"
+Cohesion: 0.33
+Nodes (15): (Re)definition of character groups, SetLengthMods(), NewTranslator(), ProcessLanguageOptions(), ResetLetterBits(), SelectTranslator(), SetArabicLetters(), SetCyrillicLetters() (+7 more)
 
 ### Community 142 - "Android CLI Specialist"
 Cohesion: 0.07
-Nodes (26): Android Interaction Rules, Annotated Screenshot, Input, Screenshot, Text Input, Tools, UI Dump, Handling failure (+18 more)
+Nodes (25): Android Interaction Rules, Annotated Screenshot, Input, Screenshot, Text Input, Tools, UI Dump, Handling failure (+17 more)
 
 ### Community 143 - "eSpeak NG user guide"
 Cohesion: 0.29
 Nodes (7): Error solutions, eSpeak NG user guide, Installation, Linux, Problems with pcaudiolib, Problems with pulseaudio, Windows
 
 ### Community 146 - "PcmLoopRenderer"
-Cohesion: 0.30
-Nodes (3): PcmLoopRenderer, PcmLoopRendererTest, UnavailableSource
+Cohesion: 0.16
+Nodes (5): FramePositionEvents, PcmLoopBounds, PcmLoopRenderer, PcmLoopRendererTest, UnavailableSource
 
 ### Community 149 - "Dictionaries"
 Cohesion: 0.33
 Nodes (6): Dictionaries, Pronunciation lookup, Release inputs and installation, Responsiveness and verification, Search behavior, Using dictionaries
 
-### Community 152 - "Voice Attributes"
-Cohesion: 0.09
-Nodes (22): breath, breathw, consonants, echo, flutter, formant, freq\_add, gender (+14 more)
+### Community 152 - "LoadSpectSeq"
+Cohesion: 0.16
+Nodes (10): ieee_extended_to_double(), GetFrameLength(), LoadFrame(), LoadSpectSeq(), read_double(), SpectFrameCreate(), SpectFrameDestroy(), SpectSeqCreate() (+2 more)
 
 ### Community 153 - "Using eSpeak NG as a library"
 Cohesion: 0.50
@@ -713,13 +691,17 @@ Nodes (5): Downloadable rhyme dictionaries, eSpeak NG 1.52.0, Ghostwriter Dictio
 Cohesion: 0.18
 Nodes (11): About and attribution, Beats and playback, Dictionaries, Feature roadmap, Guiding rules, Implementation guidance, Import, export, and optional sync, Lyric editor (+3 more)
 
-### Community 178 - "DictionaryScreen"
-Cohesion: 0.12
-Nodes (16): DictionaryScreenTest, PronunciationResult, PronunciationSource, ESPEAK_DATABASE, ESPEAK_GENERATED, WIKTIONARY, DictionaryMatch, DictionarySearchMode (+8 more)
+### Community 178 - "DictionaryScreenTest.kt"
+Cohesion: 0.15
+Nodes (10): DictionaryScreenTest, PronunciationResult, PronunciationSource, ESPEAK_DATABASE, ESPEAK_GENERATED, WIKTIONARY, DictionaryMatch, DictionarySearchResult (+2 more)
 
-### Community 179 - "IpaSearchKeys"
-Cohesion: 0.23
-Nodes (4): DictionarySearchPlan, Prefix, IpaSearchKeys, Keys
+### Community 179 - "SystemFontFile"
+Cohesion: 0.30
+Nodes (5): LyricFont, lyricFontFromPreference(), SystemFontFile, systemFontOptions(), LyricFontTest
+
+### Community 181 - "PlaybackFrameLedger"
+Cohesion: 0.16
+Nodes (8): PlaybackFrameLedger, PlaybackFrameLedgerTest, Architecture, Dictionaries, Ghostwriter documentation, Known limitations, Playback and waveforms, Projects and settings
 
 ### Community 182 - "Releasing"
 Cohesion: 0.50
@@ -741,41 +723,49 @@ Nodes (5): Conditions when redistributing, Dictionary data license and attributi
 Cohesion: 0.28
 Nodes (3): LyricTextSettings, LyricTextSettingsTest, LyricTextStyleTest
 
-### Community 190 - "AssonanceFormFilter"
-Cohesion: 0.27
-Nodes (4): AssonanceFormFilter, Entry, PrefixNode, Pronounced
+### Community 189 - "Configuration Files"
+Cohesion: 0.12
+Nodes (16): Accent (optional), Adding or Improving a Language, Adding tests, Building Phonemes, Compiling Rules File for Debugging, Configuration Files, Considerations Before Preparation, Dictionary Files (+8 more)
+
+### Community 190 - "LyricTextAlignment"
+Cohesion: 0.14
+Nodes (13): LyricFontFamily, CURSIVE, MONOSPACE, SANS_SERIF, SERIF, SYSTEM_DEFAULT, LyricTextAlignment, CENTER (+5 more)
 
 ### Community 192 - "sPlayer.c"
-Cohesion: 0.19
-Nodes (12): KlattFini(), fillSpeechPlayerFrame(), isKlattFrameFollowing(), KlattFiniSP(), KlattInitSP(), KlattResetSP(), MIN(), mixWaveFile() (+4 more)
+Cohesion: 0.18
+Nodes (13): KlattInit(), KlattReset(), fillSpeechPlayerFrame(), isKlattFrameFollowing(), KlattFiniSP(), KlattInitSP(), KlattResetSP(), MIN() (+5 more)
+
+### Community 194 - "DictionaryInstaller"
+Cohesion: 0.15
+Nodes (7): DictionaryInstaller, DictionarySource, ESPEAK, WIKTIONARY, DictionarySearchData, DictionarySearchRows, InstalledDictionarySearchData
 
 ### Community 195 - "GhostwriterTheme"
-Cohesion: 0.18
-Nodes (5): BeatComponentsTest, WaveformMarkerDialog(), BeatPlaybackControls(), BeatPlayerPanel(), GhostwriterTheme()
+Cohesion: 0.17
+Nodes (5): BeatComponentsTest, AboutScreenTest, BeatPlaybackControls(), BeatPlayerPanel(), GhostwriterTheme()
 
-### Community 196 - "main"
-Cohesion: 0.24
-Nodes (8): main(), PrintVersion(), create_version_mismatch_error_context(), espeak_ng_ClearErrorContext(), espeak_ng_GetStatusCodeMessage(), espeak_ng_PrintStatusCodeMessage(), espeak_Info(), espeak_ng_GetSampleRate()
+### Community 196 - "espeak_ng_PrintStatusCodeMessage"
+Cohesion: 0.39
+Nodes (4): create_version_mismatch_error_context(), espeak_ng_ClearErrorContext(), espeak_ng_GetStatusCodeMessage(), espeak_ng_PrintStatusCodeMessage()
 
 ### Community 198 - "Language Attributes"
-Cohesion: 0.12
-Nodes (16): brackets, bracketsAnnounced, dictionary, dictmin, dictrules, intonation, Language Attributes, lowercaseSentence (+8 more)
+Cohesion: 0.05
+Nodes (38): brackets, bracketsAnnounced, breath, breathw, consonants, dictionary, dictmin, dictrules (+30 more)
 
 ### Community 200 - "MainActivity.kt"
-Cohesion: 0.13
-Nodes (13): About, Dictionary, DictionaryDownloads, Editor, GhostwriterApp(), Home, MainActivity, openExternalLink() (+5 more)
-
-### Community 202 - "ReadClause"
-Cohesion: 0.17
-Nodes (17): AnnouncePunctuation(), CheckPhonemeMode(), DecodeWithPhonemeMode(), Eof(), GetC(), IgnoreOrReplaceChar(), IsRomanU(), LookupCharName() (+9 more)
+Cohesion: 0.09
+Nodes (17): About, Dictionary, DictionaryDownloads, Editor, GhostwriterApp(), Home, MainActivity, openExternalLink() (+9 more)
 
 ### Community 203 - "PlaybackNotificationUpdater"
 Cohesion: 0.30
 Nodes (3): PlaybackNotificationUpdater, PlaybackNotificationUpdaterTest, TestQueue
 
-### Community 205 - "Synthesize"
-Cohesion: 0.35
-Nodes (9): process_espeak_command(), InitNamedata(), InitText2(), sync_espeak_Char(), sync_espeak_Key(), sync_espeak_Synth(), sync_espeak_Synth_Mark(), Synthesize() (+1 more)
+### Community 204 - "Diacritics"
+Cohesion: 0.20
+Nodes (10): Air Flow, Articulation, Co-articulation, Consonant Release, Diacritics, Fortis and Lenis, Phonation, Rounding and Labialization (+2 more)
+
+### Community 205 - "void"
+Cohesion: 0.20
+Nodes (6): fifo_stop(), fifo_terminate(), SetParameter(), void(), FreePhData(), FreeVoiceList()
 
 ### Community 206 - "Build setup"
 Cohesion: 0.67
@@ -785,67 +775,67 @@ Nodes (3): Build setup, Checkout and build, Requirements
 Cohesion: 0.33
 Nodes (3): copy_bytes(), Java_com_prosincerity_ghostwriter_data_EspeakIpa_nativeInitialize(), Java_com_prosincerity_ghostwriter_data_EspeakIpa_nativePhonemize()
 
-### Community 208 - "espeak-ng.c"
-Cohesion: 0.17
-Nodes (10): gcd(), getopt(), getopt_internal(), getopt_long(), permute_args(), CloseWavFile(), DisplayVoices(), OpenWavFile() (+2 more)
+### Community 208 - "eSpeakNGWorker"
+Cohesion: 0.22
+Nodes (6): eSpeakNGWorker, current_voice, pitch, rate, samplerate, voices
 
-### Community 219 - "SettingsFormatTest.kt"
-Cohesion: 0.30
-Nodes (4): formatPlaybackTime(), formatInterval(), formatTypographyNumber(), SettingsFormatTest
+### Community 209 - "getopt.c"
+Cohesion: 0.57
+Nodes (5): gcd(), getopt(), getopt_internal(), getopt_long(), permute_args()
 
-### Community 220 - "voices.c"
-Cohesion: 0.08
-Nodes (41): GetFileLength(), strncpy0(), CheckTranslator(), LoadConfig(), LoadLanguageOptions(), LookupTune(), SetVoiceStack(), check_data_path() (+33 more)
+### Community 216 - "DictionaryInstaller.kt"
+Cohesion: 0.14
+Nodes (3): DictionaryAsset, DictionaryLanguage, DictionaryRelease
+
+### Community 217 - "ParallelFormantGenerator"
+Cohesion: 0.22
+Nodes (8): ParallelFormantGenerator, r1, r2, r3, r4, r5, r6, sampleRate
+
+### Community 219 - "SettingsScreen"
+Cohesion: 0.18
+Nodes (7): formatPlaybackTime(), formatInterval(), formatTypographyNumber(), SettingsDropdownRow(), SettingsScreen(), SettingsSliderRow(), SettingsFormatTest
+
+### Community 220 - "LoadVoice"
+Cohesion: 0.11
+Nodes (28): GetFileLength(), strncpy0(), SetVoiceStack(), check_data_path(), LoadMbrolaTable(), system_data_dirs(), DoVoiceChange(), AddToVoicesList() (+20 more)
 
 ### Community 222 - "Contribution Guide"
 Cohesion: 0.67
 Nodes (3): Contribution Guide, Simple steps for your feedback, Steps for your contribution
 
-### Community 223 - "DictionaryDownloads"
-Cohesion: 0.29
-Nodes (4): DictionaryDownloads(), DictionaryDownloadsScreen(), downloadSourceLabel(), dictionaryLanguageLabel()
-
-### Community 225 - "SettingsScreen"
-Cohesion: 0.43
-Nodes (3): SettingsDropdownRow(), SettingsScreen(), SettingsSliderRow()
-
 ### Community 226 - "Translation fuzzers"
 Cohesion: 0.40
 Nodes (4): Configure the project for fuzzing, Look at fuzzer coverage, Run the fuzzers, Translation fuzzers
 
-### Community 233 - "Playback and waveforms"
-Cohesion: 0.33
-Nodes (6): Architecture, Dictionaries, Ghostwriter documentation, Known limitations, Playback and waveforms, Projects and settings
-
-### Community 235 - "ProjectInfoDialog.kt"
-Cohesion: 0.09
-Nodes (4): LongBeatWarningDialog(), ReassignBeatDialog(), ProjectInfoDialog(), trimmedOrNull()
+### Community 235 - "ProjectInfoDialog"
+Cohesion: 0.32
+Nodes (4): parsePositiveBpm(), ProjectInfoDialog(), trimmedOrNull(), ProjectInfoBpmTest
 
 ## Knowledge Gaps
-- **1010 isolated node(s):** `Home`, `WIKTIONARY`, `ESPEAK`, `WIKTIONARY`, `ESPEAK_DATABASE` (+1005 more)
+- **1009 isolated node(s):** `Home`, `WIKTIONARY`, `ESPEAK`, `WIKTIONARY`, `ESPEAK_DATABASE` (+1004 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1532 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **92 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **93 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Work-memory lessons
 
 **Preferred sources** — corroborated by past sessions; start here.
-- `BeatPlaybackService` (3× useful, score=2.922057951)
-- `DictionarySearch` (2× useful, score=1.92387683)
+- `BeatPlaybackService` (3× useful, score=2.919829722)
+- `DictionarySearch` (2× useful, score=1.922409768)
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `script` connect `script` to `ucd.h`, `uprintf`?**
-  _High betweenness centrality (0.094) - this node is a cross-community bridge._
+  _High betweenness centrality (0.083) - this node is a cross-community bridge._
 - **Why does `ucd_script_` connect `ucd_script_` to `uprintf`, `ucd.h`, `uprintf`?**
-  _High betweenness centrality (0.076) - this node is a cross-community bridge._
-- **Why does `WaveformMarker` connect `WaveformMarker` to `BeatPlayer`, `.setMarkers`, `GhostwriterTheme`, `ProjectStorageBeatTest`, `assertequals`, `BeatPlaybackService`, `EditorScreen.kt`, `WaveformView.kt`, `EditorMarkerDialogsTest.kt`, `EditorScreenTest.kt`, `BeatPlayerPanel.kt`, `WaveformViewTest.kt`, `EditorScreen`?**
-  _High betweenness centrality (0.044) - this node is a cross-community bridge._
+  _High betweenness centrality (0.075) - this node is a cross-community bridge._
+- **Why does `BeatPlayer` connect `BeatPlayer` to `GhostwriterTheme`, `WaveformMarker`, `WaveformExtractor`, `BeatPlaybackService`, `PcmBeat`, `EditorScreen.kt`, `SmoothLoopPlayback`, `.setMarkers`, `PlaybackFrameLedger`, `EditorScreenTest.kt`, `BeatPlayerPanel.kt`, `BeatPlayerInstrumentedTest`?**
+  _High betweenness centrality (0.055) - this node is a cross-community bridge._
 - **Are the 13 inferred relationships involving `WaveformMarker` (e.g. with `.frameMarkers_persistExactSamplesWithoutMillisecondRounding()` and `.frameNormalization_repairsStaleMillisecondsWithoutChangingExactFrames()`) actually correct?**
   _`WaveformMarker` has 13 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 24 inferred relationships involving `BeatPlayer` (e.g. with `.freshPlayer_currentPositionIsZero()` and `.freshPlayer_defaultsLoopingToTrue()`) actually correct?**
   _`BeatPlayer` has 24 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Home`, `WIKTIONARY`, `ESPEAK` to the rest of the system?**
-  _1010 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `synthesize.c` be split into smaller, more focused modules?**
-  _Cohesion score 0.06436487638533675 - nodes in this community are weakly interconnected._
+  _1009 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `.configure` be split into smaller, more focused modules?**
+  _Cohesion score 0.07635467980295567 - nodes in this community are weakly interconnected._

@@ -34,6 +34,36 @@ class PcmLoopRendererTest {
         assertEquals(1L, renderer.loops)
     }
 
+    @Test fun continuation_pastMarkerEndFinishesPhysicalTailThenUsesMarkerLoop() {
+        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, true, 100)), 10, noEvents)
+        renderer.seek(17, continueFromCurrentPosition = true)
+        val output = ShortArray(10)
+        assertEquals(10, renderer.render(output))
+        assertArrayEquals(shortArrayOf(17, 18, 19, 3, 4, 5, 6, 3, 4, 5), output)
+        assertEquals(2L, renderer.loops)
+    }
+
+    @Test fun continuation_insideMarkerRangeKeepsPositionAndWrapsAtMarkerEnd() {
+        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, true, 100)), 4, noEvents)
+        renderer.seek(5, continueFromCurrentPosition = true)
+        val output = ShortArray(4)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(5, 6, 3, 4), output)
+    }
+
+    @Test fun continuation_tailCrossfadeJoinsHeadAndLiveEditStillApplies() {
+        val bounds = AtomicReference(PcmLoopBounds.create(3, 13, true, 1000))
+        val renderer = PcmLoopRenderer(source(), bounds, 8, noEvents)
+        renderer.seek(15, continueFromCurrentPosition = true)
+        val output = ShortArray(8)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(15, 16, 17, 11, 5, 6, 7, 8), output)
+        renderer.seek(15, continueFromCurrentPosition = true)
+        bounds.set(PcmLoopBounds.create(2, 7, true, 100))
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(2, 3, 4, 5, 6, 2, 3, 4), output)
+    }
+
     @Test fun crossfade_constantSignalHasNoDipOrGainSpike() {
         val source = MemoryPcmSource(ShortArray(100) { 12000 }, 2)
         val renderer = PcmLoopRenderer(source, AtomicReference(PcmLoopBounds.create(5, 25, true, 1000)), 40, noEvents)

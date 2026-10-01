@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T17:05:55.794872+00:00",
+  "generated_at": "2026-10-01T17:53:28.430661+00:00",
   "nodes": {
     "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
       "code_fingerprint": "2be4f15177599f28fa7cc6cfb78f15aeb02403d2783ebab525dfe6507cbb1ac9",
@@ -17,7 +17,7 @@
           "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
         }
       ],
-      "score": 1.92387683,
+      "score": 1.922409768,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
       "status": "preferred",
       "uses": 2
@@ -33,13 +33,13 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.977787576,
+      "score": 0.977041959,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt",
       "status": "tentative",
       "uses": 1
     },
     "app_src_main_java_com_prosincerity_ghostwriter_logic_assonanceformfilter_assonanceformfilter": {
-      "code_fingerprint": "c8790fc725f490decf1fc441f3587126f8fc7e71111394b0ed4ad80d2aecb9c8",
+      "code_fingerprint": "58bb5ea49d94c46984f5a4ffc4941c73b847853f7b1db81d215dd5d194cf82c6",
       "label": "AssonanceFormFilter",
       "last": "2026-09-30T11:58:55.887296+00:00",
       "provenance": [
@@ -49,7 +49,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.972358497,
+      "score": 0.97161702,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilter.kt",
       "status": "tentative",
       "uses": 1
@@ -65,7 +65,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.972358497,
+      "score": 0.97161702,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt",
       "status": "tentative",
       "uses": 1
@@ -81,7 +81,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.971911879,
+      "score": 0.971170743,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
@@ -107,13 +107,13 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 2.922057951,
+      "score": 2.919829722,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt",
       "status": "preferred",
       "uses": 3
     },
     "app_src_main_java_com_prosincerity_ghostwriter_media_beatplayer_beatplayer": {
-      "code_fingerprint": "77ca39cba0e28a174fc08b8eba45a1012d593ac35ba305344833103f61b708e2",
+      "code_fingerprint": "20823d15d5016adbbe0f5a94f9bf94cec643bdb9cfc784fad26500fb96a5951f",
       "label": "BeatPlayer",
       "last": "2026-09-30T17:45:56.796481+00:00",
       "provenance": [
@@ -123,7 +123,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.977787576,
+      "score": 0.977041959,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
       "status": "tentative",
       "uses": 1
@@ -139,7 +139,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.971911879,
+      "score": 0.971170743,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt",
       "status": "tentative",
       "uses": 1

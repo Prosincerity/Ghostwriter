@@ -153,6 +153,61 @@ class BeatComponentsTest {
     }
 
     @Test
+    fun readyPlayer_keepsControlsDuringWaveformPreparationCancellationAndFailure() {
+        val loading = mutableStateOf(true)
+        val cancelled = mutableStateOf(false)
+        val failed = mutableStateOf(false)
+        val player = BeatPlayer()
+        composeRule.setContent {
+            GhostwriterTheme {
+                BeatPlayerPanel(
+                    beatPlayer = player,
+                    isBeatReady = true,
+                    isImporting = false,
+                    beatDisplayName = "beat.wav",
+                    onImportBeat = {},
+                    onReassignBeat = {},
+                    isReassigningBeat = false,
+                    waveformAmplitudes = intArrayOf(),
+                    isWaveformLoading = loading.value,
+                    markers = emptyList(),
+                    onAddMarker = {},
+                    onMarkerClick = {},
+                    onMarkerMove = { _, _ -> },
+                    onCancelWaveformPreparation = {
+                        loading.value = false
+                        cancelled.value = true
+                    },
+                    cancelRemovesImportedBeat = false,
+                    waveformPreparationCancelled = cancelled.value,
+                    waveformPreparationFailed = failed.value,
+                    onRetryWaveformPreparation = {
+                        cancelled.value = false
+                        failed.value = false
+                        loading.value = true
+                    },
+                )
+            }
+        }
+        composeRule.onNodeWithText("Preparing waveform…").assertExists()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled().performClick()
+        composeRule.onNodeWithContentDescription("Play from start").assertIsEnabled()
+        composeRule.onNodeWithText("Cancel preparation").performClick()
+        composeRule.onNodeWithText("Waveform preparation canceled").assertExists()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.onNodeWithText("Retry").performClick()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.runOnIdle {
+            loading.value = false
+            failed.value = true
+        }
+        composeRule.onNodeWithText("Couldn't create waveform").assertExists()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.onNodeWithContentDescription("Mute").performClick()
+        composeRule.runOnIdle { assertEquals(0f, player.volume) }
+    }
+
+    @Test
     fun beatPlayerCancelledState_centersRetryContent() {
         composeRule.setContent {
             GhostwriterTheme {

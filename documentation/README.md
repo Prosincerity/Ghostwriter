@@ -93,13 +93,26 @@ overlapped head frames are skipped on wrap, shortening a repeat by up to 3 ms.
 Playback, seeking, focus interruptions, media controls, and wake
 locks remain owned by the service. Preparation is cancelled on replacement;
 PCM files are deleted after loading into memory or on release. Beats without
-loop markers use `MediaPlayer`.
+loop markers use `MediaPlayer`. While PCM is prepared, `MediaPlayer` keeps
+playing with working pause, seek, loop, and volume controls. PCM is buffered
+silently for a future position on the same beat. The normal player stays audible
+until PCM output advances, then a 30 ms volume blend transfers playback without
+restarting. Delayed buffering retries from the updated live position. If playback
+has already passed the marker end, it finishes the physical tail before entering
+the marker loop; explicit seeks and later marker edits still apply immediately.
+Paused playback stays paused. Decoder or output preparation failure leaves the
+normal player available. The two Android outputs expose separate playback clocks;
+the handoff aligns their millisecond positions, not individual hardware samples.
 
 `WaveformExtractor.kt` decodes audio with `MediaExtractor` and `MediaCodec`
 off the UI thread. `WaveformCache.kt` validates cached peaks, and
 `WaveformViewport.kt` handles zoom and seek calculations. Compose Canvas and
 gestures provide the timeline controls. Extraction supports cancellation,
-retry, and cache reuse.
+retry, and cache reuse. Playback is available during waveform processing,
+cancellation, and failure; retry does not restart a paused beat. Newly imported
+beats start playing as soon as they are loaded, including while the long-file
+waveform warning is open.
+Canceling an import removes its beat and stops playback.
 
 ### Dictionaries
 

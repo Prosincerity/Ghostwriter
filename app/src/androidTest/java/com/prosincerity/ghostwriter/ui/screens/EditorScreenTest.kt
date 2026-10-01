@@ -407,6 +407,9 @@ class EditorScreenTest {
 
             composeRule.onNodeWithText("Cancel preparation").performClick()
             waitUntilTextExists("Waveform preparation canceled")
+            composeRule.onNodeWithContentDescription("Play").assertIsEnabled().performClick()
+            composeRule.onNodeWithContentDescription("Pause").performClick()
+            composeRule.onNodeWithContentDescription("Play").assertExists()
             composeRule.onNodeWithText("Retry").performClick()
             waitUntilTextExists("Long audio file")
 
@@ -420,7 +423,8 @@ class EditorScreenTest {
             composeRule.onNodeWithText("Process anyway").performClick()
 
             waitUntilTextExists("editor-fixture")
-            waitUntilTextExists("0:00/5:00")
+            composeRule.onNodeWithContentDescription("Play").assertExists()
+            composeRule.onNodeWithContentDescription("Pause").assertDoesNotExist()
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }
