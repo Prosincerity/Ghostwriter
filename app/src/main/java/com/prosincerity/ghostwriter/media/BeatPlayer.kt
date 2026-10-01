@@ -43,6 +43,7 @@ class BeatPlayer(
     private var markers: List<WaveformMarker> = emptyList()
     private var smoothPlayback: SmoothLoopPlayback? = null
     private var loopPcm: PcmBeat? = null
+    private var sourceDurationUs = 0L
     private var loopPreparation: AtomicBoolean? = null
     private var preparationPositionMs = 0
     private var resumeAfterPreparation = false
@@ -114,7 +115,9 @@ class BeatPlayer(
             mp.prepare()
             prepared = true
             loadedFile = beatFile
-            sampleRate = PcmBeatDecoder.sampleRate(beatFile)
+            val timing = PcmBeatDecoder.audioTiming(beatFile)
+            sampleRate = timing?.first ?: 0
+            sourceDurationUs = timing?.second ?: 0
             onStateChanged()
             true
         }.onFailure { e ->
@@ -191,9 +194,15 @@ class BeatPlayer(
         smoothPlayback?.setVolume(this.volume)
     }
 
-    private fun hasMarkerLoop(): Boolean = if (sampleRate > 0)
-        MarkerLoopFrames.fromMarkers(markers, sampleRate, durationMs.toLong() * sampleRate / 1000) != null
-        else MarkerLoopRange.fromMarkers(markers, durationMs.toLong()) != null
+    private fun hasMarkerLoop(): Boolean = hasValidMarkerLoop(markers)
+
+    /** Editor validation and preparation must use the same audio boundaries. */
+    internal fun hasValidMarkerLoop(value: List<WaveformMarker>): Boolean {
+        loopPcm?.let { return MarkerLoopFrames.fromMarkers(value, it.sampleRate, it.frames) != null }
+        return if (sampleRate > 0) MarkerLoopFrames.fromDurationUs(value, sampleRate,
+            sourceDurationUs.takeIf { it > 0 } ?: durationMs.toLong() * 1000) != null
+        else MarkerLoopRange.fromMarkers(value, durationMs.toLong()) != null
+    }
 
     private fun markerFrames(): MarkerLoopFrames? = loopPcm?.let {
         MarkerLoopFrames.fromMarkers(markers, it.sampleRate, it.frames)
@@ -289,6 +298,7 @@ class BeatPlayer(
         smoothPlayback?.close()
         smoothPlayback = null
         loopPcm = null
+        sourceDurationUs = 0
         sampleRate = 0
         if (loopWakeLock?.isHeld == true) loopWakeLock?.release()
         player = null
