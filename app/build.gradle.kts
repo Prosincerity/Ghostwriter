@@ -4,6 +4,10 @@ plugins {
     jacoco
 }
 
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
 android {
     namespace = "com.prosincerity.ghostwriter"
     ndkVersion = "30.0.16248370"
@@ -39,6 +43,10 @@ android {
                 enable = false
             }
         }
+    }
+    testCoverage {
+        // Aggregated reports require the same JaCoCo version for JVM and Android tests.
+        jacocoVersion = libs.versions.jacoco.get()
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
