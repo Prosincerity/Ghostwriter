@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.media
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.CancellationException
 
 /** All audio-thread calls are nonblocking and allocation-free. A miss returns a short copy. */
 internal interface PcmSource {
@@ -35,7 +36,13 @@ internal object PcmSources {
     /** Run during background preparation, before the audio render thread exists. */
     fun prepare(pcm: PcmBeat, cancelled: () -> Boolean): PcmSource {
         if (pcm.frames * pcm.bytesPerFrame > MEMORY_LIMIT_BYTES) {
-            return PcmRingBuffer(pcm.file, pcm.channels, pcm.frames, deleteOnClose = true)
+            try {
+                if (cancelled()) throw CancellationException()
+                return PcmRingBuffer(pcm.file, pcm.channels, pcm.frames, deleteOnClose = true)
+            } catch (problem: Exception) {
+                pcm.file.delete()
+                throw problem
+            }
         }
         try {
             val samples = ShortArray((pcm.frames * pcm.channels).toInt())
@@ -44,7 +51,7 @@ internal object PcmSources {
             var offset = 0
             RandomAccessFile(pcm.file, "r").use { file ->
                 while (offset < samples.size) {
-                    if (cancelled()) throw java.util.concurrent.CancellationException()
+                    if (cancelled()) throw CancellationException()
                     val count = minOf(bytes.size / 2, samples.size - offset)
                     file.readFully(bytes, 0, count * 2)
                     buffer.clear()

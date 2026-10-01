@@ -71,6 +71,17 @@ class PcmBeatDecoderTest {
         assertEquals(before, directory.listFiles()!!.map { it.name }.toSet())
     }
 
+    @Test fun pcm44100Hz_preservesFinalFrameDespiteRoundedWavDuration() {
+        val expected = ShortArray(1600) { (it - 800).toShort() }
+        val bytes = ByteBuffer.allocate(expected.size * 2).order(ByteOrder.LITTLE_ENDIAN)
+        expected.forEach { bytes.putShort(it) }
+        val file = wav("rounded-duration.wav", format = 1, bits = 16, channels = 2,
+            data = bytes.array(), sampleRate = 44100)
+        val pcm = PcmBeatDecoder.decode(file, directory) { false }
+        assertEquals(800L, pcm.frames)
+        assertArrayEquals(expected, readSamples(pcm.file))
+    }
+
     @Test fun aacInput_decodesCompressedAudioToLittleEndianPcm() {
         val source = encodeAac()
         assertEquals(44100, PcmBeatDecoder.sampleRate(source))
@@ -88,13 +99,13 @@ class PcmBeatDecoderTest {
         return ShortArray(bytes.remaining() / 2) { bytes.short }
     }
 
-    private fun wav(name: String, format: Int, bits: Int, channels: Int, data: ByteArray): File {
+    private fun wav(name: String, format: Int, bits: Int, channels: Int, data: ByteArray, sampleRate: Int = 8000): File {
         val bytesPerFrame = channels * bits / 8
         val wav = ByteBuffer.allocate(44 + data.size).order(ByteOrder.LITTLE_ENDIAN)
         wav.put("RIFF".toByteArray(Charsets.US_ASCII)).putInt(36 + data.size)
         wav.put("WAVEfmt ".toByteArray(Charsets.US_ASCII)).putInt(16)
-        wav.putShort(format.toShort()).putShort(channels.toShort()).putInt(8000)
-        wav.putInt(8000 * bytesPerFrame).putShort(bytesPerFrame.toShort()).putShort(bits.toShort())
+        wav.putShort(format.toShort()).putShort(channels.toShort()).putInt(sampleRate)
+        wav.putInt(sampleRate * bytesPerFrame).putShort(bytesPerFrame.toShort()).putShort(bits.toShort())
         wav.put("data".toByteArray(Charsets.US_ASCII)).putInt(data.size).put(data)
         return File(directory, name).apply { writeBytes(wav.array()) }
     }
