@@ -31,7 +31,10 @@ internal fun LyricsNotepad(
         value = lyrics,
         onValueChange = onLyricsChange,
         modifier = modifier,
-        placeholder = { Text("Start writing...", style = textStyle, modifier = Modifier.fillMaxWidth()) },
+        placeholder = {
+            Text("Start writing...", style = textStyle, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth())
+        },
         textStyle = textStyle,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         colors = TextFieldDefaults.colors(

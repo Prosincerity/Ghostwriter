@@ -21,8 +21,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -35,15 +36,16 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.MarkerLoopRole
-import androidx.compose.ui.semantics.stateDescription
+import com.prosincerity.ghostwriter.data.WaveformMarker
+import com.prosincerity.ghostwriter.logic.MarkerLoopRange
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.logic.crossesWaveformMarker
 import com.prosincerity.ghostwriter.logic.waveformMarkerHitBounds
@@ -74,6 +76,7 @@ fun WaveformView(
     viewport: WaveformViewport,
     onViewportChange: (WaveformViewport) -> Unit,
     modifier: Modifier = Modifier,
+    loopEnabled: Boolean = false,
 ) {
     var viewportWidthPx by remember { mutableFloatStateOf(0f) }
     val textMeasurer = rememberTextMeasurer()
@@ -86,7 +89,7 @@ fun WaveformView(
     val markerLabelStyle = TextStyle(
         color = GhostSecondary,
         fontFamily = MaterialTheme.typography.labelSmall.fontFamily,
-        fontSize = 10.sp,
+        fontSize = 11.sp,
     )
     val latestViewport = rememberUpdatedState(viewport)
     var draggedMarker by remember { mutableStateOf<WaveformMarker?>(null) }
@@ -147,10 +150,23 @@ fun WaveformView(
                 },
         ) {
             val drawingViewport = viewport.clamped(size.width)
-            val markerAreaHeight = 20.dp.toPx()
+            val markerAreaHeight = 24.dp.toPx()
             val waveformTop = markerAreaHeight
             val waveformHeight = (size.height - waveformTop).coerceAtLeast(0f)
             val waveformCenterY = waveformTop + waveformHeight / 2f
+
+            val displayedMarkers = if (draggedMarker == null) markers else markers.map {
+                if (it === draggedMarker) it.copy(positionMs = pendingMarkerPositionMs) else it
+            }
+            MarkerLoopRange.fromMarkers(displayedMarkers, durationMs)?.let { range ->
+                val left = drawingViewport.positionToX(range.startMs, durationMs, size.width).coerceIn(0f, size.width)
+                val right = drawingViewport.positionToX(range.endMs, durationMs, size.width).coerceIn(0f, size.width)
+                if (right > left) drawRect(
+                    color = GhostSecondary.copy(alpha = if (loopEnabled) 0.16f else 0.08f),
+                    topLeft = Offset(left, waveformTop),
+                    size = Size(right - left, waveformHeight),
+                )
+            }
 
             drawLine(
                 color = GhostBorder,
@@ -185,9 +201,9 @@ fun WaveformView(
 
             markers.forEach { marker ->
                 val markerColor = when (marker.loopRole) {
-                    MarkerLoopRole.NONE -> GhostSecondary
-                    MarkerLoopRole.START -> lerp(GhostSecondary, Color.White, 0.35f)
-                    MarkerLoopRole.END -> lerp(GhostSecondary, Color.Black, 0.25f)
+                    MarkerLoopRole.NONE -> lerp(GhostSecondary, Color.White, 0.24f)
+                    MarkerLoopRole.START -> lerp(GhostSecondary, Color.White, 0.55f)
+                    MarkerLoopRole.END -> lerp(GhostSecondary, Color.White, 0.18f)
                 }
                 val displayPositionMs = if (marker === draggedMarker) pendingMarkerPositionMs else marker.positionMs
                 val markerX = drawingViewport.positionToX(displayPositionMs, durationMs, size.width)
@@ -207,7 +223,7 @@ fun WaveformView(
                     )
                     drawText(
                         textMeasurer = textMeasurer,
-                        text = marker.label,
+                        text = marker.displayLabel(),
                         topLeft = Offset(markerX + 4.dp.toPx(), 0f),
                         style = markerLabelStyle.copy(color = markerColor),
                     )
@@ -233,7 +249,7 @@ fun WaveformView(
             // target under an active pointer changes its local coordinates and
             // makes the marker lag or jump.
             val markerX = viewport.positionToX(marker.positionMs, durationMs, viewportWidthPx)
-            val labelSize = textMeasurer.measure(marker.label, markerLabelStyle).size
+            val labelSize = textMeasurer.measure(marker.displayLabel(), markerLabelStyle).size
             val hitBounds = waveformMarkerHitBounds(
                 markerX, markerHitRadiusPx, labelSize.width.toFloat(), markerLabelPaddingPx, markerXs,
             )
@@ -320,3 +336,6 @@ fun WaveformView(
 
     }
 }
+
+private fun WaveformMarker.displayLabel(): String =
+    if (loopRole == MarkerLoopRole.NONE) label else "${loopRole.displayName} · $label"

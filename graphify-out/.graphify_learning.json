@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T18:35:49.012757+00:00",
+  "generated_at": "2026-10-01T19:39:16.581034+00:00",
   "nodes": {
     "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
       "code_fingerprint": "2be4f15177599f28fa7cc6cfb78f15aeb02403d2783ebab525dfe6507cbb1ac9",
@@ -17,7 +17,7 @@
           "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
         }
       ],
-      "score": 1.921104132,
+      "score": 1.919149037,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
       "status": "preferred",
       "uses": 2
@@ -33,7 +33,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.976378385,
+      "score": 0.975384731,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt",
       "status": "tentative",
       "uses": 1
@@ -49,7 +49,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.97095713,
+      "score": 0.969968993,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilter.kt",
       "status": "tentative",
       "uses": 1
@@ -65,13 +65,45 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.97095713,
+      "score": 0.969968993,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt",
       "status": "tentative",
       "uses": 1
     },
+    "app_src_main_java_com_prosincerity_ghostwriter_logic_waveformviewport_waveformviewport": {
+      "code_fingerprint": "dea4aa987ca3acbb62926a149b3dead0a7187e250d5f2f585521bd0fe729b908",
+      "label": "WaveformViewport",
+      "last": "2026-10-01T18:41:08.783116+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T18:41:08.783116+00:00",
+          "outcome": "useful",
+          "q": "Why do waveform markers lag behind the pointer while dragging?"
+        }
+      ],
+      "score": 0.999067735,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformViewport.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_mainactivity": {
+      "code_fingerprint": "c60a0682a4fc93a1f6f54a1a9156dfaf6964480247e1774bc070bb2585a1fdaa",
+      "label": "MainActivity.kt",
+      "last": "2026-10-01T19:23:22.282290+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:23:22.282290+00:00",
+          "outcome": "useful",
+          "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
+        }
+      ],
+      "score": 0.999744836,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
+      "status": "tentative",
+      "uses": 1
+    },
     "app_src_main_java_com_prosincerity_ghostwriter_mainactivity_dictionary": {
-      "code_fingerprint": "dd444b1a03eb82e56688b6224ae09d17898441473be6a010e0c07a46a1924abd",
+      "code_fingerprint": "c60a0682a4fc93a1f6f54a1a9156dfaf6964480247e1774bc070bb2585a1fdaa",
       "label": "Dictionary",
       "last": "2026-09-30T11:30:17.905058+00:00",
       "provenance": [
@@ -81,7 +113,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.970511156,
+      "score": 0.969523473,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
@@ -107,7 +139,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 2.917846671,
+      "score": 2.914877197,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt",
       "status": "preferred",
       "uses": 3
@@ -123,7 +155,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.976378385,
+      "score": 0.975384731,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
       "status": "tentative",
       "uses": 1
@@ -139,8 +171,56 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.970511156,
+      "score": 0.969523473,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols": {
+      "code_fingerprint": "83ed4a58eff1681ec686357d3f308726205d06bd882aa78649e5f4ee9de40201",
+      "label": "BeatPlaybackControls.kt",
+      "last": "2026-10-01T19:23:22.282290+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:23:22.282290+00:00",
+          "outcome": "useful",
+          "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
+        }
+      ],
+      "score": 0.999744836,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_components_waveformview": {
+      "code_fingerprint": "d4575a331583a13e12ea3d3bc22ef84ea77c1590207c1bcb98f84572aaf6c7d1",
+      "label": "WaveformView.kt",
+      "last": "2026-10-01T19:23:22.282290+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:23:22.282290+00:00",
+          "outcome": "useful",
+          "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
+        }
+      ],
+      "score": 0.999744836,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen": {
+      "code_fingerprint": "051a1dbf9b00fcfd5302502bee096ddf26dbab3bb2060f12e477252c99e55290",
+      "label": "EditorScreen.kt",
+      "last": "2026-10-01T19:23:22.282290+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:23:22.282290+00:00",
+          "outcome": "useful",
+          "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
+        }
+      ],
+      "score": 0.999744836,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
       "status": "tentative",
       "uses": 1
     }

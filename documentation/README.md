@@ -18,6 +18,9 @@ toolchain versions, and dependencies are defined in the Gradle configuration.
 
 UI typography uses bundled Roboto regular, medium, and bold faces, including
 waveform marker labels. The lyric editor keeps its independently selected font.
+The studio theme stays dark in either device appearance mode, with neutral
+charcoal surfaces, orange primary actions, and purple selection and loop states.
+Shared corner shapes and slim sliders keep screens and dialogs consistent.
 
 Application sources are under
 [`app/src/main/java/com/prosincerity/ghostwriter/`](../app/src/main/java/com/prosincerity/ghostwriter/).
@@ -51,6 +54,11 @@ Android measuring and drawing justified words at different widths. The saved
 letter spacing is retained for other alignments.
 
 `EditorScreen.kt` owns persistence; `LyricsNotepad.kt` owns the editing surface.
+The home screen reads project summaries off the UI thread and orders projects
+by their latest lyric snapshot or metadata edit. Beat and waveform-cache writes
+do not count as edits. Rows show the edit time, BPM, and musical key when available;
+missing or malformed metadata does not prevent opening a project.
+
 Lyrics are saved manually, periodically, and on editor exit. Loading selects
 the newest readable manual or autosave snapshot. Storage mutations are
 synchronized, and staged writes replace files through a temporary file.

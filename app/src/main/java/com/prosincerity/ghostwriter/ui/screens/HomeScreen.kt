@@ -1,13 +1,16 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,20 +18,22 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -40,32 +45,42 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.ProjectSummary
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
+import java.text.DateFormat
+import java.util.Date
+import java.util.Locale
 
-/**
- * Phase 1's screen becomes the editor; this is the new entry point.
- * Just "New file", a disabled "Import" placeholder for later, and a
- * recent-projects list so autosaved work is actually reachable again.
- */
+/** Local projects, ordered by their most recent lyric or metadata edit. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
+internal fun HomeScreen(
     existingProjects: List<String>,
     onCreateProject: (String) -> Unit,
     onOpenProject: (String) -> Unit,
     onDeleteProject: (String) -> Unit,
     onRenameProject: (currentTitle: String, renamedTitle: String) -> Unit,
     onOpenSettings: () -> Unit,
+    projectSummaries: Map<String, ProjectSummary> = emptyMap(),
 ) {
     var showTitleDialog by remember { mutableStateOf(false) }
     var projectMenuFor by remember { mutableStateOf<String?>(null) }
     var projectToDelete by remember { mutableStateOf<String?>(null) }
     var projectToRename by remember { mutableStateOf<String?>(null) }
+
+    val recentProjects = remember(existingProjects, projectSummaries) {
+        existingProjects.sortedWith(
+            compareByDescending<String> { projectSummaries[it]?.lastEditedAt ?: 0L }
+                .thenBy { it.lowercase(Locale.ROOT) },
+        )
+    }
+    val dateFormat = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
 
     Scaffold(
         topBar = {
@@ -75,7 +90,8 @@ fun HomeScreen(
                         Text(stringResource(R.string.app_name))
                         Text(
                             text = stringResource(R.string.app_tagline),
-                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
@@ -91,73 +107,115 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
-            Spacer(Modifier.height(32.dp))
-
-            Button(shape = GhostButtonShape, onClick = { showTitleDialog = true }, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                shape = GhostButtonShape,
+                onClick = { showTitleDialog = true },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("New file")
+                Text("New project")
             }
 
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedButton(
-                shape = GhostButtonShape,
-                onClick = { /* Import — implemented in a later phase */ },
-                enabled = false,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Import (coming soon)")
-            }
-
-            if (existingProjects.isNotEmpty()) {
-                Spacer(Modifier.height(32.dp))
-                Text(
-                    "Recent",
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
-                    items(existingProjects) { title ->
-                        ListItem(
-                            headlineContent = { Text(title) },
-                            trailingContent = {
-                                Box {
-                                    IconButton(shape = GhostButtonShape, onClick = { projectMenuFor = title }) {
-                                        Icon(
-                                            Icons.Filled.MoreVert,
-                                            contentDescription = "Project options for $title",
-                                        )
-                                    }
-                                    DropdownMenu(
-                                        expanded = projectMenuFor == title,
-                                        onDismissRequest = { projectMenuFor = null },
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text("Rename") },
-                                            onClick = {
-                                                projectMenuFor = null
-                                                projectToRename = title
-                                            },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("Delete") },
-                                            onClick = {
-                                                projectMenuFor = null
-                                                projectToDelete = title
-                                            },
-                                        )
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onOpenProject(title) },
+            if (existingProjects.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Surface(
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                    ) {
+                        Icon(
+                            Icons.Filled.MusicNote, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(20.dp).size(32.dp),
                         )
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    Text("Start your next track", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                    Text(
+                        "Create a project for your lyrics and beat.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Recent", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "${existingProjects.size}", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    items(recentProjects, key = { it }) { title ->
+                        val summary = projectSummaries[title]
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable { onOpenProject(title) }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            ) {
+                                Icon(
+                                    Icons.Filled.Description, contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(10.dp).size(20.dp),
+                                )
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    title, style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                )
+                                summary?.let {
+                                    val details = buildList {
+                                        if (it.lastEditedAt > 0) add("Edited ${dateFormat.format(Date(it.lastEditedAt))}")
+                                        it.bpm?.let { bpm -> add("$bpm BPM") }
+                                        it.key?.let { key -> add(key) }
+                                    }
+                                    if (details.isNotEmpty()) Text(
+                                        details.joinToString(" · "),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
+                            }
+                            Box {
+                                IconButton(shape = GhostButtonShape, onClick = { projectMenuFor = title }) {
+                                    Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $title")
+                                }
+                                DropdownMenu(
+                                    expanded = projectMenuFor == title,
+                                    onDismissRequest = { projectMenuFor = null },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Rename") },
+                                        onClick = { projectMenuFor = null; projectToRename = title },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                                        onClick = { projectMenuFor = null; projectToDelete = title },
+                                    )
+                                }
+                            }
+                        }
+                        HorizontalDivider(modifier = Modifier.padding(start = 52.dp))
                     }
                 }
             }

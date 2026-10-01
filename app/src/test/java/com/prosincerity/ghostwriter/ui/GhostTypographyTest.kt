@@ -32,11 +32,12 @@ class GhostTypographyTest {
     }
 
     @Test
-    fun uiTypography_preservesBodyAndTitleSizesAndWeights() {
+    fun uiTypography_keepsReadableBodyAndStrongerScreenTitles() {
         assertEquals(16.sp, GhostTypography.bodyLarge.fontSize)
         assertEquals(24.sp, GhostTypography.bodyLarge.lineHeight)
         assertEquals(FontWeight.Normal, GhostTypography.bodyLarge.fontWeight)
-        assertEquals(20.sp, GhostTypography.titleLarge.fontSize)
+        assertEquals(22.sp, GhostTypography.titleLarge.fontSize)
+        assertEquals(28.sp, GhostTypography.titleLarge.lineHeight)
         assertEquals(FontWeight.Bold, GhostTypography.titleLarge.fontWeight)
         assertEquals(FontWeight.Medium, GhostTypography.labelLarge.fontWeight)
     }

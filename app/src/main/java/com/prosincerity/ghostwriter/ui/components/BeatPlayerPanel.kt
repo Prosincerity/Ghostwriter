@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,8 +38,8 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.media.BeatPlayer
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
-import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 @Composable
 internal fun BeatPlayerPanel(
@@ -82,7 +83,11 @@ internal fun BeatPlayerPanel(
         }
     }
 
-    Card(modifier = modifier.height(176.dp)) {
+    Card(
+        modifier = modifier.height(176.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 4.dp)) {
             if (isWaveformLoading) {
                 CenteredPlayerContent(modifier = Modifier.weight(1f)) {
@@ -218,6 +223,7 @@ internal fun BeatPlayerPanel(
                         },
                         onMarkerMoveFinished = onMarkerMove,
                         viewport = waveformViewport,
+                        loopEnabled = beatPlayer.isLooping,
                         onViewportChange = { waveformViewport = it },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -226,7 +232,7 @@ internal fun BeatPlayerPanel(
                     )
                     Text(
                         text = if (beatPlayer.isPreparingLoop) "Preparing loop audio…" else
-                            "${formatPlaybackTime(currentPositionMs.toLong())}/" + formatPlaybackTime(durationMs.toLong()),
+                            "${formatPlaybackTime(currentPositionMs.toLong())} / " + formatPlaybackTime(durationMs.toLong()),
                         maxLines = 1,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

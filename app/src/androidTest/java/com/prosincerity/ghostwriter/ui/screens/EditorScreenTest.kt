@@ -228,7 +228,7 @@ class EditorScreenTest {
         try {
             setEditorContent(projectTitle, showEditor)
             waitUntilTextExists("editor-fixture")
-            waitUntilTextExists("0:00/0:05")
+            waitUntilTextExists("0:00 / 0:05")
 
             composeRule.onNodeWithTag("Waveform").performTouchInput { longClick(center) }
             composeRule.onNodeWithText("Add marker").assertExists()
@@ -301,7 +301,7 @@ class EditorScreenTest {
         try {
             setEditorContent(title, visible)
             waitUntilTextExists("editor-fixture")
-            waitUntilTextExists("0:00/0:05")
+            waitUntilTextExists("0:00 / 0:05")
             composeRule.waitUntil(10000) {
                 val saved = ProjectStorage.loadMetadata(directory, title).markers
                 saved.size == 2 && saved.all { it.sampleRate == 8000 }
