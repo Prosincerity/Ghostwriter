@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt": {
-    "mtime": 1790801273.5061843,
-    "seen": 1790801303.0882084,
-    "ast_hash": "8d4ec237d33bde54e9fc3804dc5e58fc",
+    "mtime": 1790880004.3467915,
+    "seen": 1790880026.7806005,
+    "ast_hash": "ab4fcb80ab33fc458f068ca0ca0f939c",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt": {
@@ -4170,9 +4170,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/WaveformViewTest.kt": {
-    "mtime": 1790871718.9740102,
-    "seen": 1790871768.579094,
-    "ast_hash": "508aa5a8ea7ba1b23dbc04ca561f4b42",
+    "mtime": 1790880004.46779,
+    "seen": 1790880026.780353,
+    "ast_hash": "f115db306976ef636f5b54dbd7966aaa",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformMarkerHitBounds.kt": {

@@ -241,8 +241,10 @@ fun WaveformView(
                                 onMarkerClick(marker)
                                 true
                             }
+                            val displayPositionMs = if (marker === draggedMarker) pendingMarkerPositionMs
+                                else marker.positionMs
                             progressBarRangeInfo = ProgressBarRangeInfo(
-                                current = marker.positionMs.toFloat(),
+                                current = displayPositionMs.toFloat(),
                                 range = 0f..durationMs.coerceAtLeast(0L).toFloat(),
                             )
                             setProgress { requestedPosition ->
@@ -269,10 +271,13 @@ fun WaveformView(
                             var dragStartPointerX = 0f
                             var dragStartMarkerX = 0f
                             detectDragGestures(
-                                onDragStart = { offset ->
+                                orientationLock = null,
+                                onDragStart = { down, _, _ ->
                                     draggedMarker = marker
                                     pendingMarkerPositionMs = marker.positionMs
-                                    dragStartPointerX = overlayLeftPx + offset.x
+                                    // Anchor to the press, not the event that crossed
+                                    // touch slop, or that initial movement is lost.
+                                    dragStartPointerX = overlayLeftPx + down.position.x
                                     dragStartMarkerX = latestViewport.value.positionToX(
                                         marker.positionMs,
                                         durationMs,
@@ -280,7 +285,9 @@ fun WaveformView(
                                     )
                                 },
                                 onDragCancel = { draggedMarker = null },
-                                onDragEnd = {
+                                onDragEnd = { change ->
+                                    val horizontalDelta = (overlayLeftPx + change.position.x) - dragStartPointerX
+                                    pendingMarkerPositionMs = seekAt(dragStartMarkerX + horizontalDelta)
                                     onMarkerMoveFinished(marker, pendingMarkerPositionMs)
                                     draggedMarker = null
                                 },
