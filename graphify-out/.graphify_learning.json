@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-30T19:37:10.026001+00:00",
+  "generated_at": "2026-10-01T16:18:50.315288+00:00",
   "nodes": {
     "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
       "code_fingerprint": "2be4f15177599f28fa7cc6cfb78f15aeb02403d2783ebab525dfe6507cbb1ac9",
@@ -17,13 +17,13 @@
           "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
         }
       ],
-      "score": 1.964073488,
+      "score": 1.92533103,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
       "status": "preferred",
       "uses": 2
     },
     "app_src_main_java_com_prosincerity_ghostwriter_data_projectmetadata_waveformmarker": {
-      "code_fingerprint": "6b2d50551bcf70c442d8c9390bac18de0dfdde605bdfd3bc1a00f7418d1a0aba",
+      "code_fingerprint": "92d94ad1912bcb1413080db6d7c2c3da7aa891c8f78277ab45fc8f4a442fb395",
       "label": "WaveformMarker",
       "last": "2026-09-30T17:45:56.796481+00:00",
       "provenance": [
@@ -33,7 +33,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.99821705,
+      "score": 0.978526655,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt",
       "status": "tentative",
       "uses": 1
@@ -49,7 +49,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.992674538,
+      "score": 0.973093473,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilter.kt",
       "status": "tentative",
       "uses": 1
@@ -65,7 +65,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.992674538,
+      "score": 0.973093473,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt",
       "status": "tentative",
       "uses": 1
@@ -81,7 +81,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.992218589,
+      "score": 0.972646517,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
@@ -107,7 +107,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 2.983110178,
+      "score": 2.924266645,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt",
       "status": "preferred",
       "uses": 3
@@ -123,7 +123,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.99821705,
+      "score": 0.978526655,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
       "status": "tentative",
       "uses": 1
@@ -139,7 +139,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.992218589,
+      "score": 0.972646517,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt",
       "status": "tentative",
       "uses": 1

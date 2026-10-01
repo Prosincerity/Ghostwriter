@@ -20,7 +20,7 @@ internal object SystemFontCatalog {
                     ttcIndex = font.ttcIndex,
                     weight = font.style.weight,
                     italic = font.style.slant == FontStyle.FONT_SLANT_ITALIC,
-                    variationSettings = FontVariationAxis.toFontVariationSettings(font.axes) ?: "",
+                    variationSettings = FontVariationAxis.toFontVariationSettings(font.axes),
                 )
             })
         } catch (_: RuntimeException) {
