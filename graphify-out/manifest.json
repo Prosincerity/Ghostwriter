@@ -120,9 +120,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageTest.kt": {
-    "mtime": 1790874989.3448386,
-    "seen": 1790875062.8653324,
-    "ast_hash": "0333eb9e13924a1ffe74951df482f000",
+    "mtime": 1790876007.241042,
+    "seen": 1790876082.759713,
+    "ast_hash": "b92ef6217c586e276cf3700843be80a2",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt": {
@@ -474,9 +474,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt": {
-    "mtime": 1790874863.0244265,
-    "seen": 1790875062.8652182,
-    "ast_hash": "6872315c8f7cfbfdd7107eb80dc65098",
+    "mtime": 1790875957.5296667,
+    "seen": 1790875977.8722613,
+    "ast_hash": "04540e8c44b802580b085b291754e5df",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryInstallerInstrumentedTest.kt": {

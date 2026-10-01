@@ -13,10 +13,15 @@ internal object ProjectLyricsStorage {
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         val manualFile = File(projectDir, manualFileName(projectDir.name))
-        val newestReadableAutosave = (1..5).firstNotNullOfOrNull { i ->
-            val file = File(projectDir, "autosave$i.txt")
-            file.readTextIfFile()?.let { file to it }
-        }
+        // Older versions could keep ten slots. Best-effort rotations can also
+        // leave slot ages out of order, so compare every readable snapshot.
+        // Scanning in slot order keeps the earlier slot when timestamps tie.
+        val newestReadableAutosave = (1..10).asSequence()
+            .mapNotNull { i ->
+                val file = File(projectDir, "autosave$i.txt")
+                file.readTextIfFile()?.let { file to it }
+            }
+            .maxByOrNull { it.first.lastModified() }
         val manualText = manualFile.readTextIfFile()
         return when {
             manualText != null &&
