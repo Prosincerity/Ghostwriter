@@ -55,7 +55,8 @@ release schedule.
   restart, loop, and adjust volume from the editor.
 - [x] **Background playback** — continue across screens and other apps, with
   Android notification and lock-screen controls. Loop state stays in sync
-  with the editor, and audio interruptions pause playback.
+  with the editor, and audio interruptions pause playback. Dismissing the app
+  from Recents stops playback and removes media controls.
 - [x] **Interaction haptics** — ticks when starting marker placement and saving
   a new marker, light ticks when manually scrubbing across markers, clicks on
   play/pause, restart, loop, and mute, and stronger feedback after project,

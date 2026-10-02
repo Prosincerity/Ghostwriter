@@ -183,6 +183,81 @@ class BeatPlaybackServiceTest {
     }
 
     @Test
+    fun taskRemovedWhileBound_releasesMarkerPlaybackAndStopsServiceAfterUnbinding() {
+        withService { service, unbind ->
+            val player = service.player
+            onMain {
+                player.setMarkers(listOf(
+                    WaveformMarker("Start", 200, MarkerLoopRole.START),
+                    WaveformMarker("End", 800, MarkerLoopRole.END),
+                ))
+                player.setLoopMode(BeatLoopMode.MARKERS)
+            }
+            waitUntil { !player.isPreparingLoop }
+            onMain { player.play() }
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Markers"))
+            var sessionDestroyed = false
+            onMain {
+                controller.registerCallback(object : MediaController.Callback() {
+                    override fun onSessionDestroyed() { sessionDestroyed = true }
+                })
+                // Resume then remove the task before a queued notification update
+                // can run. Task removal must cancel that update as well as audio.
+                player.pause()
+                player.play()
+                service.onTaskRemoved(Intent(context, MainActivity::class.java))
+                assertFalse(player.isPlaying)
+                assertFalse(player.isReady)
+                assertFalse(player.isPreparingLoop)
+                assertEquals(0, player.sampleRate)
+            }
+            waitUntil { controller.playbackState?.state == PlaybackState.STATE_STOPPED }
+            waitUntil { context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty() }
+            unbind()
+            waitUntil({ "Task removal did not destroy the unbound service" }) { sessionDestroyed }
+        }
+    }
+
+    @Test
+    fun taskRemovedWhileUnbound_stopsPlaybackAndDestroysMediaSession() {
+        withService { service, unbind ->
+            onMain { service.player.play() }
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Whole beat"))
+            var sessionDestroyed = false
+            onMain {
+                controller.registerCallback(object : MediaController.Callback() {
+                    override fun onSessionDestroyed() { sessionDestroyed = true }
+                })
+            }
+            unbind()
+            onMain { service.onTaskRemoved(Intent(context, MainActivity::class.java)) }
+            waitUntil({ "Task removal did not destroy the service" }) { sessionDestroyed }
+            assertFalse(onMainValue { service.player.isPlaying })
+            assertFalse(onMainValue { service.player.isReady })
+            waitUntil { context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty() }
+        }
+    }
+
+    @Test
+    fun taskRemovedDuringFocusLoss_cancelsResumeAndClearsPausedNotification() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
+            onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) }
+            waitForMediaNotification("Play", "Restart", "Loop: Whole beat")
+            onMain {
+                // Deliver the system callback directly, including its nullable
+                // root intent, without dismissing the test runner's Activity.
+                service.onTaskRemoved(null)
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN)
+                assertFalse(service.player.isPlaying)
+                assertFalse(service.player.isReady)
+            }
+            waitUntil { context.getSystemService(NotificationManager::class.java).activeNotifications.isEmpty() }
+        }
+    }
+
+    @Test
     fun stoppingImmediatelyAfterResume_removesNotificationWhileBound_andAllowsPlayingAgain() {
         withService { service, _ ->
             val player = service.player
