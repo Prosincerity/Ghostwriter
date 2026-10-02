@@ -85,6 +85,9 @@ and exposes a framework `MediaSession`. The editor binds to the service;
 started playback continues after it unbinds. A foreground service and wake
 lock support playback while the app is in the background or the screen is
 locked. Audio focus and headphone disconnection can pause playback.
+Dismissing the app from Recents releases playback and loop preparation, removes
+media controls, and stops the service. Switching apps or locking the screen
+continues playback.
 
 Opening another project, changing its beat, or deleting or renaming the
 playing project releases playback. Process death does not restart audio.

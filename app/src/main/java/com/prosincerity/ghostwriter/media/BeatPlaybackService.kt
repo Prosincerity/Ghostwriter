@@ -317,6 +317,16 @@ class BeatPlaybackService : Service() {
         getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // Dismissing the app from Recents is an explicit exit. Release now,
+        // even if the editor has not finished unbinding from the service yet.
+        clearNotification()
+        focus.onPauseRequested()
+        player.release()
+        stopSelf()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         destroying = true
         player.release()
