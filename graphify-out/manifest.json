@@ -6,9 +6,9 @@
     "semantic_hash": "005ac71c84af2cae38e255e2b9de2411"
   },
   "app/build.gradle.kts": {
-    "mtime": 1790871705.6111207,
-    "seen": 1790871768.5790548,
-    "ast_hash": "2086828304e981dcfe7efd8856d70f65",
+    "mtime": 1790963224.4043705,
+    "seen": 1790963234.81685,
+    "ast_hash": "1d642c532b17d9caf05f8db0433543a1",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ExampleInstrumentedTest.kt": {
