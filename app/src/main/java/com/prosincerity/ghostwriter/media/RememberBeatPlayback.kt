@@ -6,19 +6,25 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.awaitCancellation
 
 /** Unbinding a screen leaves started playback running in the service. */
 @Composable
 internal fun rememberBeatPlayback(projectTitle: String): BeatPlaybackService? {
     val context = LocalContext.current.applicationContext
     var service by remember(projectTitle) { mutableStateOf<BeatPlaybackService?>(null) }
-    DisposableEffect(context, projectTitle) {
+    LaunchedEffect(context, projectTitle) {
+        // Frame callbacks run before drawing. Wait for the following frame as
+        // well so the editor can draw once before service creation starts.
+        withFrameNanos { }
+        withFrameNanos { }
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
                 service = (binder as BeatPlaybackService.LocalBinder).service.also {
@@ -30,7 +36,11 @@ internal fun rememberBeatPlayback(projectTitle: String): BeatPlaybackService? {
         val bound = context.bindService(
             Intent(context, BeatPlaybackService::class.java), connection, Context.BIND_AUTO_CREATE,
         )
-        onDispose { if (bound) context.unbindService(connection) }
+        try {
+            awaitCancellation()
+        } finally {
+            if (bound) context.unbindService(connection)
+        }
     }
     return service
 }

@@ -8,7 +8,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -19,9 +18,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -39,7 +35,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
@@ -100,16 +95,6 @@ fun EditorScreen(
 ) {
     BackHandler(onBack = onBack)
     val playback = rememberBeatPlayback(projectTitle)
-    if (playback == null) {
-        // Binding is asynchronous on every entry. Keep drawing while it is
-        // pending instead of exposing the Activity window for a frame or more.
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        }
-        return
-    }
 
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
@@ -130,7 +115,7 @@ fun EditorScreen(
     }
     var showInfoDialog by rememberSaveable { mutableStateOf(false) }
 
-    val beatPlayer = playback.player
+    val beatPlayer = playback?.player
     var isBeatReady by remember(projectTitle) { mutableStateOf(false) }
     var beatFile by remember(projectTitle) {
         mutableStateOf(ProjectStorage.getProjectBeatFile(projectDir, metadata))
@@ -176,7 +161,7 @@ fun EditorScreen(
         // Update Compose state immediately so a following marker operation is
         // based on this change rather than an older metadata snapshot.
         metadata = updatedMetadata
-        if (isBeatReady) beatPlayer.setMarkers(updatedMetadata.markers)
+        if (isBeatReady) beatPlayer?.setMarkers(updatedMetadata.markers)
         val revision = projectMutationRevision.incrementAndGet()
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             val saved = projectMutationMutex.withLock {
@@ -208,6 +193,7 @@ fun EditorScreen(
         failureMessage: String,
         successHaptic: HapticFeedbackType? = null,
     ) {
+        val beatPlayer = beatPlayer ?: return
         val valid = beatPlayer.hasValidMarkerLoop(markers)
         if (markers.any { it.loopRole != MarkerLoopRole.NONE } && !valid) {
             Toast.makeText(context, "Loop start must be before loop end", Toast.LENGTH_SHORT).show()
@@ -252,7 +238,7 @@ fun EditorScreen(
     // Decoding a full beat can take noticeable time, so it happens once for
     // each assigned/reassigned beat on IO. Playback is loaded independently so
     // waveform preparation, cancellation and retry never interrupt the beat.
-    LaunchedEffect(beatFile, waveformRevision) {
+    LaunchedEffect(playback, beatFile, waveformRevision) {
         val currentBeat = beatFile
         if (currentBeat == null) {
             waveformAmplitudes = IntArray(0)
@@ -263,6 +249,10 @@ fun EditorScreen(
             waveformPreparationCancelled = false
             waveformPreparationFailed = false
             pendingLongBeatPreparation = null
+            return@LaunchedEffect
+        }
+        if (playback == null || beatPlayer == null) {
+            isBeatReady = false
             return@LaunchedEffect
         }
 
@@ -346,8 +336,8 @@ fun EditorScreen(
         }
     }
 
-    LaunchedEffect(beatPlayer, metadata.markers, isBeatReady, beatPlayer.sampleRate) {
-        if (isBeatReady) {
+    LaunchedEffect(beatPlayer, metadata.markers, isBeatReady, beatPlayer?.sampleRate) {
+        if (isBeatReady && beatPlayer != null) {
             val frameMarkers = metadata.markers.map { it.withSampleRate(beatPlayer.sampleRate) }
             if (frameMarkers != metadata.markers) persistMetadataUpdate(
                 metadata.copy(markers = frameMarkers), null, "Couldn't save frame marker positions",
@@ -553,7 +543,7 @@ fun EditorScreen(
                     val markerIndex = indexOfSelectedMarker(metadata.markers, marker)
                     if (markerIndex >= 0 && marker.positionMs != positionMs) {
                         val updatedMarkers = metadata.markers.toMutableList().apply {
-                            this[markerIndex] = marker.atPositionMs(positionMs, beatPlayer.sampleRate)
+                            this[markerIndex] = marker.atPositionMs(positionMs, beatPlayer?.sampleRate ?: 0)
                         }
                         persistMarkers(
                             markers = updatedMarkers,
@@ -588,7 +578,7 @@ fun EditorScreen(
     }
 
     EditorMarkerDialogs(
-        sampleRate = beatPlayer.sampleRate,
+        sampleRate = beatPlayer?.sampleRate ?: 0,
         markers = metadata.markers,
         positionToAdd = markerPositionToAdd,
         markerToEdit = markerToEdit,
@@ -603,7 +593,7 @@ fun EditorScreen(
         ReassignBeatDialog(
             onConfirm = {
                 showReassignConfirmation = false
-                beatPlayer.release()
+                beatPlayer?.release()
                 isBeatReady = false
                 removeBeatFromEditor(successHaptic = HapticFeedbackType.LongPress) { waveformRevision++ }
             },
@@ -627,7 +617,7 @@ fun EditorScreen(
                 if (!pendingBeat.removeBeatOnCancel) {
                     waveformPreparationCancelled = true
                 } else {
-                    beatPlayer.release()
+                    beatPlayer?.release()
                     isBeatReady = false
                     autoPlayWhenBeatReady = false
                     removeBeatFromEditor {

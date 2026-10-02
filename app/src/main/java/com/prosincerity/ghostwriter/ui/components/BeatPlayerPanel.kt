@@ -44,7 +44,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 internal fun BeatPlayerPanel(
-    beatPlayer: BeatPlayer,
+    beatPlayer: BeatPlayer?,
     isBeatReady: Boolean,
     isImporting: Boolean,
     beatDisplayName: String,
@@ -74,7 +74,7 @@ internal fun BeatPlayerPanel(
     // this screen owns a successfully loaded player so the waveform and clock
     // stay in sync with playback.
     LaunchedEffect(beatPlayer, isBeatReady) {
-        if (!isBeatReady) return@LaunchedEffect
+        if (!isBeatReady || beatPlayer == null) return@LaunchedEffect
 
         while (true) {
             currentPositionMs = beatPlayer.currentPositionMs
@@ -90,7 +90,15 @@ internal fun BeatPlayerPanel(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 4.dp)) {
-            if (isWaveformLoading) {
+            if (beatPlayer == null) {
+                CenteredPlayerContent(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Connecting beat player…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else if (isWaveformLoading) {
                 CenteredPlayerContent(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Preparing waveform…",
@@ -240,7 +248,7 @@ internal fun BeatPlayerPanel(
                     )
                 }
             }
-            if (isBeatReady) {
+            if (isBeatReady && beatPlayer != null) {
                 BeatPlaybackControls(
                     beatPlayer = beatPlayer,
                     isPlaying = isPlaying,
