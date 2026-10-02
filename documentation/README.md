@@ -54,6 +54,10 @@ Android measuring and drawing justified words at different widths. The saved
 letter spacing is retained for other alignments.
 
 `EditorScreen.kt` owns persistence; `LyricsNotepad.kt` owns the editing surface.
+The editor draws a dark loading surface while its playback service binds, and
+the Activity window uses the same black background. `EditorLyricsSession` orders
+lyric writes within each editor visit; its final exit save rejects queued writes
+from that visit so older snapshots cannot overwrite lyrics after navigation.
 The home screen reads project summaries off the UI thread and orders projects
 by their latest lyric snapshot or metadata edit. Beat and waveform-cache writes
 do not count as edits. Rows show the edit time, BPM, and musical key when available;

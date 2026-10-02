@@ -2,6 +2,8 @@ package com.prosincerity.ghostwriter
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.drawable.ColorDrawable
+import android.util.TypedValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
@@ -18,11 +20,13 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.toArgb
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.Settings
 import com.prosincerity.ghostwriter.ui.screens.GHOSTWRITER_REPOSITORY_URL
+import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -35,6 +39,40 @@ class MainActivityTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun activityWindow_usesStudioBackground() {
+        composeRule.runOnIdle {
+            val theme = composeRule.activity.theme
+            val background = TypedValue()
+            assertTrue(theme.resolveAttribute(android.R.attr.windowBackground, background, true))
+            val drawable = composeRule.activity.getDrawable(background.resourceId) as ColorDrawable
+            assertEquals(GhostColorScheme.background.toArgb(), drawable.color)
+            val lightTheme = TypedValue()
+            assertTrue(theme.resolveAttribute(android.R.attr.isLightTheme, lightTheme, true))
+            assertEquals(0, lightTheme.data)
+        }
+    }
+
+    @Test
+    fun returningFromSettingsAndDictionary_keepsLatestLyrics() {
+        val title = uniqueProjectTitle("Editor round trips")
+        try {
+            createProject(title)
+            for (destination in listOf("Settings", "Dictionary", "Settings", "Dictionary")) {
+                val lyrics = "Latest lyrics before $destination ${System.nanoTime()}"
+                composeRule.onNode(hasSetTextAction()).performTextReplacement(lyrics)
+                composeRule.onNodeWithContentDescription(destination).performClick()
+                composeRule.onNodeWithContentDescription("Back").performClick()
+                waitUntilTextExists(title)
+                composeRule.onNodeWithText(lyrics).assertExists()
+            }
+            composeRule.onNodeWithContentDescription("Back").performClick()
+            waitUntilTextExists(title)
+        } finally {
+            ProjectStorage.deleteProject(composeRule.activity, title)
+        }
+    }
 
     @Test
     fun navigation_homeToAboutAndBack_returnsHome() {

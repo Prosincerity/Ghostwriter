@@ -10,10 +10,15 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasScrollToNodeAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.espresso.Espresso
 import com.prosincerity.ghostwriter.data.DictionaryMatch
 import com.prosincerity.ghostwriter.data.DictionarySearchMode
 import com.prosincerity.ghostwriter.data.DictionarySearchResult
@@ -80,21 +85,28 @@ class DictionaryScreenTest {
             }
         }
 
+        fun submitAndShowError() {
+            // IME animations are outside Compose's test clock. In a lazy list,
+            // a shrinking viewport can dispose the error before assertExists.
+            Espresso.closeSoftKeyboard()
+            composeRule.onNodeWithText("Search").performScrollTo().performClick()
+            composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Lookup failed"))
+            composeRule.onNodeWithText("Lookup failed").assertExists()
+        }
+
         composeRule.onNodeWithText("Word").performTextInput("cat")
-        composeRule.onNodeWithText("Search").performClick()
-        composeRule.onNodeWithText("Lookup failed").assertExists()
-        composeRule.onNodeWithText("Word").performTextReplacement("dog")
+        submitAndShowError()
+        composeRule.onNodeWithText("Word").performScrollTo().performTextReplacement("dog")
+        Espresso.closeSoftKeyboard()
         composeRule.onNodeWithText("Lookup failed").assertDoesNotExist()
 
-        composeRule.onNodeWithText("Search").performClick()
-        composeRule.onNodeWithText("Lookup failed").assertExists()
-        composeRule.onNodeWithText("Language: English").performClick()
+        submitAndShowError()
+        composeRule.onNodeWithText("Language: English").performScrollTo().performClick()
         composeRule.onNodeWithText("German").performClick()
         composeRule.onNodeWithText("Lookup failed").assertDoesNotExist()
 
-        composeRule.onNodeWithText("Search").performClick()
-        composeRule.onNodeWithText("Lookup failed").assertExists()
-        composeRule.onNodeWithText("Mode: Rhyme").performClick()
+        submitAndShowError()
+        composeRule.onNodeWithText("Mode: Rhyme").performScrollTo().performClick()
         composeRule.onNodeWithText("Word prefix").performClick()
         composeRule.onNodeWithText("Lookup failed").assertDoesNotExist()
     }
