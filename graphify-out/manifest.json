@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt": {
-    "mtime": 1790959987.1420684,
-    "seen": 1790960399.5188537,
-    "ast_hash": "be899be514cbf6a916c16e06b3d3533b",
+    "mtime": 1790961317.880339,
+    "seen": 1790961534.5836706,
+    "ast_hash": "0bf6eba91dbaddbfff81c69689342158",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt": {
@@ -384,15 +384,15 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/AboutScreenTest.kt": {
-    "mtime": 1790871718.9745975,
-    "seen": 1790871768.5790968,
-    "ast_hash": "a3f97ece9c9914771fa94b7140478add",
+    "mtime": 1790961469.7574294,
+    "seen": 1790961534.5835412,
+    "ast_hash": "4253b7321c557c53ef2f9522c7524c31",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/AboutScreen.kt": {
-    "mtime": 1790784001.197248,
-    "seen": 1790784015.4229898,
-    "ast_hash": "d1f33ed7a0f7b9859a8c17a5273a9025",
+    "mtime": 1790961605.7547197,
+    "seen": 1790961883.658892,
+    "ast_hash": "4ef67759b4acdbbeaa2e40b6d3ff88c1",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {
@@ -504,9 +504,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloads.kt": {
-    "mtime": 1790784001.1974087,
-    "seen": 1790784015.4229946,
-    "ast_hash": "e7195d3c586a60a8d13041ee02c07eed",
+    "mtime": 1790961605.8497186,
+    "seen": 1790961883.6588953,
+    "ast_hash": "d74bbe14f20dc34dea7f7e9b70419fc7",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
@@ -3894,9 +3894,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloadsTest.kt": {
-    "mtime": 1790871718.9747472,
-    "seen": 1790871768.579099,
-    "ast_hash": "f5a327e43c7dab46943d56ba07b91fb6",
+    "mtime": 1790961605.658721,
+    "seen": 1790961883.658763,
+    "ast_hash": "83bb41a82f21fb1905d0f4add5ef5eb3",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlaybackServiceTest.kt": {
@@ -4485,6 +4485,12 @@
     "mtime": 1790960205.052329,
     "seen": 1790960399.518926,
     "ast_hash": "43b6680cf7c8a630176cb9d6c1fde95d",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/components/SettingsSection.kt": {
+    "mtime": 1790961317.7813401,
+    "seen": 1790961534.5836482,
+    "ast_hash": "e3f879c25e30959f8b24116690d9db39",
     "semantic_hash": ""
   }
 }
