@@ -51,7 +51,7 @@ class PcmLoopRendererTest {
         assertArrayEquals(shortArrayOf(5, 6, 3, 4), output)
     }
 
-    @Test fun seek_pastMarkerEndPlaysTailAcrossChunksThenIntroAndMarkerLoop() {
+    @Test fun seek_pastMarkerEndPlaysTailAcrossChunksThenStartsAtStartMarker() {
         val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, true, 100)), 4, noEvents)
         renderer.seek(15)
         assertEquals(15L, renderer.position)
@@ -60,11 +60,11 @@ class PcmLoopRendererTest {
         assertArrayEquals(shortArrayOf(15, 16, 17, 18), output)
         assertEquals(0L, renderer.loops)
         renderer.render(output)
-        assertArrayEquals(shortArrayOf(19, 0, 1, 2), output)
+        assertArrayEquals(shortArrayOf(19, 3, 4, 5), output)
         renderer.render(output)
-        assertArrayEquals(shortArrayOf(3, 4, 5, 6), output)
+        assertArrayEquals(shortArrayOf(6, 3, 4, 5), output)
         renderer.render(output)
-        assertArrayEquals(shortArrayOf(3, 4, 5, 6), output)
+        assertArrayEquals(shortArrayOf(6, 3, 4, 5), output)
     }
 
     @Test fun seek_atEndOnlyMarkerPlaysTailThenLoopsFromZero() {
@@ -87,7 +87,7 @@ class PcmLoopRendererTest {
         renderer.seek(15)
         val output = ShortArray(8)
         renderer.render(output)
-        assertArrayEquals(shortArrayOf(15, 16, 17, 18, 19, 0, 1, 2), output)
+        assertArrayEquals(shortArrayOf(15, 16, 17, 18, 19, 3, 4, 5), output)
         renderer.seek(8)
         renderer.render(output)
         assertArrayEquals(shortArrayOf(8, 9, 10, 7, 5, 6, 7, 8), output)
@@ -107,14 +107,14 @@ class PcmLoopRendererTest {
         assertEquals(0, renderer.render(output))
     }
 
-    @Test fun seek_outsideLoopReportsConsumedTailIntroAndLoopPositions() {
+    @Test fun seek_outsideLoopReportsConsumedTailAndMarkerLoopPositions() {
         val ledger = PlaybackFrameLedger(16, 20)
         val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, true, 100)), 14, ledger)
         renderer.seek(17)
         ledger.reset(renderer.position)
         renderer.render(ShortArray(14))
-        for ((consumed, beat) in listOf(0L to 17L, 2L to 19L, 3L to 0L, 5L to 2L,
-            6L to 3L, 9L to 6L, 10L to 3L, 13L to 6L)) {
+        for ((consumed, beat) in listOf(0L to 17L, 2L to 19L, 3L to 3L, 5L to 5L,
+            6L to 6L, 7L to 3L, 10L to 6L, 11L to 3L, 13L to 5L)) {
             assertEquals(beat, ledger.positionAt(consumed))
         }
     }

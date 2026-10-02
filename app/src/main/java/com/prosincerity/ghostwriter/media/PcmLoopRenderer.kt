@@ -37,8 +37,8 @@ internal class PcmLoopRenderer(
     fun seek(frame: Long, continueFromCurrentPosition: Boolean = false) {
         active = bounds.get()
         position = frame.coerceIn(0, source.frames)
-        // A manual seek outside the loop plays the physical tail, then the intro.
-        // Decoder handoff keeps its existing join directly into the marker loop.
+        // A manual seek outside the loop plays the physical tail, then the marker loop.
+        // Decoder handoff crossfades the tail directly into the marker loop.
         finishInitialTail = active.enabled && position >= active.end && position < source.frames
         tailJoinsLoop = continueFromCurrentPosition
         if (active.enabled && position >= active.end && !finishInitialTail) position = active.start
@@ -63,7 +63,7 @@ internal class PcmLoopRenderer(
             val end = if (active.enabled && !finishInitialTail) active.end else source.frames
             if (position >= end) {
                 if (!active.enabled) break
-                position = if (finishInitialTail && !tailJoinsLoop) 0 else active.start + active.crossfade
+                position = if (finishInitialTail && !tailJoinsLoop) active.start else active.start + active.crossfade
                 finishInitialTail = false
                 loops++
                 events.record(outputFrames + written, position)
