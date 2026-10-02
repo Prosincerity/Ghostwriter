@@ -84,9 +84,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt": {
-    "mtime": 1790884956.0177338,
-    "seen": 1790885015.0882227,
-    "ast_hash": "2cff7ed0573c0858ab77ed6591880400",
+    "mtime": 1790959987.1420684,
+    "seen": 1790960399.5188537,
+    "ast_hash": "be899be514cbf6a916c16e06b3d3533b",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt": {
@@ -222,9 +222,9 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1790777396.1513333,
-    "seen": 1790784015.4236355,
-    "ast_hash": "b27a047df344d2b3cfe4c4b973dac163",
+    "mtime": 1790958534.4853308,
+    "seen": 1790960399.5195298,
+    "ast_hash": "8b7a5bc2000f46e124d60f1d9b7dedf5",
     "semantic_hash": ""
   },
   "README.md": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
-    "mtime": 1790957694.7608876,
-    "seen": 1790957718.7847648,
-    "ast_hash": "79a9683f783b638bdf5b6e5f48b78ea7",
+    "mtime": 1790960121.5763783,
+    "seen": 1790960399.5195627,
+    "ast_hash": "b8bc91c0fdad1bf706ff56a132fb7fb4",
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790957694.6668887,
-    "seen": 1790957718.7847676,
-    "ast_hash": "3454f72485c679466f4aead897de930b",
+    "mtime": 1790960121.4753797,
+    "seen": 1790960399.5195665,
+    "ast_hash": "ad9baa4a1238bb7a1da48604afb13fe7",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -408,15 +408,15 @@
     "semantic_hash": ""
   },
   "documentation/TESTING.md": {
-    "mtime": 1790777396.1633332,
-    "seen": 1790784015.4237084,
-    "ast_hash": "69eb35092607b87eb307d5584dab48d4",
+    "mtime": 1790958534.5773296,
+    "seen": 1790960399.5195737,
+    "ast_hash": "88ad5f8ea6d95d5722d63551199f9295",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/MainActivityTest.kt": {
-    "mtime": 1790953542.3949049,
-    "seen": 1790953560.1908944,
-    "ast_hash": "2fd05a4a068d6d032d5e8ab7551a671a",
+    "mtime": 1790960121.3773808,
+    "seen": 1790960399.518598,
+    "ast_hash": "2fa2bfb88f900874a33fc53036ced0b5",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
@@ -4032,9 +4032,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreenTest.kt": {
-    "mtime": 1790880771.8551426,
-    "seen": 1790880802.3790038,
-    "ast_hash": "eea5ba12a74527c38db9de9a806e342a",
+    "mtime": 1790960284.1013353,
+    "seen": 1790960399.5186732,
+    "ast_hash": "7f817d78823cad98b184b884f149739f",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/LyricTextSettings.kt": {
@@ -4062,27 +4062,27 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/data/SystemFontCatalogTest.kt": {
-    "mtime": 1790871705.500122,
-    "seen": 1790871768.5790753,
-    "ast_hash": "c96f8c4fd59633b551572ca50962f857",
+    "mtime": 1790960284.2163336,
+    "seen": 1790960399.5186203,
+    "ast_hash": "ddceb1010581d4ab312f00f1870ff9a9",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/LyricFont.kt": {
-    "mtime": 1790787488.4244862,
-    "seen": 1790787507.3770585,
-    "ast_hash": "a2ee08e1f268fe06d4c370125d6d7d34",
+    "mtime": 1790960283.9893365,
+    "seen": 1790960399.5187123,
+    "ast_hash": "36be44a7770ff9d61c66dfb253b579dd",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/SystemFontCatalog.kt": {
-    "mtime": 1790871705.3951232,
-    "seen": 1790871768.579149,
-    "ast_hash": "d61370e8134d57d583f6f2a87858f169",
+    "mtime": 1790960283.878338,
+    "seen": 1790960399.51874,
+    "ast_hash": "33f7c4f0449141e80c0aad1a8c73fd30",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/LyricFontTest.kt": {
-    "mtime": 1790798578.12007,
-    "seen": 1790799711.3929381,
-    "ast_hash": "57ad815907c91a1a2060cc90bcef415d",
+    "mtime": 1790960214.593209,
+    "seen": 1790960399.5189197,
+    "ast_hash": "2cdd6f482dcf1676ee0beaf0bfbaf95e",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/ui/GhostTypographyTest.kt": {
@@ -4473,6 +4473,18 @@
     "mtime": 1790953461.501922,
     "seen": 1790953560.1911623,
     "ast_hash": "72001fc7b850b964ec1d378d3b81d86b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/OpenTypeFontMetadata.kt": {
+    "mtime": 1790960365.7883081,
+    "seen": 1790960399.518718,
+    "ast_hash": "52fd42662e39865b9ece431a066fe923",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/OpenTypeFontMetadataTest.kt": {
+    "mtime": 1790960205.052329,
+    "seen": 1790960399.518926,
+    "ast_hash": "43b6680cf7c8a630176cb9d6c1fde95d",
     "semantic_hash": ""
   }
 }

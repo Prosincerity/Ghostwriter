@@ -128,7 +128,7 @@ class MainActivityTest {
             composeRule.onNode(hasSetTextAction()).performTextInput("Keep these lyrics")
             composeRule.onNodeWithContentDescription("Settings").performClick()
             composeRule.onNodeWithContentDescription("Font family").performScrollTo().performClick()
-            composeRule.onNodeWithText("Serif").performClick()
+            composeRule.onNodeWithText("System default").performClick()
             composeRule.onNodeWithContentDescription("Font size").performScrollTo().performClick()
             composeRule.onNodeWithText("24 sp").performClick()
             composeRule.onNodeWithContentDescription("Text alignment").performScrollTo().performClick()
@@ -141,7 +141,7 @@ class MainActivityTest {
                 it(results)
             }
             val style = results.single().layoutInput.style
-            assertEquals(FontFamily.Serif, style.fontFamily)
+            assertEquals(FontFamily.Default, style.fontFamily)
             assertEquals(24.sp, style.fontSize)
             assertEquals(TextAlign.Center, style.textAlign)
             composeRule.onNodeWithContentDescription("Back").performClick()

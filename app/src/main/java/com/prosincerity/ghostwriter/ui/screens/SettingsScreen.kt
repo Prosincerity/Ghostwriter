@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,7 +85,10 @@ fun SettingsScreen(
     var intervalSeconds by remember { mutableIntStateOf(AppSettings.getAutosaveIntervalSeconds(context)) }
     var autosaveCount by remember { mutableIntStateOf(AppSettings.getAutosaveCount(context)) }
     var lyricTextSettings by remember(context) { mutableStateOf(AppSettings.getLyricTextSettings(context)) }
-    val fontOptions by produceState<List<LyricFont>>(initialValue = LyricFontFamily.entries) {
+    val configuration = LocalConfiguration.current
+    val fontOptions by produceState<List<LyricFont>>(
+        initialValue = listOf(LyricFontFamily.SYSTEM_DEFAULT), key1 = configuration.locales,
+    ) {
         value = withContext(Dispatchers.IO) { SystemFontCatalog.availableFonts() }
     }
 
@@ -151,7 +155,7 @@ fun SettingsScreen(
                     description = "Font family",
                     options = fontOptions,
                     selected = lyricTextSettings.fontFamily,
-                    label = { if (it in fontOptions) it.label else "${it.label} (unavailable)" },
+                    label = { SystemFontCatalog.selectionLabel(it, fontOptions) },
                     onSelect = { updateLyricTextSettings(lyricTextSettings.copy(fontFamily = it)) },
                     useDialog = true,
                 )

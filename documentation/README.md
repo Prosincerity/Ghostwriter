@@ -44,10 +44,16 @@ and its waveform cache. Metadata uses Android's `org.json`.
 Global lyric-pad typography is stored with those preferences. `LyricTextSettings`
 keeps defaults and bounds; the editor and Settings preview share a Compose text
 style mapping. On Android 10 and later, `SystemFonts.getAvailableFonts()` discovers
-device font files off the UI thread. Font selections preserve collection face
-indices and variation settings in SharedPreferences. Generic platform families
-remain available on older Android versions; unavailable saved files fall back to
-monospace. Sizes and letter spacing use scaled pixels, and line height is relative
+device font files off the UI thread. The picker reads OpenType typographic family
+names (name ID 16, falling back to ID 1), groups weights/styles and UI variants,
+and offers a regular upright face per family. Android font language tags and ICU
+writing-script samples filter choices to the device's primary language; direct
+OpenType character coverage excludes unrelated fallback and symbol fonts.
+Only System default is pinned above the alphabetized installed families.
+Font selections preserve collection face indices, variation settings, and family
+names in SharedPreferences. Older Android versions or discovery failure offer
+System default. Existing generic-family and file selections remain readable;
+unavailable saved files fall back to monospace. Sizes and letter spacing use scaled pixels, and line height is relative
 to the scaled font size.
 Justified text uses zero letter spacing in the editor and Settings preview to avoid
 Android measuring and drawing justified words at different widths. The saved

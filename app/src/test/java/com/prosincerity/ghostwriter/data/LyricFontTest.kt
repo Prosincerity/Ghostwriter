@@ -1,7 +1,6 @@
 package com.prosincerity.ghostwriter.data
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LyricFontTest {
@@ -21,12 +20,12 @@ class LyricFontTest {
             weight = 650,
             italic = true,
             variationSettings = "'wght' 650,'wdth' 90",
+            familyName = "Device Font",
         )
         val restored = lyricFontFromPreference(font.toPreferenceValue())
         assertEquals(font, restored)
         assertEquals(font, LyricTextSettings(fontFamily = restored).normalized().fontFamily)
-        assertTrue(font.label.contains("DeviceFont"))
-        assertTrue(font.label.contains("face 3"))
+        assertEquals("Device Font", font.label)
     }
 
     @Test
@@ -53,17 +52,36 @@ class LyricFontTest {
     }
 
     @Test
-    fun options_sortDeviceFontsAndDeduplicateWithoutLosingFacesOrVariations() {
-        val zed = SystemFontFile("/system/fonts/Zed.ttf")
-        val alpha = SystemFontFile("/product/fonts/alpha.ttc")
+    fun options_sortFamiliesAndChooseRegularUprightNormalWidthFaces() {
+        val zed = SystemFontFile("/system/fonts/Zed.ttf", familyName = "Zed")
+        val alpha = SystemFontFile("/product/fonts/alpha.ttc", familyName = "Alpha")
         val secondFace = alpha.copy(ttcIndex = 1)
         val variable = alpha.copy(weight = 600, variationSettings = "'wght' 600")
-        val fonts = listOf(zed, variable, secondFace, alpha, zed, alpha)
+        val italic = alpha.copy(italic = true)
+        val ui = alpha.copy(path = "/fonts/AlphaUI.ttf", familyName = "Alpha UI")
+        val condensed = alpha.copy(variationSettings = "'wdth' 75")
+        val fonts = listOf(zed, variable, secondFace, italic, ui, condensed, alpha, zed, alpha)
         val options = systemFontOptions(fonts)
 
-        assertEquals(LyricFontFamily.entries, options.take(LyricFontFamily.entries.size))
-        assertEquals(listOf(alpha, secondFace, variable, zed), options.drop(LyricFontFamily.entries.size))
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT, alpha, zed), options)
         assertEquals(options, systemFontOptions(fonts.reversed()))
-        assertEquals(LyricFontFamily.entries, systemFontOptions(emptyList()))
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), systemFontOptions(emptyList()))
+    }
+
+    @Test
+    fun options_keepDistinctCollectionFamiliesAndUseNearestWeightWhenRegularIsMissing() {
+        val mono = SystemFontFile("/fonts/Device.ttc", familyName = "Droid Sans Mono", weight = 500)
+        val serif = mono.copy(ttcIndex = 1, familyName = "Noto Serif")
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT, mono, serif),
+            systemFontOptions(listOf(mono.copy(weight = 700), serif, mono)))
+    }
+
+    @Test
+    fun legacySavedFace_keepsMetadataAndGetsACleanFallbackLabel() {
+        val old = """{"path":"/system/fonts/NotoNaskhArabicUI-Bold.ttf","ttcIndex":0,"weight":700,"italic":false,"variationSettings":""}"""
+        val restored = lyricFontFromPreference(old) as SystemFontFile
+        assertEquals("Noto Naskh Arabic", restored.label)
+        assertEquals(700, restored.weight)
+        assertEquals("", restored.familyName)
     }
 }
