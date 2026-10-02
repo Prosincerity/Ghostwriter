@@ -83,9 +83,14 @@ locked. Audio focus and headphone disconnection can pause playback.
 Opening another project, changing its beat, or deleting or renaming the
 playing project releases playback. Process death does not restart audio.
 Volume, loop mode, and playback position are session state. The loop button
-cycles Off, Whole beat, and Markers, using a label, distinct icons, and three
-position dots. Notification and lock-screen actions and subtitles show the same
-mode. Whole beat is the default and uses `MediaPlayer`, ignoring loop boundaries.
+cycles Off, Whole beat, and Markers, using distinct icons and three position
+dots, a visible Off / Beat / Marker label, and an accessibility label in all
+layouts. The compact Reassign button scales to the available width. Playback
+receives the space between compact, balanced side areas, keeping Play centered
+in the full row. Loop labels scale to fit beneath the icon on small screens;
+playback actions and volume controls remain evenly spaced on one row.
+Notification and lock-screen actions and subtitles show the same mode. Whole
+beat is the default and uses `MediaPlayer`, ignoring loop boundaries.
 Valid loop markers prepare PCM in the background in any mode, retaining the
 decoded audio and paused output for the loaded beat. Selecting Markers seeks
 to the loop start (or zero when no start is set), preserving whether playback
