@@ -24,8 +24,10 @@ Before modifying code, read:
 - Make focused changes; do not opportunistically refactor unrelated code.
 - Inspect existing architecture before introducing abstractions.
 - Add or update tests for behavior changes.
-- The maintainer uses Android Studio with an emulator for device testing. Leave
-  emulator and physical-device testing to the maintainer; do not run those tests.
+- Agents may run relevant instrumented tests on an already connected emulator
+  or physical device, including devices connected over wireless debugging.
+  Confirm the target with `adb devices -l` and select it with `ANDROID_SERIAL`.
+  If no device is available, compile the tests and leave execution to the maintainer.
 - Before completing a task, run the relevant non-device tests, including JVM tests.
 - Run ./gradlew test and ./gradlew lint when practical.
 - Do not modify main unless explicitly requested.
