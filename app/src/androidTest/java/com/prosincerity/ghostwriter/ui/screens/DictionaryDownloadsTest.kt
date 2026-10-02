@@ -1,6 +1,16 @@
 package com.prosincerity.ghostwriter.ui.screens
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -8,6 +18,9 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.data.DictionaryArchiveSource
 import com.prosincerity.ghostwriter.data.DictionaryInstaller
@@ -38,6 +51,39 @@ class DictionaryDownloadsTest {
     @get:Rule val composeRule = createComposeRule(StandardTestDispatcher())
 
     @Test
+    fun languageSectionsAndSourceNoticesRemainReachableWithLargeText() = withDictionaryTestContext { context ->
+        val attempts = AtomicInteger()
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+            attempts.incrementAndGet()
+            error("Downloads must be explicitly requested")
+        })
+        composeRule.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.5f)) {
+                GhostwriterTheme {
+                    DictionaryDownloads(
+                        installer,
+                        Modifier.width(320.dp).height(480.dp).verticalScroll(rememberScrollState()),
+                    )
+                }
+            }
+        }
+
+        waitForDownloadButton()
+        for (language in listOf("English", "German", "Turkish")) {
+            composeRule.onNodeWithText(language).performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithContentDescription("Download Wiktionary Kaikki for $language")
+                .performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithContentDescription("Download eSpeak NG generated for $language")
+                .performScrollTo().assertIsDisplayed()
+        }
+        composeRule.onNodeWithText("Dictionary sources").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.")
+            .performScrollTo().assertIsDisplayed()
+        assertEquals(0, attempts.get())
+    }
+
+    @Test
     fun failedDownloadCanBeRetriedAndMarksInstalledSource() = withDictionaryTestContext { context ->
         val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         val invalid = ByteArrayOutputStream().use { output ->
@@ -65,6 +111,7 @@ class DictionaryDownloadsTest {
 
         assertEquals(2, attempts.get())
         assertNotNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+        composeRule.onNodeWithText("Installed · Available offline").assertExists()
         composeRule.onNodeWithText("Could not download Wiktionary Kaikki for English: Downloaded dictionary is invalid")
             .assertDoesNotExist()
     }
@@ -87,6 +134,9 @@ class DictionaryDownloadsTest {
             composeRule.waitForIdle()
             assertTrue(started.await(5, TimeUnit.SECONDS))
             composeRule.onNodeWithText("Downloading Wiktionary Kaikki...").assertExists()
+            composeRule.onNode(SemanticsMatcher.expectValue(
+                SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo.Indeterminate,
+            )).assertExists()
             composeRule.onNodeWithContentDescription("Download eSpeak NG generated for English")
                 .assertIsNotEnabled()
             composeRule.onNodeWithText("Cancel download").performClick()
@@ -142,6 +192,9 @@ class DictionaryDownloadsTest {
             composeRule.waitUntil(5_000) {
                 composeRule.onAllNodesWithText("%", substring = true).fetchSemanticsNodes().isNotEmpty()
             }
+            val indicator = composeRule.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+                .fetchSemanticsNodes().single().config[SemanticsProperties.ProgressBarRangeInfo]
+            assertTrue(indicator.current > 0f && indicator.current <= 1f)
             composeRule.onNodeWithText("Cancel download").performClick()
         } finally {
             release.countDown()

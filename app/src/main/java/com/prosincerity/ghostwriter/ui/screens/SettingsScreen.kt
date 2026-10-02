@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,6 +56,7 @@ import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.data.SystemFontCatalog
 import com.prosincerity.ghostwriter.ui.components.SlimSlider
+import com.prosincerity.ghostwriter.ui.components.SettingsSection
 import com.prosincerity.ghostwriter.ui.components.toTextStyle
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import java.util.Locale
@@ -250,17 +250,6 @@ private fun SettingsSliderRow(
             valueRange = valueRange,
             modifier = Modifier.weight(0.6f).semantics { contentDescription = description },
         )
-    }
-}
-
-@Composable
-private fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Text(
-        title, style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(bottom = 12.dp),
-    )
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), content = content)
     }
 }
 

@@ -5,7 +5,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.Assert.assertEquals
@@ -41,10 +40,22 @@ class AboutScreenTest {
         composeRule.onNodeWithText("CC BY-SA 4.0").assertExists()
         composeRule.onNodeWithText("Third-party licenses").assertExists()
         composeRule.onNodeWithText("Dictionary data license and attribution").assertExists()
-        composeRule.onNodeWithText("Dictionary source files").performScrollTo().performClick()
-
-        composeRule.runOnIdle {
-            assertEquals(DICTIONARY_REPOSITORY_URL, openedUrl)
+        val links = listOf(
+            "Source code" to GHOSTWRITER_REPOSITORY_URL,
+            "GNU GPL v3.0 or later" to GHOSTWRITER_LICENSE_URL,
+            "Third-party licenses" to THIRD_PARTY_LICENSES_URL,
+            "Dictionary source files" to DICTIONARY_REPOSITORY_URL,
+            "Dictionary data license and attribution" to DICTIONARY_DATA_LICENSE_URL,
+            "Kaikki.org data source" to KAIKKI_URL,
+            "Wiktionary copyright and licensing" to WIKTIONARY_COPYRIGHT_URL,
+            "CC BY-SA 4.0" to CC_BY_SA_URL,
+            "GNU Free Documentation License" to GFDL_URL,
+            "eSpeak NG 1.52.0 source" to ESPEAK_SOURCE_URL,
+            "eSpeak NG license" to ESPEAK_LICENSE_URL,
+        )
+        for ((label, url) in links) {
+            composeRule.onNodeWithText(label).performScrollTo().performClick()
+            composeRule.runOnIdle { assertEquals(url, openedUrl) }
         }
     }
 
