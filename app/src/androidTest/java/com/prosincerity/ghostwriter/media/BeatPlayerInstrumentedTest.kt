@@ -87,6 +87,29 @@ class BeatPlayerInstrumentedTest {
     }
 
     @Test
+    fun seekBeyondLoopEnd_preservesPausedPositionPlaysTailThenResumesMarkerLoop() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(createPcm16Wav("beat-player-seek-outside-loop.wav", 2000)))
+            player.setMarkers(listOf(
+                WaveformMarker("Start", 400, MarkerLoopRole.START),
+                WaveformMarker("End", 900, MarkerLoopRole.END),
+            ))
+        }
+        waitUntil("PCM preparation did not finish", timeoutMs = 10000) { !player.isPreparingLoop }
+        instrumentation.runOnMainSync { player.seekTo(1400) }
+        SystemClock.sleep(100) // Give the paused audio worker time to apply the seek.
+        assertFalse(player.isPlaying)
+        assertTrue("Paused seek snapped into the loop", player.currentPositionMs in 1350..1450)
+        instrumentation.runOnMainSync { player.play() }
+        waitUntil("Seek did not play the physical tail") { player.isPlaying && player.currentPositionMs in 1500..1900 }
+        waitUntil("Beat did not wrap through the intro") { player.isPlaying && player.currentPositionMs in 0..300 }
+        waitUntil("Playback did not enter the marker range") { player.currentPositionMs in 650..850 }
+        waitUntil("Marker looping did not resume") { player.isPlaying && player.currentPositionMs in 400..550 }
+    }
+
+    @Test
     fun fractionalDuration_acceptsTailStartBeforeAndAfterPcmPreparation() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val player = createPlayer()

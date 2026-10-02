@@ -98,6 +98,8 @@ prefetches loop head/tail pages, and retains loop regions up to 8 MiB in memory.
 preallocated scratch arrays and atomic boundary snapshots, with no allocation,
 monitor locks, file I/O or decoding in render calls. Marker edits apply to upcoming
 buffers without pausing/flushing playback. Explicit seeks still flush queued audio.
+Seeking past the loop end plays the remaining beat, wraps to the beat beginning,
+and resumes marker looping after playback enters the loop range again.
 `PlaybackFrameLedger` maps consumed output frames to the beat, including live edits.
 Loop joins use an overlapping 3 ms crossfade, capped for short regions. The
 overlapped head frames are skipped on wrap, shortening a repeat by up to 3 ms.
