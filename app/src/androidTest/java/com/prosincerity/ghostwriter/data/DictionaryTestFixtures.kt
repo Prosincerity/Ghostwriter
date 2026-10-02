@@ -29,13 +29,19 @@ internal fun dictionaryArchive(context: Context, entries: List<Pair<String, Stri
     val file = File(context.cacheDir, "dictionary-fixture-${System.nanoTime()}.db")
     try {
         SQLiteDatabase.openOrCreateDatabase(file, null).use { database ->
-            database.execSQL(
-                "CREATE TABLE dictionary (word TEXT NOT NULL, ipa TEXT NOT NULL, " +
-                    "ipa_reversed TEXT NOT NULL, assonance_reversed TEXT NOT NULL, " +
-                    "PRIMARY KEY (word, ipa)) WITHOUT ROWID",
-            )
-            entries.forEach { (word, ipa) ->
-                database.execSQL("INSERT INTO dictionary VALUES (?, ?, '', '')", arrayOf(word, ipa))
+            database.beginTransaction()
+            try {
+                database.execSQL(
+                    "CREATE TABLE dictionary (word TEXT NOT NULL, ipa TEXT NOT NULL, " +
+                        "ipa_reversed TEXT NOT NULL, assonance_reversed TEXT NOT NULL, " +
+                        "PRIMARY KEY (word, ipa)) WITHOUT ROWID",
+                )
+                entries.forEach { (word, ipa) ->
+                    database.execSQL("INSERT INTO dictionary VALUES (?, ?, '', '')", arrayOf(word, ipa))
+                }
+                database.setTransactionSuccessful()
+            } finally {
+                database.endTransaction()
             }
         }
         return ByteArrayOutputStream().use { output ->
