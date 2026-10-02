@@ -15,15 +15,29 @@ rather than maintaining test or warning totals in documentation.
 
 ## Android tests
 
-The maintainer runs instrumented tests from Android Studio on an emulator or
-device. Agent work should compile these tests and leave execution to the
-maintainer, as required by [AGENTS.md](../AGENTS.md).
+Instrumented tests can run from Android Studio or the terminal on a connected
+emulator or device. Agents may run relevant tests on an already connected target,
+including devices connected over wireless debugging, as allowed by
+[AGENTS.md](../AGENTS.md). If no device is available, compile the tests and leave
+execution to the maintainer.
 
-The equivalent terminal command for the maintainer is:
+To run the full suite:
 
 ```sh
 ./gradlew connectedDebugAndroidTest
 ```
+
+For a sample test on one device, use the serial shown by `adb devices -l`:
+
+```sh
+ANDROID_SERIAL='<device serial>' ./gradlew :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.ExampleInstrumentedTest
+```
+
+Wireless debugging must already be paired and connected. Use the `adb` binary
+from the SDK configured in `local.properties` if it is not on your `PATH`.
+In a sandboxed agent session, access to the host ADB server and Gradle caches
+may require running the command outside the sandbox.
 
 Tests use AndroidJUnitRunner, Espresso, and Compose UI testing and can run
 without Google Play Services. Reports appear under
@@ -66,8 +80,8 @@ Debug builds enable JaCoCo for JVM and instrumented tests.
 | Combined | `./gradlew :app:createCoverageReport` | `app/build/reports/code_coverage_html_report/global/index.html` |
 
 Android and combined coverage require a running emulator or connected device
-and are maintainer tasks. The combined task reruns both suites. No minimum
-coverage threshold is enforced.
+and follow the same device-testing rules. The combined task reruns both suites.
+No minimum coverage threshold is enforced.
 
 If Gradle cannot see the emulator, check `adb devices` or launch the task from
 Android Studio's Gradle tool window. Failed runs do not produce complete
