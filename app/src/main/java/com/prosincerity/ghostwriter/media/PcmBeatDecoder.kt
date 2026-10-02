@@ -152,6 +152,13 @@ internal object PcmBeatDecoder {
         buffer.position(buffer.position() + (skipFrames * bytesPerSample * channels).toInt())
         // Append decoder output in order. Timestamp rounding must not overwrite samples.
         val data = ByteArray(buffer.remaining() / bytesPerSample * 2)
+        // PCM16 is already in the signed little-endian output format. Copy it
+        // in bulk while keeping the same offset, preroll and whole-sample bounds.
+        if (encoding == AudioFormat.ENCODING_PCM_16BIT) {
+            buffer.get(data)
+            pcm.write(data)
+            return
+        }
         var written = 0
         while (buffer.remaining() >= bytesPerSample) {
             val sample = when (encoding) {

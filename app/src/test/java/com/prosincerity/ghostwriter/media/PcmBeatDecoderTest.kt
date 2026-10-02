@@ -83,6 +83,25 @@ class PcmBeatDecoderTest {
             -32767, -32767, -16383, 0, 16383, 32767, 32767), readSamples(file.readBytes()))
     }
 
+    @Test fun pcm16DirectReadOnlyBuffer_preservesBytesAndIgnoresIncompleteTrailingSample() {
+        val samples = shortArrayOf(Short.MIN_VALUE, -12345, -1, 0, 1, 12345, Short.MAX_VALUE)
+        val buffer = ByteBuffer.allocateDirect(samples.size * 2 + 4).order(ByteOrder.LITTLE_ENDIAN)
+        buffer.putShort(999)
+        samples.forEach { buffer.putShort(it) }
+        buffer.putShort(999)
+        val input = buffer.asReadOnlyBuffer()
+        input.position(1)
+        val originalLimit = input.limit()
+        val file = folder.newFile()
+        RandomAccessFile(file, "rw").use { pcm ->
+            PcmBeatDecoder.appendDecodedBuffer(pcm, input, 2, samples.size * 2 + 1, 0,
+                44100, 1, AudioFormat.ENCODING_PCM_16BIT)
+        }
+        assertArrayEquals(samples, readSamples(file.readBytes()))
+        assertEquals(1, input.position())
+        assertEquals(originalLimit, input.limit())
+    }
+
     private fun append(pcm: RandomAccessFile, samples: ShortArray, timestamp: Long) {
         val buffer = ByteBuffer.allocate(samples.size * 2 + 4).order(ByteOrder.LITTLE_ENDIAN)
         buffer.putShort(999)

@@ -410,14 +410,20 @@ class DictionarySearchInstrumentedTest {
 
     private fun database(file: File, rows: List<Row>) {
         SQLiteDatabase.openOrCreateDatabase(file, null).use { db ->
-            db.execSQL("CREATE TABLE dictionary (word TEXT NOT NULL, ipa TEXT NOT NULL, " +
-                "ipa_reversed TEXT NOT NULL, assonance_reversed TEXT NOT NULL, " +
-                "PRIMARY KEY (word, ipa)) WITHOUT ROWID")
-            db.execSQL("CREATE INDEX idx_ipa_reversed ON dictionary(ipa_reversed)")
-            db.execSQL("CREATE INDEX idx_assonance_reversed ON dictionary(assonance_reversed)")
-            rows.forEach { row ->
-                db.execSQL("INSERT INTO dictionary VALUES (?, ?, ?, ?)",
-                    arrayOf(row.word, row.ipa, row.reversed, row.assonance))
+            db.beginTransaction()
+            try {
+                db.execSQL("CREATE TABLE dictionary (word TEXT NOT NULL, ipa TEXT NOT NULL, " +
+                    "ipa_reversed TEXT NOT NULL, assonance_reversed TEXT NOT NULL, " +
+                    "PRIMARY KEY (word, ipa)) WITHOUT ROWID")
+                db.execSQL("CREATE INDEX idx_ipa_reversed ON dictionary(ipa_reversed)")
+                db.execSQL("CREATE INDEX idx_assonance_reversed ON dictionary(assonance_reversed)")
+                rows.forEach { row ->
+                    db.execSQL("INSERT INTO dictionary VALUES (?, ?, ?, ?)",
+                        arrayOf(row.word, row.ipa, row.reversed, row.assonance))
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
             }
         }
     }

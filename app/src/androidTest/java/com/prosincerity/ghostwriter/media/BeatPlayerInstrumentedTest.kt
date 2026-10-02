@@ -680,12 +680,22 @@ class BeatPlayerInstrumentedTest {
         wav.put("data".toByteArray(Charsets.US_ASCII))
         wav.putInt(dataSize)
 
-        repeat(sampleCount) { sampleIndex ->
+        // Fill one period, then duplicate the populated bytes. Large fixtures
+        // keep the same samples without millions of instrumented putShort calls.
+        val periodSamples = minOf(sampleCount, 40)
+        repeat(periodSamples) { sampleIndex ->
             val sample = if ((sampleIndex / 20) % 2 == 0) 12_000 else -12_000
             wav.putShort(sample.toShort())
         }
+        val bytes = wav.array()
+        var filledBytes = periodSamples * bytesPerSample
+        while (filledBytes < dataSize) {
+            val copySize = minOf(filledBytes, dataSize - filledBytes)
+            bytes.copyInto(bytes, WAV_HEADER_SIZE + filledBytes, WAV_HEADER_SIZE, WAV_HEADER_SIZE + copySize)
+            filledBytes += copySize
+        }
 
-        return generatedFile(fileName).apply { writeBytes(wav.array()) }
+        return generatedFile(fileName).apply { writeBytes(bytes) }
     }
 
     private fun generatedFile(fileName: String): File {
