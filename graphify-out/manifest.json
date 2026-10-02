@@ -66,9 +66,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt": {
-    "mtime": 1790953461.3029244,
-    "seen": 1790953560.1911232,
-    "ast_hash": "96b5536ed42b7eb83884b440153a0ac1",
+    "mtime": 1790956138.7094498,
+    "seen": 1790956151.516338,
+    "ast_hash": "32955393fb7c74e55e3866e33f6db186",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/HomeScreen.kt": {
@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1790953542.2669065,
-    "seen": 1790953560.1917872,
-    "ast_hash": "5d9ab8bd212f453beb1493e35aeb33a1",
+    "mtime": 1790956095.1489975,
+    "seen": 1790956151.516698,
+    "ast_hash": "4fdde4c03707627ce443f08b630e430f",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
@@ -360,9 +360,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlayerPanel.kt": {
-    "mtime": 1790944448.3342326,
-    "seen": 1790944634.000671,
-    "ast_hash": "73a6a6d79a84c06c384a4efa4c3f3c28",
+    "mtime": 1790956095.0529985,
+    "seen": 1790956151.5163188,
+    "ast_hash": "25411874bdd0a41c4ff83a2e5a190b33",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt": {
@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
-    "mtime": 1790953414.72451,
-    "seen": 1790953560.1909535,
-    "ast_hash": "7af4e1c51f6ea59cc398a8e5662c6788",
+    "mtime": 1790957130.1609855,
+    "seen": 1790957149.8331065,
+    "ast_hash": "572a4387391162724b3a22d0f4fa83b1",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt": {
@@ -3912,9 +3912,9 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/media/RememberBeatPlayback.kt": {
-    "mtime": 1790777396.1603332,
-    "seen": 1790784015.422963,
-    "ast_hash": "9f8529cf3e8d4f7a3fcdf8f06fdfe45e",
+    "mtime": 1790956094.864001,
+    "seen": 1790956151.5163107,
+    "ast_hash": "b69a580821f73daa42b3c2da5786c81b",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260929_132838_b998c83d_does_dictionary_assonance_search_put_exact_matches.md": {

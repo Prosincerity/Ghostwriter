@@ -6,9 +6,12 @@ import android.content.Intent
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.ServiceConnection
+import android.content.ComponentName
+import android.os.IBinder
 import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import androidx.activity.compose.LocalActivityResultRegistryOwner
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +48,7 @@ import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.BeatPlaybackService
+import com.prosincerity.ghostwriter.media.rememberBeatPlayback
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
 import org.junit.Assert.assertEquals
@@ -77,7 +81,50 @@ class EditorScreenTest {
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun awaitingPlaybackConnection_onEveryEntryDrawsDarkBackground() {
+    fun playbackBinding_waitsUntilAfterFirstFrame_andCancelsOnExit() {
+        val connections = mutableSetOf<ServiceConnection>()
+        val pendingContext = object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun bindService(intent: Intent, connection: ServiceConnection, flags: Int): Boolean {
+                connections += connection
+                return true
+            }
+            override fun unbindService(connection: ServiceConnection) {
+                assertTrue(connections.remove(connection))
+            }
+        }
+        val visible = mutableStateOf(true)
+        composeRule.mainClock.autoAdvance = false
+        try {
+            composeRule.setContent {
+                CompositionLocalProvider(LocalContext provides pendingContext) {
+                    if (visible.value) rememberBeatPlayback("Deferred playback")
+                }
+            }
+            composeRule.runOnIdle { assertTrue(connections.isEmpty()) }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.runOnIdle { assertTrue(connections.isEmpty()) }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.runOnIdle { assertEquals(1, connections.size) }
+            composeRule.runOnIdle { visible.value = false }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.runOnIdle { assertTrue(connections.isEmpty()) }
+
+            // Leaving before the deferred bind must never acquire a connection.
+            composeRule.runOnIdle { visible.value = true }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.runOnIdle { visible.value = false }
+            composeRule.mainClock.advanceTimeByFrame()
+            composeRule.runOnIdle { assertTrue(connections.isEmpty()) }
+        } finally {
+            composeRule.runOnIdle { visible.value = false }
+            composeRule.mainClock.autoAdvance = true
+            composeRule.waitForIdle()
+        }
+    }
+
+    @Test
+    fun awaitingPlaybackConnection_onEveryEntryAllowsEditingAndSaving() {
         // Hold service connections pending, so this exercises the otherwise brief
         // first composition rather than waiting for the fully loaded editor.
         val connections = mutableSetOf<ServiceConnection>()
@@ -94,26 +141,117 @@ class EditorScreenTest {
             }
         }
         val visible = mutableStateOf(true)
-        composeRule.setContent {
-            CompositionLocalProvider(LocalContext provides pendingContext) {
-                GhostwriterTheme {
-                    if (visible.value) {
-                        EditorScreen("Pending playback", onBack = {}, onOpenSettings = {})
+        val title = uniqueProjectTitle("Pending playback")
+        val projectDir = ProjectStorage.projectDir(context, title)
+        assertTrue(ProjectStorage.saveManual(projectDir, title, "Saved lyrics", keepCount = 2))
+        try {
+            composeRule.setContent {
+                // Capture the host Activity's owner before replacing its context
+                // with the application-based service fixture.
+                val resultRegistryOwner = checkNotNull(LocalActivityResultRegistryOwner.current)
+                CompositionLocalProvider(
+                    LocalContext provides pendingContext,
+                    LocalActivityResultRegistryOwner provides resultRegistryOwner,
+                ) {
+                    GhostwriterTheme {
+                        if (visible.value) {
+                            EditorScreen(title, onBack = {}, onOpenSettings = {})
+                        }
                     }
                 }
             }
-        }
 
-        repeat(3) {
-            composeRule.runOnIdle { assertEquals(1, connections.size) }
-            val pixels = composeRule.onRoot().captureToImage().toPixelMap()
-            assertTrue("Waiting editor must fill the screen", pixels.width > 1 && pixels.height > 1)
-            for ((x, y) in listOf(0 to 0, (pixels.width - 1) to (pixels.height - 1))) {
-                assertEquals(GhostColorScheme.background, pixels[x, y])
+            repeat(3) { visit ->
+                composeRule.runOnIdle { assertEquals(1, connections.size) }
+                composeRule.onNodeWithText(title).assertExists()
+                composeRule.onNodeWithText("Connecting beat player…").assertExists()
+                composeRule.onNodeWithContentDescription("Play").assertDoesNotExist()
+                composeRule.onNodeWithContentDescription("Project Info").assertIsEnabled()
+                composeRule.onNodeWithContentDescription("Dictionary").assertIsEnabled()
+                composeRule.onNode(hasSetTextAction()).assertIsEnabled()
+                composeRule.onNode(hasSetTextAction()).assert(
+                    androidx.compose.ui.test.hasText(if (visit == 0) "Saved lyrics" else "Edited lyrics ${visit - 1}"),
+                )
+                val editedLyrics = "Edited lyrics $visit"
+                composeRule.onNode(hasSetTextAction()).performTextReplacement(editedLyrics)
+                composeRule.onNodeWithContentDescription("Save").performClick()
+                composeRule.waitUntil(5_000) { ProjectStorage.loadLatest(projectDir) == editedLyrics }
+
+                val pixels = composeRule.onRoot().captureToImage().toPixelMap()
+                assertTrue("Editor must fill the screen", pixels.width > 1 && pixels.height > 1)
+                assertEquals(GhostColorScheme.background, pixels[pixels.width - 1, pixels.height - 1])
+                composeRule.runOnIdle { visible.value = false }
+                composeRule.runOnIdle { assertTrue(connections.isEmpty()) }
+                assertEquals(editedLyrics, ProjectStorage.loadLatest(projectDir))
+                if (visit < 2) composeRule.runOnIdle { visible.value = true }
             }
+        } finally {
             composeRule.runOnIdle { visible.value = false }
-            composeRule.runOnIdle { assertTrue(connections.isEmpty()) }
-            if (it < 2) composeRule.runOnIdle { visible.value = true }
+            assertTrue(ProjectStorage.deleteProject(context, title))
+        }
+    }
+
+    @Test
+    fun playbackConnection_preservesEditsMadeWhileWaiting_andLoadsAssignedBeat() {
+        val title = uniqueProjectTitle("Delayed playback")
+        val projectDir = createAssignedBeat(title, durationMs = 1_000, cacheWaveform = true)
+        val visible = mutableStateOf(true)
+        var pendingConnection: ServiceConnection? = null
+        var pendingName: ComponentName? = null
+        var pendingBinder: IBinder? = null
+        val delayedContext = object : ContextWrapper(context) {
+            private val connections = mutableMapOf<ServiceConnection, ServiceConnection>()
+            override fun getApplicationContext(): Context = this
+            override fun bindService(intent: Intent, connection: ServiceConnection, flags: Int): Boolean {
+                val delayed = object : ServiceConnection {
+                    override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+                        pendingConnection = connection
+                        pendingName = name
+                        pendingBinder = binder
+                    }
+                    override fun onServiceDisconnected(name: ComponentName?) {
+                        connection.onServiceDisconnected(name)
+                    }
+                }
+                connections[connection] = delayed
+                return super.bindService(intent, delayed, flags)
+            }
+            override fun unbindService(connection: ServiceConnection) {
+                super.unbindService(checkNotNull(connections.remove(connection)))
+            }
+        }
+        try {
+            composeRule.setContent {
+                val resultRegistryOwner = checkNotNull(LocalActivityResultRegistryOwner.current)
+                CompositionLocalProvider(
+                    LocalContext provides delayedContext,
+                    LocalActivityResultRegistryOwner provides resultRegistryOwner,
+                ) {
+                    GhostwriterTheme {
+                        if (visible.value) EditorScreen(title, onBack = {}, onOpenSettings = {})
+                    }
+                }
+            }
+            composeRule.waitUntil(10_000) { pendingBinder != null }
+            composeRule.onNodeWithText("Connecting beat player…").assertExists()
+            composeRule.onNode(hasSetTextAction()).performTextReplacement("Written before playback connected")
+            composeRule.runOnIdle {
+                checkNotNull(pendingConnection).onServiceConnected(pendingName, pendingBinder)
+            }
+            waitUntilTextExists("editor-fixture")
+            composeRule.onNodeWithText("Connecting beat player…").assertDoesNotExist()
+            composeRule.onNodeWithContentDescription("Play").assertExists()
+            composeRule.onNode(hasSetTextAction()).assert(
+                androidx.compose.ui.test.hasText("Written before playback connected"),
+            )
+            composeRule.runOnIdle { visible.value = false }
+            // The state change schedules removal; the exit save runs when
+            // Compose actually disposes the editor in the next recomposition.
+            composeRule.waitForIdle()
+            composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
+            assertEquals("Written before playback connected", ProjectStorage.loadLatest(projectDir))
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
         }
     }
 
