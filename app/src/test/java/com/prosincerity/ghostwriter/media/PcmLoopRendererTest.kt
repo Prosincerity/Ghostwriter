@@ -51,6 +51,74 @@ class PcmLoopRendererTest {
         assertArrayEquals(shortArrayOf(5, 6, 3, 4), output)
     }
 
+    @Test fun seek_pastMarkerEndPlaysTailAcrossChunksThenIntroAndMarkerLoop() {
+        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, true, 100)), 4, noEvents)
+        renderer.seek(15)
+        assertEquals(15L, renderer.position)
+        val output = ShortArray(4)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(15, 16, 17, 18), output)
+        assertEquals(0L, renderer.loops)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(19, 0, 1, 2), output)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(3, 4, 5, 6), output)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(3, 4, 5, 6), output)
+    }
+
+    @Test fun seek_atEndOnlyMarkerPlaysTailThenLoopsFromZero() {
+        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(0, 7, true, 100)), 4, noEvents)
+        renderer.seek(7)
+        val output = ShortArray(4)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(7, 8, 9, 10), output)
+        renderer.seek(18)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(18, 19, 0, 1), output)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(2, 3, 4, 5), output)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(6, 0, 1, 2), output)
+    }
+
+    @Test fun seek_backInsideLoopCancelsTailPlaybackAndRestoresMarkerCrossfade() {
+        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 13, true, 1000)), 8, noEvents)
+        renderer.seek(15)
+        val output = ShortArray(8)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(15, 16, 17, 18, 19, 0, 1, 2), output)
+        renderer.seek(8)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(8, 9, 10, 7, 5, 6, 7, 8), output)
+    }
+
+    @Test fun seek_beforeStartPlaysIntroThenLoopsAndDisablingLoopPlaysToPhysicalEnd() {
+        val bounds = AtomicReference(PcmLoopBounds.create(3, 7, true, 100))
+        val renderer = PcmLoopRenderer(source(), bounds, 10, noEvents)
+        renderer.seek(1)
+        val output = ShortArray(10)
+        renderer.render(output)
+        assertArrayEquals(shortArrayOf(1, 2, 3, 4, 5, 6, 3, 4, 5, 6), output)
+        renderer.seek(17)
+        bounds.set(PcmLoopBounds.create(3, 7, false, 100))
+        assertEquals(3, renderer.render(output))
+        assertArrayEquals(shortArrayOf(17, 18, 19), output.copyOf(3))
+        assertEquals(0, renderer.render(output))
+    }
+
+    @Test fun seek_outsideLoopReportsConsumedTailIntroAndLoopPositions() {
+        val ledger = PlaybackFrameLedger(16, 20)
+        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, true, 100)), 14, ledger)
+        renderer.seek(17)
+        ledger.reset(renderer.position)
+        renderer.render(ShortArray(14))
+        for ((consumed, beat) in listOf(0L to 17L, 2L to 19L, 3L to 0L, 5L to 2L,
+            6L to 3L, 9L to 6L, 10L to 3L, 13L to 6L)) {
+            assertEquals(beat, ledger.positionAt(consumed))
+        }
+    }
+
     @Test fun continuation_tailCrossfadeJoinsHeadAndLiveEditStillApplies() {
         val bounds = AtomicReference(PcmLoopBounds.create(3, 13, true, 1000))
         val renderer = PcmLoopRenderer(source(), bounds, 8, noEvents)
@@ -113,14 +181,14 @@ class PcmLoopRendererTest {
         assertTrue(output.all { it == 4.toShort() })
     }
 
-    @Test fun seek_clampsPhysicalPositionsWrapsEnabledEndAndResetsOutputClock() {
+    @Test fun seek_clampsPhysicalPositionsPreservesMarkerEndAndResetsOutputClock() {
         val bounds = AtomicReference(PcmLoopBounds.create(3, 7, true, 100))
         val renderer = PcmLoopRenderer(source(), bounds, 10, noEvents)
         renderer.seek(6)
         renderer.render(ShortArray(10))
         assertTrue(renderer.loops > 0)
         renderer.seek(7)
-        assertEquals(3L, renderer.position)
+        assertEquals(7L, renderer.position)
         assertEquals(0L, renderer.outputFrames)
         assertEquals(0L, renderer.loops)
         renderer.seek(-1)

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T19:39:16.581034+00:00",
+  "generated_at": "2026-10-02T12:03:05.104189+00:00",
   "nodes": {
     "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
       "code_fingerprint": "2be4f15177599f28fa7cc6cfb78f15aeb02403d2783ebab525dfe6507cbb1ac9",
@@ -17,7 +17,7 @@
           "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
         }
       ],
-      "score": 1.919149037,
+      "score": 1.889092575,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
       "status": "preferred",
       "uses": 2
@@ -33,7 +33,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.975384731,
+      "score": 0.96010889,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt",
       "status": "tentative",
       "uses": 1
@@ -49,7 +49,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.969968993,
+      "score": 0.954777971,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilter.kt",
       "status": "tentative",
       "uses": 1
@@ -65,7 +65,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.969968993,
+      "score": 0.954777971,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt",
       "status": "tentative",
       "uses": 1
@@ -81,13 +81,13 @@
           "q": "Why do waveform markers lag behind the pointer while dragging?"
         }
       ],
-      "score": 0.999067735,
+      "score": 0.983420987,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformViewport.kt",
       "status": "tentative",
       "uses": 1
     },
     "app_src_main_java_com_prosincerity_ghostwriter_mainactivity": {
-      "code_fingerprint": "c60a0682a4fc93a1f6f54a1a9156dfaf6964480247e1774bc070bb2585a1fdaa",
+      "code_fingerprint": "9e52e697a5e0e531d4166c74b70b3fc9541c8c4ef0831d047ecd1efddc9f7431",
       "label": "MainActivity.kt",
       "last": "2026-10-01T19:23:22.282290+00:00",
       "provenance": [
@@ -97,13 +97,13 @@
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 0.999744836,
+      "score": 0.984087483,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
     },
     "app_src_main_java_com_prosincerity_ghostwriter_mainactivity_dictionary": {
-      "code_fingerprint": "c60a0682a4fc93a1f6f54a1a9156dfaf6964480247e1774bc070bb2585a1fdaa",
+      "code_fingerprint": "9e52e697a5e0e531d4166c74b70b3fc9541c8c4ef0831d047ecd1efddc9f7431",
       "label": "Dictionary",
       "last": "2026-09-30T11:30:17.905058+00:00",
       "provenance": [
@@ -113,7 +113,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.969523473,
+      "score": 0.954339428,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
@@ -139,7 +139,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 2.914877197,
+      "score": 2.869226289,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt",
       "status": "preferred",
       "uses": 3
@@ -155,7 +155,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.975384731,
+      "score": 0.96010889,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
       "status": "tentative",
       "uses": 1
@@ -171,42 +171,52 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.969523473,
+      "score": 0.954339428,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt",
       "status": "tentative",
       "uses": 1
     },
     "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols": {
-      "code_fingerprint": "83ed4a58eff1681ec686357d3f308726205d06bd882aa78649e5f4ee9de40201",
+      "code_fingerprint": "9670abe63a5e127ad7e8c6378b8b045b41ff0feea145a1c9bde7348ffaffaa11",
       "label": "BeatPlaybackControls.kt",
-      "last": "2026-10-01T19:23:22.282290+00:00",
+      "last": "2026-10-01T19:40:47.424614+00:00",
       "provenance": [
+        {
+          "date": "2026-10-01T19:40:47.424614+00:00",
+          "outcome": "useful",
+          "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
+        },
         {
           "date": "2026-10-01T19:23:22.282290+00:00",
           "outcome": "useful",
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 0.999744836,
+      "score": 1.968450048,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "app_src_main_java_com_prosincerity_ghostwriter_ui_components_waveformview": {
-      "code_fingerprint": "d4575a331583a13e12ea3d3bc22ef84ea77c1590207c1bcb98f84572aaf6c7d1",
+      "code_fingerprint": "a81b8dc038b912284c5c054d9b3ca8d742b3e393048f2148dee6da032aa2f19b",
       "label": "WaveformView.kt",
-      "last": "2026-10-01T19:23:22.282290+00:00",
+      "last": "2026-10-01T19:40:47.424614+00:00",
       "provenance": [
+        {
+          "date": "2026-10-01T19:40:47.424614+00:00",
+          "outcome": "useful",
+          "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
+        },
         {
           "date": "2026-10-01T19:23:22.282290+00:00",
           "outcome": "useful",
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 0.999744836,
+      "score": 1.968450048,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt",
-      "status": "tentative",
-      "uses": 1
+      "status": "preferred",
+      "uses": 2
     },
     "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_editorscreen": {
       "code_fingerprint": "051a1dbf9b00fcfd5302502bee096ddf26dbab3bb2060f12e477252c99e55290",
@@ -219,8 +229,88 @@
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 0.999744836,
+      "score": 0.984087483,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_screens_settingsscreen": {
+      "code_fingerprint": "b0254d60263c4b37df649872b6c497afbb37840ab9311fcae83897f95797f769",
+      "label": "SettingsScreen.kt",
+      "last": "2026-10-01T19:40:47.424614+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:40:47.424614+00:00",
+          "outcome": "useful",
+          "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
+        }
+      ],
+      "score": 0.984362564,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_theme_color": {
+      "code_fingerprint": "a36e951d8554031d35a5cac6ebc1ca63e02b5d1458b951be2efdc477588af9bd",
+      "label": "Color.kt",
+      "last": "2026-10-01T19:40:47.424614+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:40:47.424614+00:00",
+          "outcome": "useful",
+          "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
+        }
+      ],
+      "score": 0.984362564,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_theme_shapes": {
+      "code_fingerprint": "c614ec7ca9c1b262a6529b5310c6ea864f51a1b5d959a30e196dd0c1bb56d9a1",
+      "label": "Shapes.kt",
+      "last": "2026-10-01T19:40:47.424614+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:40:47.424614+00:00",
+          "outcome": "useful",
+          "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
+        }
+      ],
+      "score": 0.984362564,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Shapes.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_theme_theme": {
+      "code_fingerprint": "3f1dff9ecde9b33ee730c46bb1b7031f6e0aa9881b7c09ac8b8c6bd8714a3127",
+      "label": "Theme.kt",
+      "last": "2026-10-01T19:40:47.424614+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:40:47.424614+00:00",
+          "outcome": "useful",
+          "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
+        }
+      ],
+      "score": 0.984362564,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Theme.kt",
+      "status": "tentative",
+      "uses": 1
+    },
+    "app_src_main_java_com_prosincerity_ghostwriter_ui_theme_type": {
+      "code_fingerprint": "00504e9eea6a024e1aa9bf53a40339cf67228b8c2185cd23c0640b7718a3ce05",
+      "label": "Type.kt",
+      "last": "2026-10-01T19:40:47.424614+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-01T19:40:47.424614+00:00",
+          "outcome": "useful",
+          "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
+        }
+      ],
+      "score": 0.984362564,
+      "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Type.kt",
       "status": "tentative",
       "uses": 1
     }
