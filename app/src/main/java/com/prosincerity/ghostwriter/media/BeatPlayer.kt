@@ -42,6 +42,8 @@ class BeatPlayer(
     private var prepared = false
     private var loadedFile: File? = null
     private var markers: List<WaveformMarker> = emptyList()
+    // Retained for the loaded beat, including while MediaPlayer is audible.
+    private var cachedPlayback: SmoothLoopPlayback? = null
     private var smoothPlayback: SmoothLoopPlayback? = null
     private var pendingPlayback: SmoothLoopPlayback? = null
     private var handoffPlan: PlaybackHandoff? = null
@@ -73,9 +75,11 @@ class BeatPlayer(
     /** True if the player is currently playing audio. */
     val isPlaying: Boolean get() = smoothPlayback?.isPlaying ?: (player?.isPlaying == true)
 
-    /** Whether playback repeats between marker boundaries, or the whole beat without markers. */
-    var isLooping: Boolean by mutableStateOf(true)
-        private set
+    /** Whole-beat looping is the default; valid markers prepare PCM in any mode. */
+    private var selectedLoopMode: BeatLoopMode by mutableStateOf(BeatLoopMode.WHOLE_BEAT)
+    val loopMode: BeatLoopMode get() = selectedLoopMode
+
+    val isLooping: Boolean get() = loopMode != BeatLoopMode.OFF
 
     /** Playback volume, from silent (0f) to full volume (1f). */
     var volume: Float = 1f
@@ -141,7 +145,7 @@ class BeatPlayer(
     fun play() {
         if (!prepared || isPlaying || !beforePlay()) return
         // An explicit play retries preparation after a transient decoder/storage failure.
-        if (smoothPlayback == null && !isPreparingLoop && hasMarkerLoop()) setMarkers(markers)
+        if (cachedPlayback == null && !isPreparingLoop && hasMarkerLoop()) setMarkers(markers)
         when {
             smoothPlayback != null -> smoothPlayback?.play()
             else -> player?.start()
@@ -180,20 +184,55 @@ class BeatPlayer(
         onStateChanged()
     }
 
-    /**
-     * Toggles looping on/off and applies the change to the active player.
-     * @return the new looping state.
-     */
-    fun toggleLoop(): Boolean {
-        isLooping = !isLooping
-        player?.isLooping = isLooping
-        smoothPlayback?.configure(markerFrames(), isLooping)
-        pendingPlayback?.let {
-            it.configure(markerFrames(), isLooping)
-            if (handoffFadeStartMs == null) planHandoff(it)
+    /** Cycle Off -> Whole beat -> Markers -> Off from any playback control. */
+    fun toggleLoop(): BeatLoopMode {
+        setLoopMode(loopMode.next())
+        return loopMode
+    }
+
+    fun setLoopMode(mode: BeatLoopMode) {
+        if (mode == loopMode) return
+        selectedLoopMode = mode
+        if (mode == BeatLoopMode.MARKERS) {
+            player?.isLooping = true
+            val startMs = if (sampleRate > 0) {
+                MarkerLoopFrames.fromDurationUs(markers, sampleRate,
+                    sourceDurationUs.takeIf { it > 0 } ?: durationMs.toLong() * 1000)
+                    ?.let { it.start * 1000 / sampleRate } ?: 0
+            } else MarkerLoopRange.fromMarkers(markers, durationMs.toLong())?.startMs ?: 0
+            seekTo(startMs.toInt())
+            // MediaPlayer seeks asynchronously; cached PCM must use the requested
+            // start rather than reading the previous MediaPlayer position back.
+            if (cachedPlayback != null) activateCachedPlayback(startMs.toInt())
+            else setMarkers(markers)
+        } else {
+            useNormalPlayback()
+            player?.isLooping = mode == BeatLoopMode.WHOLE_BEAT
         }
         onStateChanged()
-        return isLooping
+    }
+
+    /** Return to MediaPlayer, retaining decoded PCM and its paused output for reuse. */
+    private fun useNormalPlayback() {
+        val position = currentPositionMs
+        val playing = isPlaying
+        val hadSmoothPlayback = smoothPlayback != null
+        cancelHandoffCallbacks()
+        pendingPlayback?.pause()
+        pendingPlayback = null
+        handoffPlan = null
+        smoothPlayback?.pause()
+        smoothPlayback = null
+        if (cachedPlayback != null) {
+            prepareCachedMarkers()
+            isPreparingLoop = false
+        }
+        player?.setVolume(volume, volume)
+        if (hadSmoothPlayback) {
+            player?.seekTo(position.coerceIn(0, durationMs))
+            if (playing) player?.start()
+        }
+        updateLoopWakeLock()
     }
 
     /**
@@ -222,6 +261,29 @@ class BeatPlayer(
         MarkerLoopFrames.fromMarkers(markers, it.sampleRate, it.frames)
     }
 
+    /** Keep marker pages and the next loop start ready without making PCM audible. */
+    private fun prepareCachedMarkers() {
+        val next = cachedPlayback ?: return
+        val range = markerFrames()
+        next.configure(range, looping = true)
+        next.seekTo(((range?.start ?: 0) * 1000 / sampleRate).toInt())
+    }
+
+    private fun activateCachedPlayback(positionMs: Int = currentPositionMs) {
+        val next = cachedPlayback ?: return
+        next.configure(markerFrames(), isLooping)
+        next.seekTo(positionMs, continueFromCurrentPosition = true)
+        if (isPlaying) {
+            next.setVolume(0f)
+            pendingPlayback = next
+            planHandoff(next)
+        } else {
+            next.setVolume(volume)
+            smoothPlayback = next
+            isPreparingLoop = false
+        }
+    }
+
     /** The service-owned player keeps marker loops alive after the editor unbinds. */
     fun setMarkers(value: List<WaveformMarker>) {
         if (!prepared) return
@@ -230,6 +292,11 @@ class BeatPlayer(
         pendingPlayback?.let {
             it.configure(markerFrames(), isLooping)
             if (handoffFadeStartMs == null) planHandoff(it)
+            return
+        }
+        cachedPlayback?.let {
+            if (loopMode == BeatLoopMode.MARKERS) activateCachedPlayback()
+            else prepareCachedMarkers()
             return
         }
         if (!hasMarkerLoop() || isPreparingLoop) return
@@ -253,13 +320,11 @@ class BeatPlayer(
                     return@post
                 }
                 decoded.onSuccess { (pcm, audio) ->
-                    val playing = isPlaying
-                    val positionMs = currentPositionMs
                     loopPcm = pcm
                     sampleRate = pcm.sampleRate
                     lateinit var next: SmoothLoopPlayback
                     next = SmoothLoopPlayback(
-                        pcm, audio, positionMs, markerFrames(), isLooping, if (playing) 0f else volume,
+                        pcm, audio, currentPositionMs, markerFrames(), true, 0f,
                         continueFromCurrentPosition = true,
                         onPrimed = { version -> scheduleHandoff(next, version) },
                         onOutputStarted = { beginHandoffBlend(next) },
@@ -269,9 +334,10 @@ class BeatPlayer(
                         onFailure = { failure ->
                             if (!cancelled.get() && loopPreparation === cancelled) {
                                 Log.e(TAG, "Smooth loop playback failed", failure)
-                                if (pendingPlayback === next) {
+                                if (smoothPlayback !== next) {
                                     cancelHandoffCallbacks()
                                     next.close()
+                                    cachedPlayback = null
                                     pendingPlayback = null
                                     loopPcm = null
                                     loopPreparation = null
@@ -283,11 +349,11 @@ class BeatPlayer(
                             }
                         },
                     )
-                    if (playing) {
-                        pendingPlayback = next
-                        planHandoff(next)
+                    cachedPlayback = next
+                    if (loopMode == BeatLoopMode.MARKERS) {
+                        activateCachedPlayback()
                     } else {
-                        smoothPlayback = next
+                        prepareCachedMarkers()
                         isPreparingLoop = false
                     }
                 }.onFailure { failure ->
@@ -417,11 +483,11 @@ class BeatPlayer(
         isPreparingLoop = false
         markers = emptyList()
         cancelHandoffCallbacks()
-        pendingPlayback?.close()
         pendingPlayback = null
         handoffPlan = null
-        smoothPlayback?.close()
         smoothPlayback = null
+        cachedPlayback?.close()
+        cachedPlayback = null
         loopPcm = null
         sourceDurationUs = 0
         sampleRate = 0

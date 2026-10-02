@@ -66,9 +66,10 @@ class BeatPlaybackService : Service() {
     private val playbackTitle get() = beatTitle.ifBlank { getString(R.string.app_name) }
     private val playbackSubtitle get() = listOfNotNull(
         getString(R.string.beat_playback_source), project?.takeIf { it.isNotBlank() },
+        loopLabel,
     ).joinToString(" · ")
-    private val loopLabel get() = getString(if (player.isLooping) R.string.beat_disable_loop else R.string.beat_enable_loop)
-    private val loopIcon get() = if (player.isLooping) R.drawable.ic_beat_loop_on else R.drawable.ic_beat_loop
+    private val loopLabel get() = getString(player.loopMode.labelRes)
+    private val loopIcon get() = player.loopMode.iconRes
 
     private val focusListener = AudioManager.OnAudioFocusChangeListener(::onAudioFocusChange)
 

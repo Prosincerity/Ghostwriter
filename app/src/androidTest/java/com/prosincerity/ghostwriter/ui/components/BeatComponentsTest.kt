@@ -23,6 +23,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.prosincerity.ghostwriter.media.BeatLoopMode
 import com.prosincerity.ghostwriter.media.BeatPlayer
 import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
@@ -59,7 +60,7 @@ class BeatComponentsTest {
             composeRule.onNodeWithText("Reassign"),
             composeRule.onNodeWithContentDescription("Play from start"),
             composeRule.onNodeWithContentDescription("Play"),
-            composeRule.onNodeWithContentDescription(if (player.isLooping) "Disable loop" else "Enable loop"),
+            composeRule.onNodeWithContentDescription("Loop: Whole beat"),
             composeRule.onNodeWithContentDescription("Mute"),
         )
         // Material sliders extend their accessibility bounds beyond the visible track.
@@ -103,16 +104,21 @@ class BeatComponentsTest {
         composeRule.runOnIdle { assertTrue(feedback.isEmpty()) }
         composeRule.onNodeWithContentDescription("Pause").performClick()
         composeRule.onNodeWithContentDescription("Play").performClick()
-        composeRule.onNodeWithContentDescription("Disable loop").performClick()
+        composeRule.onNodeWithContentDescription("Loop: Whole beat").performClick()
+        composeRule.onNodeWithText("Markers").assertExists()
+        composeRule.runOnIdle { assertEquals(BeatLoopMode.MARKERS, player.loopMode) }
+        composeRule.onNodeWithContentDescription("Loop: Markers").performClick()
+        composeRule.onNodeWithText("Off").assertExists()
         composeRule.runOnIdle { assertTrue(!player.isLooping) }
-        composeRule.onNodeWithContentDescription("Enable loop").performClick()
-        composeRule.runOnIdle { assertTrue(player.isLooping) }
+        composeRule.onNodeWithContentDescription("Loop: Off").performClick()
+        composeRule.onNodeWithText("Beat").assertExists()
+        composeRule.runOnIdle { assertEquals(BeatLoopMode.WHOLE_BEAT, player.loopMode) }
         composeRule.onNodeWithContentDescription("Play from start").performClick()
         composeRule.onNodeWithContentDescription("Mute").performClick()
-        composeRule.runOnIdle { assertEquals(List(6) { HapticFeedbackType.ContextClick }, feedback) }
+        composeRule.runOnIdle { assertEquals(List(7) { HapticFeedbackType.ContextClick }, feedback) }
         composeRule.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(player.volume, 0f..1f)))
             .performSemanticsAction(SemanticsActions.SetProgress) { it(0.5f) }
-        composeRule.runOnIdle { assertEquals(6, feedback.size) }
+        composeRule.runOnIdle { assertEquals(7, feedback.size) }
     }
 
     @Test
@@ -446,8 +452,11 @@ class BeatComponentsTest {
         composeRule.onNodeWithContentDescription("Play from start").performClick()
         composeRule.onNodeWithContentDescription("Play").performClick()
 
-        composeRule.onNodeWithContentDescription("Disable loop").performClick()
-        composeRule.onNodeWithContentDescription("Enable loop").assertExists()
+        composeRule.onNodeWithContentDescription("Loop: Whole beat").performClick()
+        composeRule.onNodeWithContentDescription("Loop: Markers").assertExists()
+        composeRule.runOnIdle { assertEquals(BeatLoopMode.MARKERS, beatPlayer.loopMode) }
+        composeRule.onNodeWithContentDescription("Loop: Markers").performClick()
+        composeRule.onNodeWithContentDescription("Loop: Off").assertExists()
         composeRule.runOnIdle { assertTrue(!beatPlayer.isLooping) }
 
         composeRule.onNodeWithContentDescription("Mute").performClick()
@@ -484,12 +493,14 @@ class BeatComponentsTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("Disable loop").assertExists()
+        composeRule.onNodeWithContentDescription("Loop: Whole beat").assertExists()
         composeRule.runOnIdle { beatPlayer.toggleLoop() }
-        composeRule.onNodeWithContentDescription("Enable loop").assertExists()
-        composeRule.onNodeWithContentDescription("Enable loop").performClick()
+        composeRule.onNodeWithContentDescription("Loop: Markers").assertExists()
+        composeRule.runOnIdle { beatPlayer.toggleLoop() }
+        composeRule.onNodeWithContentDescription("Loop: Off").assertExists()
+        composeRule.onNodeWithContentDescription("Loop: Off").performClick()
         composeRule.runOnIdle { assertTrue(beatPlayer.isLooping) }
-        composeRule.onNodeWithContentDescription("Disable loop").assertExists()
+        composeRule.onNodeWithContentDescription("Loop: Whole beat").assertExists()
     }
 
     @Test

@@ -65,8 +65,14 @@ release schedule.
 - [x] **Waveform timeline and loop markers** — seek, zoom, pan, and manage named markers.
   Marker dialogs offer **Looping: None / Start / End**, with one start and one
   end per beat. Setting a role transfers it from the previous marker. The Loop
-  button enables marker looping: a missing start uses 0:00, and a missing end
-  uses the end of the beat. Start markers use a brighter shade of purple and
+  button cycles **Off / Whole beat / Markers**, with a mode label, distinct icons,
+  and three indicators. Notifications and lock-screen controls show the same
+  mode. Whole beat ignores marker boundaries and uses normal playback. Valid
+  loop markers prepare PCM in the background in every mode; decoded audio and
+  paused PCM output are reused across mode changes and marker edits until the
+  beat is released. Selecting Markers jumps to the loop start while preserving
+  play/pause state: a missing start uses 0:00, and a missing end uses the end of
+  the beat. Start markers use a brighter shade of purple and
   end markers a darker shade. Loop audio is prepared locally and streamed
   with memory caching, worker prefetch for long beats, live loop boundaries,
   and a 3 ms overlapping crossfade to reduce clicks. Crossfades overlap samples,

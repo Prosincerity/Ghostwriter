@@ -43,10 +43,11 @@ class BeatPlaybackServiceTest {
                     WaveformMarker("Start", 200, MarkerLoopRole.START),
                     WaveformMarker("End", 800, MarkerLoopRole.END),
                 ))
+                player.setLoopMode(BeatLoopMode.MARKERS)
             }
             waitUntil { !player.isPreparingLoop }
             onMain { player.seekTo(700); player.play() }
-            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Markers"))
             unbind()
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
             try {
@@ -56,12 +57,12 @@ class BeatPlaybackServiceTest {
                 onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN) }
                 waitUntil { player.isPlaying }
                 controller.transportControls.sendCustomAction(
-                    controller.playbackState!!.customActions.first { it.name.toString() == "Disable loop" }.action, null,
+                    controller.playbackState!!.customActions.first { it.name.toString() == "Loop: Markers" }.action, null,
                 )
                 waitUntil { !player.isLooping && player.currentPositionMs > 900 }
                 controller.transportControls.pause()
                 waitUntil { !player.isPlaying }
-                waitForMediaNotification("Play", "Restart", "Enable loop")
+                waitForMediaNotification("Play", "Restart", "Loop: Off")
             } finally {
                 composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
             }
@@ -73,20 +74,20 @@ class BeatPlaybackServiceTest {
         withService { service, _ ->
             onMain { service.player.play() }
             waitUntil { service.player.isPlaying }
-            val notification = waitForMediaNotification("Pause", "Restart", "Disable loop")
+            val notification = waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
             val controller = mediaController(notification)
             val metadata = controller.metadata!!
 
             assertEquals("Test instrumental", metadata.getString(MediaMetadata.METADATA_KEY_TITLE))
-            assertEquals("[Ghostwriter] · Service test", metadata.getString(MediaMetadata.METADATA_KEY_ARTIST))
-            assertEquals("[Ghostwriter] · Service test", notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+            assertEquals("[Ghostwriter] · Service test · Loop: Whole beat", metadata.getString(MediaMetadata.METADATA_KEY_ARTIST))
+            assertEquals("[Ghostwriter] · Service test · Loop: Whole beat", notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
             assertNotNull(notification.getLargeIcon())
             assertNotNull(metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART))
             assertNotNull(metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON))
-            assertEquals(listOf("Restart", "Disable loop"),
+            assertEquals(listOf("Restart", "Loop: Whole beat"),
                 controller.playbackState!!.customActions.map { it.name.toString() })
             assertEquals(0L, controller.playbackState!!.actions and PlaybackState.ACTION_STOP)
-            assertEquals(listOf("Pause", "Restart", "Disable loop"),
+            assertEquals(listOf("Pause", "Restart", "Loop: Whole beat"),
                 notification.actions.map { it.title.toString() })
         }
     }
@@ -97,31 +98,34 @@ class BeatPlaybackServiceTest {
             val player = service.player
             onMain { player.play() }
             waitUntil { player.isPlaying }
-            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Whole beat"))
             val actions = controller.playbackState!!.customActions
             val restart = actions.first { it.name.toString() == "Restart" }.action
-            val loop = actions.first { it.name.toString() == "Disable loop" }.action
+            val loop = actions.first { it.name.toString() == "Loop: Whole beat" }.action
 
             onMain { player.seekTo(5_000); player.pause() }
             waitUntil { !player.isPlaying && player.currentPositionMs >= 5_000 }
             controller.transportControls.sendCustomAction(restart, null)
             waitUntil { player.isPlaying && player.currentPositionMs < 1_000 }
 
-            controller.transportControls.sendCustomAction(loop, null)
-            waitUntil { !player.isLooping }
-            waitUntil { controller.playbackState!!.customActions.any { it.name.toString() == "Enable loop" } }
-            assertEquals("Enable loop",
-                waitForMediaNotification("Pause", "Restart", "Enable loop").actions[2].title.toString())
-            onMain { player.toggleLoop() }
-            waitUntil { controller.playbackState!!.customActions.any { it.name.toString() == "Disable loop" } }
-            assertEquals("Disable loop",
-                waitForMediaNotification("Pause", "Restart", "Disable loop").actions[2].title.toString())
+            for (mode in listOf(BeatLoopMode.MARKERS, BeatLoopMode.OFF, BeatLoopMode.WHOLE_BEAT)) {
+                controller.transportControls.sendCustomAction(loop, null)
+                waitUntil { player.loopMode == mode }
+                val label = context.getString(mode.labelRes)
+                waitUntil { controller.playbackState!!.customActions.any { it.name.toString() == label } }
+                val action = controller.playbackState!!.customActions.first { it.action == loop }
+                assertEquals(mode.iconRes, action.icon)
+                val notification = waitForMediaNotification("Pause", "Restart", label)
+                assertEquals(mode.iconRes, notification.actions[2].getIcon()!!.resId)
+                assertTrue(notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString().endsWith(label))
+                assertTrue(controller.metadata!!.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE)!!.endsWith(label))
+            }
 
             controller.transportControls.pause()
             waitUntil { !player.isPlaying }
             assertTrue(onMainValue { player.isReady })
             assertEquals("Play",
-                waitForMediaNotification("Play", "Restart", "Disable loop").actions[0].title.toString())
+                waitForMediaNotification("Play", "Restart", "Loop: Whole beat").actions[0].title.toString())
         }
     }
 
@@ -134,18 +138,23 @@ class BeatPlaybackServiceTest {
             onMain { player.seekTo(5_000); player.pause() }
             waitUntil { !player.isPlaying && player.currentPositionMs >= 5_000 }
 
-            waitForMediaNotification("Play", "Restart", "Disable loop").actions[2].actionIntent.send()
-            waitUntil { !player.isLooping }
-            assertFalse(onMainValue { player.isPlaying })
-            waitForMediaNotification("Play", "Restart", "Enable loop").actions[2].actionIntent.send()
-            waitUntil { player.isLooping }
-            waitForMediaNotification("Play", "Restart", "Disable loop").actions[1].actionIntent.send()
+            var label = "Loop: Whole beat"
+            for (mode in listOf(BeatLoopMode.MARKERS, BeatLoopMode.OFF, BeatLoopMode.WHOLE_BEAT)) {
+                waitForMediaNotification("Play", "Restart", label).actions[2].actionIntent.send()
+                waitUntil { player.loopMode == mode }
+                assertFalse(onMainValue { player.isPlaying })
+                label = context.getString(mode.labelRes)
+                val notification = waitForMediaNotification("Play", "Restart", label)
+                assertEquals(mode.iconRes, notification.actions[2].getIcon()!!.resId)
+                assertEquals(label, mediaController(notification).playbackState!!.customActions.last().name.toString())
+            }
+            waitForMediaNotification("Play", "Restart", "Loop: Whole beat").actions[1].actionIntent.send()
             waitUntil { player.isPlaying && player.currentPositionMs < 1_000 }
-            waitForMediaNotification("Pause", "Restart", "Disable loop").actions[0].actionIntent.send()
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat").actions[0].actionIntent.send()
             waitUntil { !player.isPlaying }
             assertTrue(onMainValue { player.isReady })
-            assertEquals(listOf("Play", "Restart", "Disable loop"),
-                waitForMediaNotification("Play", "Restart", "Disable loop").actions.map { it.title.toString() })
+            assertEquals(listOf("Play", "Restart", "Loop: Whole beat"),
+                waitForMediaNotification("Play", "Restart", "Loop: Whole beat").actions.map { it.title.toString() })
         }
     }
 
@@ -155,7 +164,7 @@ class BeatPlaybackServiceTest {
             val player = service.player
             onMain { player.play() }
             waitUntil { player.isPlaying }
-            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Whole beat"))
             unbind()
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
             val position = onMainValue { player.currentPositionMs }
@@ -178,7 +187,7 @@ class BeatPlaybackServiceTest {
         withService { service, _ ->
             val player = service.player
             onMain { player.play() }
-            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Disable loop"))
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Whole beat"))
 
             controller.transportControls.pause()
             waitUntil { !player.isPlaying }
@@ -194,7 +203,7 @@ class BeatPlaybackServiceTest {
 
             onMain { player.play() }
             waitUntil { player.isPlaying }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
         }
     }
 
@@ -224,7 +233,7 @@ class BeatPlaybackServiceTest {
     fun transientFocusLoss_keepsUnboundServiceForeground_andResumesInBackground() {
         withService { service, unbind ->
             onMain { service.player.play() }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
             unbind()
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
             try {
@@ -234,13 +243,13 @@ class BeatPlaybackServiceTest {
                     AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)) {
                     onMain { service.onAudioFocusChange(loss) }
                     waitUntil { !service.player.isPlaying }
-                    val notification = waitForMediaNotification("Play", "Restart", "Disable loop")
+                    val notification = waitForMediaNotification("Play", "Restart", "Loop: Whole beat")
                     assertTrue("An interrupted beat must keep its foreground service",
                         notification.flags and Notification.FLAG_FOREGROUND_SERVICE != 0)
 
                     onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN) }
                     waitUntil { service.player.isPlaying }
-                    waitForMediaNotification("Pause", "Restart", "Disable loop")
+                    waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
                 }
             } finally {
                 composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
@@ -252,7 +261,7 @@ class BeatPlaybackServiceTest {
     fun editorPauseDuringFocusLoss_cancelsResume_andLeavesForeground() {
         withService { service, _ ->
             onMain { service.player.play() }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
             onMain {
                 service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
                 // The editor calls BeatPlayer directly, including when already paused.
@@ -261,7 +270,7 @@ class BeatPlaybackServiceTest {
             }
 
             assertFalse(onMainValue { service.player.isPlaying })
-            val notification = waitForMediaNotification("Play", "Restart", "Disable loop")
+            val notification = waitForMediaNotification("Play", "Restart", "Loop: Whole beat")
             assertEquals(0, notification.flags and Notification.FLAG_FOREGROUND_SERVICE)
         }
     }
@@ -270,7 +279,7 @@ class BeatPlaybackServiceTest {
     fun replacingProjectDuringFocusLoss_doesNotResumeOrRestoreNotification() {
         withService { service, _ ->
             onMain { service.player.play() }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
             onMain {
                 service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
                 service.selectProject("Replacement project")
@@ -287,7 +296,7 @@ class BeatPlaybackServiceTest {
     fun headphoneDisconnection_pausesPlaybackAndCancelsPendingFocusResume() {
         withService { service, _ ->
             onMain { service.player.play() }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
             onMain { service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) }
             // Android protects this broadcast; deliver its intent to the real receiver.
             onMain { service.noisyReceiver.onReceive(context, Intent(AudioManager.ACTION_AUDIO_BECOMING_NOISY)) }
@@ -301,7 +310,7 @@ class BeatPlaybackServiceTest {
 
             assertFalse(onMainValue { service.player.isPlaying })
             assertTrue(onMainValue { service.player.isReady })
-            waitForMediaNotification("Play", "Restart", "Disable loop")
+            waitForMediaNotification("Play", "Restart", "Loop: Whole beat")
         }
     }
 
@@ -309,15 +318,15 @@ class BeatPlaybackServiceTest {
     fun headphoneDisconnectionWhilePlaying_keepsPausedBeatAvailableForUserResume() {
         withService { service, _ ->
             onMain { service.player.play() }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
 
             onMain { service.noisyReceiver.onReceive(context, Intent(AudioManager.ACTION_AUDIO_BECOMING_NOISY)) }
 
             waitUntil { !service.player.isPlaying }
             assertTrue(onMainValue { service.player.isReady })
-            waitForMediaNotification("Play", "Restart", "Disable loop")
+            waitForMediaNotification("Play", "Restart", "Loop: Whole beat")
             onMain { service.player.play() }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
         }
     }
 
@@ -325,7 +334,7 @@ class BeatPlaybackServiceTest {
     fun noisyReceiverIgnoresMissingAndUnrelatedActions() {
         withService { service, _ ->
             onMain { service.player.play() }
-            waitForMediaNotification("Pause", "Restart", "Disable loop")
+            waitForMediaNotification("Pause", "Restart", "Loop: Whole beat")
 
             onMain {
                 service.noisyReceiver.onReceive(context, null)

@@ -8,20 +8,20 @@ class PlaybackNotificationUpdaterTest {
     @Test
     fun burstPublishesLatestButtonsOnce() {
         val queue = TestQueue()
-        var buttons = "Play, Restart, Disable loop"
+        var buttons = "Play, Restart, Loop: Whole beat"
         val published = mutableListOf<String>()
         val updater = PlaybackNotificationUpdater(queue::schedule, queue::remove) { published += buttons }
 
         updater.request()
-        buttons = "Pause, Restart, Disable loop"
+        buttons = "Pause, Restart, Loop: Markers"
         updater.request()
-        buttons = "Pause, Restart, Enable loop"
+        buttons = "Pause, Restart, Loop: Off"
         updater.request()
 
         queue.advanceTo(499)
         assertTrue(published.isEmpty())
         queue.advanceTo(500)
-        assertEquals(listOf("Pause, Restart, Enable loop"), published)
+        assertEquals(listOf("Pause, Restart, Loop: Off"), published)
         assertTrue(queue.tasks.isEmpty())
     }
 

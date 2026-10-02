@@ -82,14 +82,24 @@ locked. Audio focus and headphone disconnection can pause playback.
 
 Opening another project, changing its beat, or deleting or renaming the
 playing project releases playback. Process death does not restart audio.
-Volume, loop, and playback position are session state.
+Volume, loop mode, and playback position are session state. The loop button
+cycles Off, Whole beat, and Markers, using a label, distinct icons, and three
+position dots. Notification and lock-screen actions and subtitles show the same
+mode. Whole beat is the default and uses `MediaPlayer`, ignoring loop boundaries.
+Valid loop markers prepare PCM in the background in any mode, retaining the
+decoded audio and paused output for the loaded beat. Selecting Markers seeks
+to the loop start (or zero when no start is set), preserving whether playback
+is playing or paused. Leaving marker
+mode pauses PCM output and resumes `MediaPlayer` at the current position;
+preparation and cached PCM survive mode changes. Off plays to the physical end
+without repeating.
 
 Marker loop roles and exact frame indices (with their sample rate) are persisted
 in project metadata. Old millisecond markers migrate when the beat is opened;
 milliseconds remain a UI adapter. `MarkerLoop.kt` resolves the start/end range. A missing
 start defaults to zero; a missing end defaults to beat duration. The editor
 rejects empty or reversed ranges and transfers duplicate roles to the newly
-selected marker. With loop markers, `BeatPlayer` prepares a temporary,
+selected marker. With valid loop markers, `BeatPlayer` prepares a temporary,
 disk-backed PCM copy using `MediaExtractor`/`MediaCodec` off the UI thread.
 Short beats up to 8 MiB of PCM are loaded into a `ShortArray`. Longer beats use
 `PcmRingBuffer`: a separate worker fills a bounded circular page buffer,
@@ -98,15 +108,18 @@ prefetches loop head/tail pages, and retains loop regions up to 8 MiB in memory.
 preallocated scratch arrays and atomic boundary snapshots, with no allocation,
 monitor locks, file I/O or decoding in render calls. Marker edits apply to upcoming
 buffers without pausing/flushing playback. Explicit seeks still flush queued audio.
-Seeking past the loop end plays the remaining beat, wraps to the beat beginning,
-and resumes marker looping after playback enters the loop range again.
+Seeking past the loop end plays the remaining beat, then wraps to the start
+marker and resumes marker looping. A missing start marker wraps to zero.
 `PlaybackFrameLedger` maps consumed output frames to the beat, including live edits.
 Loop joins use an overlapping 3 ms crossfade, capped for short regions. The
 overlapped head frames are skipped on wrap, shortening a repeat by up to 3 ms.
 Playback, seeking, focus interruptions, media controls, and wake
 locks remain owned by the service. Preparation is cancelled on replacement;
-PCM files are deleted after loading into memory or on release. Beats without
-loop markers use `MediaPlayer`. While PCM is prepared, `MediaPlayer` keeps
+PCM files are deleted after loading into memory or on release. Marker edits
+update cached boundaries and prefetch without decoding the beat again. Beats
+without loop markers use `MediaPlayer`; an already prepared PCM output can
+also play the whole beat in Markers mode after removing the markers. While PCM
+is prepared, `MediaPlayer` keeps
 playing with working pause, seek, loop, and volume controls. PCM is buffered
 silently for a future position on the same beat. The normal player stays audible
 until PCM output advances, then a 30 ms volume blend transfers playback without

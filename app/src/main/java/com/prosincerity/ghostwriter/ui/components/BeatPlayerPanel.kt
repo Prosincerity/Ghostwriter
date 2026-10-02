@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.media.BeatPlayer
+import com.prosincerity.ghostwriter.media.BeatLoopMode
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
@@ -223,7 +224,7 @@ internal fun BeatPlayerPanel(
                         },
                         onMarkerMoveFinished = onMarkerMove,
                         viewport = waveformViewport,
-                        loopEnabled = beatPlayer.isLooping,
+                        loopEnabled = beatPlayer.loopMode == BeatLoopMode.MARKERS,
                         onViewportChange = { waveformViewport = it },
                         modifier = Modifier
                             .fillMaxWidth()
