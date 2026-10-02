@@ -1,5 +1,7 @@
 package com.prosincerity.ghostwriter.media
 
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
+import com.prosincerity.ghostwriter.data.WaveformMarker
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,6 +25,15 @@ import java.io.File
  *   - release() being safe to call multiple times
  */
 class BeatPlayerTest {
+
+    @Test
+    fun unpreparedPlayer_neverRequestsPlaybackServiceStart() {
+        var starts = 0
+        val player = BeatPlayer(beforePlay = { starts++; true })
+        player.play()
+        player.togglePlayPause()
+        assertEquals(0, starts)
+    }
 
     @Test
     fun setVolume_ignoresNaNAndKeepsPreviousVolume() {
@@ -55,9 +66,10 @@ class BeatPlayerTest {
     }
 
     @Test
-    fun freshPlayer_defaultsLoopingToTrue() {
+    fun freshPlayer_defaultsToWholeBeatLooping() {
         val player = BeatPlayer()
-        assertTrue("Loop should default to ON", player.isLooping)
+        assertEquals(BeatLoopMode.WHOLE_BEAT, player.loopMode)
+        assertTrue(player.isLooping)
     }
 
     @Test
@@ -101,24 +113,57 @@ class BeatPlayerTest {
         assertEquals(0, player.currentPositionMs)
     }
 
+    @Test
+    fun markersWithoutLoadedBeat_doNotPreparePcmInAnyLoopMode() {
+        val player = BeatPlayer()
+        player.decodeLoopAudio = { _, _, _ -> error("No beat is loaded") }
+        val markers = listOf(WaveformMarker("Start", 400, MarkerLoopRole.START))
+        for (mode in BeatLoopMode.entries) {
+            player.setLoopMode(mode)
+            player.setMarkers(markers)
+            player.play()
+            assertFalse(player.isPreparingLoop)
+            assertFalse(player.isReady)
+            assertFalse(player.isPlaying)
+        }
+    }
+
     // --- Loop toggle ---
 
     @Test
-    fun toggleLoop_flipsFromTrueToFalse() {
-        val player = BeatPlayer()
-        assertTrue(player.isLooping)         // default: true
-        val after = player.toggleLoop()
-        assertFalse("Loop should have been toggled off", after)
-        assertFalse(player.isLooping)
+    fun toggleLoop_notifiesOwnerWithUpdatedState() {
+        val observed = mutableListOf<BeatLoopMode>()
+        lateinit var player: BeatPlayer
+        player = BeatPlayer(onStateChanged = { observed += player.loopMode })
+
+        player.toggleLoop()
+        player.toggleLoop()
+        player.toggleLoop()
+
+        assertEquals(listOf(BeatLoopMode.MARKERS, BeatLoopMode.OFF, BeatLoopMode.WHOLE_BEAT), observed)
     }
 
     @Test
-    fun toggleLoop_flipsBackToTrue() {
+    fun toggleLoop_cyclesEveryModeAndReportsWhetherPlaybackRepeats() {
         val player = BeatPlayer()
-        player.toggleLoop()  // true → false
-        val back = player.toggleLoop()  // false → true
-        assertTrue("Loop should have been toggled back on", back)
+        assertEquals(BeatLoopMode.MARKERS, player.toggleLoop())
         assertTrue(player.isLooping)
+        assertEquals(BeatLoopMode.OFF, player.toggleLoop())
+        assertFalse(player.isLooping)
+        assertEquals(BeatLoopMode.WHOLE_BEAT, player.toggleLoop())
+        assertTrue(player.isLooping)
+    }
+
+    @Test
+    fun setLoopMode_keepsSelectionAcrossReleaseAndDoesNotNotifyForSameMode() {
+        var changes = 0
+        val player = BeatPlayer(onStateChanged = { changes++ })
+        player.setLoopMode(BeatLoopMode.OFF)
+        player.setLoopMode(BeatLoopMode.OFF)
+        assertEquals(1, changes)
+        player.release()
+        assertEquals(BeatLoopMode.OFF, player.loopMode)
+        assertFalse(player.isLooping)
     }
 
     // --- Volume ---

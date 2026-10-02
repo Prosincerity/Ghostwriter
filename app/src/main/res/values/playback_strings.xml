@@ -1,0 +1,13 @@
+<resources>
+    <string name="beat_playback_channel">Beat playback</string>
+    <string name="beat_play">Play</string>
+    <string name="beat_pause">Pause</string>
+    <string name="beat_restart">Restart</string>
+    <string name="beat_loop_off">Loop: Off</string>
+    <string name="beat_loop_whole">Loop: Whole beat</string>
+    <string name="beat_loop_markers">Loop: Markers</string>
+    <string name="beat_loop_off_short">Off</string>
+    <string name="beat_loop_whole_short">Beat</string>
+    <string name="beat_loop_markers_short">Marker</string>
+    <string name="beat_playback_source">[Ghostwriter]</string>
+</resources>

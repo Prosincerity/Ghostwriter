@@ -10,17 +10,25 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.net.toUri
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.ProjectSummary
+import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.screens.AboutScreen
+import com.prosincerity.ghostwriter.ui.screens.DictionaryDownloadsScreen
+import com.prosincerity.ghostwriter.ui.screens.DictionaryScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
 import com.prosincerity.ghostwriter.ui.screens.HomeScreen
 import com.prosincerity.ghostwriter.ui.screens.SettingsScreen
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +50,8 @@ private sealed class Screen {
     data class Editor(val projectTitle: String) : Screen()
     data class Settings(val returnTo: Screen) : Screen()
     data class About(val returnTo: Settings) : Screen()
+    data class DictionaryDownloads(val returnTo: Screen) : Screen()
+    data class Dictionary(val projectTitle: String) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -67,9 +77,20 @@ private fun GhostwriterApp(
     onOpenExternalLink: (Context, String) -> Boolean,
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
     var projects by remember { mutableStateOf(ProjectStorage.listProjects(context)) }
+    val projectSummaries by produceState<Map<String, ProjectSummary>>(
+        initialValue = emptyMap(), key1 = screen, key2 = projects,
+    ) {
+        if (screen == Screen.Home) {
+            value = withContext(Dispatchers.IO) {
+                val root = ProjectStorage.rootDir(context)
+                projects.associateWith { title -> ProjectSummary.fromDirectory(File(root, title)) }
+            }
+        }
+    }
     val versionName = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -85,6 +106,7 @@ private fun GhostwriterApp(
     when (val current = screen) {
         is Screen.Home -> HomeScreen(
             existingProjects = projects,
+            projectSummaries = projectSummaries,
             onCreateProject = { title ->
                 val cleanTitle = ProjectStorage.resolveProjectTitle(title, projects)
                 ProjectStorage.projectDir(context, cleanTitle) // creates the folder immediately
@@ -93,11 +115,13 @@ private fun GhostwriterApp(
             },
             onOpenProject = { title -> screen = Screen.Editor(title) },
             onDeleteProject = { title ->
+                BeatPlaybackService.forgetProject(context, title)
                 coroutineScope.launch {
                     val deleted = withContext(Dispatchers.IO) {
                         ProjectStorage.deleteProject(context, title)
                     }
                     if (deleted) {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         refreshProjects()
                     } else {
                         withContext(Dispatchers.Main.immediate) {
@@ -107,6 +131,7 @@ private fun GhostwriterApp(
                 }
             },
             onRenameProject = { currentTitle, renamedTitle ->
+                BeatPlaybackService.forgetProject(context, currentTitle)
                 coroutineScope.launch {
                     val renamed = withContext(Dispatchers.IO) {
                         ProjectStorage.renameProject(context, currentTitle, renamedTitle)
@@ -130,11 +155,22 @@ private fun GhostwriterApp(
                 screen = Screen.Home
             },
             onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Editor(current.projectTitle)) },
+            onOpenDictionary = { screen = Screen.Dictionary(current.projectTitle) },
+        )
+
+        is Screen.Dictionary -> DictionaryScreen(
+            onBack = { screen = Screen.Editor(current.projectTitle) },
+            onOpenDownloads = { screen = Screen.DictionaryDownloads(returnTo = current) },
         )
 
         is Screen.Settings -> SettingsScreen(
             onBack = { screen = current.returnTo },
             onOpenAbout = { screen = Screen.About(returnTo = current) },
+            onOpenDictionaryDownloads = { screen = Screen.DictionaryDownloads(returnTo = current) },
+        )
+
+        is Screen.DictionaryDownloads -> DictionaryDownloadsScreen(
+            onBack = { screen = current.returnTo },
         )
 
         is Screen.About -> AboutScreen(

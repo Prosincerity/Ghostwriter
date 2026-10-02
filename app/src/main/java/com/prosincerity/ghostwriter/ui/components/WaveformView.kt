@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -20,25 +21,34 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import com.prosincerity.ghostwriter.data.WaveformMarker
+import com.prosincerity.ghostwriter.logic.MarkerLoopRange
 import com.prosincerity.ghostwriter.logic.WaveformViewport
+import com.prosincerity.ghostwriter.logic.crossesWaveformMarker
+import com.prosincerity.ghostwriter.logic.waveformMarkerHitBounds
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
 import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
 import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
@@ -66,16 +76,20 @@ fun WaveformView(
     viewport: WaveformViewport,
     onViewportChange: (WaveformViewport) -> Unit,
     modifier: Modifier = Modifier,
+    loopEnabled: Boolean = false,
 ) {
     var viewportWidthPx by remember { mutableFloatStateOf(0f) }
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
+    val latestHaptics = rememberUpdatedState(haptics)
+    val latestMarkers = rememberUpdatedState(markers)
     val markerHitRadiusPx = with(density) { 24.dp.toPx() }
     val markerLabelPaddingPx = with(density) { 4.dp.toPx() }
     val markerLabelStyle = TextStyle(
         color = GhostSecondary,
-        fontFamily = FontFamily.Monospace,
-        fontSize = 10.sp,
+        fontFamily = MaterialTheme.typography.labelSmall.fontFamily,
+        fontSize = 11.sp,
     )
     val latestViewport = rememberUpdatedState(viewport)
     var draggedMarker by remember { mutableStateOf<WaveformMarker?>(null) }
@@ -102,7 +116,10 @@ fun WaveformView(
                 .pointerInput(durationMs, markers, viewportWidthPx) {
                     detectTapGestures(
                         onTap = { offset -> onSeekFinished(seekAt(offset.x)) },
-                        onLongPress = { offset -> onAddMarker(seekAt(offset.x)) },
+                        onLongPress = { offset ->
+                            latestHaptics.value.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            onAddMarker(seekAt(offset.x))
+                        },
                     )
                 }
                 .pointerInput(viewportWidthPx) {
@@ -114,7 +131,14 @@ fun WaveformView(
                         ) {
                             // At the full-beat view, a one-finger drag keeps
                             // the old seek-slider feel instead of panning.
-                            onSeekFinished(seekAt(centroid.x))
+                            // The detector reports the previous centroid; pan
+                            // takes us to the current finger/playhead position.
+                            val fromMs = seekAt(centroid.x)
+                            val toMs = seekAt(centroid.x + pan.x)
+                            if (crossesWaveformMarker(fromMs, toMs, latestMarkers.value)) {
+                                latestHaptics.value.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                            }
+                            onSeekFinished(toMs)
                         } else {
                             onViewportChange(
                                 currentViewport
@@ -126,10 +150,23 @@ fun WaveformView(
                 },
         ) {
             val drawingViewport = viewport.clamped(size.width)
-            val markerAreaHeight = 20.dp.toPx()
+            val markerAreaHeight = 24.dp.toPx()
             val waveformTop = markerAreaHeight
             val waveformHeight = (size.height - waveformTop).coerceAtLeast(0f)
             val waveformCenterY = waveformTop + waveformHeight / 2f
+
+            val displayedMarkers = if (draggedMarker == null) markers else markers.map {
+                if (it === draggedMarker) it.copy(positionMs = pendingMarkerPositionMs) else it
+            }
+            MarkerLoopRange.fromMarkers(displayedMarkers, durationMs)?.let { range ->
+                val left = drawingViewport.positionToX(range.startMs, durationMs, size.width).coerceIn(0f, size.width)
+                val right = drawingViewport.positionToX(range.endMs, durationMs, size.width).coerceIn(0f, size.width)
+                if (right > left) drawRect(
+                    color = GhostSecondary.copy(alpha = if (loopEnabled) 0.16f else 0.08f),
+                    topLeft = Offset(left, waveformTop),
+                    size = Size(right - left, waveformHeight),
+                )
+            }
 
             drawLine(
                 color = GhostBorder,
@@ -163,17 +200,22 @@ fun WaveformView(
             }
 
             markers.forEach { marker ->
+                val markerColor = when (marker.loopRole) {
+                    MarkerLoopRole.NONE -> lerp(GhostSecondary, Color.White, 0.24f)
+                    MarkerLoopRole.START -> lerp(GhostSecondary, Color.White, 0.55f)
+                    MarkerLoopRole.END -> lerp(GhostSecondary, Color.White, 0.18f)
+                }
                 val displayPositionMs = if (marker === draggedMarker) pendingMarkerPositionMs else marker.positionMs
                 val markerX = drawingViewport.positionToX(displayPositionMs, durationMs, size.width)
                 if (markerX in -48.dp.toPx()..size.width) {
                     drawLine(
-                        color = GhostSecondary,
+                        color = markerColor,
                         start = Offset(markerX, 0f),
                         end = Offset(markerX, size.height),
                         strokeWidth = 1.dp.toPx(),
                     )
                     drawLine(
-                        color = GhostSecondary,
+                        color = markerColor,
                         start = Offset(markerX, markerAreaHeight - 2.dp.toPx()),
                         end = Offset(markerX + 8.dp.toPx(), markerAreaHeight - 2.dp.toPx()),
                         strokeWidth = 3.dp.toPx(),
@@ -181,9 +223,9 @@ fun WaveformView(
                     )
                     drawText(
                         textMeasurer = textMeasurer,
-                        text = marker.label,
+                        text = marker.displayLabel(),
                         topLeft = Offset(markerX + 4.dp.toPx(), 0f),
-                        style = markerLabelStyle,
+                        style = markerLabelStyle.copy(color = markerColor),
                     )
                 }
             }
@@ -199,27 +241,42 @@ fun WaveformView(
 
         // Each marker gets a transparent hit target. This keeps its gestures
         // separate from the waveform's seek and pan gestures underneath.
+        val markerXs = markers.map {
+            viewport.positionToX(it.positionMs, durationMs, viewportWidthPx)
+        }
         markers.forEach { marker ->
             // Keep this target at the marker's pre-drag position. Moving the
             // target under an active pointer changes its local coordinates and
             // makes the marker lag or jump.
             val markerX = viewport.positionToX(marker.positionMs, durationMs, viewportWidthPx)
-            val labelSize = textMeasurer.measure(marker.label, markerLabelStyle).size
-            val overlayLeftPx = markerX - markerHitRadiusPx
-            val overlayWidthPx = maxOf(markerHitRadiusPx * 2f, markerHitRadiusPx + markerLabelPaddingPx + labelSize.width)
+            val labelSize = textMeasurer.measure(marker.displayLabel(), markerLabelStyle).size
+            val hitBounds = waveformMarkerHitBounds(
+                markerX, markerHitRadiusPx, labelSize.width.toFloat(), markerLabelPaddingPx, markerXs,
+            )
+            val overlayLeftPx = hitBounds.start.roundToInt().toFloat()
+            val overlayWidthPx = (hitBounds.endInclusive.roundToInt() - overlayLeftPx).coerceAtLeast(1f)
+            val labelLeftPx = markerX - overlayLeftPx + markerLabelPaddingPx
             val overlayWidth = with(density) { overlayWidthPx.toDp() }
 
             if (markerX in -overlayWidthPx..viewportWidthPx) {
                 Box(
                     modifier = Modifier
+                        .fillMaxHeight()
+                        .width(overlayWidth)
+                        .offset { IntOffset(overlayLeftPx.roundToInt(), 0) }
+                        // Report semantics at the same position as the pointer
+                        // handlers, after applying the marker's layout offset.
                         .testTag("Waveform marker ${marker.label}")
                         .semantics {
+                            stateDescription = "Looping: ${marker.loopRole.displayName}"
                             onClick(label = "Edit marker") {
                                 onMarkerClick(marker)
                                 true
                             }
+                            val displayPositionMs = if (marker === draggedMarker) pendingMarkerPositionMs
+                                else marker.positionMs
                             progressBarRangeInfo = ProgressBarRangeInfo(
-                                current = marker.positionMs.toFloat(),
+                                current = displayPositionMs.toFloat(),
                                 range = 0f..durationMs.coerceAtLeast(0L).toFloat(),
                             )
                             setProgress { requestedPosition ->
@@ -230,14 +287,11 @@ fun WaveformView(
                                 true
                             }
                         }
-                        .fillMaxHeight()
-                        .width(overlayWidth)
-                        .offset { IntOffset(overlayLeftPx.roundToInt(), 0) }
-                        .pointerInput(marker, durationMs, viewportWidthPx) {
+                        .pointerInput(marker, durationMs, viewportWidthPx, overlayLeftPx, labelLeftPx, labelSize) {
                             detectTapGestures(
                                 onTap = { offset ->
-                                    val isLabelTap = offset.x >= markerHitRadiusPx + markerLabelPaddingPx &&
-                                        offset.x <= markerHitRadiusPx + markerLabelPaddingPx + labelSize.width &&
+                                    val isLabelTap = offset.x >= labelLeftPx &&
+                                        offset.x <= labelLeftPx + labelSize.width &&
                                         offset.y <= labelSize.height
                                     if (isLabelTap) onMarkerClick(marker)
                                     else onSeekFinished(marker.positionMs)
@@ -245,14 +299,17 @@ fun WaveformView(
                                 onLongPress = { onMarkerClick(marker) },
                             )
                         }
-                        .pointerInput(marker, durationMs, viewportWidthPx) {
+                        .pointerInput(marker, durationMs, viewportWidthPx, overlayLeftPx) {
                             var dragStartPointerX = 0f
                             var dragStartMarkerX = 0f
                             detectDragGestures(
-                                onDragStart = { offset ->
+                                orientationLock = null,
+                                onDragStart = { down, _, _ ->
                                     draggedMarker = marker
                                     pendingMarkerPositionMs = marker.positionMs
-                                    dragStartPointerX = overlayLeftPx + offset.x
+                                    // Anchor to the press, not the event that crossed
+                                    // touch slop, or that initial movement is lost.
+                                    dragStartPointerX = overlayLeftPx + down.position.x
                                     dragStartMarkerX = latestViewport.value.positionToX(
                                         marker.positionMs,
                                         durationMs,
@@ -260,7 +317,9 @@ fun WaveformView(
                                     )
                                 },
                                 onDragCancel = { draggedMarker = null },
-                                onDragEnd = {
+                                onDragEnd = { change ->
+                                    val horizontalDelta = (overlayLeftPx + change.position.x) - dragStartPointerX
+                                    pendingMarkerPositionMs = seekAt(dragStartMarkerX + horizontalDelta)
                                     onMarkerMoveFinished(marker, pendingMarkerPositionMs)
                                     draggedMarker = null
                                 },
@@ -277,3 +336,6 @@ fun WaveformView(
 
     }
 }
+
+private fun WaveformMarker.displayLabel(): String =
+    if (loopRole == MarkerLoopRole.NONE) label else "${loopRole.displayName} · $label"

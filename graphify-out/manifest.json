@@ -6,9 +6,9 @@
     "semantic_hash": "005ac71c84af2cae38e255e2b9de2411"
   },
   "app/build.gradle.kts": {
-    "mtime": 1789215848.024623,
-    "seen": 1789215930.0074732,
-    "ast_hash": "851ade82d3d72dbe9c39ebfd77d4decc",
+    "mtime": 1790963224.4043705,
+    "seen": 1790963234.81685,
+    "ast_hash": "1d642c532b17d9caf05f8db0433543a1",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ExampleInstrumentedTest.kt": {
@@ -18,28 +18,28 @@
     "semantic_hash": "7c1404307d239fc98adb19ea5796d3ee"
   },
   "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt": {
-    "mtime": 1789757794.4772081,
-    "seen": 1789757827.6449115,
-    "ast_hash": "0bc1d7acf528da71c623bcad3c1a350d",
+    "mtime": 1790884956.0161207,
+    "seen": 1790885015.0879464,
+    "ast_hash": "5d11b9ef8b217b1352730abac8f3263b",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt": {
-    "mtime": 1789923914.1512232,
-    "seen": 1789923940.9902995,
-    "ast_hash": "9fc20087a3d54f5e20052efd1a89dde4",
+    "mtime": 1790871705.2921247,
+    "seen": 1790871768.5791392,
+    "ast_hash": "e31b205d783d60256293138931175b87",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectStorage.kt": {
-    "mtime": 1789923858.2119265,
-    "seen": 1789923940.9903011,
-    "ast_hash": "6d8f358b223602b28f93b971138e19d3",
+    "mtime": 1790875041.2741857,
+    "seen": 1790875062.8652246,
+    "ast_hash": "ca4499465db0b5ab1fb3d411db599950",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/Settings.kt": {
-    "mtime": 1788796497.1528633,
-    "seen": 1788970343.617755,
-    "ast_hash": "bb36f324d672065e71d61d3dead80ea3",
-    "semantic_hash": "bb36f324d672065e71d61d3dead80ea3"
+    "mtime": 1790871705.0901272,
+    "seen": 1790871768.5791433,
+    "ast_hash": "a3a5ff5dbf9a3debb51b276f1ad1b950",
+    "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformExtractor.kt": {
     "mtime": 1789924749.3217237,
@@ -54,63 +54,63 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt": {
-    "mtime": 1789925041.4010518,
-    "seen": 1789925106.1621227,
-    "ast_hash": "a8ea9171aa3ade371873711f289470a3",
+    "mtime": 1790945459.694518,
+    "seen": 1790945511.443714,
+    "ast_hash": "3c7336716f57ce376dce57f2a18b6fd3",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt": {
-    "mtime": 1789756503.9554322,
-    "seen": 1789756533.568302,
-    "ast_hash": "f5d4770741a0a3ffc30fe5c2e6c4487c",
+    "mtime": 1790884956.0188131,
+    "seen": 1790885015.088192,
+    "ast_hash": "d7bf18c5670a41262d0d14be337318f3",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt": {
-    "mtime": 1789924330.5159888,
-    "seen": 1789924496.5362349,
-    "ast_hash": "e43b292ef6ac4cdc1222a6286c71f916",
+    "mtime": 1790956138.7094498,
+    "seen": 1790956151.516338,
+    "ast_hash": "32955393fb7c74e55e3866e33f6db186",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/HomeScreen.kt": {
-    "mtime": 1788801275.9154108,
-    "seen": 1788970343.6177685,
-    "ast_hash": "d57be269b5e6783bd8650406446a7199",
-    "semantic_hash": "d57be269b5e6783bd8650406446a7199"
+    "mtime": 1790884956.0173178,
+    "seen": 1790885015.0882149,
+    "ast_hash": "4acc2146c46a63b689950bd66fca3739",
+    "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/ProjectInfoDialog.kt": {
-    "mtime": 1789922245.894196,
-    "seen": 1789922255.219844,
-    "ast_hash": "e9bc60be5cf84d0b5111b22374cc52bb",
+    "mtime": 1790784001.1970317,
+    "seen": 1790784015.4230175,
+    "ast_hash": "8133c03c3c6cc2f5ef9808acf06349b4",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt": {
-    "mtime": 1789213548.5125318,
-    "seen": 1789213632.7742486,
-    "ast_hash": "bb0fd2febb70058ce986a357440f46c0",
+    "mtime": 1790961317.880339,
+    "seen": 1790961534.5836706,
+    "ast_hash": "0bf6eba91dbaddbfff81c69689342158",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt": {
-    "mtime": 1789211420.7431269,
-    "seen": 1789212798.1952696,
-    "ast_hash": "920185ed4cfc100d487342a321bb6065",
+    "mtime": 1790884299.1377985,
+    "seen": 1790885015.088226,
+    "ast_hash": "c78ddfc75dd3f818f4d0253658da572b",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Theme.kt": {
-    "mtime": 1788804733.7879395,
-    "seen": 1788970343.6177773,
-    "ast_hash": "4feb022cb7157e35589c432e0a653f68",
-    "semantic_hash": "4feb022cb7157e35589c432e0a653f68"
+    "mtime": 1790885109.1066158,
+    "seen": 1790885166.8779693,
+    "ast_hash": "d69b4600c74e294df68b2b64fc454e47",
+    "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Type.kt": {
-    "mtime": 1788796499.2028375,
-    "seen": 1788970343.61778,
-    "ast_hash": "fd5fa4d5e4c33b40c18b5f99e707948a",
-    "semantic_hash": "fd5fa4d5e4c33b40c18b5f99e707948a"
+    "mtime": 1790884299.342796,
+    "seen": 1790885015.0882382,
+    "ast_hash": "564957998c167fa12fc2e64a85b58dec",
+    "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectMetadataTest.kt": {
-    "mtime": 1789211420.7431269,
-    "seen": 1789212798.1952753,
-    "ast_hash": "cf490e92aed6469ec469d88044644da0",
+    "mtime": 1790798578.2260685,
+    "seen": 1790799711.3929443,
+    "ast_hash": "49ab79b194d143176c2693ee74e693cd",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageBeatTest.kt": {
@@ -120,9 +120,9 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectStorageTest.kt": {
-    "mtime": 1789921369.0422196,
-    "seen": 1789921446.360518,
-    "ast_hash": "94e33865b25725f568497809b34163c1",
+    "mtime": 1790950365.3468459,
+    "seen": 1790950401.3620176,
+    "ast_hash": "5997d5637a106fffacf92e0ab6313767",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformExtractorTest.kt": {
@@ -138,28 +138,28 @@
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/media/BeatPlayerTest.kt": {
-    "mtime": 1789925041.943045,
-    "seen": 1789925106.1621597,
-    "ast_hash": "153ae0e38741f0d60ff1906c76e92d2a",
+    "mtime": 1790945343.3859804,
+    "seen": 1790945511.4438605,
+    "ast_hash": "7b4f9da6b3fa63a9425e1ecf6d4afe70",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/ui/SettingsFormatTest.kt": {
-    "mtime": 1789211420.7458644,
-    "seen": 1789212798.1952906,
-    "ast_hash": "c1454ad1ea92d24906c7b2d5b368796e",
+    "mtime": 1790786232.3272777,
+    "seen": 1790786292.3923419,
+    "ast_hash": "67c07311d3b40a0afb017701395e8014",
     "semantic_hash": ""
   },
   "build.gradle.kts": {
-    "mtime": 1788258766.4861982,
-    "seen": 1788970343.6177979,
-    "ast_hash": "f49e4fcefdb4de67e72283440b2f3b75",
-    "semantic_hash": "f49e4fcefdb4de67e72283440b2f3b75"
+    "mtime": 1790857541.690239,
+    "seen": 1790858314.320058,
+    "ast_hash": "f542a2c0e3b59da81efb4f0ba4668086",
+    "semantic_hash": ""
   },
   "gradlew": {
-    "mtime": 1788258760.369275,
-    "seen": 1788970343.6178005,
-    "ast_hash": "266606e78242737ef3da02a80ea0564d",
-    "semantic_hash": "266606e78242737ef3da02a80ea0564d"
+    "mtime": 1790856791.9636643,
+    "seen": 1790858314.3200653,
+    "ast_hash": "a43be8432bac3ffd05b3769aa42fe996",
+    "semantic_hash": ""
   },
   "settings.gradle.kts": {
     "mtime": 1788262578.6622727,
@@ -168,93 +168,87 @@
     "semantic_hash": "0e975564b1e23536a54768c68771d517"
   },
   ".codex/skills/graphify/SKILL.md": {
-    "mtime": 1789211420.7357175,
-    "seen": 1789212798.1953006,
-    "ast_hash": "212b55d95333d84e14262f8ec83faa2b",
+    "mtime": 1790863698.6943963,
+    "seen": 1790866156.8412209,
+    "ast_hash": "0f57b61141afe7b743273aec47c49dcc",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/add-watch.md": {
-    "mtime": 1789211420.7359185,
-    "seen": 1789212798.195304,
-    "ast_hash": "d59d027fe449f06aa03905a01184e779",
+    "mtime": 1790863647.702742,
+    "seen": 1790866156.8412232,
+    "ast_hash": "c1f65eb4102ad515149303c7f296b718",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/exports.md": {
-    "mtime": 1789211420.7360492,
-    "seen": 1789212798.1953068,
+    "mtime": 1790863647.7028623,
+    "seen": 1790866156.841226,
     "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/extraction-spec.md": {
-    "mtime": 1789211420.7360492,
-    "seen": 1789212798.1953094,
+    "mtime": 1790863647.7029858,
+    "seen": 1790866156.8412282,
     "ast_hash": "bf895ec4d4e40f5f66f7d31c2a9bd4a7",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/github-and-merge.md": {
-    "mtime": 1789211420.7360492,
-    "seen": 1789212798.195312,
+    "mtime": 1790863647.7031064,
+    "seen": 1790866156.841231,
     "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/hooks.md": {
-    "mtime": 1789211420.7360492,
-    "seen": 1789212798.1953144,
+    "mtime": 1790863647.7032206,
+    "seen": 1790866156.8412333,
     "ast_hash": "3f545db6ce646650bb9de588f5512a27",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/query.md": {
-    "mtime": 1789211420.736127,
-    "seen": 1789212798.195317,
+    "mtime": 1790863647.7033603,
+    "seen": 1790866156.8412359,
     "ast_hash": "3c46f8ad006874260614ed8657d02307",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/transcribe.md": {
-    "mtime": 1789211420.736127,
-    "seen": 1789212798.1953194,
+    "mtime": 1790863647.7035046,
+    "seen": 1790866156.8412385,
     "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
     "semantic_hash": ""
   },
   ".codex/skills/graphify/references/update.md": {
-    "mtime": 1789211420.736127,
-    "seen": 1789212798.1953225,
+    "mtime": 1790863647.7036407,
+    "seen": 1790866156.841241,
     "ast_hash": "9378bd03d56baaf78bd738ab3848f142",
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1789211420.7369802,
-    "seen": 1789212798.1953254,
-    "ast_hash": "ba0a4a62afc984cf80aeb86ee5e0d7a1",
+    "mtime": 1790958534.4853308,
+    "seen": 1790960399.5195298,
+    "ast_hash": "8b7a5bc2000f46e124d60f1d9b7dedf5",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1789925376.1398435,
-    "seen": 1789925402.1983268,
-    "ast_hash": "1313d049668a656a1d9ef06282df49e5",
-    "semantic_hash": ""
-  },
-  "documentation/AGENT_CONTEXT.md": {
-    "mtime": 1789925426.458211,
-    "seen": 1789925430.4987783,
-    "ast_hash": "dbe86b5746d4d271238826f7db06fb45",
+    "mtime": 1790777396.1523333,
+    "seen": 1790784015.4236426,
+    "ast_hash": "2d5d1377986fcc99eb698cbf846adeec",
     "semantic_hash": ""
   },
   "documentation/FEATURES.md": {
-    "mtime": 1789754813.3036866,
-    "seen": 1789754847.3135028,
-    "ast_hash": "bf19b6d3d1ca14b219f6fda1d9d2d6e1",
+    "mtime": 1790960121.5763783,
+    "seen": 1790960399.5195627,
+    "ast_hash": "b8bc91c0fdad1bf706ff56a132fb7fb4",
     "semantic_hash": ""
   },
   "documentation/README.md": {
-    "mtime": 1789220082.603387,
-    "seen": 1789754847.313505,
-    "ast_hash": "a77ad5273fbf8acd1ed98b0ae4658fa8",
+    "mtime": 1790960121.4753797,
+    "seen": 1790960399.5195665,
+    "ast_hash": "ad9baa4a1238bb7a1da48604afb13fe7",
     "semantic_hash": ""
   },
   "documentation/SETUP_NOTES.md": {
-    "mtime": 1789220217.1806953,
-    "seen": 1789754847.3135076,
-    "ast_hash": "ff4d2d1ca613f2a8ec518f73b1ee42f7",
+    "mtime": 1790777396.1633332,
+    "seen": 1790784015.423704,
+    "ast_hash": "651843f808331440092d55499e3bc969",
     "semantic_hash": ""
   },
   "app/src/main/ic_launcher-playstore.png": {
@@ -360,15 +354,15 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatDialogs.kt": {
-    "mtime": 1789211420.7412508,
-    "seen": 1789212798.195248,
-    "ast_hash": "43e2fa2e77966205ffac81922c381f4e",
+    "mtime": 1790791357.8208413,
+    "seen": 1790792491.8075297,
+    "ast_hash": "7de0770a83a625d39fdd5f290862062d",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlayerPanel.kt": {
-    "mtime": 1789923162.2806754,
-    "seen": 1789923192.0619993,
-    "ast_hash": "bbfde02c4b01012c10102f24bd2eba47",
+    "mtime": 1790956095.0529985,
+    "seen": 1790956151.5163188,
+    "ast_hash": "25411874bdd0a41c4ff83a2e5a190b33",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/PlaybackTime.kt": {
@@ -378,63 +372,63 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/BeatComponentsTest.kt": {
-    "mtime": 1789925054.3278892,
-    "seen": 1789925106.162095,
-    "ast_hash": "2b86f84e90076150943f67a6f1253aaa",
+    "mtime": 1790949988.0325892,
+    "seen": 1790950015.9351096,
+    "ast_hash": "29ca56705bcab3950c4681c9972b14bc",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/ProjectInfoDialogTest.kt": {
-    "mtime": 1789922167.942176,
-    "seen": 1789922215.9852192,
-    "ast_hash": "262a03100788c0cf6012d2d2aba9a013",
+    "mtime": 1790871718.9742134,
+    "seen": 1790871768.5791092,
+    "ast_hash": "659ea40d10d91c1cae1430048740855d",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/AboutScreenTest.kt": {
-    "mtime": 1789754813.81268,
-    "seen": 1789754847.3134382,
-    "ast_hash": "8415c99e3068ddb8f265a9156ff29da5",
+    "mtime": 1790961469.7574294,
+    "seen": 1790961534.5835412,
+    "ast_hash": "4253b7321c557c53ef2f9522c7524c31",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/AboutScreen.kt": {
-    "mtime": 1789754813.5566833,
-    "seen": 1789754847.313462,
-    "ast_hash": "7486fb72ecd336445a34798462fd3cae",
+    "mtime": 1790961605.7547197,
+    "seen": 1790961883.658892,
+    "ast_hash": "4ef67759b4acdbbeaa2e40b6d3ff88c1",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepadTest.kt": {
-    "mtime": 1789214279.495342,
-    "seen": 1789214334.2523808,
-    "ast_hash": "35d01e0e63c49747b05e9bcfba07969d",
+    "mtime": 1790880771.7521439,
+    "seen": 1790880802.3789814,
+    "ast_hash": "22a67b209e1d257571334605dd570e0d",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricsNotepad.kt": {
-    "mtime": 1789214153.6619241,
-    "seen": 1789214334.252401,
-    "ast_hash": "8ba0a630c983028bc3f96e848c119ce1",
+    "mtime": 1790884749.6519983,
+    "seen": 1790885015.0881805,
+    "ast_hash": "b54b2fb6990bbc52d0aeba0e2f1508aa",
     "semantic_hash": ""
   },
   "documentation/TESTING.md": {
-    "mtime": 1789217237.4421556,
-    "seen": 1789217281.146114,
-    "ast_hash": "051d8ba89cc58e3601b74cc837b6a6c3",
+    "mtime": 1790958534.5773296,
+    "seen": 1790960399.5195737,
+    "ast_hash": "88ad5f8ea6d95d5722d63551199f9295",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/MainActivityTest.kt": {
-    "mtime": 1789757527.5095644,
-    "seen": 1789757560.5160866,
-    "ast_hash": "78a31cddd23586c0ae818f2b94c0a834",
+    "mtime": 1790960121.3773808,
+    "seen": 1790960399.518598,
+    "ast_hash": "2fa2bfb88f900874a33fc53036ced0b5",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorScreenTest.kt": {
-    "mtime": 1789756686.8781326,
-    "seen": 1789756700.2947886,
-    "ast_hash": "541fcab3094954ca84a728700ba2949a",
+    "mtime": 1790957130.1609855,
+    "seen": 1790957149.8331065,
+    "ast_hash": "572a4387391162724b3a22d0f4fa83b1",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenTest.kt": {
-    "mtime": 1789219020.4857397,
-    "seen": 1789219089.7877154,
-    "ast_hash": "3149d815fb934976df487dfadce7377f",
+    "mtime": 1790884826.8517292,
+    "seen": 1790885015.087928,
+    "ast_hash": "3693870e5b79eecd2df4cb45914f584a",
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/logic/WaveformExtractorInstrumentedTest.kt": {
@@ -444,9 +438,9 @@
     "semantic_hash": ""
   },
   "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlayerInstrumentedTest.kt": {
-    "mtime": 1789755533.5846314,
-    "seen": 1789755565.805644,
-    "ast_hash": "c5c326ede753822be563f84e6eeaffac",
+    "mtime": 1790952174.3341038,
+    "seen": 1790952255.6738873,
+    "ast_hash": "9b80204912c3d509dc22a87472aa015d",
     "semantic_hash": ""
   },
   "app/src/test/java/com/prosincerity/ghostwriter/ui/ProjectInfoBpmTest.kt": {
@@ -468,21 +462,4035 @@
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogs.kt": {
-    "mtime": 1789922745.4409158,
-    "seen": 1789922782.626934,
-    "ast_hash": "ae35740663c9a97433c8b9c45fe70b03",
+    "mtime": 1790882283.1831424,
+    "seen": 1790882486.1574285,
+    "ast_hash": "953cefcb7889177d9acdc160dcfc2532",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt": {
-    "mtime": 1789925041.6720483,
-    "seen": 1789925106.1621277,
-    "ast_hash": "8a5b818be19c18d033f29a3bb59ea17e",
+    "mtime": 1790950194.9609878,
+    "seen": 1790950231.5208375,
+    "ast_hash": "58d8a113fc893bd8d31ff9d5adad0bb6",
     "semantic_hash": ""
   },
   "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectLyricsStorage.kt": {
-    "mtime": 1789923870.334774,
-    "seen": 1789923940.990295,
-    "ast_hash": "612e528cfeb64339060eebdf96f9b776",
+    "mtime": 1790875957.5296667,
+    "seen": 1790875977.8722613,
+    "ast_hash": "04540e8c44b802580b085b291754e5df",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryInstallerInstrumentedTest.kt": {
+    "mtime": 1790777396.1523333,
+    "seen": 1790784015.42275,
+    "ast_hash": "2bed84bb25ac7b0aab30f9d2229f29f5",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/dictionary_release.json": {
+    "mtime": 1790777396.1536005,
+    "seen": 1790784015.4228451,
+    "ast_hash": "e1d502d03b32e8972077041e72d2ff40",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryInstaller.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228652,
+    "ast_hash": "2bbe7ea9b1febe8144ea50e411a81abf",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryPronunciations.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228694,
+    "ast_hash": "df2b3e2310dff2dd14e2eeb9680b1ca6",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloads.kt": {
+    "mtime": 1790961605.8497186,
+    "seen": 1790961883.6588953,
+    "ast_hash": "d74bbe14f20dc34dea7f7e9b70419fc7",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/data/EspeakIpaInstrumentedTest.kt": {
+    "mtime": 1790777396.1536005,
+    "seen": 1790784015.422767,
+    "ast_hash": "7b85d04194e61cc1dd06fa18d1886915",
+    "semantic_hash": ""
+  },
+  "app/src/main/cpp/ipa_jni.c": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228497,
+    "ast_hash": "8a3fd1d7925919f9d18a19bd80059bf6",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/EspeakIpa.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228966,
+    "ast_hash": "8ebad9f38e7a92c8dde45369eca98138",
+    "semantic_hash": ""
+  },
+  "scripts/generate_espeak_data.sh": {
+    "mtime": 1790777396.174333,
+    "seen": 1790784015.4231274,
+    "ast_hash": "72f620f2f23dffdfe6d9cf1d0ebfa577",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/build.gradle": {
+    "mtime": 1790191670.083617,
+    "seen": 1790192587.2424867,
+    "ast_hash": "a18d61f0efacad1b93205587aff4fc86",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/CheckVoiceDataTest.java": {
+    "mtime": 1790191670.0846171,
+    "seen": 1790192587.2424886,
+    "ast_hash": "e79cd88bbc25e3e61ca79ed1a65b324a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/SpeechSynthesisTest.java": {
+    "mtime": 1790191670.086617,
+    "seen": 1790192587.2424912,
+    "ast_hash": "28747965061f54aa42dd16155f9a1a67",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/TextToSpeechServiceTest.java": {
+    "mtime": 1790191670.087617,
+    "seen": 1790192587.2424934,
+    "ast_hash": "b6aac43b02a363474a3dba7c77c32eca",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/TextToSpeechTest.java": {
+    "mtime": 1790191670.087617,
+    "seen": 1790192587.2424963,
+    "ast_hash": "c48bc94c00922f6d479cfbbf03942c61",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/TextToSpeechTestCase.java": {
+    "mtime": 1790191670.087617,
+    "seen": 1790192587.2424982,
+    "ast_hash": "e3f93ba803416ff86725d1def88e6fe3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/TtsMatcher.java": {
+    "mtime": 1790191660.3033586,
+    "seen": 1790192587.2425008,
+    "ast_hash": "0b5613a401865797d77fc3ada6744abc",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/VoiceData.java": {
+    "mtime": 1790191670.088617,
+    "seen": 1790192587.242503,
+    "ast_hash": "4d7447608587de809fa4c8cceb42e122",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/VoiceSettingsTest.java": {
+    "mtime": 1790191670.088617,
+    "seen": 1790192587.2425046,
+    "ast_hash": "5645f67e623c91d5f2d306287cb01600",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/src/com/reecedunn/espeak/test/VoiceVariantTest.java": {
+    "mtime": 1790191670.088617,
+    "seen": 1790192587.2425058,
+    "ast_hash": "45a3292261830a48e2d00142b944c2de",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/gradlew": {
+    "mtime": 1790191670.089617,
+    "seen": 1790192587.242508,
+    "ast_hash": "1db6d150e9a9442ca929c1fa8b2fd25e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/jni/include/Log.h": {
+    "mtime": 1790191660.3054075,
+    "seen": 1790192587.2425106,
+    "ast_hash": "5ff16437be651c85c0d053cce5e5ce2a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/jni/jni/eSpeakService.c": {
+    "mtime": 1790191670.090617,
+    "seen": 1790192587.242513,
+    "ast_hash": "80a5d9b1d92d892a0d15d77e8447930a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/remove_string.sh": {
+    "mtime": 1790191660.305512,
+    "seen": 1790192587.2425148,
+    "ast_hash": "69ac58550fec60477b84ca056d1a6afc",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/settings.gradle": {
+    "mtime": 1790191660.3119242,
+    "seen": 1790192587.2425172,
+    "ast_hash": "10eb3062f0568dd55e31b670acc48edd",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/CheckVoiceData.java": {
+    "mtime": 1790191670.1036167,
+    "seen": 1790192587.24252,
+    "ast_hash": "abf9ebe9ef444a0954a9562ceb22aa1f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/DownloadVoiceData.java": {
+    "mtime": 1790191670.1066167,
+    "seen": 1790192587.2425215,
+    "ast_hash": "325e9c474af78dffb5f3d87771dbf2ee",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/EspeakApp.java": {
+    "mtime": 1790191670.1076167,
+    "seen": 1790192587.242523,
+    "ast_hash": "cc5c5267cf4389cd8152373fd04818eb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/FileListAdapter.java": {
+    "mtime": 1790191660.3122582,
+    "seen": 1790192587.2425253,
+    "ast_hash": "81543150698b095fd24ada21a89c0c04",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/FileUtils.java": {
+    "mtime": 1790191660.3122582,
+    "seen": 1790192587.2425282,
+    "ast_hash": "0a7ef3e8bfce6aa68fa60e61a38e33a0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/GetSampleText.java": {
+    "mtime": 1790191660.3122582,
+    "seen": 1790192587.2425306,
+    "ast_hash": "6e32bfaa7ddf7d58deecba8c5a7af16d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/InformationListAdapter.java": {
+    "mtime": 1790191670.1076167,
+    "seen": 1790192587.242533,
+    "ast_hash": "5f943a11d12cfe53e4d929270d845b3b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/ResourceIdListAdapter.java": {
+    "mtime": 1790191660.3122582,
+    "seen": 1790192587.242535,
+    "ast_hash": "62e5b89944d60ae3f2e48445c3647fc8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/SpeechSynthesis.java": {
+    "mtime": 1790191670.1076167,
+    "seen": 1790192587.2425377,
+    "ast_hash": "c467fe4ae72ef42edb262839ff27326b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/TtsService.java": {
+    "mtime": 1790191670.1076167,
+    "seen": 1790192587.2425406,
+    "ast_hash": "3207f379a7947bb3f00c69fb900eed37",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/TtsSettingsActivity.java": {
+    "mtime": 1790191670.1076167,
+    "seen": 1790192587.2425423,
+    "ast_hash": "a5e71d38fb52ab13de1ee216465cf3c9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/Voice.java": {
+    "mtime": 1790191660.3122582,
+    "seen": 1790192587.242545,
+    "ast_hash": "24e947a1dc6719fb8dfc01b979c2fa08",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/VoiceSettings.java": {
+    "mtime": 1790191670.1086168,
+    "seen": 1790192587.242547,
+    "ast_hash": "80d872b6f1a5c93c4ed5c58d1db7a2dc",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/VoiceVariant.java": {
+    "mtime": 1790191660.3127398,
+    "seen": 1790192587.2425492,
+    "ast_hash": "d6341777eeb2a2248b041a1b312465f9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/eSpeakActivity.java": {
+    "mtime": 1790191670.1086168,
+    "seen": 1790192587.2425516,
+    "ast_hash": "9fe0af42b79f57002f50dd2a9c6eaf66",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/preference/ImportVoicePreference.java": {
+    "mtime": 1790191660.3127398,
+    "seen": 1790192587.2425637,
+    "ast_hash": "93eb5836e00617e1cd23ddcef9afcd8c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/preference/SeekBarPreference.java": {
+    "mtime": 1790191670.1086168,
+    "seen": 1790192587.2425666,
+    "ast_hash": "e9e3a3495606a21a96565e71fd1f7b2b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/preference/SpeakPunctuationPreference.java": {
+    "mtime": 1790191670.1086168,
+    "seen": 1790192587.242569,
+    "ast_hash": "db1d27c0ac24e65bd11f2248ddbacff5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/src/com/reecedunn/espeak/preference/VoiceVariantPreference.java": {
+    "mtime": 1790191670.1086168,
+    "seen": 1790192587.242571,
+    "ast_hash": "5a392a83980d7c0fa7f7b97ff77e4631",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/autogen.sh": {
+    "mtime": 1790191670.1096168,
+    "seen": 1790192587.2425733,
+    "ast_hash": "70ac15dd13af328caa762d10163535fb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/emscripten/espeakng_glue.cpp": {
+    "mtime": 1790191660.4932158,
+    "seen": 1790192587.2425756,
+    "ast_hash": "432fa5fb82c2f555237c5cacacff7d67",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/emscripten/js/demo.js": {
+    "mtime": 1790191660.4932158,
+    "seen": 1790192587.2425783,
+    "ast_hash": "92fc9a7b1d3314549e45e4100b370b7f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/emscripten/js/espeakng.js": {
+    "mtime": 1790191660.4936435,
+    "seen": 1790192587.24258,
+    "ast_hash": "9adc9d00f8631100b0cd318b6f14459c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/emscripten/post.js": {
+    "mtime": 1790191660.4936435,
+    "seen": 1790192587.2425826,
+    "ast_hash": "69af8dd6547da03ab96102b6dfae4709",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/emscripten/pre.js": {
+    "mtime": 1790191660.4936435,
+    "seen": 1790192587.242585,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/compat/getopt.c": {
+    "mtime": 1790191660.6230133,
+    "seen": 1790192587.242587,
+    "ast_hash": "8e34597ffbfad9a701fb79be4688c0d3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/espeak-ng.c": {
+    "mtime": 1790191670.5696108,
+    "seen": 1790192587.2425895,
+    "ast_hash": "5b58ce577819dfa30902aa45fed30f6d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/endian.h": {
+    "mtime": 1790191660.62331,
+    "seen": 1790192587.2425919,
+    "ast_hash": "16125fb508d4960d22a2f7c679f029bd",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/getopt.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2425935,
+    "ast_hash": "67ef125d2dbb412e248b69c3783dee99",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/math.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2425961,
+    "ast_hash": "2ce2334ec3e6cfdb63f7bc7e6f7881e0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/stdint.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2425978,
+    "ast_hash": "faeb0962f078f86366a0ca2ab9d516ce",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/stdio.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2426007,
+    "ast_hash": "031d1e25b4e625a34045dd566344dcc2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/string.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.242603,
+    "ast_hash": "e2c2defffa72bc8ae6c6d351000d6339",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/strings.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.242605,
+    "ast_hash": "5ffe03bab233b43700fab6953d3db08b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/sys/stat.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2426078,
+    "ast_hash": "acd138e5d95363cc640e8c24b2972f3d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/unistd.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2426102,
+    "ast_hash": "2802b2cda990f14767b231a9db867db4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/wchar.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2426128,
+    "ast_hash": "d63a6459bbfda998c2905d196bfc8957",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/compat/wctype.h": {
+    "mtime": 1790191670.5696108,
+    "seen": 1790192587.242615,
+    "ast_hash": "e6921d44559545f6ea3924ac110fd9ad",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/espeak-ng/encoding.h": {
+    "mtime": 1790191660.623412,
+    "seen": 1790192587.2426174,
+    "ast_hash": "e7877f19716c60782464a462075dbb53",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/espeak-ng/espeak_ng.h": {
+    "mtime": 1790191670.5766108,
+    "seen": 1790192587.24262,
+    "ast_hash": "cd1c2249aee9d2650970d11567b645e9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/espeak-ng/speak_lib.h": {
+    "mtime": 1790191670.5826108,
+    "seen": 1790192587.2426221,
+    "ast_hash": "eac7d77af352f30a4bb8508678a82e16",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/include/espeak/speak_lib.h": {
+    "mtime": 1790191670.5826108,
+    "seen": 1790192587.2426248,
+    "ast_hash": "eac7d77af352f30a4bb8508678a82e16",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/common.c": {
+    "mtime": 1790191670.5826108,
+    "seen": 1790192587.2426271,
+    "ast_hash": "944e9eed0a0989948476938eda705882",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/common.h": {
+    "mtime": 1790191670.5836108,
+    "seen": 1790192587.2426293,
+    "ast_hash": "e9a86c8810cfbeb522453581ef78406f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/compiledata.c": {
+    "mtime": 1790191670.5836108,
+    "seen": 1790192587.2426317,
+    "ast_hash": "183249b7b1e552770d35f4549a0c5762",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/compiledict.c": {
+    "mtime": 1790191670.5866108,
+    "seen": 1790192587.242634,
+    "ast_hash": "cfde94afc64883c6afdab264599c6d88",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/compiledict.h": {
+    "mtime": 1790191660.6244636,
+    "seen": 1790192587.242636,
+    "ast_hash": "203b99f60e0b396924ce573ad21e6351",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/compilembrola.c": {
+    "mtime": 1790191670.5876107,
+    "seen": 1790192587.2426383,
+    "ast_hash": "be5c71fb7fb4d14f17ec5e4b7994fa8f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/dictionary.c": {
+    "mtime": 1790191670.5896106,
+    "seen": 1790192587.242641,
+    "ast_hash": "7ccbab3e3fc6ffe4d207cb1134c432e0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/dictionary.h": {
+    "mtime": 1790191670.5976105,
+    "seen": 1790192587.242643,
+    "ast_hash": "3c6ae9bce16570d932e710e1972071e9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/encoding.c": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.242645,
+    "ast_hash": "b6001fe5f7fe095107c80a10aacf1837",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/error.c": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426481,
+    "ast_hash": "931db74da28c8cfa7b9be9582276911d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/error.h": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426503,
+    "ast_hash": "adb353f97f8e60d6b28e92123fa2e636",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/espeak_api.c": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.242653,
+    "ast_hash": "c34d391a5cdcf4b132b9cc759e0b2640",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/espeak_command.c": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426553,
+    "ast_hash": "770765e3ebb8626ed2743de8f7ad2885",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/espeak_command.h": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426574,
+    "ast_hash": "2c78abb52c16d7c65c0131d09b9e4880",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/event.c": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426598,
+    "ast_hash": "8e88a244c29c5219a8b803a87196a671",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/event.h": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426622,
+    "ast_hash": "07ccbaf86fabb9c1c55783e091760701",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/fifo.c": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426648,
+    "ast_hash": "256a7d127a6691d92f4b433089d68ac6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/fifo.h": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.242667,
+    "ast_hash": "6ca9c477fa585dbbfb93df21d1b273de",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/ieee80.c": {
+    "mtime": 1790191660.624736,
+    "seen": 1790192587.2426689,
+    "ast_hash": "9a26dc7fbf55ce9137f6f233ec29da03",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/ieee80.h": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.2426713,
+    "ast_hash": "d89a04d1d612e35bb2e08099d71871f4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/intonation.c": {
+    "mtime": 1790191670.6006105,
+    "seen": 1790192587.2426732,
+    "ast_hash": "0e78abb9abba3d5115abf01f91f22ff0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/intonation.h": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.2426758,
+    "ast_hash": "e5829aa9ace89cc5b04d88c769887baa",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/klatt.c": {
+    "mtime": 1790191670.6006105,
+    "seen": 1790192587.242678,
+    "ast_hash": "b08f293fd1671953217eec83a9d93890",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/klatt.h": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.2426805,
+    "ast_hash": "298108550d4d61c8968addc193916926",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/langopts.c": {
+    "mtime": 1790191670.6096106,
+    "seen": 1790192587.2426846,
+    "ast_hash": "6c373e4b7a98d97957b2eab6bbf833cb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/langopts.h": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.242687,
+    "ast_hash": "fb4421838dc60394eb85402c1988bf6d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/mbrola.h": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.2426891,
+    "ast_hash": "b3eb30ecb874753dd72aff2f4f690954",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/mbrowrap.c": {
+    "mtime": 1790191670.6146104,
+    "seen": 1790192587.2426913,
+    "ast_hash": "54f85a80198717d3b3ee24bfd4602c57",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/mbrowrap.h": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.2426934,
+    "ast_hash": "d7425d47063ec8b2d59a6aeea0ed30e2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/mnemonics.c": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.2426956,
+    "ast_hash": "4524a564b060e4f3178aae3f5e1cf285",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/mnemonics.h": {
+    "mtime": 1790191660.625736,
+    "seen": 1790192587.2426984,
+    "ast_hash": "6b9ce6d3b4e3cd4f0b0a90444cd85380",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/numbers.c": {
+    "mtime": 1790191670.6186104,
+    "seen": 1790192587.2427008,
+    "ast_hash": "6372f359911e6f622895bfc267efe2f2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/numbers.h": {
+    "mtime": 1790191670.6276102,
+    "seen": 1790192587.2427032,
+    "ast_hash": "8234d2aae2d7ce2af63f66c93d1f7878",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/phoneme.c": {
+    "mtime": 1790191660.626736,
+    "seen": 1790192587.2427056,
+    "ast_hash": "759d1f6313a51f50dd4e91af8966d75d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/phoneme.h": {
+    "mtime": 1790191660.626736,
+    "seen": 1790192587.2427082,
+    "ast_hash": "1bf58764615fd4fddbda0090572ea514",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/phonemelist.c": {
+    "mtime": 1790191670.6276102,
+    "seen": 1790192587.24271,
+    "ast_hash": "2f6c800926c168a49d836e9b6b5bfd79",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/phonemelist.h": {
+    "mtime": 1790191660.626736,
+    "seen": 1790192587.2427127,
+    "ast_hash": "f7c08bdcabee6fef2496d2555ef2fc5d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/readclause.c": {
+    "mtime": 1790191670.6376102,
+    "seen": 1790192587.2427151,
+    "ast_hash": "f71d5224f46447a3bb708167c8e488f8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/readclause.h": {
+    "mtime": 1790191660.626736,
+    "seen": 1790192587.2427177,
+    "ast_hash": "9458964aad4139c3d497e84fb6fd426b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/sPlayer.c": {
+    "mtime": 1790191660.626736,
+    "seen": 1790192587.24272,
+    "ast_hash": "8401e04fbb3ebffebc1eb2c0f0069a76",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/sPlayer.h": {
+    "mtime": 1790191660.626736,
+    "seen": 1790192587.2427223,
+    "ast_hash": "2f662fc1a6d9df4914898dfefd1fd720",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/setlengths.c": {
+    "mtime": 1790191670.6386101,
+    "seen": 1790192587.2427244,
+    "ast_hash": "3e850789ebcb21037cc3256758588e14",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/setlengths.h": {
+    "mtime": 1790191660.6277359,
+    "seen": 1790192587.2427266,
+    "ast_hash": "6d74d06bcaba55d06818611964497dac",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/sintab.h": {
+    "mtime": 1790191660.6277359,
+    "seen": 1790192587.242729,
+    "ast_hash": "ae0f0711837de69a5792f740893cfc60",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/soundicon.c": {
+    "mtime": 1790191670.63961,
+    "seen": 1790192587.2427313,
+    "ast_hash": "cf60fa699ef3f771ce8b3535ae30681e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/soundicon.h": {
+    "mtime": 1790191660.6277359,
+    "seen": 1790192587.2427337,
+    "ast_hash": "b2aea61dcd1fb8a4940a9b181da1dcaa",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/spect.c": {
+    "mtime": 1790191670.63961,
+    "seen": 1790192587.242736,
+    "ast_hash": "a3078107c63adf5d394334d2de1e8892",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/spect.h": {
+    "mtime": 1790191660.6277359,
+    "seen": 1790192587.2427387,
+    "ast_hash": "f94135e27f59d0b8d2f7c42397b8ee8d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/speech.c": {
+    "mtime": 1790191670.64661,
+    "seen": 1790192587.2427404,
+    "ast_hash": "bbdc292409358242dc5657f365243792",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/speech.h": {
+    "mtime": 1790191670.64761,
+    "seen": 1790192587.242743,
+    "ast_hash": "923ce458de4991d59fee69512f336c1c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/ssml.c": {
+    "mtime": 1790191670.64761,
+    "seen": 1790192587.242745,
+    "ast_hash": "c8df6e769b6d78dba89e274a37af7cc5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/ssml.h": {
+    "mtime": 1790191660.6277359,
+    "seen": 1790192587.242747,
+    "ast_hash": "13e3771198b53971010da226d4cee8d9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/synth_mbrola.c": {
+    "mtime": 1790191670.64761,
+    "seen": 1790192587.2427497,
+    "ast_hash": "ca60ba2b498ddfd55117867e6bfab29a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/synthdata.c": {
+    "mtime": 1790191670.6486099,
+    "seen": 1790192587.242752,
+    "ast_hash": "b6c796d9e95996456ed02ef3592efdae",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/synthdata.h": {
+    "mtime": 1790191670.6486099,
+    "seen": 1790192587.2427537,
+    "ast_hash": "30fa3ad80f2e3affa6680827bdf51dbf",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/synthesize.c": {
+    "mtime": 1790191670.6486099,
+    "seen": 1790192587.2427561,
+    "ast_hash": "09650f61ac2d22be481a469c36c64aa5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/synthesize.h": {
+    "mtime": 1790191670.6486099,
+    "seen": 1790192587.2427588,
+    "ast_hash": "f9257fcabccae392a04a3285f1292292",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/tr_languages.c": {
+    "mtime": 1790191670.64961,
+    "seen": 1790192587.2427604,
+    "ast_hash": "9175cc0a5da365ff70248dd49cd981df",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/translate.c": {
+    "mtime": 1790191670.65161,
+    "seen": 1790192587.2427628,
+    "ast_hash": "78e8742e5511316b141a0f9c12064f08",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/translate.h": {
+    "mtime": 1790191670.6606097,
+    "seen": 1790192587.2427654,
+    "ast_hash": "c345b46996dc0e086fab4ff9b7dc4673",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/translateword.c": {
+    "mtime": 1790191670.6636097,
+    "seen": 1790192587.242767,
+    "ast_hash": "09b538d36a4ba23780db6e0efeae728b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/translateword.h": {
+    "mtime": 1790191670.6636097,
+    "seen": 1790192587.2427702,
+    "ast_hash": "a2fa80cc7301b9bc6a98f96e03a92ecb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/voice.h": {
+    "mtime": 1790191660.6307359,
+    "seen": 1790192587.2427719,
+    "ast_hash": "d449ab8a96e035cf29fce7ac6e5da596",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/voices.c": {
+    "mtime": 1790191670.6646097,
+    "seen": 1790192587.2427742,
+    "ast_hash": "a77f70cbf9a4432d076678d7dddf8234",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/wavegen.c": {
+    "mtime": 1790191670.6706097,
+    "seen": 1790192587.2427769,
+    "ast_hash": "c8f19dba17e558be136569d78a79d6b9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/libespeak-ng/wavegen.h": {
+    "mtime": 1790191660.6307359,
+    "seen": 1790192587.2427793,
+    "ast_hash": "cc4028ec9b6695f6ea70de7d1062e7b8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speak-ng.c": {
+    "mtime": 1790191660.6307359,
+    "seen": 1790192587.2427819,
+    "ast_hash": "c938f4e522c49a9aad565dd4904fd949",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speak-ng.cpp": {
+    "mtime": 1790191660.6307359,
+    "seen": 1790192587.2427843,
+    "ast_hash": "88b8c4db16e8b4f81799574cea732675",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/include/speechPlayer.h": {
+    "mtime": 1790191660.6323106,
+    "seen": 1790192587.242787,
+    "ast_hash": "c68efa9504b9e69a100a8909e7bcdf5f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/frame.cpp": {
+    "mtime": 1790191660.6323106,
+    "seen": 1790192587.242789,
+    "ast_hash": "fbe82f7dd16481fd1de089b69c5002d1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/frame.h": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.2427914,
+    "ast_hash": "35e242da10aa88883cf86a943c63ffe5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/sample.h": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.2427936,
+    "ast_hash": "7dc16f926447003046a253062903136d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/speechPlayer.cpp": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.2427957,
+    "ast_hash": "ee1b11bb1b8a6b91db7ccb07696bd919",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/speechPlayer.h": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.242798,
+    "ast_hash": "fe1967c05ecf541ee400a616ddd35860",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/speechWaveGenerator.cpp": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.2428007,
+    "ast_hash": "77c878f9e7991845b4ddabae4591e503",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/speechWaveGenerator.h": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.2428029,
+    "ast_hash": "5cb5a225a08867fae60a829b40c2ac9b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/utils.h": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.2428055,
+    "ast_hash": "934072f73e36b4f8850c5ea770d70243",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/speechPlayer/src/waveGenerator.h": {
+    "mtime": 1790191660.6325164,
+    "seen": 1790192587.2428079,
+    "ast_hash": "62e78cc300c92f0513714bb913ffd879",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/autogen.sh": {
+    "mtime": 1790191660.6331491,
+    "seen": 1790192587.24281,
+    "ast_hash": "12687e018e3d57c57a2f4fbe37fa4f80",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/src/case.c": {
+    "mtime": 1790191660.6340928,
+    "seen": 1790192587.2428124,
+    "ast_hash": "b56389f2167cd231978d6e84e14f2124",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/src/categories.c": {
+    "mtime": 1790191660.6346421,
+    "seen": 1790192587.242815,
+    "ast_hash": "709b27cba1c15ebc1667002d8dab7c30",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/src/ctype.c": {
+    "mtime": 1790191660.6346421,
+    "seen": 1790192587.2428176,
+    "ast_hash": "eeafbf466ad5a80bced332e0863df1b8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/src/include/ucd/ucd.h": {
+    "mtime": 1790191660.6349726,
+    "seen": 1790192587.2428195,
+    "ast_hash": "cdb65742d94688427ab3e64f500aecfa",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/src/proplist.c": {
+    "mtime": 1790191660.6349726,
+    "seen": 1790192587.242822,
+    "ast_hash": "f846bf5a8f5a387247c584bae54e2bde",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/src/scripts.c": {
+    "mtime": 1790191660.6349726,
+    "seen": 1790192587.242824,
+    "ast_hash": "ef9958ec2466ec885bd7edd65dcea761",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/src/tostring.c": {
+    "mtime": 1790191660.6349726,
+    "seen": 1790192587.2428267,
+    "ast_hash": "53ce8a9815c9c200772e377cd936cf81",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tests/printcdata.c": {
+    "mtime": 1790191660.6349726,
+    "seen": 1790192587.242829,
+    "ast_hash": "0a9222f498e5b5a6c2718f8c25e791d6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tests/printucddata.c": {
+    "mtime": 1790191660.635737,
+    "seen": 1790192587.2428315,
+    "ast_hash": "7a46425099ab48380b1ad69527c18883",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tests/printucddata_cpp.cpp": {
+    "mtime": 1790191660.635737,
+    "seen": 1790192587.2428331,
+    "ast_hash": "8f07c6b9786acb64b09400b7d862f468",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tools/case.py": {
+    "mtime": 1790191660.635737,
+    "seen": 1790192587.2428358,
+    "ast_hash": "0f9bc1aad435a14267d49195801f3cfe",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tools/categories.py": {
+    "mtime": 1790191660.6359859,
+    "seen": 1790192587.2428374,
+    "ast_hash": "11c9e8501690dd6deb10bc0fd3bd88a3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tools/mkencodingtable": {
+    "mtime": 1790191660.6359859,
+    "seen": 1790192587.24284,
+    "ast_hash": "8dd2fdbb0b983ecf68d43630be87f3c0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tools/printdata.py": {
+    "mtime": 1790191660.6359859,
+    "seen": 1790192587.2428424,
+    "ast_hash": "0eb20521e1fe8ef99424d210b7f4ee16",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tools/scripts.py": {
+    "mtime": 1790191660.6359859,
+    "seen": 1790192587.2428446,
+    "ast_hash": "ab3e3157ca89df94fd78c43d88cf1169",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/tools/ucd.py": {
+    "mtime": 1790191660.6359859,
+    "seen": 1790192587.242847,
+    "ast_hash": "eaeae1a7cebe12a064ec9d40d106e195",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/windows/com/comentrypoints.c": {
+    "mtime": 1790191660.6407359,
+    "seen": 1790192587.242849,
+    "ast_hash": "9407f7acce2144695b1e6e3e2324aad4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/windows/com/ttsengine.cpp": {
+    "mtime": 1790191660.6424718,
+    "seen": 1790192587.2428513,
+    "ast_hash": "014b37efc70fab8702f0310a04a079ce",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/windows/config.h": {
+    "mtime": 1790191660.6424718,
+    "seen": 1790192587.2428536,
+    "ast_hash": "78c1507190c8f2bdab942f7deb31ab7d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/windows/espeak-ng.sln": {
+    "mtime": 1790191660.6424718,
+    "seen": 1790192587.242856,
+    "ast_hash": "fc1aa1da7c2ba0ec00edbbc70df12157",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/api.c": {
+    "mtime": 1790191670.6746097,
+    "seen": 1790192587.242858,
+    "ast_hash": "9ae773e572653a58c3ea7cc5663b3795",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/common": {
+    "mtime": 1790191670.6756096,
+    "seen": 1790192587.2428603,
+    "ast_hash": "c82c51cc14968523edf90862c5553e21",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/dummy.cpp": {
+    "mtime": 1790191660.644392,
+    "seen": 1790192587.2428627,
+    "ast_hash": "3a5e1f84ecd5b68b09f087bf611e0a1c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/encoding.c": {
+    "mtime": 1790191660.644392,
+    "seen": 1790192587.2428644,
+    "ast_hash": "471761e279ff76c0f4351a980af79b36",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/fuzzing/create_dict_corpus_file.py": {
+    "mtime": 1790191660.645496,
+    "seen": 1790192587.242867,
+    "ast_hash": "56adda3e2835ad35f53e9dea5c409c2d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/fuzzing/minimize-corpus.sh": {
+    "mtime": 1790191660.645496,
+    "seen": 1790192587.2428691,
+    "ast_hash": "1747bd7e411f59a66e4f8179bb7e655a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/fuzzing/synth_fuzzer.c": {
+    "mtime": 1790191670.6756096,
+    "seen": 1790192587.2428718,
+    "ast_hash": "e1bfe1db793d61ac065b26862c450935",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/fuzzrunner.c": {
+    "mtime": 1790191670.6766095,
+    "seen": 1790192587.2428741,
+    "ast_hash": "44a63ac44d6d1f2490aaebb54683f817",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/ieee80.c": {
+    "mtime": 1790191660.645496,
+    "seen": 1790192587.242876,
+    "ast_hash": "e81ffab7e57a2207b46b78194a5dd3e2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/readclause.c": {
+    "mtime": 1790191660.6457357,
+    "seen": 1790192587.2428784,
+    "ast_hash": "699b007dfa5bdbb4bba2db8986e6968b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/ssml-fuzzer.c": {
+    "mtime": 1790191670.6776097,
+    "seen": 1790192587.242881,
+    "ast_hash": "938b5b2a76838cd137aa4ba0bdcf8089",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/test_assert.h": {
+    "mtime": 1790191660.6470635,
+    "seen": 1790192587.2428827,
+    "ast_hash": "42a9de7dd20d9da4749518a99e5dbeb9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tools/emoji": {
+    "mtime": 1790191670.6786096,
+    "seen": 1790192587.242885,
+    "ast_hash": "81e87390668c87be4aafa8b1c32ff9a9",
+    "semantic_hash": ""
+  },
+  "app/src/main/cpp/CMakeLists.txt": {
+    "mtime": 1790777396.159088,
+    "seen": 1790784015.423675,
+    "ast_hash": "a98711c0223f11f16712fec2df5443ea",
+    "semantic_hash": ""
+  },
+  "documentation/ESPEAK_NATIVE.md": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.423685,
+    "ast_hash": "fc5e947d1736a6d0eda4f3bb2bdd7f1d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/dependabot.yml": {
+    "mtime": 1790191660.2987401,
+    "seen": 1790192587.2429166,
+    "ast_hash": "9c35121daadb3e711e4daa87be2c98b6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/android.yml": {
+    "mtime": 1790191670.0806172,
+    "seen": 1790192587.242919,
+    "ast_hash": "c03a3b5cf2a09133d8ffda85a8ffc009",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/autoconf.yml": {
+    "mtime": 1790191670.0806172,
+    "seen": 1790192587.242921,
+    "ast_hash": "cb761a85553c0a8ab2b23c82dd2d0fbf",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/ci.yml": {
+    "mtime": 1790191670.0806172,
+    "seen": 1790192587.2429235,
+    "ast_hash": "c8395e538c8fc9f822b6d13df8e6f9ea",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/dist.yml": {
+    "mtime": 1790191670.0806172,
+    "seen": 1790192587.2429261,
+    "ast_hash": "2977cd55870bd20cb7eef0f652b58c15",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/fuzzing.yml": {
+    "mtime": 1790191670.0806172,
+    "seen": 1790192587.2429283,
+    "ast_hash": "a0b2b8dcb8b6e4883cbda17dba29c280",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/gradle-wrapper-validation.yml": {
+    "mtime": 1790191670.081617,
+    "seen": 1790192587.242931,
+    "ast_hash": "fd3c6a60af0cad10c5090925a01a4d6a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/windows-msbuild.yml": {
+    "mtime": 1790191670.081617,
+    "seen": 1790192587.2429333,
+    "ast_hash": "6e58c21d6a3166e58c950baa35f65048",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/.github/workflows/windows.yml": {
+    "mtime": 1790191670.082617,
+    "seen": 1790192587.2429352,
+    "ast_hash": "d5868d58ec846be65f665b25c90683d6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/ChangeLog.md": {
+    "mtime": 1790191670.082617,
+    "seen": 1790192587.2429376,
+    "ast_hash": "45b3dcd69c6259bed68f3d694dc05311",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/README.md": {
+    "mtime": 1790191670.083617,
+    "seen": 1790192587.24294,
+    "ast_hash": "77ff55054c56894afa27b90188cd6ab0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/add_language.md": {
+    "mtime": 1790191670.492612,
+    "seen": 1790192587.242942,
+    "ast_hash": "d8d37a6909b5bfeea9a313f7d0f1b993",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/building.md": {
+    "mtime": 1790191670.5026119,
+    "seen": 1790192587.2429442,
+    "ast_hash": "76123865291fa5ea4f68acf1054a7679",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/contributing.md": {
+    "mtime": 1790191670.5096116,
+    "seen": 1790192587.2429466,
+    "ast_hash": "d506bc117c4c7c87f8dac6eff3d1b7f8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/dictionary.md": {
+    "mtime": 1790191670.5196116,
+    "seen": 1790192587.2429485,
+    "ast_hash": "408769902782556354969334b7f8e353",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/guide.md": {
+    "mtime": 1790191670.5206115,
+    "seen": 1790192587.242951,
+    "ast_hash": "5ddc34ae2c72e969c53af9c8926b3e22",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/index.md": {
+    "mtime": 1790191660.4711676,
+    "seen": 1790192587.2429538,
+    "ast_hash": "d6786da489d6f2a14dccf87e7d64a60a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/integration.md": {
+    "mtime": 1790191660.4711676,
+    "seen": 1790192587.2429554,
+    "ast_hash": "6331e276a690a82e69f2bfff76f135d2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/intonation.md": {
+    "mtime": 1790191660.4711676,
+    "seen": 1790192587.242958,
+    "ast_hash": "c95e43c566c0c9a4a0f4d7edd5d344d5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/languages.md": {
+    "mtime": 1790191670.5206115,
+    "seen": 1790192587.242961,
+    "ast_hash": "ca55c49db6e52970e11677836927d67b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/languages/gmw/en.md": {
+    "mtime": 1790191660.471586,
+    "seen": 1790192587.2429633,
+    "ast_hash": "c57974cc2ce77016c1087f6c2ba2223d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/languages/gmw/lb.md": {
+    "mtime": 1790191670.5216115,
+    "seen": 1790192587.2429652,
+    "ast_hash": "07c143c94a2575a5cf7e08600e031938",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/languages/iro/chr.md": {
+    "mtime": 1790191660.4717505,
+    "seen": 1790192587.2429676,
+    "ast_hash": "2a854cbcbef905caafe06c0a92d6befd",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/markup.md": {
+    "mtime": 1790191660.4717505,
+    "seen": 1790192587.2429695,
+    "ast_hash": "0e1e134e85ba6519d56797a9c32d9dd2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/mbrola.md": {
+    "mtime": 1790191670.5216115,
+    "seen": 1790192587.242972,
+    "ast_hash": "c14776ba5b587d8892c559854e7dcdc6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/numbers.md": {
+    "mtime": 1790191660.4717505,
+    "seen": 1790192587.2429743,
+    "ast_hash": "d95ab68c0ed71983cbb761ec6357587a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phoneme_model.md": {
+    "mtime": 1790191660.4717505,
+    "seen": 1790192587.2429762,
+    "ast_hash": "b6609747b07f72ac64c1bab313df423c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes.md": {
+    "mtime": 1790191660.4717505,
+    "seen": 1790192587.242979,
+    "ast_hash": "17d0b0a63ddee69dfe1568c8a26f687e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/cxs.md": {
+    "mtime": 1790191660.4717505,
+    "seen": 1790192587.2429814,
+    "ast_hash": "6d5784d080ba72d70e16e88a9caa63e3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/kirshenbaum.md": {
+    "mtime": 1790191660.4727254,
+    "seen": 1790192587.242983,
+    "ast_hash": "3344dcf728f4a3076348a3707063bf9e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/xsampa.md": {
+    "mtime": 1790191660.4917376,
+    "seen": 1790192587.2429857,
+    "ast_hash": "82cd7d830ff2ae4ceec83606059d81d4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phontab.md": {
+    "mtime": 1790191670.5216115,
+    "seen": 1790192587.242988,
+    "ast_hash": "a54678a65110d688f026efb0069b5895",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/voices.md": {
+    "mtime": 1790191660.4917376,
+    "seen": 1790192587.2429903,
+    "ast_hash": "2a8dfb4b1f753dd1c4139da7735f8f79",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/emscripten/README.md": {
+    "mtime": 1790191660.4932158,
+    "seen": 1790192587.2429929,
+    "ast_hash": "7ea498c69ee156fb38b408b6261f37ed",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/emscripten/demo.html": {
+    "mtime": 1790191660.4932158,
+    "seen": 1790192587.2429953,
+    "ast_hash": "f10884b51be9f3c29e926cbe43929689",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/fastlane/metadata/android/en-US/full_description.txt": {
+    "mtime": 1790191660.514724,
+    "seen": 1790192587.2429976,
+    "ast_hash": "e785c1f1f216867c0517d20be9167488",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/fastlane/metadata/android/en-US/short_description.txt": {
+    "mtime": 1790191660.5148456,
+    "seen": 1790192587.243,
+    "ast_hash": "4d868e94364b9eb7c8da6bae5ae40466",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/fastlane/metadata/android/es-ES/full_description.txt": {
+    "mtime": 1790191660.5148456,
+    "seen": 1790192587.2430027,
+    "ast_hash": "8d07a62bbf9849491ff397411749bca4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/fastlane/metadata/android/es-ES/short_description.txt": {
+    "mtime": 1790191660.515191,
+    "seen": 1790192587.2430043,
+    "ast_hash": "cca39bf217abad1da19f26ae74f0724f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/CHANGELOG.md": {
+    "mtime": 1790191660.6331491,
+    "seen": 1790192587.2430067,
+    "ast_hash": "f9e02e9e9b9deeee9d54b1010491af49",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/README.md": {
+    "mtime": 1790191660.6331491,
+    "seen": 1790192587.243009,
+    "ast_hash": "f5736a90e03b427bff1393e3678b30a9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/data/csur/Klingon.txt": {
+    "mtime": 1790191660.6338995,
+    "seen": 1790192587.243011,
+    "ast_hash": "acb45109fd106e26725d164ad8124fbe",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/data/espeak-ng/PropList.txt": {
+    "mtime": 1790191660.6338995,
+    "seen": 1790192587.2430134,
+    "ast_hash": "30f944b8cd0f63238620b9a0f5f95cf7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/ucd-tools/data/espeak-ng/emoji-data.txt": {
+    "mtime": 1790191660.6340928,
+    "seen": 1790192587.2430158,
+    "ast_hash": "d8b29b68f739b6484570fd9f1c3766d5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/tests/fuzzing/README.md": {
+    "mtime": 1790191670.6756096,
+    "seen": 1790192587.243018,
+    "ast_hash": "eb6280f0b59e0e2de48a573333c9d317",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/vim/registry/espeak.yaml": {
+    "mtime": 1790191660.6488154,
+    "seen": 1790192587.24302,
+    "ast_hash": "bd92425dfa5601ad2e299b801d468091",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/res/drawable-hdpi/ic_launcher.png": {
+    "mtime": 1790191660.302532,
+    "seen": 1790192587.2430427,
+    "ast_hash": "e99d5b979b433e182115f7d9e8f2ca7c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/res/drawable-ldpi/ic_launcher.png": {
+    "mtime": 1790191660.302532,
+    "seen": 1790192587.243045,
+    "ast_hash": "bfc518124bf06b2a8dab0e4a8c3f715a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/res/drawable-mdpi/ic_launcher.png": {
+    "mtime": 1790191660.302532,
+    "seen": 1790192587.2430477,
+    "ast_hash": "7a1dae47bd5a8ee85e0c58995b57f464",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/eSpeakTests/res/drawable-xhdpi/ic_launcher.png": {
+    "mtime": 1790191660.302532,
+    "seen": 1790192587.2430494,
+    "ast_hash": "6d961fa6711cf1a349d4cecbe67e5099",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/icons/launcher.svg": {
+    "mtime": 1790191660.3049479,
+    "seen": 1790192587.243052,
+    "ast_hash": "9c8ce820ae5aa68d3b9ffaa78b9f85ee",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/icons/promo-graphic.svg": {
+    "mtime": 1790191660.3052592,
+    "seen": 1790192587.2430544,
+    "ast_hash": "2f87df9668060a73975543eb14b448ec",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/res/mipmap-hdpi/icon.png": {
+    "mtime": 1790191660.3060553,
+    "seen": 1790192587.2430563,
+    "ast_hash": "452f9df9c7e143bc3a1cbbe02b56f0e3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/res/mipmap-mdpi/icon.png": {
+    "mtime": 1790191660.3060553,
+    "seen": 1790192587.2430587,
+    "ast_hash": "ea609575dfb3cb02a0f74e90baab54b5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/res/mipmap-xhdpi/icon.png": {
+    "mtime": 1790191660.3060553,
+    "seen": 1790192587.2430613,
+    "ast_hash": "464dc2f9306f5aaa21e15b0a3904b173",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/res/mipmap-xxhdpi/icon.png": {
+    "mtime": 1790191660.3060553,
+    "seen": 1790192587.243063,
+    "ast_hash": "87281c5e97e85100e0035ec0b6e1700c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/android/res/mipmap-xxxhdpi/icon.png": {
+    "mtime": 1790191660.3060553,
+    "seen": 1790192587.2430654,
+    "ast_hash": "175e7fd91f705f333e39a6d0f471cbd2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/images/envelopes.png": {
+    "mtime": 1790191660.469738,
+    "seen": 1790192587.243068,
+    "ast_hash": "0328e09b51e3647f4c2c817bef6a6580",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/images/lips.png": {
+    "mtime": 1790191660.4711676,
+    "seen": 1790192587.2430701,
+    "ast_hash": "298157947c35a6e3312481a5821ed60a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/images/sand-light.jpg": {
+    "mtime": 1790191660.4711676,
+    "seen": 1790192587.243072,
+    "ast_hash": "8bce7b0c2adf61732931f7c8d47eb0e8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/af.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430744,
+    "ast_hash": "4a7d3605594d265d0c94e7c0f84e92b4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ak.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430766,
+    "ast_hash": "b522bbbb22caf37d8d5d86c629510955",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/am.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430787,
+    "ast_hash": "daef41cff1418d522fb48d279e012d46",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/an.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430809,
+    "ast_hash": "380d9e4b9a20cf552a3fbb5191034fb5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ar.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.243083,
+    "ast_hash": "025116ace4500ba2c6e1f1867a4ad545",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/as.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430854,
+    "ast_hash": "87ce9e9b71243d8710b90198e061840c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/az.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430878,
+    "ast_hash": "1bdfb8e7156e81cd4ea1cd050774fd3e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/base.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430902,
+    "ast_hash": "71718d8acf0e881da6d2994aaabbae2c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/base2.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430923,
+    "ast_hash": "f489a5dabdd88dee9c9ffb8016df9011",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/bg.png": {
+    "mtime": 1790191660.4729118,
+    "seen": 1790192587.2430944,
+    "ast_hash": "c77710d71a932170503aa17b9d4a1e23",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/bn.png": {
+    "mtime": 1790191660.473738,
+    "seen": 1790192587.2430968,
+    "ast_hash": "e746b0723e9401bef361ffb82ee9bd06",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/bo.png": {
+    "mtime": 1790191660.473738,
+    "seen": 1790192587.2430995,
+    "ast_hash": "882411fa479b17e5fab9f3d0141ac557",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ca.png": {
+    "mtime": 1790191660.473738,
+    "seen": 1790192587.2431011,
+    "ast_hash": "c31a60da14adc8cf9a2eb4679efa3f44",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/consonants.png": {
+    "mtime": 1790191660.473738,
+    "seen": 1790192587.2431035,
+    "ast_hash": "71718d8acf0e881da6d2994aaabbae2c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/cs.png": {
+    "mtime": 1790191660.473738,
+    "seen": 1790192587.243106,
+    "ast_hash": "34f480e2fa1b89a163c57d90dbefb62d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/cy.png": {
+    "mtime": 1790191660.474738,
+    "seen": 1790192587.2431076,
+    "ast_hash": "c34da6da880b15e672512a44f50a6eac",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/da.png": {
+    "mtime": 1790191660.474738,
+    "seen": 1790192587.2431102,
+    "ast_hash": "19276bf593bce406b15a02d686f7d318",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/de.png": {
+    "mtime": 1790191660.474738,
+    "seen": 1790192587.2431126,
+    "ast_hash": "33cd2f23c3118e8f173b066b40991ab4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/dv.png": {
+    "mtime": 1790191660.474738,
+    "seen": 1790192587.2431142,
+    "ast_hash": "2fedd38a07cdf25be5cb614e6feba6d2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/el.png": {
+    "mtime": 1790191660.474738,
+    "seen": 1790192587.2431169,
+    "ast_hash": "45e88132c6b4b7c32bd78857c1dce116",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/en-n.png": {
+    "mtime": 1790191660.4757378,
+    "seen": 1790192587.243119,
+    "ast_hash": "6ba96f4ae623ab9c0267c9b2bc6a8b00",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/en-rp.png": {
+    "mtime": 1790191660.4757378,
+    "seen": 1790192587.2431245,
+    "ast_hash": "bbe498bda913cf10ff2b1b1ef00c5840",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/en-sc.png": {
+    "mtime": 1790191660.4757378,
+    "seen": 1790192587.2431269,
+    "ast_hash": "a4010c579afc692235d21fa0e5884951",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/en-us.png": {
+    "mtime": 1790191660.4757378,
+    "seen": 1790192587.2431285,
+    "ast_hash": "7f730f3f14f1196ca36f324f9b151334",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/en-wi.png": {
+    "mtime": 1790191660.4767377,
+    "seen": 1790192587.2431312,
+    "ast_hash": "4357c0a103b6537b67b017d0b52b6147",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/en-wm.png": {
+    "mtime": 1790191660.4767377,
+    "seen": 1790192587.2431328,
+    "ast_hash": "08e0900bf832e72ef17a06660a75898e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/en.png": {
+    "mtime": 1790191660.4767377,
+    "seen": 1790192587.2431355,
+    "ast_hash": "3ee1877ee282b244b64cd789d25a83e7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/eo.png": {
+    "mtime": 1790191660.4767377,
+    "seen": 1790192587.2431378,
+    "ast_hash": "6a7aa39b00d8c2dadb44c64d01276bf7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/es-la.png": {
+    "mtime": 1790191660.4767377,
+    "seen": 1790192587.24314,
+    "ast_hash": "9d113edb2b12f674da6cc224befacab0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/es.png": {
+    "mtime": 1790191660.477738,
+    "seen": 1790192587.243142,
+    "ast_hash": "9d113edb2b12f674da6cc224befacab0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/et.png": {
+    "mtime": 1790191660.477738,
+    "seen": 1790192587.2431445,
+    "ast_hash": "4371fa231793722235e14febac45957a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/eu.png": {
+    "mtime": 1790191660.477738,
+    "seen": 1790192587.2431462,
+    "ast_hash": "530373db5ec1161a768769b1ea1407cf",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/fa.png": {
+    "mtime": 1790191660.477738,
+    "seen": 1790192587.2431486,
+    "ast_hash": "49e504ae90440eaa7e4a086563c142d4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/fi.png": {
+    "mtime": 1790191660.477738,
+    "seen": 1790192587.2431512,
+    "ast_hash": "696483be4ddc01fd07247ae4f0b7f161",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/fr-ca.png": {
+    "mtime": 1790191660.4787378,
+    "seen": 1790192587.2431529,
+    "ast_hash": "a30ef9c4bf0a22651c571849f3866639",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/fr.png": {
+    "mtime": 1790191660.4787378,
+    "seen": 1790192587.2431552,
+    "ast_hash": "edf6b4032dab57e8ce4bbec130838512",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ga.png": {
+    "mtime": 1790191660.4787378,
+    "seen": 1790192587.2431579,
+    "ast_hash": "bc7869d40343e254d5a06897e3f42af0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/gd.png": {
+    "mtime": 1790191660.4787378,
+    "seen": 1790192587.2431595,
+    "ast_hash": "6b3c97b04db6af27aedebfefa324c75d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/grc.png": {
+    "mtime": 1790191660.4787378,
+    "seen": 1790192587.2431622,
+    "ast_hash": "e6ea262468483602028794c35ee8840c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/gu.png": {
+    "mtime": 1790191660.4797378,
+    "seen": 1790192587.2431643,
+    "ast_hash": "dfa30afd6cd61d635e444562532a17ea",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/hi.png": {
+    "mtime": 1790191660.4797378,
+    "seen": 1790192587.2431667,
+    "ast_hash": "93850d85d304ea6ee9c816f81569648f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/hr.png": {
+    "mtime": 1790191660.4797378,
+    "seen": 1790192587.2431688,
+    "ast_hash": "995beeefec21b60cb4837913a1d7911a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ht.png": {
+    "mtime": 1790191660.4797378,
+    "seen": 1790192587.243171,
+    "ast_hash": "2e97faa293e5eb9b88437cdf258ea0a8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/hu.png": {
+    "mtime": 1790191660.4797378,
+    "seen": 1790192587.2431734,
+    "ast_hash": "1ed258ff6f481980e5bef4ff7b83e4f4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/hy.png": {
+    "mtime": 1790191660.4807377,
+    "seen": 1790192587.2431757,
+    "ast_hash": "de35659f827f7e15452918b1e2788435",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ia.png": {
+    "mtime": 1790191660.4807377,
+    "seen": 1790192587.2431777,
+    "ast_hash": "c63d5e31e98eedf55823e279e560b59c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/id.png": {
+    "mtime": 1790191660.4807377,
+    "seen": 1790192587.24318,
+    "ast_hash": "3be0cd58884b2d45276945075b0ad462",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/is.png": {
+    "mtime": 1790191660.4807377,
+    "seen": 1790192587.2431822,
+    "ast_hash": "49180e3e0a18d6409eeecb4dbbdc78ae",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/it.png": {
+    "mtime": 1790191660.4807377,
+    "seen": 1790192587.2431843,
+    "ast_hash": "55e0ff657f437b403bf5bf8466566e0c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/jbo.png": {
+    "mtime": 1790191660.4817379,
+    "seen": 1790192587.2431865,
+    "ast_hash": "ba5453318551adfbebf26db2c01f4ab9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ka.png": {
+    "mtime": 1790191660.4817379,
+    "seen": 1790192587.2431886,
+    "ast_hash": "e3e751218f29372c4f5d7c23718a17ae",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/kk.png": {
+    "mtime": 1790191660.4817379,
+    "seen": 1790192587.2431908,
+    "ast_hash": "9f76c4a22f17eb7a6d1d30ec92d29ee7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/kl.png": {
+    "mtime": 1790191660.4817379,
+    "seen": 1790192587.243192,
+    "ast_hash": "75fae9a92ffedda10b6b2cc4bba082d2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/kn.png": {
+    "mtime": 1790191660.4817379,
+    "seen": 1790192587.243194,
+    "ast_hash": "ba184ce062608007d44b11aeab15fd1c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ko.png": {
+    "mtime": 1790191660.4827378,
+    "seen": 1790192587.2431965,
+    "ast_hash": "33918fe75695bcceae8d120a96bf3d26",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ku.png": {
+    "mtime": 1790191660.4827378,
+    "seen": 1790192587.2431982,
+    "ast_hash": "f038c8f674958d25c5e721d75463aee3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/la.png": {
+    "mtime": 1790191660.4827378,
+    "seen": 1790192587.2432005,
+    "ast_hash": "74d61e34f36f1822fdfb24ae3271c30c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/lt.png": {
+    "mtime": 1790191660.4827378,
+    "seen": 1790192587.243202,
+    "ast_hash": "ad43d5c8380d65a95fbd1c69806568fc",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/lv.png": {
+    "mtime": 1790191660.4827378,
+    "seen": 1790192587.2432044,
+    "ast_hash": "cef960e94995747043e9ffc5110419a1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/mk.png": {
+    "mtime": 1790191660.4827378,
+    "seen": 1790192587.243207,
+    "ast_hash": "0715c79c405335c3147384463e40da45",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ml.png": {
+    "mtime": 1790191660.4837377,
+    "seen": 1790192587.2432091,
+    "ast_hash": "4db8b2452ae5af910d2c19404ef0e5e0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/mni.png": {
+    "mtime": 1790191660.4837377,
+    "seen": 1790192587.243211,
+    "ast_hash": "f3441ca250beea2bdf8384ac76fe7fba",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/mt.png": {
+    "mtime": 1790191660.4837377,
+    "seen": 1790192587.2432134,
+    "ast_hash": "293018e4cc28b1fe063092a07d42bffe",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/nci.png": {
+    "mtime": 1790191660.4837377,
+    "seen": 1790192587.2432158,
+    "ast_hash": "628c4a3863bd82ebf426b3e5d683fe22",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ne.png": {
+    "mtime": 1790191660.4837377,
+    "seen": 1790192587.243218,
+    "ast_hash": "2521059f91751b133b04db54a0a350a1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/nl.png": {
+    "mtime": 1790191660.4847376,
+    "seen": 1790192587.2432203,
+    "ast_hash": "20f667ba157a5fea609b3fb214419890",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/no.png": {
+    "mtime": 1790191660.4847376,
+    "seen": 1790192587.2432225,
+    "ast_hash": "a68e4ea907b4967ed90588bcd75d5cb6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/nso.png": {
+    "mtime": 1790191660.4847376,
+    "seen": 1790192587.2432246,
+    "ast_hash": "4f3ed4d500cebf00a712df72c2b3564f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/or.png": {
+    "mtime": 1790191660.4847376,
+    "seen": 1790192587.2432268,
+    "ast_hash": "2df1c039df05a50019aeede4726ac8d5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/pa.png": {
+    "mtime": 1790191660.4847376,
+    "seen": 1790192587.2432287,
+    "ast_hash": "8832b7e97751a0341af90fc56e4160d5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/pl.png": {
+    "mtime": 1790191660.4847376,
+    "seen": 1790192587.2432313,
+    "ast_hash": "d47fb5b7a841ff0bbba573db1f7d9f6a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/prs.png": {
+    "mtime": 1790191660.4857378,
+    "seen": 1790192587.2432334,
+    "ast_hash": "7844d1c1e8666a3b51a591cf6c2f8a79",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/pt-pt.png": {
+    "mtime": 1790191660.4857378,
+    "seen": 1790192587.2432356,
+    "ast_hash": "50783c9dd39bebfffaaa78ece915e7d6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/pt.png": {
+    "mtime": 1790191660.4857378,
+    "seen": 1790192587.243238,
+    "ast_hash": "3422f0a12abfe032e4a1738a5b01c3a7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ro.png": {
+    "mtime": 1790191660.4857378,
+    "seen": 1790192587.24324,
+    "ast_hash": "c3ea6fe27ecd0e1837a659f9f21d5e2c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ru.png": {
+    "mtime": 1790191660.4867377,
+    "seen": 1790192587.243242,
+    "ast_hash": "510d21f9f9a0fd010d48cea9a7b52742",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/rw.png": {
+    "mtime": 1790191660.4867377,
+    "seen": 1790192587.2432446,
+    "ast_hash": "f84509a0b9e171864bbed4d8c10ea848",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/si.png": {
+    "mtime": 1790191660.4867377,
+    "seen": 1790192587.2432463,
+    "ast_hash": "14f51080dc054f405648e3f144f84bbb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/sk.png": {
+    "mtime": 1790191660.4867377,
+    "seen": 1790192587.2432487,
+    "ast_hash": "d5da6d9820e7847864c4baabd470980f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/sl.png": {
+    "mtime": 1790191660.4867377,
+    "seen": 1790192587.243251,
+    "ast_hash": "f31652935b59840733d016b9bb16f2fb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/sq.png": {
+    "mtime": 1790191660.4867377,
+    "seen": 1790192587.2432532,
+    "ast_hash": "8cbed7f8511a2f49083f822626231438",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/sr.png": {
+    "mtime": 1790191660.4877377,
+    "seen": 1790192587.2432556,
+    "ast_hash": "9332e5c691dfe91e1ccfb39a599f5550",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/sv.png": {
+    "mtime": 1790191660.4877377,
+    "seen": 1790192587.2432578,
+    "ast_hash": "7ce6f13264db2f271438cbff5ce36e30",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/sw.png": {
+    "mtime": 1790191660.4877377,
+    "seen": 1790192587.2432601,
+    "ast_hash": "47ec43cc0fe39fc8955f266752f3278c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ta.png": {
+    "mtime": 1790191660.4877377,
+    "seen": 1790192587.2432623,
+    "ast_hash": "14710e5b212f1261ec777b656455ff92",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/te.png": {
+    "mtime": 1790191660.4877377,
+    "seen": 1790192587.2432644,
+    "ast_hash": "7ac6b2594e75281c352ec4c63d7df81a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/tn.png": {
+    "mtime": 1790191660.4877377,
+    "seen": 1790192587.2432663,
+    "ast_hash": "cbc5ead9994fb9bdd518890b49003a37",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/tr.png": {
+    "mtime": 1790191660.4887376,
+    "seen": 1790192587.243269,
+    "ast_hash": "ba825a7a1a781171ba0fffb69bdc9b2c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/tt.png": {
+    "mtime": 1790191660.4887376,
+    "seen": 1790192587.243271,
+    "ast_hash": "21e66b411858629e7282692c4d8f544a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/ur.png": {
+    "mtime": 1790191660.4887376,
+    "seen": 1790192587.2432735,
+    "ast_hash": "1c029adc6f4f606ddf799efc693d93de",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vdiph.png": {
+    "mtime": 1790191660.4887376,
+    "seen": 1790192587.2432754,
+    "ast_hash": "598ce6b69ac856789d664fffce75f538",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vdiph2.png": {
+    "mtime": 1790191660.4887376,
+    "seen": 1790192587.2432778,
+    "ast_hash": "d16a881f28a3ce79deb2abf41d5a95a9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vi-hue.png": {
+    "mtime": 1790191660.4897377,
+    "seen": 1790192587.2432804,
+    "ast_hash": "3e931d030069674ecf9a446abd87abdd",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vi-sgn.png": {
+    "mtime": 1790191660.4897377,
+    "seen": 1790192587.243282,
+    "ast_hash": "c8399203f3dd74e20951e33f62f4373d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vi.png": {
+    "mtime": 1790191660.4897377,
+    "seen": 1790192587.2432847,
+    "ast_hash": "7c21414fb3064e930707e309c0cace7b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vnasal.png": {
+    "mtime": 1790191660.4897377,
+    "seen": 1790192587.2432866,
+    "ast_hash": "b4ddd2244f4c68a9fa797d29b791ba13",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vowel.png": {
+    "mtime": 1790191660.4907377,
+    "seen": 1790192587.2432888,
+    "ast_hash": "204f5b959b98167c54aa2d30dcfe314f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vowelr.png": {
+    "mtime": 1790191660.4907377,
+    "seen": 1790192587.2432914,
+    "ast_hash": "3ba8f0a90f84df36ae9ec3bb8d9c14f1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vwl_en_us.png": {
+    "mtime": 1790191660.4907377,
+    "seen": 1790192587.2432933,
+    "ast_hash": "b870c2353f81ff0350e366c80a46e6f2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/vwl_lv.png": {
+    "mtime": 1790191660.4907377,
+    "seen": 1790192587.2432954,
+    "ast_hash": "ae244ea4dfe3923d56d5dd0b6844bb29",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/wo.png": {
+    "mtime": 1790191660.4907377,
+    "seen": 1790192587.2432976,
+    "ast_hash": "6bc430c013bdbf5aca98a724c7ecbb94",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/zh.png": {
+    "mtime": 1790191660.4907377,
+    "seen": 1790192587.2432997,
+    "ast_hash": "779281eb91335fc5d2d2b8cb5a7d9345",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/docs/phonemes/vowelcharts/zhy.png": {
+    "mtime": 1790191660.4917376,
+    "seen": 1790192587.243302,
+    "ast_hash": "18e501515189a8cbba9427dee79bdf08",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/fastlane/metadata/android/en-US/images/icon.png": {
+    "mtime": 1790191660.5148456,
+    "seen": 1790192587.2433043,
+    "ast_hash": "2925909328d166128fbd807f5c35cc5a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/h-lv.wav": {
+    "mtime": 1790191660.5201561,
+    "seen": 1790192587.2433064,
+    "ast_hash": "c7d9be72a004c06d186de5ac90fa74e8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/h@.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.2433088,
+    "ast_hash": "0f41342155ce3bef3e858e50fa184644",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/h_.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.243311,
+    "ast_hash": "64d12344b043606667c44388a2f19ce9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/h_phr.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.243313,
+    "ast_hash": "994090c699dd8c745d4f865f20db1431",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/ha.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.2433157,
+    "ast_hash": "eca7fbc6bf551d80bf35fea265fff140",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/he.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.243318,
+    "ast_hash": "33cdaa8110d4342f0cee4119e8493238",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/hi.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.24332,
+    "ast_hash": "4b76f225e92afefa1ef8fdcf45c32080",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/ho.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.2433224,
+    "ast_hash": "c5efccbcb0e266c1437c1ea3eab05837",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/hu.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.2433248,
+    "ast_hash": "a594708293107757c8bebee79f7b108c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/h/hu_fi.wav": {
+    "mtime": 1790191660.5203574,
+    "seen": 1790192587.2433264,
+    "ast_hash": "9ddd9a303e90f4dc8c6a5319ff5009d1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/by.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433288,
+    "ast_hash": "5d40f80e11b6b7676accb7875ead86a8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/ch.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433314,
+    "ast_hash": "4046bbc8e49cfc3c65ef6d623fe58231",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/d.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433336,
+    "ast_hash": "64381fa30ce6a1dfe881d75af05dbf29",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/dya.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433357,
+    "ast_hash": "78d9dc632687390301c979604d1d25b3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/g.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433379,
+    "ast_hash": "d2a1cd3fd328c1b51c9de43af945d6a8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/gya.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433403,
+    "ast_hash": "9983c66511182b975c663769cf3f8d7e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/h.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433429,
+    "ast_hash": "62917f5eed889e1f59a17bcfa95c615c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/hs.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433445,
+    "ast_hash": "c3c38ed9c8ed419c2c69803d54a5617f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/ht.wav": {
+    "mtime": 1790191660.539737,
+    "seen": 1790192587.2433472,
+    "ast_hash": "9b1c5ae1ec4814fb5fb3a3e8628d5a89",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/htya.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.243349,
+    "ast_hash": "cd6cabfa6afb70dee67f37ba5e976057",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/k.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.2433515,
+    "ast_hash": "2fb57da55b86b4c89b67773e22a0cfb1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/kh.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.2433538,
+    "ast_hash": "f300f16d71d9837c27c0bce018f96066",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/p.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.2433558,
+    "ast_hash": "1ebc1e79827fa4b0fc4b72d2faa66302",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/phya.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.243358,
+    "ast_hash": "376b52ac148474ff75d699033766fb2d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/pya.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.2433603,
+    "ast_hash": "5db4a016fb245fa9763577ee98b540c7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/r.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.2433627,
+    "ast_hash": "8c049e8a0fe81b2d2558737a718f756e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/s.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.243365,
+    "ast_hash": "34bac174bff1a16b533f7cf2d81095a6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/sh.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.243367,
+    "ast_hash": "7de39ab65c966a7d23e45bc1a0812fd9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/t_hi.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.243369,
+    "ast_hash": "41e608ff225a753a5ca4bd6b739ba830",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/t_short.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.2433717,
+    "ast_hash": "be11f9df876c1eb6ab32253b95e18de4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/ty.wav": {
+    "mtime": 1790191660.540737,
+    "seen": 1790192587.243374,
+    "ast_hash": "7908048ebb96c83ea7ed96c86d28d2e3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/myanmar/z.wav": {
+    "mtime": 1790191660.541737,
+    "seen": 1790192587.2433765,
+    "ast_hash": "0740292531f1c5f6c1e899ad3d5c136e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_ru.wav": {
+    "mtime": 1790191660.5584583,
+    "seen": 1790192587.2433789,
+    "ast_hash": "e224a868f30f5c4d61c9cebf62430947",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_sr.wav": {
+    "mtime": 1790191660.5584583,
+    "seen": 1790192587.2433808,
+    "ast_hash": "c0786be03fac9b87651a06e8ae62b13d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_trill.wav": {
+    "mtime": 1790191660.5587368,
+    "seen": 1790192587.2433834,
+    "ast_hash": "52c0e19065dccf759a1ff4b7012a99d5",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_trill2.wav": {
+    "mtime": 1790191660.5587368,
+    "seen": 1790192587.243385,
+    "ast_hash": "5c9f3e74d6447af88228cdce4f4a2abb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_trill3.wav": {
+    "mtime": 1790191660.5587368,
+    "seen": 1790192587.2433875,
+    "ast_hash": "1371f71b362ad364920ca6a7b4146d86",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_trill4.wav": {
+    "mtime": 1790191660.5587368,
+    "seen": 1790192587.2433896,
+    "ast_hash": "0dfa8e2436f75dccf422cd71a353dfe0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_uvl.wav": {
+    "mtime": 1790191660.5587368,
+    "seen": 1790192587.2433922,
+    "ast_hash": "8f059012fe8e786bd4136fd7279d9e31",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/r_uvl2.wav": {
+    "mtime": 1790191660.5587368,
+    "seen": 1790192587.2433944,
+    "ast_hash": "3cb760a0b2350c0196c66fe693916a3d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/rx.wav": {
+    "mtime": 1790191660.5587368,
+    "seen": 1790192587.2433968,
+    "ast_hash": "a0f05db711541b72604d4853c7031111",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/r3/rz_cs.wav": {
+    "mtime": 1790191660.5597367,
+    "seen": 1790192587.2433987,
+    "ast_hash": "c3eb31f99078584b7f5015ac776e6fb4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/ch.wav": {
+    "mtime": 1790191660.5597367,
+    "seen": 1790192587.243401,
+    "ast_hash": "4bbcf268fa24eee4c9ff78be682fe6f2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/ch_.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.243403,
+    "ast_hash": "36111d8d07302aad7f3ad7eb98996bb0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/ch_sr.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434053,
+    "ast_hash": "dafd517df2253021d28993fd0972402b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/f.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434077,
+    "ast_hash": "363e3f6a2160596c57256569039610d0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/f_.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434096,
+    "ast_hash": "6e8c594f8136478a1809879d82413d7b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/l#.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.243412,
+    "ast_hash": "b2251e84535118884b21893a2e27ac8e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/l#_2.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.243414,
+    "ast_hash": "24982931433d2619572c76e82a4d2a64",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/s!.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434163,
+    "ast_hash": "19f283935598dec87f9eda93a46cfc4f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/s.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434185,
+    "ast_hash": "a1f76549e61ea8eac8b45587e2ef06ca",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/s_.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434206,
+    "ast_hash": "db007f9f4b3d23ec55b3cae9f6f63892",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/s_continue.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.243423,
+    "ast_hash": "455b465d3a3c6be3234615ecf4a1fd46",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/s_pal.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434251,
+    "ast_hash": "ac54257462dc8687926572a2d1eeb073",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/s_pzd.wav": {
+    "mtime": 1790191660.560705,
+    "seen": 1790192587.2434273,
+    "ast_hash": "56771ca6cd0bbebdb73d93edfae481d0",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/s_pzd_.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434292,
+    "ast_hash": "e75d95a30550d4b2f74d2ab185e5581c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sh.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434313,
+    "ast_hash": "6ee58f29b7b90919db9c5fa44aab44fa",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sh3.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.243434,
+    "ast_hash": "da8ac9718e13710e03fb6d4c18ffdc59",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sh_.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434359,
+    "ast_hash": "f5839d1b6039e471e3b992d1b8806c0b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sh_pzd.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.243438,
+    "ast_hash": "8bf941531d150ef59ddbc4d736b631dd",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sh_pzd2.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434406,
+    "ast_hash": "ce189d283e855bf9b9c9a05c2851eae3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sh_pzd_.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434425,
+    "ast_hash": "5c93e6d9e0b41a7404cbddc8a43f3a73",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sh_rfx.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.243445,
+    "ast_hash": "cd535950c6cb62025834117082d1d670",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/sx_sv.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434468,
+    "ast_hash": "6a047a3987b48b87d80373508f7dbb0a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/th.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434494,
+    "ast_hash": "cbc3edbbf44fcd97b05d8a0cfd9502b8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/th_.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.243451,
+    "ast_hash": "e21b6bccfb1294ffa0194d63a46b1716",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/tl#.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434535,
+    "ast_hash": "2d093dfacb29f0a16968d12076ceeb02",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/tlh.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434554,
+    "ast_hash": "b6f6ee5d2c76aaab4339780f59c6a69e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/ts_eu.wav": {
+    "mtime": 1790191660.5607367,
+    "seen": 1790192587.2434578,
+    "ast_hash": "deb8118a86a8fb26e185f6b13be7ee0c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/tz_eu.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.2434602,
+    "ast_hash": "2b30022c2f9e81fdb2ac2e328abdad39",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/x.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.2434626,
+    "ast_hash": "619ec4c829841a3aac47b2b218a89b14",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/x2.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.243465,
+    "ast_hash": "f81294b649dc786a06208276595f4721",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/x_.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.2434673,
+    "ast_hash": "3df87cb2793c06408b3118e18d8a91de",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/x_hr.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.243469,
+    "ast_hash": "0f138c133d9c1436785114cf34699095",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/x_ku.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.2434716,
+    "ast_hash": "854f971f0aadc08f9feeef52c5798289",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/x_sr.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.2434733,
+    "ast_hash": "7d5e3fddd984aaa69aa5e2aa46450e6e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/xx.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.243476,
+    "ast_hash": "97b8698c6d495f263e4a915b6a1b6729",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ufric/z_eu.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.2434783,
+    "ast_hash": "e72520c8c434b5e896ba661b6aaa7939",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/c.wav": {
+    "mtime": 1790191660.5617368,
+    "seen": 1790192587.2434802,
+    "ast_hash": "95840a1ae82cf16efd0ee7a85dd4857e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/c_ejc.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2434826,
+    "ast_hash": "84b92e1f44a6e338c42b9f35df15da7c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.243485,
+    "ast_hash": "140d70375da6236659b5842653ae5b9d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.243487,
+    "ast_hash": "dd907c8c0a1be83a95859c6c052ca405",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_asp.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2434893,
+    "ast_hash": "d8973a9f274fc0dadf6561d712ce2558",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_asp2.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2434916,
+    "ast_hash": "e199733af17867d96ebadde0cccc147f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_asp_a.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2434936,
+    "ast_hash": "cc51b5fdd316039a701be21d91b125ee",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_asp_e.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.243496,
+    "ast_hash": "13d68c249dda7eb2f658c86e33c46556",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_asp_u.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2434976,
+    "ast_hash": "2b5640f6f7b983ebeb7c34842094502f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_ejc.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2434998,
+    "ast_hash": "a6a802df228c47620d2b431ed5cab5c2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_ejc2.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435026,
+    "ast_hash": "3fe354e224858c407cd9cfdd51388b22",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_unasp.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435045,
+    "ast_hash": "e59798b897b86e5db8df20a86bbfc2f1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_unasp2.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.243507,
+    "ast_hash": "5eec57dcc162e45dfc9e6ba846a568e7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/k_unasp_.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435088,
+    "ast_hash": "ac9ed8ac32918cd837a4ef3aa35929bf",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ki.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435112,
+    "ast_hash": "fc78d10f2dec41b9e9cb5ece012746b6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ki_ejc.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.243513,
+    "ast_hash": "9c84cc0161c7608bab08045b3bcf923e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ki_unasp2.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435153,
+    "ast_hash": "f985ef0ba298c6ae5ff73f76572b3fc3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/kl.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435174,
+    "ast_hash": "8a87ff5497f5c550096d30a84a1fa2ea",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/kr.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435198,
+    "ast_hash": "1e47d5d9f970b014f98be29b2825e10c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/null.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435215,
+    "ast_hash": "dfc351bb0598b1d93fca62af59759f52",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/p.wav": {
+    "mtime": 1790191660.5633404,
+    "seen": 1790192587.2435236,
+    "ast_hash": "3fdf016c0a5ce7326cb5b7c002904274",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/p_.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.243526,
+    "ast_hash": "c197702e005278db3cb5cada4839ea5e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/p_asp.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435274,
+    "ast_hash": "0e03b1d74b614cb92fe9de484303ecea",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/p_ejc.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435298,
+    "ast_hash": "b35d47da516a70a14451bf1a23543837",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/p_unasp.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435317,
+    "ast_hash": "384fda4ef9c6d6ddc7e09a93337fc66a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/p_unasp_.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435346,
+    "ast_hash": "d82d9b9d7f3d29b715c98f9e93729db7",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/percus02.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435358,
+    "ast_hash": "47960e8627528d033aab4a22d976869d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/percus10.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435389,
+    "ast_hash": "32162ae7855b870cab0a4c292d199bbc",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/pl.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435412,
+    "ast_hash": "aaeac116e955abb0c410a80dc57e562e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/pr.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.243544,
+    "ast_hash": "57c4869218cf97faa95c681fe22731fb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/q.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435467,
+    "ast_hash": "c6360b81a4d20994c96284f4224136cc",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/q_u.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435493,
+    "ast_hash": "b2652737082c4c2d1cbd0d6418b5acdb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.24356,
+    "ast_hash": "ce336adb64f08e69db2ad5aa6cb841eb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.243563,
+    "ast_hash": "5ecb3b01c86815442a219a395b91a81e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_dnt.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435656,
+    "ast_hash": "cc183212ca405af3555b96cd3123f97d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_dnt2.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435675,
+    "ast_hash": "1f91ab648b6fc66d38112edd31aac9d9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_ejc.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435703,
+    "ast_hash": "4c263cc7a7bf2878f96958bcc6eef103",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_hard.wav": {
+    "mtime": 1790191660.5637367,
+    "seen": 1790192587.2435727,
+    "ast_hash": "a7148b326f86c8bec6f029ef82c33611",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_hard_.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435753,
+    "ast_hash": "dd6196934f0ef2603520c74f10967f86",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_hi.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435777,
+    "ast_hash": "41e608ff225a753a5ca4bd6b739ba830",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_pzd.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435794,
+    "ast_hash": "4b9c442c6a7a3f269b35642469b16086",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_short.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.243582,
+    "ast_hash": "fbd1f8d630bac13d12b03859535452c1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_short_.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435842,
+    "ast_hash": "a7c6126ff4392229876b1f695277541b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_sr.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435865,
+    "ast_hash": "c043540e283e2d8274ad2e22fd07f5ee",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_unasp.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435877,
+    "ast_hash": "7f56a3a0251c4fa6ef83db30dab3d0ec",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_unasp2.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435894,
+    "ast_hash": "dbd03c3e642c68ebc28f2b2916b6b70b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/t_unasp3.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435918,
+    "ast_hash": "ad2925e9b50b776bf48148aca94fa6cd",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/th_rfx.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435927,
+    "ast_hash": "261fe03af7ba766461aa7d20b4d040ca",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/th_rfx2.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435951,
+    "ast_hash": "54941c458c128b5d4fe36472370dc293",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tr.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435975,
+    "ast_hash": "f90b8132b0cd0a1366b53e5edef62853",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2435982,
+    "ast_hash": "f24d55758e9bf11cf472f8bf41817437",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts2.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2436008,
+    "ast_hash": "ab9517987d4983f8b605f510052202a8",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_.wav": {
+    "mtime": 1790191660.5647366,
+    "seen": 1790192587.2436035,
+    "ast_hash": "579e84dd635d7b4dd862c0ef386e8da1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_pzd.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436051,
+    "ast_hash": "01e2ea46341f96e624e68a72e50eaafd",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_pzd2.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436075,
+    "ast_hash": "69dafc4447d1fdb0344af6a03bc76c39",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_pzd3.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.24361,
+    "ast_hash": "3e30f4af181875b31e33681ce6d40eec",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_pzd_.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436125,
+    "ast_hash": "eb3fe38caec49d7f18d41a2fedb848d1",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_rfx.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436142,
+    "ast_hash": "b319c69512696d85909e1bd3e6ce9b7b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_rfx_unasp.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436166,
+    "ast_hash": "2335ed23fca893ac481803752823f5e4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_sr.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436187,
+    "ast_hash": "3b2c7c6b929fdbea49b4914cc4e4fb29",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/ts_unasp.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436204,
+    "ast_hash": "ef2c1d3e229e1904015b1e8bbd005228",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436216,
+    "ast_hash": "8c914142b125ceab55cfb98ffeacd08f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh2.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436242,
+    "ast_hash": "30aa24b36a011bd512d4660f967c9032",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh_.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.243627,
+    "ast_hash": "b90b41c83c55ac4f50c2167fa105cc6d",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh_asp.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436283,
+    "ast_hash": "5b571f1f9fc3f62f86cc19ea64e9ed62",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh_pzd.wav": {
+    "mtime": 1790191660.5657368,
+    "seen": 1790192587.2436306,
+    "ast_hash": "ff8f4c8bbbc7cc57d70965f964b31ae4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh_pzd_unasp.wav": {
+    "mtime": 1790191660.5667367,
+    "seen": 1790192587.2436333,
+    "ast_hash": "770688d3a9e608aab36b6c8fea8ed8ff",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh_sr.wav": {
+    "mtime": 1790191660.5667367,
+    "seen": 1790192587.2436354,
+    "ast_hash": "bb5d9e94d49188646391143517d3cd02",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh_unasp.wav": {
+    "mtime": 1790191660.5667367,
+    "seen": 1790192587.243637,
+    "ast_hash": "81cfaa38e787f9dc5b681edad9893e5b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/ustop/tsh_unasp2.wav": {
+    "mtime": 1790191660.5667367,
+    "seen": 1790192587.2436392,
+    "ast_hash": "62cefc4e903518aabe07dd1a1a657024",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/_c.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.2436416,
+    "ast_hash": "3648e0e384773757d47b70d3d0224bc4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/c.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.2436447,
+    "ast_hash": "d8916a7421245b032fd62a54fd8302df",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/c_2.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.2436469,
+    "ast_hash": "7cab28932318eb026a4b66efa2c22dcb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/ch.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.2436495,
+    "ast_hash": "996f4ba7134e8d5c53fa9cfd7050a72a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/dd.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.243652,
+    "ast_hash": "3ab6357694d59a754e0ef5b33e6e419f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/dd_2.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.2436533,
+    "ast_hash": "b1e2b1f4a28b81e42bf6e67cde118852",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/dda.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.2436554,
+    "ast_hash": "8a1df40cc599855d57e16d4577ee9d4f",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/dda_2.wav": {
+    "mtime": 1790191660.5809133,
+    "seen": 1790192587.2436583,
+    "ast_hash": "e386a6bfacc02b383e5774c91f337652",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/hi.wav": {
+    "mtime": 1790191660.5817366,
+    "seen": 1790192587.24366,
+    "ast_hash": "1263890aecb378c161823b1e08dbb228",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/hu.wav": {
+    "mtime": 1790191660.5817366,
+    "seen": 1790192587.2436624,
+    "ast_hash": "a13db8d8b80295bdcb20d25605dcc7d2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/kh.wav": {
+    "mtime": 1790191660.5817366,
+    "seen": 1790192587.243665,
+    "ast_hash": "0eb26140b75920ea3a3b043365741782",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/n.wav": {
+    "mtime": 1790191660.5817366,
+    "seen": 1790192587.2436666,
+    "ast_hash": "defd2bd5115b577990da559872ae37eb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/nh.wav": {
+    "mtime": 1790191660.5817366,
+    "seen": 1790192587.2436695,
+    "ast_hash": "60f332a098a5e7d58097ff2e7e983bf6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/th.wav": {
+    "mtime": 1790191660.5827365,
+    "seen": 1790192587.2436721,
+    "ast_hash": "8092fa8673accfb1899e6c94d4f57ceb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/tr.wav": {
+    "mtime": 1790191660.5827365,
+    "seen": 1790192587.2436743,
+    "ast_hash": "e36cd32d46dcb2b3c7833db9d36c0a0c",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vietnam/w.wav": {
+    "mtime": 1790191660.5827365,
+    "seen": 1790192587.243677,
+    "ast_hash": "9c30f162e83318d40fe421895aac0ff6",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/Q.wav": {
+    "mtime": 1790191660.5877364,
+    "seen": 1790192587.2436788,
+    "ast_hash": "8950f81350b2be9d49323636c203a91b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/Q2.wav": {
+    "mtime": 1790191660.5886974,
+    "seen": 1790192587.243681,
+    "ast_hash": "c989cd75c168e443beef9fe79447b9bc",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/Q_.wav": {
+    "mtime": 1790191660.5886974,
+    "seen": 1790192587.2436826,
+    "ast_hash": "6ccc8ce329943ac1451d2d71301c1443",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/dh.wav": {
+    "mtime": 1790191660.5886974,
+    "seen": 1790192587.2436855,
+    "ast_hash": "f9629eda492d3c7f0619e246a74ebbf2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/v.wav": {
+    "mtime": 1790191660.5886974,
+    "seen": 1790192587.2436876,
+    "ast_hash": "cbeb6efb5acd5d6ddcf919bd73a83624",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/x.wav": {
+    "mtime": 1790191660.5886974,
+    "seen": 1790192587.2436895,
+    "ast_hash": "619ec4c829841a3aac47b2b218a89b14",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/zh.wav": {
+    "mtime": 1790191660.5886974,
+    "seen": 1790192587.243692,
+    "ast_hash": "f3b8ee94e6cf59f638b30fffc388e1a4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vocw/zh_rfx.wav": {
+    "mtime": 1790191660.5886974,
+    "seen": 1790192587.2436943,
+    "ast_hash": "1df404c349cdf579f5a3ca8c02dd8372",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_af/rx.wav": {
+    "mtime": 1790191660.604304,
+    "seen": 1790192587.243697,
+    "ast_hash": "981306e16dc14beda349ac02bfb9df2a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/H2.wav": {
+    "mtime": 1790191660.604304,
+    "seen": 1790192587.2436986,
+    "ast_hash": "c5d1c7720f836b5b7bc2cb06a682a9a3",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/SA1.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.2437012,
+    "ast_hash": "b9dd8b13adc5333b77c34c458daa398e",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/ZH4.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.2437031,
+    "ast_hash": "5f83f9247d569a5ef33644258eea7845",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/ain.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.2437053,
+    "ast_hash": "faf927a596e55eebcb564bbea2aa2642",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/ain2.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.243708,
+    "ast_hash": "e1d60b85c7e312e80ebc760929033f63",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/da7.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.2437098,
+    "ast_hash": "c242c1053b464f79367933f2370ee7fe",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/dhad.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.243712,
+    "ast_hash": "ddb586d2b7b162fabe3d1a29e369c807",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/ghain6.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.243714,
+    "ast_hash": "d496826f84cca4008b17e2745906496b",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/hah.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.2437158,
+    "ast_hash": "d46452737bb30a71dabcb8a6503bdbfb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/kha.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.2437181,
+    "ast_hash": "fd3bb7698b0a0119ace3c2037a841245",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/shin.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.2437208,
+    "ast_hash": "ff1c267768209df2ccd4b454f631eea2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_ar/zah.wav": {
+    "mtime": 1790191660.6046553,
+    "seen": 1790192587.243723,
+    "ast_hash": "bd1dd51b48bfd41b89d338c9380dd186",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_sv/r.wav": {
+    "mtime": 1790191660.616853,
+    "seen": 1790192587.2437253,
+    "ast_hash": "6fd15c19a07bf6e8bd1e35097f793724",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/vwl_tn/rx.wav": {
+    "mtime": 1790191660.6188357,
+    "seen": 1790192587.2437274,
+    "ast_hash": "981306e16dc14beda349ac02bfb9df2a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/b.wav": {
+    "mtime": 1790191660.6210685,
+    "seen": 1790192587.2437296,
+    "ast_hash": "8216a56529a59e0a5a04255547355cb9",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/b_.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437322,
+    "ast_hash": "6ccf14c8ae71567cc5e4926668351576",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/d.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437341,
+    "ast_hash": "b6525998829798b27a08a389ee3ba7bb",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/d_.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437365,
+    "ast_hash": "4c1e026c76e2d7a21cc1549715bda02a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/d_dnt.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.243739,
+    "ast_hash": "892db6fc574919d1fd311e5990dad000",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/d_pzd.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437406,
+    "ast_hash": "4b104132c075a7fbe593b990926555d4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/dz_pzd.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.243743,
+    "ast_hash": "9378026442f4ed5eb3b17449851301a4",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/dz_pzd2.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437456,
+    "ast_hash": "6ae3618b809619efb58f545475fcb029",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/dz_pzd_.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437472,
+    "ast_hash": "f597796f3c8f44bcfe47d645742f6a79",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/dzh.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437496,
+    "ast_hash": "3157105759b9988da8264d0a0369b3ae",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/dzh_.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437522,
+    "ast_hash": "abdcf35aa688efcb0926071cb3d69c2a",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/g.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.243754,
+    "ast_hash": "0347033a772bae2e9c5c0e0472739581",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/g2.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437563,
+    "ast_hash": "044f2da00c365b905d2580ed62e03714",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/g2_.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.243759,
+    "ast_hash": "5ce3170e9e423ba01e2192c0a936ed80",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/g3.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.243761,
+    "ast_hash": "6cb3c978a979d48041ecb53106c48234",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/phsource/x/g_.wav": {
+    "mtime": 1790191660.6218455,
+    "seen": 1790192587.2437637,
+    "ast_hash": "7c2516b90b1d39386b63acdaa91d96f2",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/windows/Debug/output_@.wav": {
+    "mtime": 1790191660.636736,
+    "seen": 1790192587.2437656,
+    "ast_hash": "ec029aa62f4135e2e755ed722dc80034",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/windows/Debug/output_e.wav": {
+    "mtime": 1790191660.6387358,
+    "seen": 1790192587.243768,
+    "ast_hash": "14d8a671c56bfb9a32711780337783ce",
+    "semantic_hash": ""
+  },
+  "third_party/espeak-ng/src/windows/Debug/output_i.wav": {
+    "mtime": 1790191660.6407359,
+    "seen": 1790192587.24377,
+    "ast_hash": "d18107992dd811465bc97caba0107a4b",
+    "semantic_hash": ""
+  },
+  "THIRD_PARTY_LICENSES.md": {
+    "mtime": 1790788676.9975438,
+    "seen": 1790788686.5333607,
+    "ast_hash": "41df4aea20b851a828a749c09e4c2db8",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/GPL-3.0-or-later.txt": {
+    "mtime": 1790777396.159088,
+    "seen": 1790784015.4236536,
+    "ast_hash": "2e9fb6322cacddc19bebd661f36121da",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/THIRD_PARTY_LICENSES.md": {
+    "mtime": 1790788677.30254,
+    "seen": 1790788686.5333798,
+    "ast_hash": "41df4aea20b851a828a749c09e4c2db8",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionarySearchInstrumentedTest.kt": {
+    "mtime": 1790952214.1736028,
+    "seen": 1790952255.6738691,
+    "ast_hash": "3633c85ea8ecd7bcad2ef9db40a803e2",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreenTest.kt": {
+    "mtime": 1790954024.82984,
+    "seen": 1790954044.6911538,
+    "ast_hash": "109bb4945e1c3d8e96719da1f426773d",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228804,
+    "ast_hash": "19cd277ab02c1cef593488d8ae7ec93e",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4229362,
+    "ast_hash": "227a4a5db7ba2e14a9dd086dc45a3d91",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryScreen.kt": {
+    "mtime": 1790886304.8460023,
+    "seen": 1790886373.440843,
+    "ast_hash": "87d6308f27d5e792456bfe61c93d93b8",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/IpaSearchKeysTest.kt": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.4230845,
+    "ast_hash": "89d4e3ed618d12d1c5d3d1e39637466e",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/Ghostwriter-Dict-MIT.txt": {
+    "mtime": 1790777396.159088,
+    "seen": 1790784015.4236646,
+    "ast_hash": "5afc23e2e9464a36acb36dca22a096a4",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/DictionaryHeadword.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.422932,
+    "ast_hash": "1985f35f19859b9767cdfd262b86ccfd",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/DictionaryHeadwordTest.kt": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.42308,
+    "ast_hash": "b5e7001d11b2923da76ac4e81c2ad4e8",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/CompoundRhymeFilter.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4229264,
+    "ast_hash": "95f46ad4d34a12fd0da9ebd464327c81",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/CompoundRhymeFilterTest.kt": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.4230747,
+    "ast_hash": "763c645ffed538c9044b85662e30dd61",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilter.kt": {
+    "mtime": 1790876651.5489419,
+    "seen": 1790876669.7184305,
+    "ast_hash": "f4c2950bc5b70f0e4d2f34127bec27ce",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilterTest.kt": {
+    "mtime": 1790876521.0505824,
+    "seen": 1790876669.7185326,
+    "ast_hash": "3e663a7b240217484a9bc529a748c5a8",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryQueries.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228756,
+    "ast_hash": "6b02cff3b6abad3e573f4d4582785eb4",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/DictionaryLabels.kt": {
+    "mtime": 1790777396.1603332,
+    "seen": 1790784015.4229984,
+    "ast_hash": "d8e15d6208dd56d372c4769d400d74c8",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/data/DictionaryTestFixtures.kt": {
+    "mtime": 1790952214.2746017,
+    "seen": 1790952255.6738746,
+    "ast_hash": "1c3d418f770a963478a572d073656ad9",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/DictionaryDownloadsTest.kt": {
+    "mtime": 1790961605.658721,
+    "seen": 1790961883.658763,
+    "ast_hash": "83bb41a82f21fb1905d0f4add5ef5eb3",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/media/BeatPlaybackServiceTest.kt": {
+    "mtime": 1790957694.57089,
+    "seen": 1790957718.7841485,
+    "ast_hash": "a6c6327c88397eb24f1ff68cb6806b68",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt": {
+    "mtime": 1790957694.475891,
+    "seen": 1790957718.7842648,
+    "ast_hash": "45f1b32c324fb5b96e7578b681e28e35",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/RememberBeatPlayback.kt": {
+    "mtime": 1790956094.864001,
+    "seen": 1790956151.5163107,
+    "ast_hash": "b69a580821f73daa42b3c2da5786c81b",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260929_132838_b998c83d_does_dictionary_assonance_search_put_exact_matches.md": {
+    "mtime": 1790688518.103276,
+    "seen": 1790688799.2523725,
+    "ast_hash": "e3d24baa0932f36d0d75cace3848ba5f",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackNotificationUpdater.kt": {
+    "mtime": 1790777396.1603332,
+    "seen": 1790784015.422959,
+    "ast_hash": "28c75a15f157161ab89af464a29fefae",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PlaybackNotificationUpdaterTest.kt": {
+    "mtime": 1790944543.19804,
+    "seen": 1790944634.000811,
+    "ast_hash": "7ddb56ff3d45fe5d7c02aeeafac0be28",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt": {
+    "mtime": 1790777396.1603332,
+    "seen": 1790784015.4229548,
+    "ast_hash": "4f002b9f691ef8350d6f07d7753e7694",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PlaybackFocusStateTest.kt": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.4230998,
+    "ast_hash": "b479b6c16a4c384db5e1e148432d24a0",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/DictionaryArchiveSourceTest.kt": {
+    "mtime": 1790777396.1613333,
+    "seen": 1790784015.4230394,
+    "ast_hash": "2c9dd00ee1ad1a20dc99ca3f9a32e729",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/DictionaryReleaseTest.kt": {
+    "mtime": 1790777396.1613333,
+    "seen": 1790784015.4230485,
+    "ast_hash": "b23e12d1cb0a775727e480f2d44dee3f",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260930_113017_4b72241f_what_should_be_checked_before_merging_rhyme_detect.md": {
+    "mtime": 1790767817.9054763,
+    "seen": 1790768311.6483657,
+    "ast_hash": "d3fdb19a507546db719a0e2b4c460fd9",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260930_115855_c29f74e0_review_code_added_on_rhyme_detection_for_simplific.md": {
+    "mtime": 1790769535.8876476,
+    "seen": 1790769545.3982794,
+    "ast_hash": "406ed8f6c31b4942d472f99b0dd3cce7",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/DictionaryArchive.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228601,
+    "ast_hash": "6221f449bb8cca950154127c57df50d2",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearchPlan.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228919,
+    "ast_hash": "dcc32a33663f934995c15d9faade1854",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/DictionaryArchiveTest.kt": {
+    "mtime": 1790777396.1613333,
+    "seen": 1790784015.4230433,
+    "ast_hash": "921c23c7fff64e65e66130af0bdf7c59",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/DictionarySearchPlanTest.kt": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.4230528,
+    "ast_hash": "d2668ea18c363bcadc0dd90c6bddc50a",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearchData.kt": {
+    "mtime": 1790777396.1596074,
+    "seen": 1790784015.4228861,
+    "ast_hash": "abfaa945e7a3ec8285d40f1f1c679086",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/DictionarySearchTest.kt": {
+    "mtime": 1790876626.488257,
+    "seen": 1790876669.718522,
+    "ast_hash": "5ba5a7081aa8547f70e41e93850de0c8",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/Ghostwriter-Dict-LICENSE-DATA.md": {
+    "mtime": 1790777396.159088,
+    "seen": 1790784015.4236588,
+    "ast_hash": "0c5f2ed625cdcdce60e31503d2f690d5",
+    "semantic_hash": ""
+  },
+  "documentation/RELEASING.md": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.4236994,
+    "ast_hash": "b6e18039bdd282fa4138cd6fc4de2ed5",
+    "semantic_hash": ""
+  },
+  "documentation/DICTIONARIES.md": {
+    "mtime": 1790777396.1623333,
+    "seen": 1790784015.4236803,
+    "ast_hash": "3a52275b93afe03845e2717d02161703",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Shapes.kt": {
+    "mtime": 1790884299.2407973,
+    "seen": 1790885015.08823,
+    "ast_hash": "3c4f65901fe14bf8a93da1017b1185ac",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreenTest.kt": {
+    "mtime": 1790960284.1013353,
+    "seen": 1790960399.5186732,
+    "ast_hash": "7f817d78823cad98b184b884f149739f",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/LyricTextSettings.kt": {
+    "mtime": 1790787244.2885554,
+    "seen": 1790787507.3770633,
+    "ast_hash": "93cc1ec5c0408c0c4f9508eb38117f10",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/components/LyricTextStyle.kt": {
+    "mtime": 1790880648.1656976,
+    "seen": 1790880802.3791938,
+    "ast_hash": "f51dbeb15e312b436353bfedca5858c9",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/LyricTextSettingsTest.kt": {
+    "mtime": 1790786232.1872792,
+    "seen": 1790786292.3922994,
+    "ast_hash": "654f934366e48fcc2a5a318dcb879b35",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/ui/LyricTextStyleTest.kt": {
+    "mtime": 1790880648.372695,
+    "seen": 1790880802.3792896,
+    "ast_hash": "a25eff9a824635b9f6a2049c0d6beb18",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/data/SystemFontCatalogTest.kt": {
+    "mtime": 1790960284.2163336,
+    "seen": 1790960399.5186203,
+    "ast_hash": "ddceb1010581d4ab312f00f1870ff9a9",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/LyricFont.kt": {
+    "mtime": 1790960283.9893365,
+    "seen": 1790960399.5187123,
+    "ast_hash": "36be44a7770ff9d61c66dfb253b579dd",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/SystemFontCatalog.kt": {
+    "mtime": 1790960283.878338,
+    "seen": 1790960399.51874,
+    "ast_hash": "33f7c4f0449141e80c0aad1a8c73fd30",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/LyricFontTest.kt": {
+    "mtime": 1790960214.593209,
+    "seen": 1790960399.5189197,
+    "ast_hash": "2cdd6f482dcf1676ee0beaf0bfbaf95e",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/ui/GhostTypographyTest.kt": {
+    "mtime": 1790884956.0153124,
+    "seen": 1790885015.088327,
+    "ast_hash": "140489fc53989ba274f3d50f74123414",
+    "semantic_hash": ""
+  },
+  "app/src/main/assets/licenses/Roboto-Apache-2.0.txt": {
+    "mtime": 1790788481.2102113,
+    "seen": 1790788686.5333688,
+    "ast_hash": "86d3f3a95c324c9479bd8986968f4327",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/MarkerLoop.kt": {
+    "mtime": 1790873732.6346376,
+    "seen": 1790873892.586031,
+    "ast_hash": "2d90ca5511576cc8cf42a18843aae2e2",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PcmBeatDecoder.kt": {
+    "mtime": 1790952174.4321024,
+    "seen": 1790952255.6739886,
+    "ast_hash": "a025c2c095c9e55e3a65a513990e060b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/SmoothLoopPlayback.kt": {
+    "mtime": 1790879148.9015458,
+    "seen": 1790879176.5840986,
+    "ast_hash": "2bdb3e619761ea4d7a343263477c19fc",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/MarkerLoopTest.kt": {
+    "mtime": 1790873732.9286337,
+    "seen": 1790873892.5861466,
+    "ast_hash": "b19b4f4522aeff6cb256a7144c89d675",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260930_174556_e682a9d3_how_hard_would_it_be_to_include_loop_markers_in_wa.md": {
+    "mtime": 1790790356.796426,
+    "seen": 1790792491.8079317,
+    "ast_hash": "a875fcb56c18b3d459b5d0592520e4d2",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PcmLoopRenderer.kt": {
+    "mtime": 1790946330.4295716,
+    "seen": 1790946386.899572,
+    "ast_hash": "45ee3c8bdf279d437c95cf05d4833177",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PcmRingBuffer.kt": {
+    "mtime": 1790795676.0765536,
+    "seen": 1790795850.394907,
+    "ast_hash": "a8ea5d1c58d189470a7356939a4fa72b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PcmSource.kt": {
+    "mtime": 1790872959.0683625,
+    "seen": 1790873044.1119945,
+    "ast_hash": "6988b69a2a340c49e7488496e3aced88",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFrameLedger.kt": {
+    "mtime": 1790794553.675664,
+    "seen": 1790795850.3949142,
+    "ast_hash": "ac79d66c5402160f920db8d9c324d416",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PcmLoopRendererTest.kt": {
+    "mtime": 1790946330.5265703,
+    "seen": 1790946386.8997064,
+    "ast_hash": "bb1935a0b30ffe02bf323bb1e7c25b7e",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PcmRingBufferTest.kt": {
+    "mtime": 1790798763.5457387,
+    "seen": 1790799711.3929791,
+    "ast_hash": "58a74f1b60991428c888a3868d81d030",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PlaybackFrameLedgerTest.kt": {
+    "mtime": 1790798578.439066,
+    "seen": 1790799711.3929877,
+    "ast_hash": "f61598b878d79e3759bd8340771bfebc",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/components/WaveformViewTest.kt": {
+    "mtime": 1790882472.5358658,
+    "seen": 1790882486.1571655,
+    "ast_hash": "28ae79b92d7ea54086289985eaf4d644",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformMarkerHitBounds.kt": {
+    "mtime": 1790797340.42063,
+    "seen": 1790797482.3681192,
+    "ast_hash": "a56478e1c53f823a7da5c16659ca999c",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformMarkerHitBoundsTest.kt": {
+    "mtime": 1790797340.6336272,
+    "seen": 1790797482.3682756,
+    "ast_hash": "491f47d5f2eecdf11b7848590f360af5",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/media/PcmBeatDecoderTest.kt": {
+    "mtime": 1790873009.943723,
+    "seen": 1790873044.1118603,
+    "ast_hash": "d925b8f92d057a3bffc05760a5986160",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/media/SmoothLoopPlaybackTest.kt": {
+    "mtime": 1790878991.2785668,
+    "seen": 1790879062.8638263,
+    "ast_hash": "71407ba2989e504c5c7a042631ba9d73",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PcmSourceTest.kt": {
+    "mtime": 1790872886.573274,
+    "seen": 1790873044.1121182,
+    "ast_hash": "6d61ba5f9804a23a5d8fd9ab074a5969",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/perfetto/bin/trace_processor": {
+    "mtime": 1790863551.1523356,
+    "seen": 1790866156.8407388,
+    "ast_hash": "974bfa40b9e6818cdd20a788e565149e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-cli/SKILL.md": {
+    "mtime": 1790866218.7959301,
+    "seen": 1790867076.5647614,
+    "ast_hash": "0429f7bd54c44d11bf0c10cd84ba2350",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-cli/references/interact.md": {
+    "mtime": 1790863549.0103626,
+    "seen": 1790866156.841163,
+    "ast_hash": "3d65dc86efd1b2806e22c0e46ebb563c",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-cli/references/journeys.md": {
+    "mtime": 1790866218.796246,
+    "seen": 1790867076.5647664,
+    "ast_hash": "4c20f04d4ecd683b77db1dad030c41a7",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/SKILL.md": {
+    "mtime": 1790863551.1413357,
+    "seen": 1790866156.841168,
+    "ast_hash": "38ae52edb2bf33a9887ac9722afe4825",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/analysis_orchestrator.md": {
+    "mtime": 1790863551.1433358,
+    "seen": 1790866156.84117,
+    "ast_hash": "95a3b0dd594f00b7ab9c8300bf85415c",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-sql/perfetto_sql.md": {
+    "mtime": 1790863551.1433358,
+    "seen": 1790866156.841173,
+    "ast_hash": "a46e394a289b4ffa17c183ffe7378015",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/perfetto_trace_analysis.md": {
+    "mtime": 1790863551.1443357,
+    "seen": 1790866156.841175,
+    "ast_hash": "33bf854811c2e0b7915117be9a7280a3",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/guiding_principles.md": {
+    "mtime": 1790863551.1453357,
+    "seen": 1790866156.8411772,
+    "ast_hash": "1c92e142034432279c43550f68ae6af9",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/domain_hints_template.md": {
+    "mtime": 1790863551.1453357,
+    "seen": 1790866156.8411798,
+    "ast_hash": "63c8fffd7384343808834f72bebc9afd",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_cpu.md": {
+    "mtime": 1790863551.1463356,
+    "seen": 1790866156.8411822,
+    "ast_hash": "c7dbfa12ff2d3ad5bf0516c5bc01d758",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_graphics.md": {
+    "mtime": 1790863551.1463356,
+    "seen": 1790866156.841185,
+    "ast_hash": "d10dadf7c83f31a46c52bc2b4b88575b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_io.md": {
+    "mtime": 1790863551.1463356,
+    "seen": 1790866156.8411882,
+    "ast_hash": "62365a421617bd898d9e150684a19697",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_ipc.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411903,
+    "ast_hash": "30d5ea023fa05f77283a784408e7047e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_memory.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411932,
+    "ast_hash": "a33bc87400c3307fff6958a20d0a3a7f",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/hints/subsystems/hints_power.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411956,
+    "ast_hash": "5707104d8204e30c7a724b86266a2533",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/per_candidate_analysis.md": {
+    "mtime": 1790863551.1473358,
+    "seen": 1790866156.8411977,
+    "ast_hash": "5e43ed33fd95dd7061b3e04ae3f41c3b",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/analysis/workflows/perfetto-trace-analysis/references/triage.md": {
+    "mtime": 1790863551.1483357,
+    "seen": 1790866156.8412006,
+    "ast_hash": "7842cf98c1b555033e1f9bbc289dbb6f",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/recording/recording_orchestrator.md": {
+    "mtime": 1790863551.1483357,
+    "seen": 1790866156.8412032,
+    "ast_hash": "5437cda98618ba1d3eb9646dc064648e",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/recording/workflows/perfetto-trace-recording/perfetto_trace_recording.md": {
+    "mtime": 1790863551.1493356,
+    "seen": 1790866156.8412056,
+    "ast_hash": "858c948c48ecdc5b2404247654d840a5",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/recording/workflows/perfetto-trace-recording/references/trace_config_reference.md": {
+    "mtime": 1790863551.1513357,
+    "seen": 1790866156.8412077,
+    "ast_hash": "801e49bca31e96feac62dd79c924ca9f",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/env_setup.md": {
+    "mtime": 1790863551.1513357,
+    "seen": 1790866156.84121,
+    "ast_hash": "8963b8bf29a89fe1b99e05b822c2f640",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/perfetto/setup.md": {
+    "mtime": 1790863551.1523356,
+    "seen": 1790866156.8412125,
+    "ast_hash": "175b124ee45689f07fe3eb515867c4de",
+    "semantic_hash": ""
+  },
+  ".agents/skills/android-profiler/references/perfetto/sql.md": {
+    "mtime": 1790863551.1523356,
+    "seen": 1790866156.8412151,
+    "ast_hash": "b62d2593e8195caaca124149e5088b62",
+    "semantic_hash": ""
+  },
+  ".agents/skills/edge-to-edge/SKILL.md": {
+    "mtime": 1790863550.089349,
+    "seen": 1790866156.8412175,
+    "ast_hash": "e536ec1a83db6370752722b5311b186b",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PcmBeatDecoderTest.kt": {
+    "mtime": 1790952214.3756003,
+    "seen": 1790952255.6740847,
+    "ast_hash": "be637a4c471237d87e50625861bef353",
+    "semantic_hash": ""
+  },
+  "app/src/androidTest/java/com/prosincerity/ghostwriter/ui/screens/EditorMarkerDialogsTest.kt": {
+    "mtime": 1790882357.517208,
+    "seen": 1790882486.157183,
+    "ast_hash": "0717bb19da7a2d7764b3730af0dad5c9",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackHandoff.kt": {
+    "mtime": 1790878760.722426,
+    "seen": 1790879062.8639445,
+    "ast_hash": "d1bb235a02320636aa1a1a90069eee63",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/media/PlaybackHandoffTest.kt": {
+    "mtime": 1790878860.5231712,
+    "seen": 1790879062.8640413,
+    "ast_hash": "551a6b7741d228aecac0ab411c290e1c",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261001_184108_949d82f5_why_do_waveform_markers_lag_behind_the_pointer_whi.md": {
+    "mtime": 1790880068.7829814,
+    "seen": 1790880802.379719,
+    "ast_hash": "22192b8dee5f518bf4d6de8a75536e59",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformMarkerCrossing.kt": {
+    "mtime": 1790882282.7961473,
+    "seen": 1790882486.1573186,
+    "ast_hash": "a38e05562a4247b5b01454d470548303",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/logic/WaveformMarkerCrossingTest.kt": {
+    "mtime": 1790882357.2202117,
+    "seen": 1790882486.157563,
+    "ast_hash": "c11fdcd933d9bf09c2c831940625a5a6",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261001_185440_4aa29b46_why_does_justified_lyric_text_overflow_with_tight.md": {
+    "mtime": 1790880880.143425,
+    "seen": 1790882486.1584353,
+    "ast_hash": "ad7dd591edd063cce53d3513b525344e",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261001_192322_a27c1a61_does_this_app_have_haptic_feedback_for_waveform_ma.md": {
+    "mtime": 1790882602.2826943,
+    "seen": 1790882639.4479604,
+    "ast_hash": "e00af781ea7de77a41266c03e28cfd07",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectSummary.kt": {
+    "mtime": 1790884372.4828765,
+    "seen": 1790885015.0880888,
+    "ast_hash": "5c8067c517e53edbf289798930b02051",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/components/SlimSlider.kt": {
+    "mtime": 1790884482.7164907,
+    "seen": 1790885015.0881875,
+    "ast_hash": "8aa2f8be87654de69665e588822b245c",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/ProjectSummaryTest.kt": {
+    "mtime": 1790884826.3661704,
+    "seen": 1790885015.0882683,
+    "ast_hash": "1f3d25985bcf60df3a13bf2caa250376",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/ui/GhostThemeContrastTest.kt": {
+    "mtime": 1790885109.3576126,
+    "seen": 1790885166.8780377,
+    "ast_hash": "0523a15e78c2ac329946960745a2337e",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261001_194047_00414c15_can_you_check_which_part_of_the_ui_is_customizable.md": {
+    "mtime": 1790883647.424967,
+    "seen": 1790885015.0891197,
+    "ast_hash": "d7c87bb80daa7b5df2307d9e77e4b3cb",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenPreviews.kt": {
+    "mtime": 1790885109.4736114,
+    "seen": 1790885166.8779562,
+    "ast_hash": "43d745feada9a77db210abd6d70120ce",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/media/BeatLoopMode.kt": {
+    "mtime": 1790944218.6371205,
+    "seen": 1790944634.0006223,
+    "ast_hash": "bede54ae82060f2ae1a3952ceb4e7020",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261002_120837_dafadf61_why_does_seeking_beyond_the_beat_loop_end_snap_the.md": {
+    "mtime": 1790942917.9778771,
+    "seen": 1790944634.0013402,
+    "ast_hash": "c4ced349be89781e164918c8fc5a81fe",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20261002_123837_6d03ef42_how_do_three_beat_loop_modes_reach_the_editor__not.md": {
+    "mtime": 1790944717.916109,
+    "seen": 1790945511.444397,
+    "ast_hash": "d2e1de20807337741c339c25f48f6659",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/EditorLyricsSession.kt": {
+    "mtime": 1790953461.1989257,
+    "seen": 1790953560.190997,
+    "ast_hash": "102b096edf3952c7e03aeee11c67eb59",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/EditorLyricsSessionTest.kt": {
+    "mtime": 1790953461.501922,
+    "seen": 1790953560.1911623,
+    "ast_hash": "72001fc7b850b964ec1d378d3b81d86b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/data/OpenTypeFontMetadata.kt": {
+    "mtime": 1790960365.7883081,
+    "seen": 1790960399.518718,
+    "ast_hash": "52fd42662e39865b9ece431a066fe923",
+    "semantic_hash": ""
+  },
+  "app/src/test/java/com/prosincerity/ghostwriter/data/OpenTypeFontMetadataTest.kt": {
+    "mtime": 1790960205.052329,
+    "seen": 1790960399.518926,
+    "ast_hash": "43b6680cf7c8a630176cb9d6c1fde95d",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/prosincerity/ghostwriter/ui/components/SettingsSection.kt": {
+    "mtime": 1790961317.7813401,
+    "seen": 1790961534.5836482,
+    "ast_hash": "e3f879c25e30959f8b24116690d9db39",
     "semantic_hash": ""
   }
 }
