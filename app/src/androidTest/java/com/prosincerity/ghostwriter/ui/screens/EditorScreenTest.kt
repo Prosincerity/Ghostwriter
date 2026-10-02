@@ -3,6 +3,9 @@ package com.prosincerity.ghostwriter.ui.screens
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.ServiceConnection
 import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
@@ -12,11 +15,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -26,6 +32,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
@@ -39,6 +46,7 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.BeatPlaybackService
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
+import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -67,6 +75,47 @@ class EditorScreenTest {
 
     private val context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    @Test
+    fun awaitingPlaybackConnection_onEveryEntryDrawsDarkBackground() {
+        // Hold service connections pending, so this exercises the otherwise brief
+        // first composition rather than waiting for the fully loaded editor.
+        val connections = mutableSetOf<ServiceConnection>()
+        val pendingContext = object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+
+            override fun bindService(intent: Intent, connection: ServiceConnection, flags: Int): Boolean {
+                connections += connection
+                return true
+            }
+
+            override fun unbindService(connection: ServiceConnection) {
+                assertTrue(connections.remove(connection))
+            }
+        }
+        val visible = mutableStateOf(true)
+        composeRule.setContent {
+            CompositionLocalProvider(LocalContext provides pendingContext) {
+                GhostwriterTheme {
+                    if (visible.value) {
+                        EditorScreen("Pending playback", onBack = {}, onOpenSettings = {})
+                    }
+                }
+            }
+        }
+
+        repeat(3) {
+            composeRule.runOnIdle { assertEquals(1, connections.size) }
+            val pixels = composeRule.onRoot().captureToImage().toPixelMap()
+            assertTrue("Waiting editor must fill the screen", pixels.width > 1 && pixels.height > 1)
+            for ((x, y) in listOf(0 to 0, (pixels.width - 1) to (pixels.height - 1))) {
+                assertEquals(GhostColorScheme.background, pixels[x, y])
+            }
+            composeRule.runOnIdle { visible.value = false }
+            composeRule.runOnIdle { assertTrue(connections.isEmpty()) }
+            if (it < 2) composeRule.runOnIdle { visible.value = true }
+        }
+    }
 
     @Test
     fun leavingAndReturningToEditor_keepsBeatPlaying_andSystemControlsStopIt() {

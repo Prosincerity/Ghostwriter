@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -18,6 +19,9 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -35,6 +39,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +47,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
+import com.prosincerity.ghostwriter.data.EditorLyricsSession
 import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
@@ -93,13 +99,24 @@ fun EditorScreen(
     onOpenDictionary: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
-    val playback = rememberBeatPlayback(projectTitle) ?: return
+    val playback = rememberBeatPlayback(projectTitle)
+    if (playback == null) {
+        // Binding is asynchronous on every entry. Keep drawing while it is
+        // pending instead of exposing the Activity window for a frame or more.
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
 
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val lyricTextSettings = remember(context) { AppSettings.getLyricTextSettings(context) }
     val coroutineScope = rememberCoroutineScope()
     val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
+    val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle) }
 
     var lyrics by rememberSaveable(projectTitle) {
         mutableStateOf(ProjectStorage.loadLatest(projectDir))
@@ -402,8 +419,10 @@ fun EditorScreen(
             delay(intervalSeconds.seconds)
             intervalSeconds = AppSettings.getAutosaveIntervalSeconds(context)
             keepCount = AppSettings.getAutosaveCount(context)
+            val contentToSave = lyrics
+            val backupsToKeep = keepCount
             withContext(Dispatchers.IO) {
-                ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount)
+                lyricsSession.autosave(contentToSave, backupsToKeep)
             }
         }
     }
@@ -411,11 +430,10 @@ fun EditorScreen(
     // Cancel decoding before the final save when leaving the screen. The
     // updated-state holders avoid capturing the values from the first
     // composition in this long-lived effect.
-    DisposableEffect(projectTitle) {
+    DisposableEffect(lyricsSession) {
         onDispose {
             latestWaveformCancellation.value?.set(true)
-            ProjectStorage.rotateAndSave(
-                projectDir,
+            lyricsSession.finish(
                 latestLyrics.value,
                 latestKeepCount.value,
             )
@@ -470,9 +488,10 @@ fun EditorScreen(
                     }
                     IconButton(shape = GhostButtonShape, onClick = {
                         val contentToSave = lyrics
+                        val backupsToKeep = keepCount
                         coroutineScope.launch {
                             val saved = withContext(Dispatchers.IO) {
-                                ProjectStorage.saveManual(projectDir, projectTitle, contentToSave, keepCount)
+                                lyricsSession.saveManual(contentToSave, backupsToKeep)
                             }
                             withContext(Dispatchers.Main.immediate) {
                                 Toast.makeText(

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-02T13:20:26.472129+00:00",
+  "generated_at": "2026-10-02T15:00:54.857973+00:00",
   "nodes": {
     "app_src_main_java_com_prosincerity_ghostwriter_data_dictionarysearch_dictionarysearch": {
       "code_fingerprint": "2be4f15177599f28fa7cc6cfb78f15aeb02403d2783ebab525dfe6507cbb1ac9",
@@ -17,7 +17,7 @@
           "q": "Does dictionary assonance search put exact matches first and how do shorter vowel tiers paginate?"
         }
       ],
-      "score": 1.886749316,
+      "score": 1.883710141,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/DictionarySearch.kt",
       "status": "preferred",
       "uses": 2
@@ -33,7 +33,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 0.958917957,
+      "score": 0.957373332,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/data/ProjectMetadata.kt",
       "status": "tentative",
       "uses": 1
@@ -49,7 +49,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.95359365,
+      "score": 0.952057602,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/AssonanceFormFilter.kt",
       "status": "tentative",
       "uses": 1
@@ -65,7 +65,7 @@
           "q": "Review code added on rhyme-detection for simplification, cleanup, refactoring, and readability."
         }
       ],
-      "score": 0.95359365,
+      "score": 0.952057602,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/IpaSearchKeys.kt",
       "status": "tentative",
       "uses": 1
@@ -81,7 +81,7 @@
           "q": "Why do waveform markers lag behind the pointer while dragging?"
         }
       ],
-      "score": 0.982201137,
+      "score": 0.980619008,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/logic/WaveformViewport.kt",
       "status": "tentative",
       "uses": 1
@@ -97,7 +97,7 @@
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 0.982866807,
+      "score": 0.981283605,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
@@ -113,7 +113,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.953155651,
+      "score": 0.951620308,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/MainActivity.kt",
       "status": "tentative",
       "uses": 1
@@ -129,7 +129,7 @@
           "q": "How do three beat loop modes reach the editor, notification, and lock screen?"
         }
       ],
-      "score": 0.999329392,
+      "score": 0.997719673,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatLoopMode.kt",
       "status": "tentative",
       "uses": 1
@@ -160,7 +160,7 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 3.86499665,
+      "score": 3.858770915,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlaybackService.kt",
       "status": "preferred",
       "uses": 4
@@ -186,7 +186,7 @@
           "q": "How hard would it be to include loop markers in WaveformView and BeatPlayer that jump to the previous marker or beat start?"
         }
       ],
-      "score": 2.957095844,
+      "score": 2.952332556,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/BeatPlayer.kt",
       "status": "preferred",
       "uses": 3
@@ -202,7 +202,7 @@
           "q": "Why does seeking beyond the beat loop end snap the playhead back?"
         }
       ],
-      "score": 0.998848495,
+      "score": 0.99723955,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PcmLoopRenderer.kt",
       "status": "tentative",
       "uses": 1
@@ -218,13 +218,13 @@
           "q": "What should be checked before merging rhyme-detection into dev for a tester version, with LyricPad changes moved to their own branch?"
         }
       ],
-      "score": 0.953155651,
+      "score": 0.951620308,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/media/PlaybackFocusState.kt",
       "status": "tentative",
       "uses": 1
     },
     "app_src_main_java_com_prosincerity_ghostwriter_ui_components_beatplaybackcontrols": {
-      "code_fingerprint": "2d58f20bf5cb9d008e493ad4254020ff1beb90abd883031d8b573113e739acd3",
+      "code_fingerprint": "a647683039e53f794e76c40695d4fb6719529bac13eea153a545386207736383",
       "label": "BeatPlaybackControls.kt",
       "last": "2026-10-01T19:40:47.424614+00:00",
       "provenance": [
@@ -239,7 +239,7 @@
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 1.966008353,
+      "score": 1.962841508,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/BeatPlaybackControls.kt",
       "status": "preferred",
       "uses": 2
@@ -260,7 +260,7 @@
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 1.966008353,
+      "score": 1.962841508,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/components/WaveformView.kt",
       "status": "preferred",
       "uses": 2
@@ -276,7 +276,7 @@
           "q": "Does this app have haptic feedback for waveform markers, beat controls, and destructive actions?"
         }
       ],
-      "score": 0.982866807,
+      "score": 0.981283605,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/EditorScreen.kt",
       "status": "tentative",
       "uses": 1
@@ -292,7 +292,7 @@
           "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
         }
       ],
-      "score": 0.983141546,
+      "score": 0.981557902,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/screens/SettingsScreen.kt",
       "status": "tentative",
       "uses": 1
@@ -308,7 +308,7 @@
           "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
         }
       ],
-      "score": 0.983141546,
+      "score": 0.981557902,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Color.kt",
       "status": "tentative",
       "uses": 1
@@ -324,7 +324,7 @@
           "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
         }
       ],
-      "score": 0.983141546,
+      "score": 0.981557902,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Shapes.kt",
       "status": "tentative",
       "uses": 1
@@ -340,7 +340,7 @@
           "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
         }
       ],
-      "score": 0.983141546,
+      "score": 0.981557902,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Theme.kt",
       "status": "tentative",
       "uses": 1
@@ -356,7 +356,7 @@
           "q": "can you check which part of the UI is customizable and is currently in a default state? give me suggestions fitting for this app on how the UI should be changed to be prettier."
         }
       ],
-      "score": 0.983141546,
+      "score": 0.981557902,
       "source_file": "app/src/main/java/com/prosincerity/ghostwriter/ui/theme/Type.kt",
       "status": "tentative",
       "uses": 1
@@ -372,7 +372,7 @@
           "q": "Why does seeking beyond the beat loop end snap the playhead back?"
         }
       ],
-      "score": 0.998848495,
+      "score": 0.99723955,
       "source_file": "app/src/test/java/com/prosincerity/ghostwriter/media/PcmLoopRendererTest.kt",
       "status": "tentative",
       "uses": 1
