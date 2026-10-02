@@ -75,12 +75,15 @@ class SettingsScreenTest {
                 }
             }
         }
-        select("Font family", "Serif")
+        select("Font family", "System default")
         composeRule.runOnIdle {
-            assertEquals(LyricFontFamily.SERIF, Settings.getLyricTextSettings(testContext).fontFamily)
+            assertEquals(LyricFontFamily.SYSTEM_DEFAULT, Settings.getLyricTextSettings(testContext).fontFamily)
         }
 
         composeRule.onNodeWithContentDescription("Font family").performScrollTo().performClick()
+        for (generic in listOf("Sans serif", "Serif", "Cursive", "Monospace")) {
+            composeRule.onNodeWithText(generic).assertDoesNotExist()
+        }
         // Discovery runs on an external dispatcher, and offscreen lazy rows are not
         // composed yet. Wait by scrolling the actual picker to the requested face.
         var lastScrollFailure: AssertionError? = null
@@ -122,7 +125,7 @@ class SettingsScreenTest {
             }
         }
 
-        select("Font family", "Serif")
+        select("Font family", "System default")
         select("Font size", "24 sp")
         setSlider("Line height", 3.25f)
         setSlider("Letter spacing", 7.5f)
@@ -132,7 +135,7 @@ class SettingsScreenTest {
 
         composeRule.runOnIdle {
             assertEquals(
-                LyricTextSettings(LyricFontFamily.SERIF, 24, 3.25f, 7.5f, LyricTextAlignment.CENTER),
+                LyricTextSettings(LyricFontFamily.SYSTEM_DEFAULT, 24, 3.25f, 7.5f, LyricTextAlignment.CENTER),
                 Settings.getLyricTextSettings(testContext),
             )
             assertEquals(120, Settings.getAutosaveIntervalSeconds(testContext))

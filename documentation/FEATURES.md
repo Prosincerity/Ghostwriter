@@ -28,7 +28,8 @@ release schedule.
 - [x] **Autosave** — configurable periodic saves with a configurable number
   of rotating backups; load the newest readable manual or autosave snapshot.
 - [x] **Lyric-pad typography** — choose a device font discovered through Android's
-  system font API (Android 10+), or a generic platform family, plus font size,
+  system font API (Android 10+), with clean family names grouped by style and
+  filtered to the device language, or System default, plus font size,
   relative line height, letter spacing, and alignment in Settings, with a live
   preview. Line height (0.5–4×) and letter spacing (−2–10 sp) use sliders.
   Choices apply across projects and follow Android's font scaling.
