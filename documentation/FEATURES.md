@@ -65,9 +65,12 @@ release schedule.
 - [x] **Waveform timeline and loop markers** — seek, zoom, pan, and manage named markers.
   Marker dialogs offer **Looping: None / Start / End**, with one start and one
   end per beat. Setting a role transfers it from the previous marker. The Loop
-  button cycles **Off / Whole beat / Markers**, with a mode label, distinct icons,
-  and three indicators. Notifications and lock-screen controls show the same
-  mode. Whole beat ignores marker boundaries and uses normal playback. Valid
+  button cycles **Off / Whole beat / Markers**, with distinct icons, three
+  indicators, and a visible **Off / Beat / Marker** label that scales to fit
+  on small screens. Its accessibility label always identifies the mode.
+  A compact, adaptive Reassign button leaves more room for playback, while
+  Play stays centered in the full row and volume controls keep their sizes.
+  Notifications and lock-screen controls show the same mode. Whole beat ignores marker boundaries and uses normal playback. Valid
   loop markers prepare PCM in the background in every mode; decoded audio and
   paused PCM output are reused across mode changes and marker edits until the
   beat is released. Selecting Markers jumps to the loop start while preserving

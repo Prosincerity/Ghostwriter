@@ -79,8 +79,14 @@ class ProjectStorageTest {
         val project = tempFolder.newFolder("failed_newest")
         File(project, "autosave1.txt").mkdir()
         File(project, "autosave1.txt/keep").writeText("unrelated file")
-        File(project, "autosave4.txt").writeText("recoverable lyrics")
-        File(project, "autosave5.txt").writeText("older lyrics")
+        File(project, "autosave4.txt").apply {
+            writeText("recoverable lyrics")
+            assertTrue(setLastModified(2_000L))
+        }
+        File(project, "autosave5.txt").apply {
+            writeText("older lyrics")
+            assertTrue(setLastModified(1_000L))
+        }
 
         ProjectStorage.rotateAndSave(project, "unsaved lyrics", 3)
 

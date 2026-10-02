@@ -8,6 +8,6 @@
     <string name="beat_loop_markers">Loop: Markers</string>
     <string name="beat_loop_off_short">Off</string>
     <string name="beat_loop_whole_short">Beat</string>
-    <string name="beat_loop_markers_short">Markers</string>
+    <string name="beat_loop_markers_short">Marker</string>
     <string name="beat_playback_source">[Ghostwriter]</string>
 </resources>
