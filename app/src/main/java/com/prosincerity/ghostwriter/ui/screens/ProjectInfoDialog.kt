@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.ProjectMetadata
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 
 @Composable
 fun ProjectInfoDialog(
@@ -121,6 +122,7 @@ fun ProjectInfoDialog(
         },
         confirmButton = {
             TextButton(
+                shape = GhostButtonShape,
                 onClick = {
                     val updated = metadata.copy(
                         bpm = parsedBpm,
@@ -136,7 +138,7 @@ fun ProjectInfoDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(shape = GhostButtonShape, onClick = onDismiss) {
                 Text("Cancel")
             }
         }

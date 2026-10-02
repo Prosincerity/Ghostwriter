@@ -2,7 +2,7 @@
 
 Before modifying code, read:
 
-- documentation/AGENT_CONTEXT.md
+- documentation/README.md
 - documentation/FEATURES.md
 - README.md
 
@@ -24,13 +24,17 @@ Before modifying code, read:
 - Make focused changes; do not opportunistically refactor unrelated code.
 - Inspect existing architecture before introducing abstractions.
 - Add or update tests for behavior changes.
-- Before completing a task, run the relevant Gradle tests.
+- Agents may run relevant instrumented tests on an already connected emulator
+  or physical device, including devices connected over wireless debugging.
+  Confirm the target with `adb devices -l` and select it with `ANDROID_SERIAL`.
+  If no device is available, compile the tests and leave execution to the maintainer.
+- Before completing a task, run the relevant non-device tests, including JVM tests.
 - Run ./gradlew test and ./gradlew lint when practical.
 - Do not modify main unless explicitly requested.
 
 ## Current architecture
 
-See documentation/AGENT_CONTEXT.md for authoritative details.
+See documentation/README.md for architecture and deliberate decisions.
 
 If documentation conflicts with assumptions or general Android conventions,
 the repository documentation wins.

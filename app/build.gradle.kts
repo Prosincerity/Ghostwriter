@@ -4,8 +4,13 @@ plugins {
     jacoco
 }
 
+jacoco {
+    toolVersion = libs.versions.jacoco.get()
+}
+
 android {
     namespace = "com.prosincerity.ghostwriter"
+    ndkVersion = "30.0.16248370"
     compileSdk {
         version = release(37)
     }
@@ -14,10 +19,18 @@ android {
         applicationId = "com.prosincerity.ghostwriter"
         minSdk = 24
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.1.0-waveform-test.1"
+        versionCode = 4
+        versionName = "1.2.1-studio-polish.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+        externalNativeBuild {
+            cmake {
+                targets += "ghostwriter_ipa"
+            }
+        }
     }
 
     buildTypes {
@@ -31,12 +44,22 @@ android {
             }
         }
     }
+    testCoverage {
+        // Aggregated reports require the same JaCoCo version for JVM and Android tests.
+        jacocoVersion = libs.versions.jacoco.get()
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
         compose = true
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "4.1.2"
+        }
     }
 }
 
@@ -52,7 +75,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
-    testImplementation("org.json:json:20231013")
+    testImplementation(libs.json)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

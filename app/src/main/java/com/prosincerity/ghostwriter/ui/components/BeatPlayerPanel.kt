@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,12 +37,14 @@ import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.media.BeatPlayer
-import kotlinx.coroutines.delay
+import com.prosincerity.ghostwriter.media.BeatLoopMode
+import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
 
 @Composable
 internal fun BeatPlayerPanel(
-    beatPlayer: BeatPlayer,
+    beatPlayer: BeatPlayer?,
     isBeatReady: Boolean,
     isImporting: Boolean,
     beatDisplayName: String,
@@ -71,205 +74,209 @@ internal fun BeatPlayerPanel(
     // this screen owns a successfully loaded player so the waveform and clock
     // stay in sync with playback.
     LaunchedEffect(beatPlayer, isBeatReady) {
-        if (!isBeatReady) return@LaunchedEffect
+        if (!isBeatReady || beatPlayer == null) return@LaunchedEffect
 
         while (true) {
             currentPositionMs = beatPlayer.currentPositionMs
             durationMs = beatPlayer.durationMs
             isPlaying = beatPlayer.isPlaying
-            delay(250.milliseconds)
+            delay(if (isPlaying) 33.milliseconds else 250.milliseconds)
         }
     }
 
-    Card(modifier = modifier.height(176.dp)) {
-        if (isWaveformLoading) {
-            CenteredPlayerContent {
-                Text(
-                    text = "Preparing waveform…",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = "The player will be available when preparation finishes.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-                Button(
-                    onClick = onCancelWaveformPreparation,
-                    modifier = Modifier.padding(top = 8.dp),
-                ) {
-                    Text(if (cancelRemovesImportedBeat) "Cancel import" else "Cancel preparation")
+    Card(
+        modifier = modifier.height(176.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 4.dp)) {
+            if (beatPlayer == null) {
+                CenteredPlayerContent(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Connecting beat player…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-            }
-            return@Card
-        }
-
-        if (waveformPreparationCancelled) {
-            CenteredPlayerContent {
-                Text(
-                    text = "Waveform preparation canceled",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(
-                    onClick = onRetryWaveformPreparation,
-                    modifier = Modifier.padding(top = 8.dp),
-                ) {
-                    Text("Retry")
+            } else if (isWaveformLoading) {
+                CenteredPlayerContent(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Preparing waveform…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        shape = GhostButtonShape,
+                        onClick = onCancelWaveformPreparation,
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text(if (cancelRemovesImportedBeat) "Cancel import" else "Cancel preparation")
+                    }
                 }
-            }
-            return@Card
-        }
-
-        if (waveformPreparationFailed) {
-            CenteredPlayerContent {
-                Text(
-                    text = "Couldn't create waveform",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Row(
-                    modifier = Modifier.padding(top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Button(onClick = onRetryWaveformPreparation) {
+            } else if (waveformPreparationCancelled) {
+                CenteredPlayerContent(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Waveform preparation canceled",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        shape = GhostButtonShape,
+                        onClick = onRetryWaveformPreparation,
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
                         Text("Retry")
                     }
-                    TextButton(onClick = onReassignBeat) {
-                        Text("Remove beat")
+                }
+            } else if (waveformPreparationFailed) {
+                CenteredPlayerContent(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Couldn't create waveform",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Button(shape = GhostButtonShape, onClick = onRetryWaveformPreparation) {
+                            Text("Retry")
+                        }
+                        TextButton(shape = GhostButtonShape, onClick = onReassignBeat) {
+                            Text("Remove beat")
+                        }
                     }
                 }
-            }
-            return@Card
-        }
-
-        if (!isBeatReady) {
-            CenteredPlayerContent {
-                Text(
-                    text = if (isReassigningBeat) "Removing beat…" else "No beat selected",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(
-                    onClick = onImportBeat,
-                    enabled = !isImporting && !isReassigningBeat,
-                    modifier = Modifier.padding(top = 4.dp),
-                ) {
+            } else if (!isBeatReady) {
+                CenteredPlayerContent(modifier = Modifier.weight(1f)) {
                     Text(
-                        when {
-                            isReassigningBeat -> "Removing…"
-                            isImporting -> "Importing…"
-                            else -> "Import beat"
-                        }
+                        text = if (isReassigningBeat) "Removing beat…" else "No beat selected",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        shape = GhostButtonShape,
+                        onClick = onImportBeat,
+                        enabled = !isImporting && !isReassigningBeat,
+                        modifier = Modifier.padding(top = 4.dp),
+                    ) {
+                        Text(
+                            when {
+                                isReassigningBeat -> "Removing…"
+                                isImporting -> "Importing…"
+                                else -> "Import beat"
+                            }
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = beatDisplayName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        WaveformZoomButton(
+                            imageVector = Icons.Filled.ZoomOut,
+                            contentDescription = "Zoom out waveform",
+                            onClick = {
+                                waveformViewport = waveformViewport.zoomBy(
+                                    scaleFactor = 0.5f,
+                                    focalXpx = waveformWidthPx / 2f,
+                                    viewportWidthPx = waveformWidthPx,
+                                )
+                            },
+                            enabled = waveformWidthPx > 0f &&
+                                waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
+                        )
+                        WaveformZoomButton(
+                            imageVector = Icons.Filled.ZoomIn,
+                            contentDescription = "Zoom in waveform",
+                            onClick = {
+                                waveformViewport = waveformViewport.zoomBy(
+                                    scaleFactor = 2f,
+                                    focalXpx = waveformWidthPx / 2f,
+                                    viewportWidthPx = waveformWidthPx,
+                                )
+                            },
+                            enabled = waveformWidthPx > 0f &&
+                                waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
+                        )
+                    }
+                    WaveformView(
+                        amplitudes = waveformAmplitudes,
+                        durationMs = durationMs.toLong(),
+                        currentPositionMs = currentPositionMs.toLong(),
+                        markers = markers,
+                        onSeekFinished = { positionMs ->
+                            beatPlayer.seekTo(positionMs.toInt())
+                            currentPositionMs = positionMs.toInt()
+                        },
+                        onAddMarker = onAddMarker,
+                        onMarkerClick = { marker ->
+                            val markerPositionMs = marker.positionMs
+                                .coerceIn(0L, durationMs.toLong())
+                                .toInt()
+                            beatPlayer.seekTo(markerPositionMs)
+                            currentPositionMs = markerPositionMs
+                            onMarkerClick(marker)
+                        },
+                        onMarkerMoveFinished = onMarkerMove,
+                        viewport = waveformViewport,
+                        loopEnabled = beatPlayer.loopMode == BeatLoopMode.MARKERS,
+                        onViewportChange = { waveformViewport = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onSizeChanged { waveformWidthPx = it.width.toFloat() }
+                            .weight(1f),
+                    )
+                    Text(
+                        text = if (beatPlayer.isPreparingLoop) "Preparing loop audio…" else
+                            "${formatPlaybackTime(currentPositionMs.toLong())} / " + formatPlaybackTime(durationMs.toLong()),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            return@Card
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = beatDisplayName,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                WaveformZoomButton(
-                    imageVector = Icons.Filled.ZoomOut,
-                    contentDescription = "Zoom out waveform",
-                    onClick = {
-                        waveformViewport = waveformViewport.zoomBy(
-                            scaleFactor = 0.5f,
-                            focalXpx = waveformWidthPx / 2f,
-                            viewportWidthPx = waveformWidthPx,
-                        )
+            if (isBeatReady && beatPlayer != null) {
+                BeatPlaybackControls(
+                    beatPlayer = beatPlayer,
+                    isPlaying = isPlaying,
+                    onPlayFromStart = {
+                        beatPlayer.seekTo(0)
+                        beatPlayer.play()
+                        currentPositionMs = 0
+                        isPlaying = beatPlayer.isPlaying
                     },
-                    enabled = waveformWidthPx > 0f &&
-                        waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
-                )
-                WaveformZoomButton(
-                    imageVector = Icons.Filled.ZoomIn,
-                    contentDescription = "Zoom in waveform",
-                    onClick = {
-                        waveformViewport = waveformViewport.zoomBy(
-                            scaleFactor = 2f,
-                            focalXpx = waveformWidthPx / 2f,
-                            viewportWidthPx = waveformWidthPx,
-                        )
+                    onTogglePlayback = {
+                        beatPlayer.togglePlayPause()
+                        isPlaying = beatPlayer.isPlaying
                     },
-                    enabled = waveformWidthPx > 0f &&
-                        waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
+                    onReassignBeat = onReassignBeat,
+                    isReassigningBeat = isReassigningBeat,
                 )
             }
-            WaveformView(
-                amplitudes = waveformAmplitudes,
-                durationMs = durationMs.toLong(),
-                currentPositionMs = currentPositionMs.toLong(),
-                markers = markers,
-                onSeekFinished = { positionMs ->
-                    beatPlayer.seekTo(positionMs.toInt())
-                    currentPositionMs = positionMs.toInt()
-                },
-                onAddMarker = onAddMarker,
-                onMarkerClick = { marker ->
-                    val markerPositionMs = marker.positionMs
-                        .coerceIn(0L, durationMs.toLong())
-                        .toInt()
-                    beatPlayer.seekTo(markerPositionMs)
-                    currentPositionMs = markerPositionMs
-                    onMarkerClick(marker)
-                },
-                onMarkerMoveFinished = onMarkerMove,
-                viewport = waveformViewport,
-                onViewportChange = { waveformViewport = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onSizeChanged { waveformWidthPx = it.width.toFloat() }
-                    .weight(1f),
-            )
-            Text(
-                text = "${formatPlaybackTime(currentPositionMs.toLong())}/" +
-                    formatPlaybackTime(durationMs.toLong()),
-                maxLines = 1,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            BeatPlaybackControls(
-                beatPlayer = beatPlayer,
-                isPlaying = isPlaying,
-                onPlayFromStart = {
-                    beatPlayer.seekTo(0)
-                    beatPlayer.play()
-                    currentPositionMs = 0
-                    isPlaying = beatPlayer.isPlaying
-                },
-                onTogglePlayback = {
-                    beatPlayer.togglePlayPause()
-                    isPlaying = beatPlayer.isPlaying
-                },
-                onReassignBeat = onReassignBeat,
-                isReassigningBeat = isReassigningBeat,
-            )
         }
     }
 }
 
 @Composable
-private fun CenteredPlayerContent(content: @Composable ColumnScope.() -> Unit) {
+private fun CenteredPlayerContent(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -286,6 +293,7 @@ private fun WaveformZoomButton(
     onClick: () -> Unit,
 ) {
     IconButton(
+        shape = GhostButtonShape,
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier.size(32.dp),
