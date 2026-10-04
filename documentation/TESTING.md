@@ -78,10 +78,28 @@ Debug builds enable JaCoCo for JVM and instrumented tests.
 | JVM | `./gradlew :app:createDebugUnitTestCoverageReport` | `app/build/reports/coverage/test/debug/index.html` |
 | Android | `./gradlew :app:createDebugAndroidTestCoverageReport` | `app/build/reports/coverage/androidTest/debug/connected/index.html` |
 | Combined | `./gradlew :app:createCoverageReport` | `app/build/reports/code_coverage_html_report/global/index.html` |
+| Aggregated | `./gradlew :app:createAggregatedCoverageReport` | `app/build/reports/aggregated_code_coverage_html_report/global/index.html` |
 
-Android and combined coverage require a running emulator or connected device
-and follow the same device-testing rules. The combined task reruns both suites.
-No minimum coverage threshold is enforced.
+Android, combined, and aggregated coverage require a running emulator or connected device
+and follow the same device-testing rules. The combined and aggregated tasks
+run both suites.
+
+Every source file in the aggregated report must meet **90% instruction coverage**
+and **80% branch coverage** for each reported build variant, combining JVM and
+Android coverage. Counters for all classes generated from the same source file
+are summed within that file; coverage from other files, modules, or variants
+cannot compensate for a file below a minimum. A metric with zero instructions
+or branches is not applicable. No source files are excluded from this check.
+These permanent minimums are configured in `app/build.gradle.kts`.
+`:app:createAggregatedCoverageReport` automatically runs
+`:app:verifyAggregatedCoverage` afterward and fails if any file misses a minimum,
+listing each failing file, variant, metric, and covered/total count.
+The check uses exact covered/total counters, not the dashboard's rounded
+percentages, and leaves the HTML report available when a minimum is missed.
+Run `./gradlew :app:verifyAggregatedCoverage` to check an existing report without
+rerunning tests; this checks saved results and does not establish fresh coverage.
+The gate's boundary, per-file grouping, and invalid-report regression checks run with
+`python3 scripts/test_coverage_verification.py` and do not require a device.
 
 If Gradle cannot see the emulator, check `adb devices` or launch the task from
 Android Studio's Gradle tool window. Failed runs do not produce complete
