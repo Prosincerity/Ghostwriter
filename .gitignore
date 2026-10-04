@@ -2,14 +2,8 @@
 .gradle
 .kotlin/
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-/.idea/inspectionProfiles/
-/.idea/androidTestResults*
+/.idea/
+/.vscode/
 .DS_Store
 /build
 /captures
@@ -42,45 +36,22 @@ release/
 *.swp
 *.swo
 
-# Agent caches and machine-specific settings (skill instructions are shared)
-/.agents/**/cache/
-/.agents/**/.cache/
-/.agents/**/__pycache__/
-/.agents/**/*.pyc
-/.agents/*.local.*
-/.agents/settings.json
-/.agents/config.toml
-/.agents/.env*
-/.codex/**/cache/
-/.codex/**/.cache/
-/.codex/**/__pycache__/
-/.codex/**/*.pyc
-/.codex/*.local.*
-/.codex/settings.json
-/.codex/config.toml
-/.codex/auth.json
-/.codex/.env*
+# Local agent tooling and generated knowledge graphs
+/.agents/
+/.codex/
+/graphify-out/
 
-# The profiler skill needs its portable launcher, not downloaded binaries.
-!/.agents/skills/android-profiler/references/perfetto/bin/
-/.agents/skills/android-profiler/references/perfetto/bin/*
-!/.agents/skills/android-profiler/references/perfetto/bin/trace_processor
+# Local environment and signing configuration
+.env
+.env.*
+!.env.example
+!.env.sample
+/keystore.properties
+/signing.properties
+*.p12
+*.pfx
 
-# Graphify local cache and in-progress build state
-/graphify-out/cache/
-/graphify-out/memory/
-/graphify-out/.graphify_python
-/graphify-out/.graphify_root
-/graphify-out/.graphify_detect.json
-/graphify-out/.graphify_ast.json
-/graphify-out/.graphify_cached.json
-/graphify-out/.graphify_uncached.txt
-/graphify-out/.graphify_chunk_*.json
-/graphify-out/.graphify_semantic.json
-/graphify-out/.graphify_semantic_new.json
-/graphify-out/.graphify_extract.json
-/graphify-out/.graphify_incremental.json
-/graphify-out/.vocab.txt
-/graphify-out/.needs_update
-/graphify-out/needs_update
-/graphify-out/20??-??-??/
+# Local profiling captures and memory dumps
+*.hprof
+*.heapdump
+*.perfetto-trace
