@@ -547,32 +547,6 @@ class BeatComponentsTest {
     }
 
     @Test
-    fun playbackControls_reflectLoopChangesFromOutsideTheEditor() {
-        val beatPlayer = BeatPlayer()
-        composeRule.setContent {
-            GhostwriterTheme {
-                BeatPlaybackControls(
-                    beatPlayer = beatPlayer,
-                    isPlaying = false,
-                    onPlayFromStart = {},
-                    onTogglePlayback = {},
-                    onReassignBeat = {},
-                    isReassigningBeat = false,
-                )
-            }
-        }
-
-        composeRule.onNodeWithContentDescription("Loop: Whole beat").assertExists()
-        composeRule.runOnIdle { beatPlayer.toggleLoop() }
-        composeRule.onNodeWithContentDescription("Loop: Markers").assertExists()
-        composeRule.runOnIdle { beatPlayer.toggleLoop() }
-        composeRule.onNodeWithContentDescription("Loop: Off").assertExists()
-        composeRule.onNodeWithContentDescription("Loop: Off").performClick()
-        composeRule.runOnIdle { assertTrue(beatPlayer.isLooping) }
-        composeRule.onNodeWithContentDescription("Loop: Whole beat").assertExists()
-    }
-
-    @Test
     fun playbackControls_restoresMutedVolumeAfterControlsAreRecreated() {
         val beatPlayer = BeatPlayer()
         val showControls = mutableStateOf(true)

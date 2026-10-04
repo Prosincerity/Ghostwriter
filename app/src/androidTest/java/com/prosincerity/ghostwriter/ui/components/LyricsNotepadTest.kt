@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -40,55 +39,38 @@ class LyricsNotepadTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun emptyNotepad_showsExistingPlaceholder() {
-        composeRule.setContent {
-            GhostwriterTheme {
-                LyricsNotepad(lyrics = "", onLyricsChange = {})
-            }
-        }
-
-        composeRule.onNodeWithText("Start writing...").assertExists()
-    }
-
-    @Test
-    fun notepad_displaysAndUpdatesHoistedLyrics() {
-        var latestLyrics = "Opening line"
-        composeRule.setContent {
-            var lyrics by remember { mutableStateOf(latestLyrics) }
-            GhostwriterTheme {
-                LyricsNotepad(
-                    lyrics = lyrics,
-                    onLyricsChange = {
-                        lyrics = it
-                        latestLyrics = it
-                    },
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Opening line").performTextReplacement("Updated line")
-
-        composeRule.onNodeWithText("Opening line").assertDoesNotExist()
-        composeRule.onNodeWithText("Updated line").assertExists()
-        composeRule.runOnIdle { assertEquals("Updated line", latestLyrics) }
-    }
-
-    @Test
-    fun notepad_appliesTypographyAndRecomposesWithoutChangingLyrics() {
+    fun notepad_typographyChangesPreserveLyricsAndEditingUpdatesHoistedState() {
+        var lyrics by mutableStateOf("")
+        var latestLyrics = lyrics
+        var useDefaults by mutableStateOf(true)
         var settings by mutableStateOf(
             LyricTextSettings(LyricFontFamily.SERIF, 20, 1.75f, 0.5f, LyricTextAlignment.CENTER),
         )
+        val onLyricsChange: (String) -> Unit = {
+            lyrics = it
+            latestLyrics = it
+        }
         composeRule.setContent {
             GhostwriterTheme {
-                LyricsNotepad(
-                    lyrics = "First line\nSecond line",
-                    onLyricsChange = {},
-                    modifier = Modifier.fillMaxWidth(),
-                    textSettings = settings,
-                )
+                if (useDefaults) {
+                    LyricsNotepad(lyrics = lyrics, onLyricsChange = onLyricsChange)
+                } else {
+                    LyricsNotepad(
+                        lyrics = lyrics,
+                        onLyricsChange = onLyricsChange,
+                        modifier = Modifier.fillMaxWidth(),
+                        textSettings = settings,
+                    )
+                }
             }
         }
 
+        // Keep default-argument coverage when folding the empty-notepad test here.
+        composeRule.onNodeWithText("Start writing...").assertExists()
+        composeRule.runOnIdle {
+            lyrics = "First line\nSecond line"
+            useDefaults = false
+        }
         val initial = textLayout().layoutInput.style
         assertEquals(FontFamily.Serif, initial.fontFamily)
         assertEquals(20.sp, initial.fontSize)
@@ -103,6 +85,11 @@ class LyricsNotepadTest {
         assertEquals(FontFamily.Monospace, changed.fontFamily)
         assertEquals(TextAlign.Right, changed.textAlign)
         composeRule.onNodeWithText("First line\nSecond line").assertExists()
+
+        composeRule.onNodeWithText("First line\nSecond line").performTextReplacement("Updated line")
+        composeRule.onNodeWithText("First line\nSecond line").assertDoesNotExist()
+        composeRule.onNodeWithText("Updated line").assertExists()
+        composeRule.runOnIdle { assertEquals("Updated line", latestLyrics) }
     }
 
     @Test

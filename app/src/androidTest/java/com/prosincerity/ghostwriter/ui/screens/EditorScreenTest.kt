@@ -339,7 +339,7 @@ class EditorScreenTest {
     }
 
     @Test
-    fun editingLyricsAndProjectInfo_persistsBothWhenLeaving() {
+    fun editingLyricsAndProjectInfo_manualSaveAndExitPersistLatestValues() {
         val projectTitle = uniqueProjectTitle("Editor persistence")
         val projectDir = ProjectStorage.projectDir(context, projectTitle)
         val showEditor = mutableStateOf(true)
@@ -347,13 +347,15 @@ class EditorScreenTest {
 
         try {
             composeRule.setContent {
-                if (showEditor.value) {
-                    GhostwriterTheme {
-                        EditorScreen(
-                            projectTitle = projectTitle,
-                            onBack = { showEditor.value = false },
-                            onOpenSettings = {},
-                        )
+                CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                    if (showEditor.value) {
+                        GhostwriterTheme {
+                            EditorScreen(
+                                projectTitle = projectTitle,
+                                onBack = { showEditor.value = false },
+                                onOpenSettings = {},
+                            )
+                        }
                     }
                 }
             }
@@ -372,35 +374,18 @@ class EditorScreenTest {
             }
 
             composeRule.onNode(hasSetTextAction()).performTextInput(lyrics)
-            composeRule.onNodeWithContentDescription("Back").performClick()
-            composeRule.waitForIdle()
-
-            assertEquals(lyrics, ProjectStorage.loadLatest(projectDir))
-        } finally {
-            disposeEditorAndDeleteProject(showEditor, projectTitle)
-        }
-    }
-
-    @Test
-    fun manualSave_persistsCurrentLyrics() {
-        val projectTitle = uniqueProjectTitle("Editor manual save")
-        val projectDir = ProjectStorage.projectDir(context, projectTitle)
-        val showEditor = mutableStateOf(true)
-        val lyrics = "Saved from the toolbar"
-
-        try {
-            setEditorContent(projectTitle, showEditor)
-
-            composeRule.waitUntil(timeoutMillis = 10_000) {
-                composeRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().size == 1
-            }
-            composeRule.onNode(hasSetTextAction()).performTextInput(lyrics)
             composeRule.onNodeWithContentDescription("Save").performClick()
-
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 ProjectStorage.loadLatest(projectDir) == lyrics
             }
             composeRule.runOnIdle { assertTrue(feedback.isEmpty()) }
+
+            val exitLyrics = "$lyrics\nWritten after the manual save"
+            composeRule.onNode(hasSetTextAction()).performTextReplacement(exitLyrics)
+            composeRule.onNodeWithContentDescription("Back").performClick()
+            composeRule.waitForIdle()
+
+            assertEquals(exitLyrics, ProjectStorage.loadLatest(projectDir))
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }

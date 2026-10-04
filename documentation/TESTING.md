@@ -104,8 +104,18 @@ The gate's boundary, per-file grouping, and invalid-report regression checks run
 When removing redundant UI tests, keep a surviving test that checks the same
 behavior and retain unique assertions. `MainActivityTest` covers About navigation
 and the open/rename/delete project workflow; screen tests retain attribution,
-empty-home behavior, and project ordering. Regenerate aggregated coverage after
-test removal to confirm that both minimums still hold.
+empty-home behavior, and project ordering. The notepad placeholder, default
+arguments, and hoisted editing assertions share the notepad typography test.
+Manual-save persistence and silent haptics share the editor metadata/exit-save
+test, which also checks that edits made after a manual save survive exit.
+External loop-mode updates are
+checked across every mode by the playback layout test, and the haptic test checks
+the complete button-driven cycle.
+
+Preserve a fresh aggregated report before test removal and compare it with a
+fresh report from the same device afterward, including Android and aggregated
+instruction/branch counters per source file. Check the coverage minimums in
+both reports to distinguish existing shortfalls from regressions.
 
 If Gradle cannot see the emulator, check `adb devices` or launch the task from
 Android Studio's Gradle tool window. Failed runs do not produce complete
