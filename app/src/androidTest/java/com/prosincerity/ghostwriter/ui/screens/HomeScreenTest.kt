@@ -6,7 +6,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import com.prosincerity.ghostwriter.data.ProjectSummary
@@ -76,47 +75,4 @@ class HomeScreenTest {
         assertTrue(newest.top < older.top)
     }
 
-    @Test
-    fun existingProject_opensRenamesAndDeletesThroughItsMenu() {
-        var openedProject: String? = null
-        var renamedProject: Pair<String, String>? = null
-        var deletedProject: String? = null
-
-        composeRule.setContent {
-            GhostwriterTheme {
-                HomeScreen(
-                    existingProjects = listOf("Existing Track"),
-                    onCreateProject = {},
-                    onOpenProject = { openedProject = it },
-                    onDeleteProject = { deletedProject = it },
-                    onRenameProject = { current, renamed ->
-                        renamedProject = current to renamed
-                    },
-                    onOpenSettings = {},
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Recent").assertExists()
-        composeRule.onNodeWithText("Existing Track").performClick()
-
-        composeRule.onNodeWithContentDescription("Project options for Existing Track")
-            .performClick()
-        composeRule.onNodeWithText("Rename").performClick()
-        composeRule.onNodeWithText("Rename track").assertExists()
-        composeRule.onNode(hasSetTextAction()).performTextReplacement("Renamed Track")
-        composeRule.onNodeWithText("Rename").performClick()
-
-        composeRule.onNodeWithContentDescription("Project options for Existing Track")
-            .performClick()
-        composeRule.onNodeWithText("Delete").performClick()
-        composeRule.onNodeWithText("Delete project?").assertExists()
-        composeRule.onNodeWithText("Delete").performClick()
-
-        composeRule.runOnIdle {
-            assertEquals("Existing Track", openedProject)
-            assertEquals("Existing Track" to "Renamed Track", renamedProject)
-            assertEquals("Existing Track", deletedProject)
-        }
-    }
 }

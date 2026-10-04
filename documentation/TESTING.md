@@ -101,6 +101,12 @@ rerunning tests; this checks saved results and does not establish fresh coverage
 The gate's boundary, per-file grouping, and invalid-report regression checks run with
 `python3 scripts/test_coverage_verification.py` and do not require a device.
 
+When removing redundant UI tests, keep a surviving test that checks the same
+behavior and retain unique assertions. `MainActivityTest` covers About navigation
+and the open/rename/delete project workflow; screen tests retain attribution,
+empty-home behavior, and project ordering. Regenerate aggregated coverage after
+test removal to confirm that both minimums still hold.
+
 If Gradle cannot see the emulator, check `adb devices` or launch the task from
 Android Studio's Gradle tool window. Failed runs do not produce complete
 combined reports. Generated reports stay in `app/build/` and can be recreated.

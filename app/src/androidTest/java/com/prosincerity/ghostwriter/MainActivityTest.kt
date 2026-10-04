@@ -168,12 +168,14 @@ class MainActivityTest {
 
             composeRule.onNodeWithContentDescription("Back").performClick()
             waitUntilTextExists(projectTitle)
+            composeRule.onNodeWithText("Recent").assertExists()
             composeRule.onNodeWithText(projectTitle).performClick()
             composeRule.onNodeWithText(projectTitle).assertExists()
             composeRule.onNodeWithContentDescription("Back").performClick()
 
             composeRule.onNodeWithContentDescription("Project options for $projectTitle").performClick()
             composeRule.onNodeWithText("Rename").performClick()
+            composeRule.onNodeWithText("Rename track").assertExists()
             composeRule.onNode(hasSetTextAction()).performTextReplacement(renamedTitle)
             composeRule.onNodeWithText("Rename").performClick()
             waitUntilTextExists(renamedTitle)
@@ -254,6 +256,7 @@ class MainActivityTest {
 
     private fun createProject(projectTitle: String) {
         composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNodeWithText("Name this track").assertExists()
         composeRule.onNode(hasSetTextAction()).performTextInput(projectTitle)
         composeRule.onNodeWithText("Create").performClick()
         composeRule.onNodeWithText(projectTitle).assertExists()
