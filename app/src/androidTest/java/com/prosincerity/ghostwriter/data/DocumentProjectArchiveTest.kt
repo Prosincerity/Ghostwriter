@@ -47,8 +47,106 @@ class DocumentProjectArchiveTest {
     private fun failWrites(enabled: Boolean) {
         resolver.call(provider, "failWrites", scope, Bundle().apply { putBoolean("enabled", enabled) })
     }
+    private fun fault(kind: String?) {
+        resolver.call(provider, "fault", scope, kind?.let { Bundle().apply { putString("kind", it) } })
+    }
+    private val selected get() = DocumentsContract.buildDocumentUriUsingTree(tree, scope)
+    private fun create(parent: Uri, name: String, directory: Boolean = false): Uri =
+        DocumentsContract.createDocument(resolver, parent,
+            if (directory) DocumentsContract.Document.MIME_TYPE_DIR else "application/json", name)!!
     private fun draft(project: File, text: String) {
         assertTrue(ProjectStorage.saveManual(project, "unused title", text, 3))
+    }
+
+    @Test fun unavailableFolderQueriesAndCreationReportUsefulFailures() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        for (kind in listOf("nullRoot", "emptyRoot", "nullChildren", "createFolder")) {
+            fault(kind)
+            assertThrows(IOException::class.java) { archive.save(project, 3) }
+            assertTrue(project.isDirectory)
+        }
+        fault(null)
+        create(selected, "Ghostwriter")
+        assertThrows(IOException::class.java) { archive.save(project, 3) }
+    }
+
+    @Test fun failedCreationOpeningAndReadBackLeaveEarlierVerifiedSaveIntact() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "previous"); archive.save(project, 3)
+        val previous = savedFiles(project.name).single()
+        draft(project, "new draft")
+        for (kind in listOf("createSnapshot", "nullWrite", "read")) {
+            fault(kind)
+            assertThrows(IOException::class.java) { archive.save(project, 3) }
+            fault(null)
+            assertEquals(listOf(previous), savedFiles(project.name))
+            assertEquals("new draft", ProjectStorage.loadLatest(project))
+        }
+        // A corrupt read-back must also remove the just-created snapshot.
+        val fresh = ProjectStorage.createProjectDirectory(localRoot, "fresh")
+        draft(fresh, "fresh draft")
+        fault("corruptRead")
+        assertThrows(IOException::class.java) { archive.save(fresh, 3) }
+        fault(null)
+        assertTrue(savedFiles(fresh.name).isEmpty())
+    }
+
+    @Test fun validationRejectsInvalidIdsAndBackupCountsBeforeWriting() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        assertThrows(IllegalArgumentException::class.java) { archive.save(localRoot, 3) }
+        assertThrows(IllegalArgumentException::class.java) { archive.save(project, 0) }
+        assertThrows(IllegalArgumentException::class.java) { archive.delete("../song") }
+        archive.delete(project.name)
+        assertTrue(project.isDirectory)
+    }
+
+    @Test fun restoreIgnoresUnrelatedEntriesAndEmptyProjectFolders() {
+        val folder = create(selected, "Ghostwriter", true)
+        create(folder, "readme")
+        create(folder, "unrelated", true)
+        val emptyId = UUID.randomUUID().toString()
+        val empty = create(folder, emptyId, true)
+        create(empty, "readme")
+        create(empty, "snapshot-incomplete.txt")
+        assertEquals(0, archive.restore(localRoot))
+        assertFalse(File(localRoot, emptyId).exists())
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "lyrics"); archive.save(project, 3)
+        val directory = children(folder).single { it.first == project.name }.second
+        create(directory, "snapshot-directory.json", true)
+        create(directory, "other.json")
+        assertTrue(project.deleteRecursively())
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("lyrics", ProjectStorage.loadLatest(project))
+        fault("delete")
+        assertThrows(IllegalArgumentException::class.java) { archive.delete(project.name) }
+        fault(null)
+        archive.delete(project.name)
+    }
+
+    @Test fun missingOrForeignCheckpointsPreserveExistingLocalLyrics() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "lyrics"); archive.save(project, 3)
+        val checkpoint = File(project, ".lyric-archive.json")
+        val original = checkpoint.readText()
+        assertTrue(checkpoint.delete())
+        assertEquals(0, archive.restore(localRoot))
+        checkpoint.writeText(org.json.JSONObject(original).put("archive", "another/folder").toString())
+        assertEquals(0, archive.restore(localRoot))
+        checkpoint.writeText("invalid")
+        assertEquals(0, archive.restore(localRoot))
+        assertEquals("lyrics", ProjectStorage.loadLatest(project))
+    }
+
+    @Test fun missingMetadataCanBeArchivedAndBlockedRestoreDoesNotDestroyLocalFiles() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "lyrics")
+        assertTrue(ProjectStorage.metadataFile(project).delete())
+        archive.save(project, 3)
+        val blockedRoot = File(localRoot, ".blocked").apply { mkdir() }
+        val blocked = File(blockedRoot, project.name).apply { writeText("keep") }
+        assertThrows(IllegalStateException::class.java) { archive.restore(blockedRoot) }
+        assertEquals("keep", blocked.readText())
     }
 
     @Test fun reinstallRecoveryKeepsStableIdUnicodeLyricsAndMetadata() {

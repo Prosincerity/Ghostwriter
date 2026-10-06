@@ -7,6 +7,7 @@
         <provider
             android:name="com.prosincerity.ghostwriter.data.LyricArchiveTestProvider"
             android:authorities="com.prosincerity.ghostwriter.test.lyric-archive"
+            android:grantUriPermissions="true"
             android:exported="true" />
     </application>
 </manifest>

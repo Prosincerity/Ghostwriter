@@ -6,6 +6,8 @@ import android.app.Instrumentation
 import android.content.IntentFilter
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.os.Bundle
+import java.io.File
 import com.prosincerity.ghostwriter.data.LyricArchiveTestProvider
 import java.util.UUID
 import org.junit.Before
@@ -35,6 +37,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.PersistentLyricsStorage
 import com.prosincerity.ghostwriter.data.Settings
 import com.prosincerity.ghostwriter.ui.screens.GHOSTWRITER_REPOSITORY_URL
 import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
@@ -103,6 +106,171 @@ class MainActivityTest {
     }
 
     @Test
+    fun folderPicker_rejectsInaccessibleFolderThenConnectsGrantedFolder() {
+        Settings.setPersistentLyricsFolder(composeRule.activity, null)
+        composeRule.activityRule.scenario.recreate()
+        waitUntilTextExists("Choose folder")
+        returnFolderFromPicker(Uri.parse("content://missing.ghostwriter.provider/tree/lyrics"))
+        waitUntilTextExists("Couldn't save to this folder. Choose a writable folder on your device. Local drafts have been kept.")
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+
+        val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        instrumentation.context.grantUriPermission(composeRule.activity.packageName, tree,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+        try {
+            returnFolderFromPicker(tree)
+            waitUntilTextDoesNotExist("Choose folder")
+            composeRule.onNodeWithText("New project").assertIsEnabled()
+            assertEquals(tree.toString(), Settings.getPersistentLyricsFolder(composeRule.activity))
+            composeRule.onNodeWithContentDescription("Settings").performClick()
+            returnFolderFromPicker(tree, "Choose lyric folder")
+            waitUntilTextExists("New project")
+            composeRule.onNodeWithText("New project").assertIsEnabled()
+        } finally {
+            composeRule.activity.contentResolver.releasePersistableUriPermission(tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            instrumentation.context.revokeUriPermission(tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+    }
+
+    @Test
+    fun duplicateProjectName_opensExistingLyricsWithoutCreatingAnotherProject() {
+        val title = uniqueProjectTitle("Existing")
+        val project = ProjectStorage.createProject(composeRule.activity, title)
+        assertTrue(ProjectStorage.saveManual(project, title, "original lyrics", 3))
+        try {
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextExists(title)
+            composeRule.onNodeWithText("New project").performClick()
+            composeRule.onNode(hasSetTextAction()).performTextInput(title.lowercase())
+            composeRule.onNodeWithText("Open").performClick()
+            waitUntilTextExists("original lyrics")
+            assertEquals(1, ProjectStorage.listProjects(composeRule.activity).count {
+                ProjectStorage.loadMetadata(ProjectStorage.projectDir(composeRule.activity, it), "").title == title
+            })
+            composeRule.onNodeWithContentDescription("Back").performClick()
+        } finally {
+            ProjectStorage.deleteProject(composeRule.activity, project.name)
+        }
+    }
+
+    @Test
+    fun sharedSaveFailures_keepCreatedAndRenamedLocalProjectsOnHome() {
+        val title = uniqueProjectTitle("Unarchived")
+        val renamed = "$title renamed"
+        val context = composeRule.activity
+        try {
+            setArchiveFault("createSnapshot")
+            composeRule.onNodeWithText("New project").performClick()
+            composeRule.onNode(hasSetTextAction()).performTextInput(title)
+            composeRule.onNodeWithText("Create").performClick()
+            waitUntilTextExists("The lyric folder couldn't be updated. Reconnect it before uninstalling. Local drafts have been kept.")
+            composeRule.onNodeWithText(title).assertExists()
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+            setArchiveFault(null)
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextDoesNotExist("Choose folder")
+            setArchiveFault("createSnapshot")
+            composeRule.onNodeWithContentDescription("Project options for $title").performClick()
+            composeRule.onNodeWithText("Rename").performClick()
+            composeRule.onNode(hasSetTextAction()).performTextReplacement(renamed)
+            composeRule.onNodeWithText("Rename").performClick()
+            waitUntilTextExists(renamed)
+            waitUntilTextExists("The lyric folder couldn't be updated. Reconnect it before uninstalling. Local drafts have been kept.")
+            setArchiveFault(null)
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextDoesNotExist("Choose folder")
+            setArchiveFault("delete")
+            composeRule.onNodeWithContentDescription("Project options for $renamed").performClick()
+            composeRule.onNodeWithText("Delete").performClick()
+            composeRule.onNodeWithText("Delete").performClick()
+            waitUntilTextDoesNotExist("Delete project?")
+            composeRule.onNodeWithText(renamed).assertExists()
+            assertTrue(ProjectStorage.projectDir(context, renamed).isDirectory)
+        } finally {
+            setArchiveFault(null)
+            ProjectStorage.deleteProject(context, title)
+            ProjectStorage.deleteProject(context, renamed)
+        }
+    }
+
+    @Test
+    fun closingActivityDuringFolderReconciliation_preservesLocalProjects() {
+        val context = composeRule.activity
+        val originalProjects = ProjectStorage.listProjects(context)
+        synchronized(ProjectStorage) {
+            composeRule.activityRule.scenario.recreate()
+            // Keep reconciliation in flight until destruction cancels its coroutine.
+            composeRule.waitUntil(timeoutMillis = 15_000) {
+                Thread.getAllStackTraces().any { (thread, frames) ->
+                    thread.state == Thread.State.BLOCKED && frames.any {
+                        it.className == ProjectStorage::class.java.name && it.methodName == "listProjects"
+                    }
+                }
+            }
+            composeRule.activityRule.scenario.close()
+        }
+        // Wait for provider work and the cancellation callback before cleanup.
+        synchronized(PersistentLyricsStorage) { }
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        assertEquals(originalProjects, ProjectStorage.listProjects(context))
+    }
+
+    @Test
+    fun closingActivityDuringFolderSelection_keepsSavedFolderUsable() {
+        val context = composeRule.activity
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
+        instrumentation.context.grantUriPermission(context.packageName, tree,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+        try {
+            composeRule.onNodeWithContentDescription("Settings").performClick()
+            synchronized(PersistentLyricsStorage) {
+                returnFolderFromPicker(tree, "Choose lyric folder")
+                composeRule.waitUntil(timeoutMillis = 15_000) {
+                    Thread.getAllStackTraces().any { (thread, frames) ->
+                        thread.state == Thread.State.BLOCKED && frames.any {
+                            it.className == PersistentLyricsStorage::class.java.name && it.methodName == "connect"
+                        }
+                    }
+                }
+                composeRule.activityRule.scenario.close()
+                instrumentation.waitForIdleSync()
+            }
+            synchronized(PersistentLyricsStorage) { }
+            instrumentation.waitForIdleSync()
+            assertEquals(tree.toString(), Settings.getPersistentLyricsFolder(context))
+            assertTrue(context.contentResolver.persistedUriPermissions.any { it.uri == tree })
+        } finally {
+            runCatching { context.contentResolver.releasePersistableUriPermission(tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+            instrumentation.context.revokeUriPermission(tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+    }
+
+    private fun setArchiveFault(kind: String?) {
+        composeRule.activity.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"),
+            "fault", archiveScope, kind?.let { Bundle().apply { putString("kind", it) } })
+    }
+
+    private fun returnFolderFromPicker(uri: Uri, button: String = "Choose folder") {
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val monitor = instrumentation.addMonitor(IntentFilter(Intent.ACTION_OPEN_DOCUMENT_TREE),
+            Instrumentation.ActivityResult(Activity.RESULT_OK, Intent().setData(uri)), true)
+        try {
+            composeRule.onNodeWithText(button).performClick()
+            composeRule.runOnIdle { assertEquals(1, monitor.hits) }
+        } finally {
+            instrumentation.removeMonitor(monitor)
+        }
+    }
+
+    @Test
     fun inaccessibleFolder_keepsLocalProjectsVisibleOnHome() {
         val context = composeRule.activity
         val project = ProjectStorage.createProject(context, uniqueProjectTitle("Local draft"))
@@ -118,6 +286,24 @@ class MainActivityTest {
             assertTrue(project.exists())
         } finally {
             ProjectStorage.deleteProject(context, project.name)
+        }
+    }
+
+    @Test
+    fun unreadableLegacyProject_keepsHomeAvailableAndReportsStorageError() {
+        val context = composeRule.activity
+        val legacy = File(ProjectStorage.rootDir(context), uniqueProjectTitle("Unreadable legacy"))
+        assertTrue(File(legacy, "project.json").mkdirs())
+        File(legacy, "project.json/keep").writeText("preserve")
+        try {
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextExists("Couldn't access your lyric folder. Select it again to reconnect. Local drafts have been kept.")
+            waitUntilTextDoesNotExist("Preparing your projects…")
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+            composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+            assertEquals("preserve", File(legacy, "project.json/keep").readText())
+        } finally {
+            legacy.deleteRecursively()
         }
     }
 

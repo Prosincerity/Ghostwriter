@@ -9,6 +9,35 @@ import org.junit.rules.TemporaryFolder
 class ProjectIdentityTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
+    @Test fun migrationHandlesMissingMetadataEmptyProjectsAndUnrelatedEntries() {
+        val root = temporaryFolder.root
+        val empty = temporaryFolder.newFolder("Empty")
+        File(empty, "project.json").apply { writeText("{}"); assertTrue(setLastModified(0)) }
+        assertTrue(empty.setLastModified(1000L))
+        val originalTime = empty.lastModified()
+        val lyrics = temporaryFolder.newFolder("Lyrics")
+        File(lyrics, "verse.txt").apply { writeText("draft"); setLastModified(originalTime + 60_000) }
+        File(lyrics, "beat.wav").writeText("beat")
+        File(lyrics, "nested").mkdir()
+        File(lyrics, "project.json").apply { writeText("{}"); assertTrue(setLastModified(0)) }
+        assertTrue(lyrics.setLastModified(1000L))
+        val hidden = temporaryFolder.newFolder(".backup")
+        val unrelated = temporaryFolder.newFile("readme")
+        ProjectStorage.migrateLegacyProjects(root)
+        assertTrue(hidden.isDirectory)
+        assertTrue(unrelated.isFile)
+        val projects = root.listFiles()!!.filter { ProjectStorage.isProjectId(it.name) }
+        assertEquals(2, projects.size)
+        val emptyMetadata = projects.map { ProjectStorage.loadMetadata(it, it.name) }.single { it.title == "Empty" }
+        assertEquals(originalTime, emptyMetadata.createdAt)
+        assertEquals(originalTime, emptyMetadata.updatedAt)
+        val lyricProject = projects.single { ProjectStorage.loadMetadata(it, it.name).title == "Lyrics" }
+        assertEquals("draft", ProjectStorage.loadLatest(lyricProject))
+        assertEquals(originalTime + 60_000, ProjectStorage.loadMetadata(lyricProject, "").updatedAt)
+        ProjectStorage.migrateLegacyProjects(File(root, "missing"))
+        assertEquals("Untitled", ProjectStorage.normalizeTitle("  "))
+    }
+
     @Test fun collidingAndDuplicateDisplayTitlesHaveIndependentIds() {
         val root = temporaryFolder.root
         val projects = listOf("verse/chorus", "verse_chorus", "verse/chorus", "字".repeat(300))

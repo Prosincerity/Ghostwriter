@@ -61,6 +61,9 @@ class SmoothLoopPlaybackTest {
             instrumentation.runOnMainSync { playback.pause(); playback.play() }
             awaitCondition { playback.isPlaying && playback.currentPositionMs in 1..500 || failure.get() != null }
             assertNull(failure.get())
+            instrumentation.runOnMainSync { playback.pause(); playback.seekTo(2000); playback.play() }
+            awaitCondition { playback.isPlaying && playback.currentPositionMs in 1..500 || failure.get() != null }
+            assertNull(failure.get())
         } finally {
             instrumentation.runOnMainSync { playback.close(); assertFalse(playback.isPlaying) }
             assertTrue("Playback did not close its PCM source", source.closed.await(5, TimeUnit.SECONDS))
@@ -75,6 +78,8 @@ class SmoothLoopPlaybackTest {
             playback = playback(source, MarkerLoopFrames(2000, 1000), true) { failure.set(it) }
         }
         try {
+            assertEquals(Triple(0L, 8000L, true), source.range.get())
+            instrumentation.runOnMainSync { playback.configure(MarkerLoopFrames(-100, 1000), true) }
             assertEquals(Triple(0L, 8000L, true), source.range.get())
             instrumentation.runOnMainSync { playback.configure(MarkerLoopFrames(9000, 10000), true) }
             assertEquals(Triple(0L, 8000L, true), source.range.get())
@@ -133,6 +138,7 @@ class SmoothLoopPlaybackTest {
             assertSame(android.os.Looper.getMainLooper().thread, callbackThread.get())
             assertFalse(playback.isPlaying)
             assertTrue(source.closed.await(5, TimeUnit.SECONDS))
+            instrumentation.runOnMainSync { assertFalse(playback.startPrepared(0)) }
         } finally {
             instrumentation.runOnMainSync { playback.close() }
         }

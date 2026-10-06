@@ -13,11 +13,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /** A local, isolated SAF fixture; never accesses the user's selected folder. */
 public class LyricArchiveTestProvider extends ContentProvider {
     public static final String AUTHORITY = "com.prosincerity.ghostwriter.test.lyric-archive";
     private final Set<String> failedScopes = new HashSet<>();
+    private final Map<String, String> faults = new HashMap<>();
+    private String fault(String id) { return faults.get(id.split("/")[0]); }
     @Override public boolean onCreate() { return true; }
 
     private File base() {
@@ -42,6 +46,10 @@ public class LyricArchiveTestProvider extends ContentProvider {
 
     @Override public Cursor query(Uri uri, String[] projection, String selection, String[] args, String sort) {
         String documentId = DocumentsContract.getDocumentId(uri);
+        String fault = fault(documentId);
+        boolean children = uri.getLastPathSegment().equals("children");
+        if ("nullChildren".equals(fault) && children) return null;
+        if ("nullRoot".equals(fault) && !children) return null;
         File parent = file(documentId);
         // A tree's root represents a selectable on-device folder.
         if (!documentId.contains("/")) parent.mkdirs();
@@ -51,6 +59,7 @@ public class LyricArchiveTestProvider extends ContentProvider {
             DocumentsContract.Document.COLUMN_MIME_TYPE
         };
         MatrixCursor cursor = new MatrixCursor(columns);
+        if ("emptyRoot".equals(fault) && !children) return cursor;
         File[] files = uri.getLastPathSegment().equals("children") ? parent.listFiles() : new File[] { parent };
         if (files == null) throw new IllegalArgumentException("Folder unavailable");
         for (File child : files) {
@@ -68,17 +77,24 @@ public class LyricArchiveTestProvider extends ContentProvider {
     }
 
     @Override public Bundle call(String method, String arg, Bundle extras) {
+        if ("fault".equals(method)) {
+            if (extras == null) faults.remove(arg); else faults.put(arg, extras.getString("kind"));
+            return new Bundle();
+        }
         if ("failWrites".equals(method)) {
             if (extras.getBoolean("enabled")) failedScopes.add(arg); else failedScopes.remove(arg);
             return new Bundle();
         }
         if ("clear".equals(method)) {
-            deleteRecursively(file(arg)); failedScopes.remove(arg); return new Bundle();
+            deleteRecursively(file(arg)); failedScopes.remove(arg); faults.remove(arg); return new Bundle();
         }
         Uri documentUri = extras.getParcelable("uri");
         File parent = file(DocumentsContract.getDocumentId(documentUri));
         Bundle result = new Bundle();
         if ("android:createDocument".equals(method)) {
+            boolean directory = DocumentsContract.Document.MIME_TYPE_DIR.equals(extras.getString("mime_type"));
+            if ((directory && "createFolder".equals(fault(id(parent)))) ||
+                (!directory && "createSnapshot".equals(fault(id(parent))))) return result;
             String name = extras.getString("_display_name");
             if (name == null || name.contains("/") || name.contains("\\")) throw new IllegalArgumentException("Bad name");
             File child = new File(parent, name);
@@ -91,6 +107,7 @@ public class LyricArchiveTestProvider extends ContentProvider {
             return result;
         }
         if ("android:deleteDocument".equals(method)) {
+            if ("delete".equals(fault(id(parent)))) throw new IllegalArgumentException("Fixture refuses deletion");
             deleteRecursively(parent); return result;
         }
         throw new UnsupportedOperationException(method);
@@ -102,6 +119,13 @@ public class LyricArchiveTestProvider extends ContentProvider {
     @Override public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
         String id = DocumentsContract.getDocumentId(uri);
         if (mode.contains("w") && failedScopes.contains(id.split("/")[0])) throw new FileNotFoundException("Fixture disconnected");
+        if (mode.contains("w") && "nullWrite".equals(fault(id))) return null;
+        if (!mode.contains("w") && "read".equals(fault(id))) throw new FileNotFoundException("Fixture unreadable");
+        if (!mode.contains("w") && "corruptRead".equals(fault(id))) {
+            try (java.io.FileOutputStream output = new java.io.FileOutputStream(file(id))) {
+                output.write("incomplete".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            } catch (IOException failure) { throw new FileNotFoundException(failure.toString()); }
+        }
         return ParcelFileDescriptor.open(file(id), ParcelFileDescriptor.parseMode(mode));
     }
     @Override public String getType(Uri uri) { return mime(file(DocumentsContract.getDocumentId(uri))); }
