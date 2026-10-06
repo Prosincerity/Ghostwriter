@@ -85,8 +85,11 @@ the newest autosave, and count reductions prune backups only after that save
 succeeds.
 Replacing a beat invalidates its waveform cache and markers.
 
-The app opens directly to Home, where a small bottom-right folder button selects
-or changes the on-device lyric folder through Android's Storage Access Framework.
+The app opens directly to Home. Until a lyric folder is connected, its centered
+welcome prompt shows "Choose a lyric folder" with a folder selection button below.
+After selection, Home restores its normal project prompt and hides the folder
+button; later folder changes are available in Settings. Selection uses Android's
+Storage Access Framework.
 Folder preparation and access errors appear on Home; project actions become
 available once the folder is connected. Selecting Documents creates a Ghostwriter subfolder; selecting
 an existing Ghostwriter folder uses it directly. Manual saves, autosaves, editor

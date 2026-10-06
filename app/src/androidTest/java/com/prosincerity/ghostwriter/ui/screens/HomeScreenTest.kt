@@ -12,8 +12,6 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -73,29 +71,41 @@ class HomeScreenTest {
         composeRule.onNodeWithContentDescription("Project options for Local draft").assertIsNotEnabled()
         composeRule.onNodeWithText("Choose folder").performClick()
         composeRule.runOnIdle { assertTrue(selected); ready = true; error = null }
-        composeRule.onNodeWithText("Change folder").assertIsEnabled()
+        composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Change folder").assertDoesNotExist()
         composeRule.onNodeWithText("Local draft kept").assertDoesNotExist()
         composeRule.onNodeWithText("New project").assertIsEnabled()
         composeRule.onNodeWithText("Local draft").assertIsEnabled()
     }
 
-    @Test fun changeFolderButton_staysAtBottomRightWhileProjectsScroll() {
+    @Test fun folderSelection_isCenteredBelowThePromptAndDisappearsWhenReady() {
         var selected = false
+        var ready by mutableStateOf(false)
         composeRule.setContent {
             GhostwriterTheme {
-                HomeScreen((1..30).map { "Track $it" }, {}, {}, {}, { _, _ -> }, {},
-                    onChooseLyricsFolder = { selected = true })
+                HomeScreen(emptyList(), {}, {}, {}, { _, _ -> }, {},
+                    onChooseLyricsFolder = { selected = true }, lyricsFolderReady = ready)
             }
         }
-        val before = composeRule.onNodeWithText("Change folder").fetchSemanticsNode().boundsInRoot
+        composeRule.onNodeWithText("Create a project for your lyrics and beat.").assertDoesNotExist()
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        val heading = composeRule.onNodeWithText("Start your next track").fetchSemanticsNode().boundsInRoot
+        val prompt = composeRule.onNodeWithText("Choose a lyric folder").fetchSemanticsNode().boundsInRoot
+        val button = composeRule.onNodeWithText("Choose folder").fetchSemanticsNode().boundsInRoot
         val screen = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
-        assertTrue(before.center.x > screen.center.x)
-        assertTrue(before.top > screen.center.y)
-        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(29)
-        composeRule.onNodeWithText("Change folder").assertIsDisplayed().performClick()
-        val after = composeRule.onNodeWithText("Change folder").fetchSemanticsNode().boundsInRoot
-        assertEquals(before, after)
-        composeRule.runOnIdle { assertTrue(selected) }
+        assertEquals(screen.center.x, heading.center.x, 1f)
+        assertEquals(screen.center.x, prompt.center.x, 1f)
+        assertEquals(screen.center.x, button.center.x, 1f)
+        assertTrue(heading.bottom < prompt.top)
+        assertTrue(prompt.bottom < button.top)
+        composeRule.onNodeWithText("Choose folder").assertIsDisplayed().performClick()
+        composeRule.runOnIdle { assertTrue(selected); ready = true }
+        composeRule.onNodeWithText("Choose a lyric folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Change folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Create a project for your lyrics and beat.").assertIsDisplayed()
+        composeRule.onNodeWithText("New project").assertIsEnabled().performClick()
+        composeRule.onNodeWithText("Name this track").assertExists()
     }
 
     @Test fun stableIdsUseDisplayTitlesAndActionsKeepTheirIdentity() {

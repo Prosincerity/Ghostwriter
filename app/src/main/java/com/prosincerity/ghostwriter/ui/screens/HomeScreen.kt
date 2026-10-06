@@ -1,6 +1,8 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,44 +120,25 @@ internal fun HomeScreen(
             )
         },
         bottomBar = {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                val folderMessage = storageError ?: if (!lyricsFolderReady && !storageLoading) {
-                    "Choose a lyric folder to keep your lyrics after uninstall."
-                } else null
-                folderMessage?.let {
-                    Text(
-                        it, style = MaterialTheme.typography.bodySmall,
-                        color = if (storageError != null) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically,
+            if (storageLoading || storageError != null) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (storageLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        Text(
-                            "Preparing your projects…", style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                        )
+                    storageError?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
-                    OutlinedButton(
-                        onClick = onChooseLyricsFolder,
-                        enabled = !storageLoading,
-                        shape = GhostButtonShape,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    ) {
-                        Icon(Icons.Filled.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(if (lyricsFolderReady) "Change folder" else "Choose folder", style = MaterialTheme.typography.labelMedium)
+                    if (storageLoading) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Text(
+                                "Preparing your projects…", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -178,33 +161,52 @@ internal fun HomeScreen(
                 Text("New project")
             }
 
-            if (existingProjects.isEmpty()) {
-                Column(
+            if (existingProjects.isEmpty() || !lyricsFolderReady) {
+                Box(
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
+                    Column(
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                     ) {
-                        Icon(
-                            Icons.Filled.MusicNote, contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(20.dp).size(32.dp),
+                        Surface(
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                        ) {
+                            Icon(
+                                Icons.Filled.MusicNote, contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(20.dp).size(32.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        Text("Start your next track", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                        Text(
+                            if (lyricsFolderReady) "Create a project for your lyrics and beat." else "Choose a lyric folder",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 8.dp),
                         )
+                        if (!lyricsFolderReady) {
+                            Spacer(Modifier.height(16.dp))
+                            OutlinedButton(
+                                onClick = onChooseLyricsFolder,
+                                enabled = !storageLoading,
+                                shape = GhostButtonShape,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            ) {
+                                Icon(Icons.Filled.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Choose folder", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
                     }
-                    Spacer(Modifier.height(20.dp))
-                    Text("Start your next track", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                    Text(
-                        "Create a project for your lyrics and beat.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
                 }
-            } else {
+            }
+            if (existingProjects.isNotEmpty()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,

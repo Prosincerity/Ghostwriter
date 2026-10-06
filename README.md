@@ -5,8 +5,8 @@ It combines a focused lyric editor, local projects, offline beat playback,
 an interactive waveform timeline, and pronunciation-based dictionary search.
 It has no AI features, ads, or Google Play Services dependency.
 
-Choose a lyric folder from the home screen before editing. Use the small folder
-button at the bottom right to change it later. Saved lyrics remain there
+Choose a lyric folder from the centered prompt on the home screen before editing.
+Change the folder later in Settings. Saved lyrics remain there
 when the app is uninstalled; select the same folder after reinstall to restore
 your projects. Beat files remain in app storage.
 

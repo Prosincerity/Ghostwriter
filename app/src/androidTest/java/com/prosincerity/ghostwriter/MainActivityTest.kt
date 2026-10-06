@@ -59,8 +59,11 @@ class MainActivityTest {
         val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
         Settings.setPersistentLyricsFolder(composeRule.activity, tree.toString())
         composeRule.activityRule.scenario.recreate()
-        waitUntilTextExists("Change folder")
         waitUntilTextDoesNotExist("Preparing your projects…")
+        composeRule.waitUntil(timeoutMillis = 15_000) {
+            composeRule.onAllNodesWithText("Choose folder").fetchSemanticsNodes().isEmpty()
+        }
+        composeRule.onNodeWithText("New project").assertIsEnabled()
     }
 
     @After fun restoreLyricFolder() {
@@ -74,7 +77,8 @@ class MainActivityTest {
     fun missingFolder_opensHomeAndPickerCancellationKeepsHome() {
         Settings.setPersistentLyricsFolder(composeRule.activity, null)
         composeRule.activityRule.scenario.recreate()
-        waitUntilTextExists("Choose a lyric folder to keep your lyrics after uninstall.")
+        waitUntilTextExists("Choose a lyric folder")
+        waitUntilTextDoesNotExist("Preparing your projects…")
         composeRule.onNodeWithText("New project").assertIsNotEnabled()
         composeRule.onNodeWithText("Keep your lyrics").assertDoesNotExist()
         composeRule.onNodeWithText("Choose folder").assertIsEnabled()
@@ -93,6 +97,7 @@ class MainActivityTest {
             instrumentation.removeMonitor(monitor)
         }
         composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onNodeWithText("Choose lyric folder").assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Choose folder").assertExists()
     }
@@ -153,8 +158,11 @@ class MainActivityTest {
     @Test
     fun navigation_homeToAboutAndBack_returnsHome() {
         composeRule.onNodeWithText("New project").assertExists()
+        composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Change folder").assertDoesNotExist()
 
         composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onNodeWithText("Choose lyric folder").assertExists()
         composeRule.onNodeWithText("Settings").assertExists()
 
         composeRule.onNodeWithText("About Ghostwriter").performScrollTo().performClick()
