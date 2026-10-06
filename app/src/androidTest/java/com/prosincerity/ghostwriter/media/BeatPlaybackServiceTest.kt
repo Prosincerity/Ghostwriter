@@ -35,6 +35,29 @@ class BeatPlaybackServiceTest {
     private val context get() = instrumentation.targetContext
 
     @Test
+    fun permanentFocusLossAndStartCommands_pauseRestartForgetAndStop() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Whole beat"))
+            onMain {
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS)
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN)
+            }
+            assertFalse(onMainValue { service.player.isPlaying })
+            controller.transportControls.skipToPrevious()
+            waitUntil { service.player.isPlaying }
+            onMain {
+                service.onStartCommand(Intent(context, BeatPlaybackService::class.java).setAction("com.prosincerity.ghostwriter.PLAY_BEAT"), 0, 1)
+                service.onStartCommand(Intent(context, BeatPlaybackService::class.java)
+                    .setAction("com.prosincerity.ghostwriter.FORGET_PROJECT")
+                    .putExtra("project", "Service test"), 0, 2)
+                assertFalse(service.player.isReady)
+                service.onStartCommand(Intent(context, BeatPlaybackService::class.java).setAction("com.prosincerity.ghostwriter.STOP_BEAT"), 0, 3)
+            }
+        }
+    }
+
+    @Test
     fun markerLoop_survivesUnbindingAndFocusInterruptionsAndKeepsMediaControls() {
         withService { service, unbind ->
             val player = service.player
