@@ -18,6 +18,80 @@ import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class EspeakIpaInstrumentedTest {
+    @Test
+    fun blockedLanguageDirectory_abortsInstallationAndCleansStaging() = withDictionaryTestContext { context ->
+        var openedAssets = 0
+        val blockedContext = object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun getAssets(): AssetManager {
+                if (++openedAssets == 7) {
+                    val staging = File(filesDir, "espeak-ng").listFiles()!!.single { it.name.endsWith(".part") }
+                    File(staging, "espeak-ng-data/lang").writeText("blocked directory")
+                }
+                return context.assets
+            }
+        }
+        assertThrows(IllegalStateException::class.java) { EspeakIpa(blockedContext).installData() }
+        assertEquals(emptyList<File>(), File(context.filesDir, "espeak-ng").listFiles()!!.toList())
+    }
+    @Test
+    fun readOnlyIncompleteVersionIsPreservedWhenReplacementFails() = withDictionaryTestContext { context ->
+        val version = File(context.filesDir, "espeak-ng/1.52.0").apply { mkdirs() }
+        val previous = File(version, "keep").apply { writeText("existing data") }
+        check(version.setWritable(false))
+        try {
+            val failure = assertThrows(IllegalStateException::class.java) { EspeakIpa(context).installData() }
+            assertEquals("Cannot replace incomplete eSpeak NG data", failure.message)
+            assertEquals("existing data", previous.readText())
+            assertEquals(listOf(version), version.parentFile!!.listFiles()!!.toList())
+        } finally {
+            check(version.setWritable(true))
+        }
+        assertEquals(version, EspeakIpa(context).installData())
+    }
+
+    @Test fun punctuationWithoutPhonemes_returnsNoPronunciation() = runBlocking {
+        assertNull(generator.ipa(".", "en"))
+    }
+    @Test
+    fun incompleteStagingIsRejectedAndCleanedBeforeActivation() = withDictionaryTestContext { context ->
+        var openedAssets = 0
+        val corruptingContext = object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun getAssets(): AssetManager {
+                if (++openedAssets == 10) {
+                    val staging = File(filesDir, "espeak-ng").listFiles()!!.single { it.name.endsWith(".part") }
+                    File(staging, "espeak-ng-data/phondata").writeBytes(byteArrayOf())
+                }
+                return context.assets
+            }
+        }
+        val failure = assertThrows(IllegalStateException::class.java) { EspeakIpa(corruptingContext).installData() }
+        assertEquals("Incomplete eSpeak NG data", failure.message)
+        assertEquals(emptyList<File>(), File(context.filesDir, "espeak-ng").listFiles()!!.toList())
+    }
+
+    @Test
+    fun activationFailureDoesNotLeaveAPartiallyInstalledVersion() = withDictionaryTestContext { context ->
+        val root = File(context.filesDir, "espeak-ng")
+        var openedAssets = 0
+        val blockedContext = object : ContextWrapper(context) {
+            override fun getApplicationContext(): Context = this
+            override fun getAssets(): AssetManager {
+                if (++openedAssets == 10) check(root.setWritable(false))
+                return context.assets
+            }
+        }
+        try {
+            val failure = assertThrows(IllegalStateException::class.java) { EspeakIpa(blockedContext).installData() }
+            assertEquals("Cannot activate eSpeak NG data", failure.message)
+            assertTrue(!File(root, "1.52.0").exists())
+        } finally {
+            check(root.setWritable(true))
+        }
+        // Restoring access permits a subsequent installation to recover.
+        assertTrue(EspeakIpa(context).installData().isDirectory)
+    }
     private val generator: EspeakIpa
         get() = EspeakIpa(InstrumentationRegistry.getInstrumentation().targetContext)
 
