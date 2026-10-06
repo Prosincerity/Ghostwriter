@@ -32,6 +32,20 @@ Before modifying code, read:
 - Run ./gradlew test and ./gradlew lint when practical.
 - Do not modify main unless explicitly requested.
 
+## Commit rules
+
+- Make small, atomic commits: one logical change each. Never mix features,
+  fixes, refactors, or formatting in one commit.
+- Use Conventional Commits: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`,
+  `chore:`. Write in the imperative mood and keep the subject at 50 characters
+  or fewer. Add a body explaining *why* when the reason isn't obvious.
+- Never commit secrets or generated files. Never force-push or amend commits
+  that are already pushed.
+- If the working tree contains unrelated changes, leave them unstaged and
+  tell the maintainer.
+- Commit as you go, after each working step, not one big commit at the end.
+- Every commit must build and pass tests.
+
 ## Current architecture
 
 See documentation/README.md for architecture and deliberate decisions.
