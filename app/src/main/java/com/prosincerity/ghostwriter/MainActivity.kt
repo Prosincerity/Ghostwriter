@@ -32,7 +32,6 @@ import com.prosincerity.ghostwriter.ui.screens.DictionaryDownloadsScreen
 import com.prosincerity.ghostwriter.ui.screens.DictionaryScreen
 import com.prosincerity.ghostwriter.ui.screens.EditorScreen
 import com.prosincerity.ghostwriter.ui.screens.HomeScreen
-import com.prosincerity.ghostwriter.ui.screens.LyricsFolderScreen
 import com.prosincerity.ghostwriter.ui.screens.SettingsScreen
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import java.io.File
@@ -112,8 +111,13 @@ private fun GhostwriterApp(
         try {
             val folder = Settings.getPersistentLyricsFolder(context)
             if (folder != null) {
-                withContext(Dispatchers.IO) { PersistentLyricsStorage.reconcile(context, Uri.parse(folder)) }
-                storageReady = true
+                try {
+                    withContext(Dispatchers.IO) { PersistentLyricsStorage.reconcile(context, Uri.parse(folder)) }
+                    storageReady = true
+                } catch (failure: Exception) {
+                    if (failure is kotlinx.coroutines.CancellationException) throw failure
+                    storageError = "Couldn't access your lyric folder. Select it again to reconnect. Local drafts have been kept."
+                }
             }
             refreshProjects()
         } catch (failure: Exception) {
@@ -161,17 +165,15 @@ private fun GhostwriterApp(
         storageError = "The lyric folder couldn't be updated. Reconnect it before uninstalling. Local drafts have been kept."
     }
 
-    if (screen == Screen.Home && (!storageReady || storageLoading)) {
-        LyricsFolderScreen(storageLoading, storageError, chooseFolder,
-            onOpenSettings = { screen = Screen.Settings(Screen.Home) })
-        return
-    }
-
     when (val current = screen) {
         is Screen.Home -> HomeScreen(
             existingProjects = projects,
             projectSummaries = projectSummaries,
             projectTitles = projectSummaries.mapValues { it.value.title },
+            onChooseLyricsFolder = chooseFolder,
+            lyricsFolderReady = storageReady,
+            storageLoading = storageLoading,
+            storageError = storageError,
             onCreateProject = { title ->
                 coroutineScope.launch {
                     runCatching {

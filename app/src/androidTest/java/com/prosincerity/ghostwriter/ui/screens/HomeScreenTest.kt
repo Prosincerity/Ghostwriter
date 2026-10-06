@@ -9,6 +9,11 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -26,6 +31,72 @@ class HomeScreenTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test fun missingFolder_keepsHomeAndSettingsVisibleWithInlineSelection() {
+        var selected = false
+        var settings = false
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(emptyList(), {}, {}, {}, { _, _ -> }, { settings = true },
+                    onChooseLyricsFolder = { selected = true }, lyricsFolderReady = false)
+            }
+        }
+        composeRule.onNodeWithText("Start your next track").assertIsDisplayed()
+        composeRule.onNodeWithText("Keep your lyrics").assertDoesNotExist()
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        composeRule.onNodeWithText("Choose folder").performClick()
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.runOnIdle { assertTrue(selected); assertTrue(settings) }
+    }
+
+    @Test fun folderPreparationAndFailure_stayOnHomeAndAllowReconnection() {
+        var loading by mutableStateOf(true)
+        var ready by mutableStateOf(false)
+        var error by mutableStateOf<String?>(null)
+        var selected = false
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(listOf("Local draft"), {}, {}, {}, { _, _ -> }, {},
+                    onChooseLyricsFolder = { selected = true }, lyricsFolderReady = ready,
+                    storageLoading = loading, storageError = error)
+            }
+        }
+        composeRule.onNodeWithText("Local draft").assertIsDisplayed()
+        composeRule.onNodeWithText("Preparing your projects…").assertIsDisplayed()
+        composeRule.onNodeWithText("Choose folder").assertIsNotEnabled()
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Settings").assertIsEnabled()
+        composeRule.runOnIdle { loading = false; error = "Local draft kept" }
+        composeRule.onNodeWithText("Local draft kept").assertIsDisplayed()
+        composeRule.onNodeWithText("Preparing your projects…").assertDoesNotExist()
+        composeRule.onNodeWithText("Local draft").assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Project options for Local draft").assertIsNotEnabled()
+        composeRule.onNodeWithText("Choose folder").performClick()
+        composeRule.runOnIdle { assertTrue(selected); ready = true; error = null }
+        composeRule.onNodeWithText("Change folder").assertIsEnabled()
+        composeRule.onNodeWithText("Local draft kept").assertDoesNotExist()
+        composeRule.onNodeWithText("New project").assertIsEnabled()
+        composeRule.onNodeWithText("Local draft").assertIsEnabled()
+    }
+
+    @Test fun changeFolderButton_staysAtBottomRightWhileProjectsScroll() {
+        var selected = false
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen((1..30).map { "Track $it" }, {}, {}, {}, { _, _ -> }, {},
+                    onChooseLyricsFolder = { selected = true })
+            }
+        }
+        val before = composeRule.onNodeWithText("Change folder").fetchSemanticsNode().boundsInRoot
+        val screen = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
+        assertTrue(before.center.x > screen.center.x)
+        assertTrue(before.top > screen.center.y)
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(29)
+        composeRule.onNodeWithText("Change folder").assertIsDisplayed().performClick()
+        val after = composeRule.onNodeWithText("Change folder").fetchSemanticsNode().boundsInRoot
+        assertEquals(before, after)
+        composeRule.runOnIdle { assertTrue(selected) }
+    }
 
     @Test fun stableIdsUseDisplayTitlesAndActionsKeepTheirIdentity() {
         val id = "2ecbf67a-9271-459f-9e31-77b40b15e1ba"

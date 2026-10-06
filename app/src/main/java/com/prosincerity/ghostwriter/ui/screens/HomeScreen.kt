@@ -4,14 +4,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
@@ -19,11 +25,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +39,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -69,6 +78,10 @@ internal fun HomeScreen(
     onOpenSettings: () -> Unit,
     projectSummaries: Map<String, ProjectSummary> = emptyMap(),
     projectTitles: Map<String, String> = emptyMap(),
+    onChooseLyricsFolder: () -> Unit = {},
+    lyricsFolderReady: Boolean = true,
+    storageLoading: Boolean = false,
+    storageError: String? = null,
 ) {
     var showTitleDialog by remember { mutableStateOf(false) }
     var projectMenuFor by remember { mutableStateOf<String?>(null) }
@@ -82,6 +95,7 @@ internal fun HomeScreen(
         )
     }
     val dateFormat = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
+    val projectsEnabled = lyricsFolderReady && !storageLoading
 
     Scaffold(
         topBar = {
@@ -103,6 +117,49 @@ internal fun HomeScreen(
                 },
             )
         },
+        bottomBar = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val folderMessage = storageError ?: if (!lyricsFolderReady && !storageLoading) {
+                    "Choose a lyric folder to keep your lyrics after uninstall."
+                } else null
+                folderMessage?.let {
+                    Text(
+                        it, style = MaterialTheme.typography.bodySmall,
+                        color = if (storageError != null) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (storageLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Text(
+                            "Preparing your projects…", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = onChooseLyricsFolder,
+                        enabled = !storageLoading,
+                        shape = GhostButtonShape,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Filled.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (lyricsFolderReady) "Change folder" else "Choose folder", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -113,6 +170,7 @@ internal fun HomeScreen(
             Button(
                 shape = GhostButtonShape,
                 onClick = { showTitleDialog = true },
+                enabled = projectsEnabled,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null)
@@ -163,7 +221,7 @@ internal fun HomeScreen(
                         val summary = projectSummaries[title]
                         val displayTitle = projectTitles[title] ?: title
                         Row(
-                            modifier = Modifier.fillMaxWidth().clickable { onOpenProject(title) }
+                            modifier = Modifier.fillMaxWidth().clickable(enabled = projectsEnabled) { onOpenProject(title) }
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -199,7 +257,7 @@ internal fun HomeScreen(
                                 }
                             }
                             Box {
-                                IconButton(shape = GhostButtonShape, onClick = { projectMenuFor = title }) {
+                                IconButton(shape = GhostButtonShape, enabled = projectsEnabled, onClick = { projectMenuFor = title }) {
                                     Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $displayTitle")
                                 }
                                 DropdownMenu(

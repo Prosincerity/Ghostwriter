@@ -85,8 +85,10 @@ the newest autosave, and count reductions prune backups only after that save
 succeeds.
 Replacing a beat invalidates its waveform cache and markers.
 
-Before editing, users select an on-device lyric folder through Android's Storage
-Access Framework. Selecting Documents creates a Ghostwriter subfolder; selecting
+The app opens directly to Home, where a small bottom-right folder button selects
+or changes the on-device lyric folder through Android's Storage Access Framework.
+Folder preparation and access errors appear on Home; project actions become
+available once the folder is connected. Selecting Documents creates a Ghostwriter subfolder; selecting
 an existing Ghostwriter folder uses it directly. Manual saves, autosaves, editor
 exit, and project-information changes also save lyrics and metadata to that
 folder. The folder survives uninstall. After reinstall, users select the same

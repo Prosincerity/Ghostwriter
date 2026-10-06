@@ -1,6 +1,9 @@
 package com.prosincerity.ghostwriter
 
 import android.content.ActivityNotFoundException
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.IntentFilter
 import android.net.Uri
 import android.provider.DocumentsContract
 import com.prosincerity.ghostwriter.data.LyricArchiveTestProvider
@@ -12,6 +15,8 @@ import android.graphics.drawable.ColorDrawable
 import android.util.TypedValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -54,7 +59,8 @@ class MainActivityTest {
         val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
         Settings.setPersistentLyricsFolder(composeRule.activity, tree.toString())
         composeRule.activityRule.scenario.recreate()
-        waitUntilTextExists("New project")
+        waitUntilTextExists("Change folder")
+        waitUntilTextDoesNotExist("Preparing your projects…")
     }
 
     @After fun restoreLyricFolder() {
@@ -62,6 +68,52 @@ class MainActivityTest {
         composeRule.activityRule.scenario.close()
         Settings.setPersistentLyricsFolder(context, originalFolder)
         context.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"), "clear", archiveScope, null)
+    }
+
+    @Test
+    fun missingFolder_opensHomeAndPickerCancellationKeepsHome() {
+        Settings.setPersistentLyricsFolder(composeRule.activity, null)
+        composeRule.activityRule.scenario.recreate()
+        waitUntilTextExists("Choose a lyric folder to keep your lyrics after uninstall.")
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        composeRule.onNodeWithText("Keep your lyrics").assertDoesNotExist()
+        composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val monitor = instrumentation.addMonitor(
+            IntentFilter(Intent.ACTION_OPEN_DOCUMENT_TREE),
+            Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null), true,
+        )
+        try {
+            composeRule.onNodeWithText("Choose folder").performClick()
+            composeRule.runOnIdle { assertEquals(1, monitor.hits) }
+            composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        } finally {
+            instrumentation.removeMonitor(monitor)
+        }
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Choose folder").assertExists()
+    }
+
+    @Test
+    fun inaccessibleFolder_keepsLocalProjectsVisibleOnHome() {
+        val context = composeRule.activity
+        val project = ProjectStorage.createProject(context, uniqueProjectTitle("Local draft"))
+        val title = ProjectStorage.loadMetadata(project, project.name).title
+        try {
+            Settings.setPersistentLyricsFolder(context, "content://missing.ghostwriter.provider/tree/lyrics")
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextExists("Couldn't access your lyric folder. Select it again to reconnect. Local drafts have been kept.")
+            waitUntilTextDoesNotExist("Preparing your projects…")
+            composeRule.onNodeWithText(title).assertExists()
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+            composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+            assertTrue(project.exists())
+        } finally {
+            ProjectStorage.deleteProject(context, project.name)
+        }
     }
 
     @Test
