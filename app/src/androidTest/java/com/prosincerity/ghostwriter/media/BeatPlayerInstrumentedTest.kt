@@ -21,6 +21,69 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class BeatPlayerInstrumentedTest {
+    @Test
+    fun markerEditsDuringHandoff_preservePauseSeekAndModeChangeIntent() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val file = createPcm16Wav("handoff-marker-edits.wav", 3000)
+        for (action in listOf("pause", "seek", "off")) {
+            var handled = false
+            val applied = CountDownLatch(1)
+            lateinit var player: BeatPlayer
+            player = BeatPlayer(instrumentation.targetContext, onStateChanged = {
+                if (player.isHandingOff && !handled) {
+                    handled = true
+                    player.setMarkers(listOf(
+                        WaveformMarker("Edited start", 200, MarkerLoopRole.START),
+                        WaveformMarker("Edited end", 1500, MarkerLoopRole.END),
+                    ))
+                    when (action) {
+                        "pause" -> player.pause()
+                        "seek" -> player.seekTo(700)
+                        "off" -> player.setLoopMode(BeatLoopMode.OFF)
+                    }
+                    applied.countDown()
+                }
+            })
+            try {
+                instrumentation.runOnMainSync {
+                    player.setLoopMode(BeatLoopMode.MARKERS)
+                    assertTrue(player.load(file))
+                    player.play()
+                    player.setMarkers(listOf(WaveformMarker("End", 1000, MarkerLoopRole.END)))
+                }
+                assertTrue("Handoff action $action was not applied", applied.await(10, TimeUnit.SECONDS))
+                instrumentation.runOnMainSync {
+                    assertTrue(player.isReady)
+                    assertFalse(player.isHandingOff)
+                    assertEquals(action != "pause", player.isPlaying)
+                    if (action == "off") assertEquals(BeatLoopMode.OFF, player.loopMode)
+                }
+                if (action == "seek") waitUntil("Seek intent was lost") { player.currentPositionMs in 650..1400 }
+            } finally {
+                instrumentation.runOnMainSync { player.release() }
+            }
+        }
+    }
+    @Test
+    fun unreadableDecodedPcm_keepsNormalPlayerAvailableAndCanRetry() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val player = createPlayer()
+        val wav = createPcm16Wav("unreadable-pcm.wav", 2000)
+        val missing = generatedFile("missing-decoded.pcm")
+        player.decodeLoopAudio = { _, _, _ -> PcmBeat(missing, 8000, 1, 16000) }
+        instrumentation.runOnMainSync {
+            assertTrue(player.load(wav))
+            player.setMarkers(listOf(WaveformMarker("Start", 100, MarkerLoopRole.START)))
+        }
+        waitUntil("Failed PCM preparation did not finish") { !player.isPreparingLoop }
+        assertTrue(player.isReady)
+        assertFalse(player.isPlaying)
+        player.decodeLoopAudio = PcmBeatDecoder::decode
+        instrumentation.runOnMainSync { player.setMarkers(listOf(WaveformMarker("End", 1000, MarkerLoopRole.END))) }
+        waitUntil("Valid PCM retry did not finish", 10000) { !player.isPreparingLoop }
+        instrumentation.runOnMainSync { player.setLoopMode(BeatLoopMode.MARKERS); player.play() }
+        waitUntil("Valid retry did not play") { player.isPlaying && player.currentPositionMs > 0 }
+    }
 
     @Test
     fun wholeBeatMode_preparesPcmAheadOfTimeWithoutObeyingMarkerBoundaries() {

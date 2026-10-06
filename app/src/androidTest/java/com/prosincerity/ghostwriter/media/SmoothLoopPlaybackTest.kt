@@ -17,6 +17,32 @@ import org.junit.runner.RunWith
 class SmoothLoopPlaybackTest {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
 
+    @Test fun pausedAndClosedOutput_rejectsPreparedStart() {
+        val source = ObservedSource(MemoryPcmSource(ShortArray(8000), 1))
+        val primed = CountDownLatch(1)
+        lateinit var playback: SmoothLoopPlayback
+        var version = -1L
+        instrumentation.runOnMainSync {
+            playback = SmoothLoopPlayback(PcmBeat(File("unused.pcm"), 8000, 1, 8000), source,
+                0, null, false, 0f, {}, { throw AssertionError(it) }, onPrimed = { primed.countDown() })
+            assertFalse(playback.startPrepared(0))
+            version = playback.prepareContinuation(100)
+        }
+        try {
+            assertTrue(primed.await(5, TimeUnit.SECONDS))
+            instrumentation.runOnMainSync {
+                playback.pause()
+                assertFalse(playback.startPrepared(version))
+                playback.close()
+                assertFalse(playback.startPrepared(version))
+                assertFalse(playback.isPlaying)
+            }
+        } finally {
+            instrumentation.runOnMainSync { playback.close() }
+            assertTrue(source.closed.await(5, TimeUnit.SECONDS))
+        }
+    }
+
     @Test fun stereoPlayback_changesVolumeCompletesAndRestartsAtBeginning() {
         val source = ObservedSource(MemoryPcmSource(ShortArray(16000) { if (it % 2 == 0) 1000 else -1000 }, 2))
         val failure = AtomicReference<Exception?>()
@@ -36,7 +62,7 @@ class SmoothLoopPlaybackTest {
             awaitCondition { playback.isPlaying && playback.currentPositionMs in 1..500 || failure.get() != null }
             assertNull(failure.get())
         } finally {
-            instrumentation.runOnMainSync { playback.close() }
+            instrumentation.runOnMainSync { playback.close(); assertFalse(playback.isPlaying) }
             assertTrue("Playback did not close its PCM source", source.closed.await(5, TimeUnit.SECONDS))
         }
     }
