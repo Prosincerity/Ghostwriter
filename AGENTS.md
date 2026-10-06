@@ -36,6 +36,11 @@ Before modifying code, read:
   If no device is available, compile the tests and leave execution to the maintainer.
 - Before completing a task, run the relevant non-device tests, including JVM tests.
 - Run ./gradlew test and ./gradlew lint when practical.
+- During Gradle tests and builds, wait for the process to finish before
+  inspecting results. Do not repeatedly poll status, read partial logs, or
+  stream intermediate output. Prefer completion notifications or blocking
+  waits; if a tool requires continuation, use long blocking waits and inspect
+  the exit status and captured output only after completion.
 - Do not modify main unless explicitly requested.
 
 ## Commit rules
