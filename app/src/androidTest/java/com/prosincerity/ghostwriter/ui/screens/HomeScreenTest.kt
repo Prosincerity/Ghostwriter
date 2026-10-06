@@ -6,6 +6,12 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import com.prosincerity.ghostwriter.data.ProjectSummary
@@ -20,6 +26,56 @@ class HomeScreenTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test fun duplicateNamesAndDialogCancellation_preserveProjects() {
+        var created: String? = null
+        var renamed: Pair<String, String>? = null
+        var deleted: String? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(listOf("Alpha", "Beta"), { created = it }, {}, { deleted = it },
+                    { old, new -> renamed = old to new }, {})
+            }
+        }
+        composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("alpha")
+        composeRule.onNodeWithText("Track already exists (will open existing)").assertExists()
+        composeRule.onNode(hasSetTextAction()).performImeAction()
+        composeRule.runOnIdle { assertEquals("Alpha", created) }
+
+        composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText("Name this track").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Project options for Alpha").performClick()
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("beta")
+        composeRule.onNodeWithText("A project with this name already exists").assertExists()
+        composeRule.onNodeWithText("Rename").assertIsNotEnabled()
+        composeRule.onNode(hasSetTextAction()).performImeAction()
+        composeRule.runOnIdle { assertEquals(null, renamed) }
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("Gamma")
+        composeRule.onNode(hasSetTextAction()).performImeAction()
+        composeRule.runOnIdle { assertEquals("Alpha" to "Gamma", renamed) }
+
+        composeRule.onNodeWithContentDescription("Project options for Alpha").performClick()
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithContentDescription("Project options for Alpha").performClick()
+        composeRule.onNodeWithText("Delete").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.runOnIdle { assertEquals(null, deleted) }
+    }
+
+    @Test fun summaryUpdates_resortProjectsAndMissingSummariesSortAlphabetically() {
+        var summaries by mutableStateOf(emptyMap<String, ProjectSummary>())
+        composeRule.setContent {
+            GhostwriterTheme { HomeScreen(listOf("Zulu", "Alpha"), {}, {}, {}, { _, _ -> }, {}, summaries) }
+        }
+        fun top(title: String) = composeRule.onNodeWithText(title).fetchSemanticsNode().boundsInRoot.top
+        assertTrue(top("Alpha") < top("Zulu"))
+        composeRule.runOnIdle { summaries = mapOf("Zulu" to ProjectSummary("Zulu", 2000)) }
+        assertTrue(top("Zulu") < top("Alpha"))
+    }
 
     @Test
     fun emptyHome_createsNamedProjectAndOpensSettings() {
