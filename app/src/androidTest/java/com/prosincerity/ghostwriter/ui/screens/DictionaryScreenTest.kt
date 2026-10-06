@@ -132,11 +132,13 @@ class DictionaryScreenTest {
 
         try {
             composeRule.onNodeWithText("Word").performTextInput("cat")
-            composeRule.onNodeWithText("Search").performClick()
+            Espresso.closeSoftKeyboard()
+            composeRule.onNodeWithText("Search").performScrollTo().performClick()
             composeRule.onNodeWithText("Searching…").assertExists()
             composeRule.onNodeWithText("Word").performTextReplacement("hat")
             composeRule.onNodeWithText("Searching…").assertDoesNotExist()
-            composeRule.onNodeWithText("Search").performClick()
+            Espresso.closeSoftKeyboard()
+            composeRule.onNodeWithText("Search").performScrollTo().performClick()
 
             composeRule.runOnIdle { pending.remove("cat")!!.resume(result("stale result")) }
             composeRule.onNodeWithText("stale result").assertDoesNotExist()

@@ -87,27 +87,28 @@ class BeatPlayerTest {
     // --- No-ops when not prepared ---
 
     @Test
-    fun play_whenNotPrepared_doesNotCrash() {
+    fun play_whenNotPrepared_keepsPlaybackStopped() {
         val player = BeatPlayer()
         player.play()   // must be a no-op, not throw
         assertFalse(player.isPlaying)
     }
 
     @Test
-    fun pause_whenNotPrepared_doesNotCrash() {
+    fun pause_whenNotPrepared_keepsPlaybackStopped() {
         val player = BeatPlayer()
-        player.pause()  // must be a no-op, not throw
+        player.pause()
+        assertFalse(player.isPlaying)
     }
 
     @Test
-    fun togglePlayPause_whenNotPrepared_doesNotCrash() {
+    fun togglePlayPause_whenNotPrepared_keepsPlaybackStopped() {
         val player = BeatPlayer()
         player.togglePlayPause()
         assertFalse(player.isPlaying)
     }
 
     @Test
-    fun seekTo_whenNotPrepared_doesNotCrash() {
+    fun seekTo_whenNotPrepared_keepsPositionAtZero() {
         val player = BeatPlayer()
         player.seekTo(5000)  // must be a no-op, not throw
         assertEquals(0, player.currentPositionMs)
@@ -228,17 +229,13 @@ class BeatPlayerTest {
     // --- release() ---
 
     @Test
-    fun release_whenNeverLoaded_doesNotCrash() {
-        val player = BeatPlayer()
-        player.release()  // must be safe
-        assertFalse(player.isReady)
-        assertFalse(player.isPlaying)
-    }
-
-    @Test
-    fun release_calledTwice_doesNotCrash() {
+    fun release_repeatedlyKeepsUnpreparedPlayerStopped() {
         val player = BeatPlayer()
         player.release()
-        player.release()  // second call must also be safe
+        player.release()
+        assertFalse(player.isReady)
+        assertFalse(player.isPlaying)
+        assertEquals(0, player.currentPositionMs)
+        assertEquals(0, player.durationMs)
     }
 }

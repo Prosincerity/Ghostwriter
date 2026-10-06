@@ -240,28 +240,6 @@ class BeatPlayerInstrumentedTest {
     }
 
     @Test
-    fun pcmDecoder_preservesWavFramesAndCleansUpCancelledPreparation() {
-        val source = createPcm16Wav("beat-loop-decode.wav", 1000)
-        val directory = source.parentFile!!
-        val decoded = PcmBeatDecoder.decode(source, directory) { false }
-        try {
-            assertEquals(8000, decoded.sampleRate)
-            assertEquals(1, decoded.channels)
-            assertEquals(8000L, decoded.frames)
-            org.junit.Assert.assertArrayEquals(source.readBytes().copyOfRange(44, source.length().toInt()), decoded.file.readBytes())
-        } finally {
-            decoded.file.delete()
-        }
-        val filesBefore = directory.listFiles()?.map { it.name }?.toSet()
-        try {
-            PcmBeatDecoder.decode(source, directory) { true }
-            fail("Cancelled decoding should throw")
-        } catch (_: java.util.concurrent.CancellationException) {
-            assertEquals(filesBefore, directory.listFiles()?.map { it.name }?.toSet())
-        }
-    }
-
-    @Test
     fun markerLoops_repeatRegionAndHonorToggleAndMissingBoundaries() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val player = createPlayer(BeatLoopMode.MARKERS)
@@ -317,7 +295,9 @@ class BeatPlayerInstrumentedTest {
         }
         waitUntil("PCM preparation did not finish", timeoutMs = 10000) { !player.isPreparingLoop }
         instrumentation.runOnMainSync { player.seekTo(1400) }
-        SystemClock.sleep(100) // Give the paused audio worker time to apply the seek.
+        waitUntil("Paused seek did not reach the requested position") {
+            player.currentPositionMs in 1350..1450
+        }
         assertFalse(player.isPlaying)
         assertTrue("Paused seek snapped into the loop", player.currentPositionMs in 1350..1450)
         instrumentation.runOnMainSync { player.play() }

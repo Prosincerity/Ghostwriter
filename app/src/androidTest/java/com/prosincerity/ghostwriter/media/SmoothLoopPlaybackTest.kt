@@ -11,10 +11,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SmoothLoopPlaybackTest {
+    @get:Rule val folder = TemporaryFolder(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir)
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
 
     @Test fun pausedAndClosedOutput_rejectsPreparedStart() {
@@ -145,7 +148,7 @@ class SmoothLoopPlaybackTest {
     }
 
     @Test fun prefetchWorkerFailure_stopsStreamAndPublishesOriginalException() {
-        val missing = File(instrumentation.targetContext.cacheDir, "missing-${System.nanoTime()}.pcm")
+        val missing = File(folder.root, "missing.pcm")
         val source = PcmRingBuffer(missing, 1, 8000)
         val observed = AtomicReference<Exception?>()
         val notified = CountDownLatch(1)

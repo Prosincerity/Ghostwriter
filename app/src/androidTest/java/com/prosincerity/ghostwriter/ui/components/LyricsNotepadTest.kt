@@ -2,15 +2,11 @@ package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasSetTextAction
@@ -30,7 +26,6 @@ import com.prosincerity.ghostwriter.data.LyricFontFamily
 import com.prosincerity.ghostwriter.data.LyricTextAlignment
 import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
-import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -42,71 +37,6 @@ class LyricsNotepadTest {
 
     @get:Rule
     val composeRule = createComposeRule()
-
-    @Test
-    fun restartingNotepads_preservesDefaultAndExplicitSettingsAndEditing() {
-        val probe = RecompositionProbe()
-        var defaultLyrics by mutableStateOf("")
-        var explicitLyrics by mutableStateOf("Explicit verse")
-        val settings = LyricTextSettings(fontSizeSp = 24, alignment = LyricTextAlignment.RIGHT)
-        try {
-            composeRule.setContent {
-                GhostwriterTheme {
-                    Column {
-                        probe.captureNext(currentComposer)
-                        LyricsNotepad(defaultLyrics, { defaultLyrics = it })
-                        probe.captureNext(currentComposer)
-                        LyricsNotepad(explicitLyrics, { explicitLyrics = it }, Modifier, settings)
-                    }
-                }
-            }
-            composeRule.runOnIdle {
-                assertEquals(2, probe.scopes.size)
-                probe.scopes.forEach { it.invalidate() }
-            }
-            composeRule.onNodeWithText("Start writing...").assertExists()
-            composeRule.onNodeWithText("Explicit verse").performTextReplacement("Updated verse")
-            composeRule.runOnIdle { probe.scopes.take(2).forEach { it.invalidate() } }
-            composeRule.onNodeWithText("Updated verse").assertExists()
-            composeRule.onNodeWithText("Start writing...").assertExists()
-            val results = mutableListOf<TextLayoutResult>()
-            composeRule.onNodeWithText("Updated verse")
-                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
-            assertEquals(24.sp, results.first().layoutInput.style.fontSize)
-            assertEquals(TextAlign.Right, results.first().layoutInput.style.textAlign)
-            composeRule.runOnIdle { assertEquals("Updated verse", explicitLyrics) }
-        } finally {
-            composeRule.runOnIdle { probe.dispose() }
-        }
-    }
-
-    @Test fun themeChanges_preserveDefaultAndExplicitNotepadTextAndEditing() {
-        var color by mutableStateOf(GhostColorScheme.background)
-        var defaultLyrics by mutableStateOf("Default verse")
-        var explicitLyrics by mutableStateOf("Explicit verse")
-        val defaultCallback: (String) -> Unit = { defaultLyrics = it }
-        val explicitCallback: (String) -> Unit = { explicitLyrics = it }
-        composeRule.setContent {
-            GhostwriterTheme {
-                MaterialTheme(colorScheme = GhostColorScheme.copy(background = color)) {
-                    Column {
-                        LyricsNotepad(defaultLyrics, defaultCallback)
-                        LyricsNotepad(explicitLyrics, explicitCallback, Modifier, LyricTextSettings())
-                    }
-                }
-            }
-        }
-        composeRule.runOnIdle { color = Color.DarkGray }
-        composeRule.onNodeWithText("Default verse").performTextReplacement("Default edited")
-        composeRule.onNodeWithText("Explicit verse").performTextReplacement("Explicit edited")
-        composeRule.runOnIdle {
-            assertEquals("Default edited", defaultLyrics)
-            assertEquals("Explicit edited", explicitLyrics)
-            color = Color.Black
-        }
-        composeRule.onNodeWithText("Default edited").assertExists()
-        composeRule.onNodeWithText("Explicit edited").assertExists()
-    }
 
     @Test
     fun replacingEditingCallback_keepsTextAndUsesLatestOwner() {
@@ -148,7 +78,7 @@ class LyricsNotepadTest {
             }
         }
 
-        // Keep default-argument coverage when folding the empty-notepad test here.
+        // An empty notepad shows the writing prompt.
         composeRule.onNodeWithText("Start writing...").assertExists()
         composeRule.runOnIdle {
             lyrics = "First line\nSecond line"

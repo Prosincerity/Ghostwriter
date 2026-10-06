@@ -56,6 +56,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
@@ -65,6 +66,7 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class EditorScreenTest {
+    @get:Rule val testName = TestName()
     @Test
     fun documentImport_handlesCancellationFailuresSuccessfulCopyAndLongImportCancellation() {
         val title = uniqueProjectTitle("Document import")
@@ -131,7 +133,7 @@ class EditorScreenTest {
 
     @Test
     fun autosaveTickPersistsEditsAndMetadataFailureKeepsExistingInformation() {
-        val title = uniqueProjectTitle("Autosave coverage")
+        val title = uniqueProjectTitle("Autosave")
         val project = ProjectStorage.projectDir(context, title)
         val visible = mutableStateOf(true)
         val oldInterval = com.prosincerity.ghostwriter.data.Settings.getAutosaveIntervalSeconds(context)
@@ -805,7 +807,7 @@ class EditorScreenTest {
     }
 
     private fun uniqueProjectTitle(prefix: String): String =
-        "$prefix ${System.nanoTime()}"
+        "Test $prefix ${testName.methodName}"
 
     private companion object {
         private const val WAV_HEADER_SIZE = 44

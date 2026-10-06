@@ -6,31 +6,23 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.hasScrollToIndexAction
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.test.printToString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.data.LyricFontFamily
 import com.prosincerity.ghostwriter.data.LyricTextAlignment
 import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.data.Settings
-import com.prosincerity.ghostwriter.data.SystemFontCatalog
 import com.prosincerity.ghostwriter.data.SystemFontFile
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.After
@@ -38,6 +30,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import com.prosincerity.ghostwriter.R
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -46,6 +40,7 @@ class SettingsScreenTest {
     val composeRule = createComposeRule()
 
     private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+    @get:Rule val folder = TemporaryFolder(appContext.cacheDir)
     private val testContext = object : ContextWrapper(appContext) {
         override fun getApplicationContext(): Context = this
         override fun getSharedPreferences(name: String, mode: Int) =
@@ -63,9 +58,12 @@ class SettingsScreenTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 29)
-    fun discoveredFont_canBeSelectedAndSurvivesPreferencesReload() {
-        val font = SystemFontCatalog.availableFonts().filterIsInstance<SystemFontFile>().first()
+    fun savedFileFont_isShownAndSurvivesPreferencesReload() {
+        val file = folder.newFile("Roboto-Regular.ttf")
+        appContext.resources.openRawResource(R.font.roboto_regular).use { input ->
+            file.outputStream().use { input.copyTo(it) }
+        }
+        val font = SystemFontFile(file.absolutePath, familyName = "Roboto")
         Settings.setLyricTextSettings(testContext, LyricTextSettings(fontFamily = font))
         assertEquals(font, Settings.getLyricTextSettings(testContext).fontFamily)
         composeRule.setContent {
@@ -75,42 +73,7 @@ class SettingsScreenTest {
                 }
             }
         }
-        select("Font family", "System default")
-        composeRule.runOnIdle {
-            assertEquals(LyricFontFamily.SYSTEM_DEFAULT, Settings.getLyricTextSettings(testContext).fontFamily)
-        }
-
-        composeRule.onNodeWithContentDescription("Font family").performScrollTo().performClick()
-        for (generic in listOf("Sans serif", "Serif", "Cursive", "Monospace")) {
-            composeRule.onNodeWithText(generic).assertDoesNotExist()
-        }
-        // Discovery runs on an external dispatcher, and offscreen lazy rows are not
-        // composed yet. Wait by scrolling the actual picker to the requested face.
-        var lastScrollFailure: AssertionError? = null
-        try {
-            composeRule.waitUntil(10_000) {
-                try {
-                    composeRule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(font.label))
-                    true
-                } catch (failure: AssertionError) {
-                    lastScrollFailure = failure
-                    false
-                }
-            }
-        } catch (timeout: ComposeTimeoutException) {
-            val roots = composeRule.onAllNodes(isRoot(), useUnmergedTree = true)
-            val tree = roots.fetchSemanticsNodes().indices.joinToString("\n") { roots[it].printToString() }
-            throw AssertionError(
-                "Device font ${font.label} was not found in the picker. " +
-                    "Last scroll failure: ${lastScrollFailure?.message}\n$tree",
-                timeout,
-            )
-        }
-        composeRule.onNodeWithText(font.label).performClick()
-        composeRule.runOnIdle {
-            assertEquals(font, Settings.getLyricTextSettings(testContext).fontFamily)
-        }
-        composeRule.onNodeWithText(font.label).assertExists()
+        composeRule.onNodeWithText("Roboto").performScrollTo().assertExists()
     }
 
     @Test

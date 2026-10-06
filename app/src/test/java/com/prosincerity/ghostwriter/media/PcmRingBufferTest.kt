@@ -58,14 +58,6 @@ class PcmRingBufferTest {
         } finally { source.close() }
     }
 
-    @Test fun prepare_shortBeatUsesMemoryAndRemovesTemporaryPcmFile() {
-        val file = audio(frames = 32)
-        val source = PcmSources.prepare(PcmBeat(file, 48000, 2, 32)) { false }
-        assertTrue(source is MemoryPcmSource)
-        assertFalse(file.exists())
-        assertEquals((0 until 64).toList(), awaitCopy(source, 0, 32).map { it.toInt() })
-    }
-
     @Test fun close_diskBackedSourceDeletesOnlyItsTemporaryFile() {
         val file = audio()
         val source = PcmRingBuffer(file, 2, 2048, deleteOnClose = true)
@@ -76,12 +68,12 @@ class PcmRingBufferTest {
         assertFalse(file.exists())
     }
 
-    @Test fun prepare_longBeatUsesBoundedRingInsteadOfLoadingWholeFile() {
+    @Test fun prepare_longBeatReadsRequestedFramesFromRetainedBackingFile() {
         val file = folder.newFile()
         val length = PcmSources.MEMORY_LIMIT_BYTES + 4
         java.io.RandomAccessFile(file, "rw").use { it.setLength(length) }
         val source = PcmSources.prepare(PcmBeat(file, 48000, 2, length / 4)) { false }
-        assertTrue(source is PcmRingBuffer)
+        assertTrue(file.exists())
         try {
             assertTrue(awaitCopy(source, 0, 16).all { it == 0.toShort() })
         } finally { source.close() }

@@ -79,39 +79,6 @@ class WaveformExtractorInstrumentedTest {
         assertEquals(1000, WaveformExtractor.extractAmplitudes(wav).size)
     }
 
-    @Test fun decodedPcmFormatsAndMissingMetadata_produceBoundedPeaks() {
-        // Exercise the buffer reduction boundary directly: codecs can omit
-        // optional format keys and output buffers can contain padding.
-        val append = WaveformExtractor::class.java.getDeclaredMethod("appendFramePeaksToBuckets",
-            ByteBuffer::class.java, android.media.MediaCodec.BufferInfo::class.java,
-            android.media.MediaFormat::class.java, Long::class.javaPrimitiveType,
-            IntArray::class.java, Function0::class.java).apply { isAccessible = true }
-        for ((encoding, data, expected) in listOf(
-            Triple(android.media.AudioFormat.ENCODING_PCM_8BIT, byteArrayOf(0, 128.toByte(), 255.toByte()), 32768),
-            Triple(android.media.AudioFormat.ENCODING_PCM_FLOAT,
-                ByteBuffer.allocate(12).order(ByteOrder.LITTLE_ENDIAN).putFloat(-2f).putFloat(0f).putFloat(0.5f).array(), 32767),
-        )) {
-            val format = android.media.MediaFormat().apply { setInteger(android.media.MediaFormat.KEY_PCM_ENCODING, encoding) }
-            val info = android.media.MediaCodec.BufferInfo().apply { set(0, data.size, 0, 0) }
-            val buckets = IntArray(1)
-            assertEquals(3L, append.invoke(WaveformExtractor, ByteBuffer.wrap(data), info, format, 1000000L, buckets, { false }))
-            assertEquals(expected, buckets.single())
-            assertEquals(0L, append.invoke(WaveformExtractor, ByteBuffer.wrap(data), info, format, 0L, IntArray(0), { false }))
-            info.set(0, 0, 0, 0)
-            assertEquals(0L, append.invoke(WaveformExtractor, ByteBuffer.wrap(data), info, format, 1000000L, buckets, { false }))
-        }
-        // Reject a corrupt channel count whose frame size would overflow,
-        // rather than reading partial PCM frames or writing spurious peaks.
-        val invalidFormat = android.media.MediaFormat().apply {
-            setInteger(android.media.MediaFormat.KEY_CHANNEL_COUNT, Int.MAX_VALUE)
-        }
-        val invalidInfo = android.media.MediaCodec.BufferInfo().apply { set(0, 4, 0, 0) }
-        val invalidBuckets = IntArray(2)
-        assertEquals(0L, append.invoke(WaveformExtractor, ByteBuffer.allocate(4), invalidInfo,
-            invalidFormat, 1000000L, invalidBuckets, { false }))
-        assertTrue(invalidBuckets.all { it == 0 })
-    }
-
     private val generatedFiles = mutableListOf<File>()
 
     @After

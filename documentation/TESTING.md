@@ -139,7 +139,7 @@ For a sample test on one device, use the serial from that command:
 
 ```sh
 ANDROID_SERIAL='<device serial>' ./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.ExampleInstrumentedTest
+  -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.ui.screens.HomeScreenTest
 ```
 
 Wireless debugging must already be paired and connected. Outside this

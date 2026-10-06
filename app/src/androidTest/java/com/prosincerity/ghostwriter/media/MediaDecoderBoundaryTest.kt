@@ -13,17 +13,16 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import org.junit.After
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MediaDecoderBoundaryTest {
-    private val directory = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,
-        "media-boundaries-${System.nanoTime()}").apply { check(mkdir()) }
-
-    @After fun cleanup() { directory.deleteRecursively() }
+    @get:Rule val folder = TemporaryFolder(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir)
+    private val directory get() = folder.root
 
     @Test fun videoOnlyContainer_hasNoAudioTimingOrWaveformAndLeavesNoPcm() {
         val source = videoOnly()

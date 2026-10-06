@@ -61,7 +61,7 @@ class ProjectSummaryTest {
     }
 
     @Test fun missingMetadataUsesAHumanTitleForUuidProjects() {
-        val project = temporaryFolder.newFolder(java.util.UUID.randomUUID().toString())
+        val project = temporaryFolder.newFolder("00000000-0000-4000-8000-000000000001")
         assertEquals("Untitled", ProjectSummary.fromDirectory(project).title)
         assertEquals("Untitled", ProjectStorage.loadMetadata(project, project.name).title)
     }

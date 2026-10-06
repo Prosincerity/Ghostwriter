@@ -7,26 +7,27 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.io.IOException
-import java.util.UUID
 import org.junit.Assert.*
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class DocumentProjectArchiveTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val scope = UUID.randomUUID().toString()
-    private val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, scope)
-    private val localRoot = File(context.cacheDir, "archive-working-$scope")
+    @get:Rule val folder = TemporaryFolder(context.cacheDir)
+    private val scope get() = folder.root.name
+    private val tree get() = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, scope)
+    private val localRoot get() = folder.root
     private val archive get() = DocumentProjectArchive(context, tree)
     private val resolver get() = context.contentResolver
     private val provider = Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}")
 
-    @Before fun setup() { assertTrue(localRoot.mkdirs()) }
+    @Before fun setup() { resolver.call(provider, "clear", scope, null) }
     @After fun cleanup() {
-        localRoot.deleteRecursively()
         resolver.call(provider, "clear", scope, null)
     }
 
@@ -43,6 +44,11 @@ class DocumentProjectArchiveTest {
         val ghostwriter = children(root).single { it.first == "Ghostwriter" }.second
         val project = children(ghostwriter).single { it.first == projectId }.second
         return children(project).map { it.second }
+    }
+    private fun latestArchiveTime(projectId: String): Long = savedFiles(projectId).maxOf { uri ->
+        resolver.openInputStream(uri)!!.bufferedReader().use {
+            PersistentProjectSnapshot.decode(it.readText(), projectId)!!.savedAt
+        }
     }
     private fun failWrites(enabled: Boolean) {
         resolver.call(provider, "failWrites", scope, Bundle().apply { putBoolean("enabled", enabled) })
@@ -104,7 +110,7 @@ class DocumentProjectArchiveTest {
         val folder = create(selected, "Ghostwriter", true)
         create(folder, "readme")
         create(folder, "unrelated", true)
-        val emptyId = UUID.randomUUID().toString()
+        val emptyId = "00000000-0000-4000-8000-000000000001"
         val empty = create(folder, emptyId, true)
         create(empty, "readme")
         create(empty, "snapshot-incomplete.txt")
@@ -205,7 +211,7 @@ class DocumentProjectArchiveTest {
         val project = ProjectStorage.createProjectDirectory(localRoot, "song")
         draft(project, "archived"); archive.save(project, 3)
         draft(project, "newer local")
-        File(project, "lyrics.txt").setLastModified(System.currentTimeMillis() + 60_000)
+        File(project, "lyrics.txt").setLastModified(latestArchiveTime(project.name) + 60_000)
         assertEquals(0, archive.restore(localRoot))
         assertEquals("newer local", ProjectStorage.loadLatest(project))
         archive.save(project, 3)
@@ -223,7 +229,7 @@ class DocumentProjectArchiveTest {
         assertTrue(project.deleteRecursively())
         assertTrue(oldWorkingCopy.renameTo(project))
         project.listFiles { it.extension == "txt" }!!.forEach {
-            it.setLastModified(System.currentTimeMillis() + 60_000)
+            it.setLastModified(latestArchiveTime(project.name) + 60_000)
         }
         assertEquals(1, archive.restore(localRoot))
         assertEquals("latest shared lyrics", ProjectStorage.loadLatest(project))

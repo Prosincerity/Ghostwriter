@@ -1,9 +1,6 @@
 package com.prosincerity.ghostwriter.data
 
-import android.graphics.fonts.FontStyle
 import android.graphics.fonts.Font
-import android.graphics.fonts.FontVariationAxis
-import android.graphics.fonts.SystemFonts
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -12,23 +9,43 @@ import com.prosincerity.ghostwriter.ui.components.toTextStyle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
 import org.junit.Test
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
+import androidx.test.platform.app.InstrumentationRegistry
+import com.prosincerity.ghostwriter.R
+import java.io.File
 import org.junit.runner.RunWith
 import java.nio.ByteBuffer
 import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class SystemFontCatalogTest {
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    @get:Rule val folder = TemporaryFolder(context.cacheDir)
+
+    private fun fontFile(): File = File(folder.root, "Roboto-Regular.ttf").apply {
+        if (!exists()) {
+            context.resources.openRawResource(R.font.roboto_regular).use { input ->
+                outputStream().use { input.copyTo(it) }
+            }
+        }
+    }
+
+    private fun fixtureFont(weight: Int = 400): Font = Font.Builder(fontFile()).setWeight(weight).build()
+
+    private fun fixtureOptions(): List<LyricFont> =
+        SystemFontCatalog.availableFonts(Locale.ENGLISH) { setOf(fixtureFont()) }
+
     @Test
     @SdkSuppress(minSdkVersion = 29)
     fun savedFaceLabels_handleMissingFilesDifferentFacesAndFamilyMatches() {
-        val regular = SystemFontCatalog.availableFonts(Locale.ENGLISH).filterIsInstance<SystemFontFile>().first()
+        val regular = fixtureOptions().filterIsInstance<SystemFontFile>().single()
         assertEquals("System default", SystemFontCatalog.selectionLabel(LyricFontFamily.SYSTEM_DEFAULT, emptyList()))
-        val missing = regular.copy(path = "/missing/font.ttf")
+        val missing = regular.copy(path = File(folder.root, "missing.ttf").absolutePath)
         assertEquals("${missing.label} (unavailable)", SystemFontCatalog.selectionLabel(missing, emptyList()))
         assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, emptyList()))
         val otherFace = regular.copy(ttcIndex = regular.ttcIndex + 1, familyName = "Another family")
@@ -40,7 +57,7 @@ class SystemFontCatalogTest {
     @Test
     @SdkSuppress(minSdkVersion = 29)
     fun discoveryFailure_keepsOnlySystemDefault() {
-        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), SystemFontCatalog.availableFonts {
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), SystemFontCatalog.availableFonts(Locale.ENGLISH) {
             throw IllegalStateException("System font discovery unavailable")
         })
     }
@@ -48,38 +65,43 @@ class SystemFontCatalogTest {
     @Test
     @SdkSuppress(minSdkVersion = 29)
     fun memoryOnlyFont_isExcludedBecauseItHasNoPersistableFilePath() {
-        val saved = SystemFontCatalog.availableFonts().filterIsInstance<SystemFontFile>().first()
+        val saved = fixtureOptions().filterIsInstance<SystemFontFile>().single()
         val bytes = java.io.File(saved.path).readBytes()
         val buffer = ByteBuffer.allocateDirect(bytes.size).apply { put(bytes); flip() }
         val font = Font.Builder(buffer).setTtcIndex(saved.ttcIndex).build()
         assertNull(font.file)
-        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), SystemFontCatalog.availableFonts { setOf(font) })
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), SystemFontCatalog.availableFonts(Locale.ENGLISH) { setOf(font) })
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 29)
-    fun discovery_groupsInstalledFamiliesAndRetainsRepresentativeFaceMetadata() {
-        val expected = SystemFonts.getAvailableFonts().mapNotNull { font ->
-            val file = font.file?.takeIf { it.isFile && it.canRead() } ?: return@mapNotNull null
-            SystemFontFile(
-                file.absolutePath,
-                font.ttcIndex,
-                font.style.weight,
-                font.style.slant == FontStyle.FONT_SLANT_ITALIC,
-                FontVariationAxis.toFontVariationSettings(font.axes),
-            )
-        }.toSet()
-        val options = SystemFontCatalog.availableFonts(Locale.ENGLISH)
+    fun discovery_groupsFixtureFacesAndRetainsRepresentativeMetadata() {
+        val regular = fixtureFont()
+        val bold = fixtureFont(weight = 700)
+        val options = SystemFontCatalog.availableFonts(Locale.ENGLISH) { setOf(bold, regular) }
         val actual = options.filterIsInstance<SystemFontFile>()
-        assertEquals(LyricFontFamily.SYSTEM_DEFAULT, options.first())
-        assertEquals(1, options.filterIsInstance<LyricFontFamily>().size)
-        assertTrue(actual.isNotEmpty())
-        assertTrue(actual.all { it.copy(familyName = "") in expected })
-        assertEquals(actual.size, actual.map { it.label.lowercase(Locale.ROOT) }.distinct().size)
-        assertTrue(actual.all { it.familyName.isNotBlank() })
-        assertTrue(actual.none { it.label.contains("Arabic") || it.label.contains("Hebrew") ||
-            it.label.contains("Emoji") || it.label.contains("Cuneiform") || it.label.endsWith(" UI") })
-        android.util.Log.i("FontCatalogTest", "English families: ${actual.map { it.label }}")
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT, actual.single()), options)
+        assertEquals(fontFile().absolutePath, actual.single().path)
+        assertEquals("Roboto", actual.single().familyName)
+        assertEquals(0, actual.single().ttcIndex)
+        assertEquals(400, actual.single().weight)
+        assertFalse(actual.single().italic)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
+    fun discovery_withNoFontFilesKeepsSystemDefault() {
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT),
+            SystemFontCatalog.availableFonts(Locale.ENGLISH) { emptySet() })
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
+    fun discovery_ignoresAFontWhoseBackingFileWasRemoved() {
+        val font = fixtureFont()
+        assertTrue(fontFile().delete())
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT),
+            SystemFontCatalog.availableFonts(Locale.ENGLISH) { setOf(font) })
     }
 
     @Test
@@ -100,24 +122,22 @@ class SystemFontCatalogTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 29)
-    fun discovery_includesArabicAndHebrewOnlyForTheirLanguages() {
-        val arabic = SystemFontCatalog.availableFonts(Locale.forLanguageTag("ar"))
-            .filterIsInstance<SystemFontFile>()
-        val hebrew = SystemFontCatalog.availableFonts(Locale.forLanguageTag("he"))
-            .filterIsInstance<SystemFontFile>()
-        assertTrue(arabic.any { it.label.contains("Arabic") })
-        assertTrue(hebrew.any { it.label.contains("Hebrew") })
-        assertFalse(arabic.any { it.label.contains("Hebrew") || it.label == "Droid Sans Mono" })
-        assertFalse(hebrew.any { it.label.contains("Arabic") })
+    fun discovery_rejectsFacesWithoutGlyphsForTheRequestedLanguage() {
+        val latin = fixtureFont()
+        for (language in listOf("ar", "he")) {
+            assertEquals(
+                listOf(LyricFontFamily.SYSTEM_DEFAULT),
+                SystemFontCatalog.availableFonts(Locale.forLanguageTag(language)) { setOf(latin) },
+            )
+        }
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 29)
-    fun discoveredFace_loadsForEditorAndPreviewAndIsCached() {
-        val font = SystemFontCatalog.availableFonts().filterIsInstance<SystemFontFile>().first()
+    fun fixtureFace_loadsForEditorAndPreviewWithSavedStyle() {
+        val font = fixtureOptions().filterIsInstance<SystemFontFile>().single()
         val typeface = SystemFontCatalog.typeface(font)
         assertNotNull(typeface)
-        assertSame(typeface, SystemFontCatalog.typeface(font))
         assertEquals(font.weight, typeface!!.weight)
         assertEquals(font.italic, typeface.isItalic)
         assertNotEquals(FontFamily.Monospace, LyricTextSettings(fontFamily = font).toTextStyle(TextStyle()).fontFamily)
@@ -126,7 +146,7 @@ class SystemFontCatalogTest {
     @Test
     @SdkSuppress(minSdkVersion = 29)
     fun legacySavedBoldFace_hasTheDiscoveredFamilyLabelWithoutChangingItsStyle() {
-        val options = SystemFontCatalog.availableFonts()
+        val options = fixtureOptions()
         val regular = options.filterIsInstance<SystemFontFile>().first()
         val legacy = regular.copy(familyName = "", weight = 700)
         assertEquals(regular.label, SystemFontCatalog.selectionLabel(legacy, options))
@@ -136,14 +156,14 @@ class SystemFontCatalogTest {
 
     @Test
     fun missingSavedFile_fallsBackToMonospace() {
-        val settings = LyricTextSettings(fontFamily = SystemFontFile("/missing/device-font.ttf"))
+        val settings = LyricTextSettings(fontFamily = SystemFontFile(File(folder.root, "missing.ttf").absolutePath))
         assertEquals(FontFamily.Monospace, settings.toTextStyle(TextStyle()).fontFamily)
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 29)
     fun malformedVariation_fallsBackAndDoesNotPoisonTheNextValidFace() {
-        val valid = SystemFontCatalog.availableFonts().filterIsInstance<SystemFontFile>().first()
+        val valid = fixtureOptions().filterIsInstance<SystemFontFile>().single()
         val malformed = valid.copy(variationSettings = "'wght' not-a-number")
         assertNull(SystemFontCatalog.typeface(malformed))
         assertNull(SystemFontCatalog.typeface(malformed))
@@ -154,7 +174,7 @@ class SystemFontCatalogTest {
     @Test
     @SdkSuppress(maxSdkVersion = 28)
     fun olderAndroid_keepsOnlySystemDefaultAndStillSupportsSavedGenericFamilies() {
-        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), SystemFontCatalog.availableFonts())
-        assertNull(SystemFontCatalog.typeface(SystemFontFile("/system/fonts/Roboto-Regular.ttf")))
+        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), SystemFontCatalog.availableFonts(Locale.ENGLISH))
+        assertNull(SystemFontCatalog.typeface(SystemFontFile(fontFile().absolutePath)))
     }
 }

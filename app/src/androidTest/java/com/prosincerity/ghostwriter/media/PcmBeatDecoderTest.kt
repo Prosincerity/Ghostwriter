@@ -10,7 +10,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import org.junit.After
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,10 +76,8 @@ class PcmBeatDecoderTest {
         assertEquals(8000L, pcm.frames)
         assertEquals(16000L, pcm.file.length())
     }
-    private val directory = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,
-        "decoder-tests-${System.nanoTime()}").apply { check(mkdirs()) }
-
-    @After fun deleteFixtures() { directory.deleteRecursively() }
+    @get:Rule val folder = TemporaryFolder(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir)
+    private val directory get() = folder.root
 
     @Test fun pcm8Bit_convertsUnsignedSamplesToSigned16Bit() {
         val input = ByteArray(1280) { intArrayOf(0, 64, 128, 192, 255)[it % 5].toByte() }

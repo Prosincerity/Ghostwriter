@@ -20,7 +20,6 @@ class WaveformExtractorTest {
                 WaveformExtractor.DecoderProgressGuard(limit)
             }
         }
-        assertEquals(null, WaveformExtractor.durationMs(File(tempFolder.root, "missing.wav")))
     }
 
 
@@ -92,10 +91,20 @@ class WaveformExtractorTest {
     }
 
     @Test
+    fun pcmAmplitude_clampsFloatSamplesOutsideTheSupportedRange() {
+        for (value in listOf(-2f, 2f)) {
+            val sample = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+                .putFloat(value).apply { flip() }
+            assertEquals(32_767, WaveformExtractor.pcmAmplitude(sample, AudioFormat.ENCODING_PCM_FLOAT))
+        }
+    }
+
+    @Test
     fun extractAmplitudes_returnsEmptyForMissingFile() {
         val missing = File(tempFolder.root, "missing.wav")
 
         assertTrue(WaveformExtractor.extractAmplitudes(missing, 100).isEmpty())
+        assertEquals(null, WaveformExtractor.durationMs(missing))
     }
 
     @Test
@@ -127,6 +136,10 @@ class WaveformExtractorTest {
         guard.record(madeProgress = false)
         guard.record(madeProgress = true)
         guard.record(madeProgress = false)
+        val error = org.junit.Assert.assertThrows(IllegalStateException::class.java) {
+            guard.record(madeProgress = false)
+        }
+        assertEquals("Audio decoder stopped making progress", error.message)
     }
 
     @Test

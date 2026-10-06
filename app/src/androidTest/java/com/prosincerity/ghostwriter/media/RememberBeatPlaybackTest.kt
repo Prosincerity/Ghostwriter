@@ -67,10 +67,13 @@ class RememberBeatPlaybackTest {
         }
         try {
             composeRule.waitUntil(5000) { service != null }
+            composeRule.runOnIdle { assertNotNull(service) }
             composeRule.runOnIdle { connection!!.onServiceDisconnected(ComponentName(context, BeatPlaybackService::class.java)) }
             composeRule.waitUntil(5000) { service == null }
+            composeRule.runOnIdle { assertNull(service) }
             composeRule.runOnIdle { title.value = "Second" }
             composeRule.waitUntil(5000) { service != null }
+            composeRule.runOnIdle { assertNotNull(service) }
         } finally {
             composeRule.runOnIdle { visible.value = false }
             context.stopService(Intent(context, BeatPlaybackService::class.java))

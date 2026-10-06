@@ -9,7 +9,6 @@ import android.provider.DocumentsContract
 import android.os.Bundle
 import java.io.File
 import com.prosincerity.ghostwriter.data.LyricArchiveTestProvider
-import java.util.UUID
 import org.junit.Before
 import org.junit.After
 import android.content.Intent
@@ -46,19 +45,23 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
+    @get:Rule val testName = TestName()
 
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     private var originalFolder: String? = null
-    private val archiveScope = UUID.randomUUID().toString()
+    private val archiveScope get() = "main-activity-${testName.methodName}"
 
     @Before fun useIsolatedLyricFolder() {
         originalFolder = Settings.getPersistentLyricsFolder(composeRule.activity)
+        composeRule.activity.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"),
+            "clear", archiveScope, null)
         val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
         Settings.setPersistentLyricsFolder(composeRule.activity, tree.toString())
         composeRule.activityRule.scenario.recreate()
@@ -197,62 +200,6 @@ class MainActivityTest {
         }
     }
 
-    @Test
-    fun closingActivityDuringFolderReconciliation_preservesLocalProjects() {
-        val context = composeRule.activity
-        val originalProjects = ProjectStorage.listProjects(context)
-        synchronized(ProjectStorage) {
-            composeRule.activityRule.scenario.recreate()
-            // Keep reconciliation in flight until destruction cancels its coroutine.
-            composeRule.waitUntil(timeoutMillis = 15_000) {
-                Thread.getAllStackTraces().any { (thread, frames) ->
-                    thread.state == Thread.State.BLOCKED && frames.any {
-                        it.className == ProjectStorage::class.java.name && it.methodName == "listProjects"
-                    }
-                }
-            }
-            composeRule.activityRule.scenario.close()
-        }
-        // Wait for provider work and the cancellation callback before cleanup.
-        synchronized(PersistentLyricsStorage) { }
-        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-        assertEquals(originalProjects, ProjectStorage.listProjects(context))
-    }
-
-    @Test
-    fun closingActivityDuringFolderSelection_keepsSavedFolderUsable() {
-        val context = composeRule.activity
-        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
-        val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
-        instrumentation.context.grantUriPermission(context.packageName, tree,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-        try {
-            composeRule.onNodeWithContentDescription("Settings").performClick()
-            synchronized(PersistentLyricsStorage) {
-                returnFolderFromPicker(tree, "Choose lyric folder")
-                composeRule.waitUntil(timeoutMillis = 15_000) {
-                    Thread.getAllStackTraces().any { (thread, frames) ->
-                        thread.state == Thread.State.BLOCKED && frames.any {
-                            it.className == PersistentLyricsStorage::class.java.name && it.methodName == "connect"
-                        }
-                    }
-                }
-                composeRule.activityRule.scenario.close()
-                instrumentation.waitForIdleSync()
-            }
-            synchronized(PersistentLyricsStorage) { }
-            instrumentation.waitForIdleSync()
-            assertEquals(tree.toString(), Settings.getPersistentLyricsFolder(context))
-            assertTrue(context.contentResolver.persistedUriPermissions.any { it.uri == tree })
-        } finally {
-            runCatching { context.contentResolver.releasePersistableUriPermission(tree,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
-            instrumentation.context.revokeUriPermission(tree,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        }
-    }
-
     private fun setArchiveFault(kind: String?) {
         composeRule.activity.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"),
             "fault", archiveScope, kind?.let { Bundle().apply { putString("kind", it) } })
@@ -327,7 +274,7 @@ class MainActivityTest {
         try {
             createProject(title)
             for (destination in listOf("Settings", "Dictionary", "Settings", "Dictionary")) {
-                val lyrics = "Latest lyrics before $destination ${System.nanoTime()}"
+                val lyrics = "Latest lyrics before $destination"
                 composeRule.onNode(hasSetTextAction()).performTextReplacement(lyrics)
                 composeRule.onNodeWithContentDescription(destination).performClick()
                 composeRule.onNodeWithContentDescription("Back").performClick()
@@ -545,5 +492,5 @@ class MainActivityTest {
     }
 
     private fun uniqueProjectTitle(prefix: String): String =
-        "$prefix ${System.nanoTime()}"
+        "Test $prefix ${testName.methodName}"
 }

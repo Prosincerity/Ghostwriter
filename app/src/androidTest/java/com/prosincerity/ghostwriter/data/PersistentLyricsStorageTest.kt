@@ -10,25 +10,28 @@ import android.provider.DocumentsContract
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.IOException
-import java.util.UUID
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PersistentLyricsStorageTest {
+    @get:Rule val testName = TestName()
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
-    private val scope = UUID.randomUUID().toString()
-    private val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, scope)
+    private val scope get() = "persistent-lyrics-${testName.methodName}"
+    private val tree get() = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, scope)
     private val provider = Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}")
     private var originalFolder: String? = null
     private val projects = mutableListOf<String>()
 
     @Before fun setup() {
         originalFolder = Settings.getPersistentLyricsFolder(context)
+        context.contentResolver.call(provider, "clear", scope, null)
         instrumentation.context.grantUriPermission(context.packageName, tree,
             Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
                 Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
@@ -45,7 +48,7 @@ class PersistentLyricsStorageTest {
     }
 
     @Test fun connectRemembersFolderAndReconciliationRestoresDeletedWorkingCopy() {
-        val project = ProjectStorage.createProject(context, "Persistent ${UUID.randomUUID()}")
+        val project = ProjectStorage.createProject(context, "Test Persistent ${testName.methodName}")
         projects += project.name
         assertTrue(ProjectStorage.saveManual(project, "unused", "retained lyrics", 3))
         PersistentLyricsStorage.connect(context, tree)
@@ -58,12 +61,12 @@ class PersistentLyricsStorageTest {
         assertTrue(PersistentLyricsStorage.delete(context, project.name))
         assertTrue(project.exists())
         assertEquals(project.name, ProjectStorage.renameProject(context, ProjectStorage.loadMetadata(project, "").title, "Renamed"))
-        assertNull(ProjectStorage.renameProject(context, "Missing ${UUID.randomUUID()}", "other"))
-        assertThrows(IllegalArgumentException::class.java) { ProjectStorage.projectDir(context, UUID.randomUUID().toString()) }
+        assertNull(ProjectStorage.renameProject(context, "Missing ${testName.methodName}", "other"))
+        assertThrows(IllegalArgumentException::class.java) { ProjectStorage.projectDir(context, "00000000-0000-4000-8000-000000000002") }
     }
 
     @Test fun missingAndDisconnectedFoldersReportSaveAndDeleteFailure() {
-        val project = ProjectStorage.createProject(context, "Draft ${UUID.randomUUID()}")
+        val project = ProjectStorage.createProject(context, "Test Draft ${testName.methodName}")
         projects += project.name
         Settings.setPersistentLyricsFolder(context, null)
         assertFalse(PersistentLyricsStorage.save(context, project, 3))
