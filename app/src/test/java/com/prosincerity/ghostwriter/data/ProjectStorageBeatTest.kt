@@ -209,7 +209,7 @@ class ProjectStorageBeatTest {
             }
 
             assertTrue(save.get(1, TimeUnit.SECONDS))
-            assertEquals("lyrics", File(project, "non_blocking_waveform.txt").readText())
+            assertEquals("lyrics", File(project, "lyrics.txt").readText())
         } finally {
             releaseExtraction.countDown()
             extraction.get(5, TimeUnit.SECONDS)

@@ -4,6 +4,7 @@ import java.io.File
 
 /** Manual lyric snapshots and the rolling autosave backup ring. */
 internal object ProjectLyricsStorage {
+    const val MANUAL_FILE_NAME = "lyrics.txt"
     private val backupTitle = Regex("autosave(?:[1-9]|10)", RegexOption.IGNORE_CASE)
 
     /** Reserved backup names need a separate manual snapshot, including on case-insensitive storage. */
@@ -12,7 +13,14 @@ internal object ProjectLyricsStorage {
 
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
-        val manualFile = File(projectDir, manualFileName(projectDir.name))
+        // Legacy title snapshots remain readable after UUID migration and rename.
+        val manualFiles = projectDir.listFiles { file ->
+            file.isFile && file.extension == "txt" &&
+                !Regex("autosave(?:[1-9]|10)\\.txt", RegexOption.IGNORE_CASE).matches(file.name)
+        }.orEmpty()
+        val manualFile = manualFiles.filter { it.readTextIfFile() != null }
+            .maxWithOrNull(compareBy<File> { it.lastModified() }.thenBy { it.name == MANUAL_FILE_NAME })
+            ?: File(projectDir, MANUAL_FILE_NAME)
         // Older versions could keep ten slots. Best-effort rotations can also
         // leave slot ages out of order, so compare every readable snapshot.
         // Scanning in slot order keeps the earlier slot when timestamps tie.

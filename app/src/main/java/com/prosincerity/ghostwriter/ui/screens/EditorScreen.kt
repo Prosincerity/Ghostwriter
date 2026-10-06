@@ -92,58 +92,59 @@ fun EditorScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenDictionary: () -> Unit = {},
+    projectId: String = projectTitle,
 ) {
     BackHandler(onBack = onBack)
-    val playback = rememberBeatPlayback(projectTitle)
+    val playback = rememberBeatPlayback(projectId, projectTitle)
 
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val lyricTextSettings = remember(context) { AppSettings.getLyricTextSettings(context) }
     val coroutineScope = rememberCoroutineScope()
-    val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
+    val projectDir = remember(projectId) { ProjectStorage.projectDir(context, projectId) }
     val waveformDirectory = remember(projectDir) { ProjectStorage.waveformCacheDirectory(context, projectDir) }
     val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle) }
 
-    var lyrics by rememberSaveable(projectTitle) {
+    var lyrics by rememberSaveable(projectId) {
         mutableStateOf(ProjectStorage.loadLatest(projectDir))
     }
 
     var intervalSeconds by remember { mutableIntStateOf(AppSettings.getAutosaveIntervalSeconds(context)) }
     var keepCount by remember { mutableIntStateOf(AppSettings.getAutosaveCount(context)) }
 
-    var metadata by remember(projectTitle) {
+    var metadata by remember(projectId) {
         mutableStateOf(ProjectStorage.loadMetadata(projectDir, projectTitle))
     }
     var showInfoDialog by rememberSaveable { mutableStateOf(false) }
 
     val beatPlayer = playback?.player
-    var isBeatReady by remember(projectTitle) { mutableStateOf(false) }
-    var beatFile by remember(projectTitle) {
+    var isBeatReady by remember(projectId) { mutableStateOf(false) }
+    var beatFile by remember(projectId) {
         mutableStateOf(ProjectStorage.getProjectBeatFile(projectDir, metadata))
     }
-    var isImporting by remember(projectTitle) { mutableStateOf(false) }
-    var isReassigningBeat by remember(projectTitle) { mutableStateOf(false) }
-    var waveformAmplitudes by remember(projectTitle) { mutableStateOf(IntArray(0)) }
-    var isWaveformLoading by remember(projectTitle) { mutableStateOf(false) }
-    var waveformRevision by remember(projectTitle) { mutableIntStateOf(0) }
-    var waveformCancellation by remember(projectTitle) { mutableStateOf<AtomicBoolean?>(null) }
-    var cancellationRequested by remember(projectTitle) { mutableStateOf(false) }
-    var waveformPreparationCancelled by remember(projectTitle) { mutableStateOf(false) }
-    var waveformPreparationFailed by remember(projectTitle) { mutableStateOf(false) }
-    var autoPlayWhenBeatReady by remember(projectTitle) { mutableStateOf(false) }
-    var isImportedBeatPreparation by remember(projectTitle) { mutableStateOf(false) }
-    var approvedLongBeatPath by remember(projectTitle) { mutableStateOf<String?>(null) }
-    var pendingLongBeatPreparation by remember(projectTitle) {
+    var isImporting by remember(projectId) { mutableStateOf(false) }
+    var isReassigningBeat by remember(projectId) { mutableStateOf(false) }
+    var waveformAmplitudes by remember(projectId) { mutableStateOf(IntArray(0)) }
+    var isWaveformLoading by remember(projectId) { mutableStateOf(false) }
+    var waveformRevision by remember(projectId) { mutableIntStateOf(0) }
+    var waveformCancellation by remember(projectId) { mutableStateOf<AtomicBoolean?>(null) }
+    var cancellationRequested by remember(projectId) { mutableStateOf(false) }
+    var waveformPreparationCancelled by remember(projectId) { mutableStateOf(false) }
+    var waveformPreparationFailed by remember(projectId) { mutableStateOf(false) }
+    var autoPlayWhenBeatReady by remember(projectId) { mutableStateOf(false) }
+    var isImportedBeatPreparation by remember(projectId) { mutableStateOf(false) }
+    var approvedLongBeatPath by remember(projectId) { mutableStateOf<String?>(null) }
+    var pendingLongBeatPreparation by remember(projectId) {
         mutableStateOf<PendingBeatPreparation?>(null)
     }
-    var showReassignConfirmation by rememberSaveable(projectTitle) { mutableStateOf(false) }
-    var markerPositionToAdd by remember(projectTitle) { mutableStateOf<Long?>(null) }
-    var markerToEdit by remember(projectTitle) { mutableStateOf<WaveformMarker?>(null) }
+    var showReassignConfirmation by rememberSaveable(projectId) { mutableStateOf(false) }
+    var markerPositionToAdd by remember(projectId) { mutableStateOf<Long?>(null) }
+    var markerToEdit by remember(projectId) { mutableStateOf<WaveformMarker?>(null) }
     val latestLyrics = rememberUpdatedState(lyrics)
     val latestKeepCount = rememberUpdatedState(keepCount)
     val latestWaveformCancellation = rememberUpdatedState(waveformCancellation)
-    val projectMutationMutex = remember(projectTitle) { Mutex() }
-    val projectMutationRevision = remember(projectTitle) { AtomicLong(0L) }
+    val projectMutationMutex = remember(projectId) { Mutex() }
+    val projectMutationRevision = remember(projectId) { AtomicLong(0L) }
 
     suspend fun removeBeatAndLoadMetadata(): ProjectMetadata =
         projectMutationMutex.withLock {
@@ -407,7 +408,7 @@ fun EditorScreen(
     // Background autosave loop. Settings are re-read every cycle so a
     // change made in the Settings screen takes effect from the next tick
     // onward (the cycle already in progress finishes on its old interval).
-    LaunchedEffect(projectTitle) {
+    LaunchedEffect(projectId) {
         while (true) {
             delay(intervalSeconds.seconds)
             intervalSeconds = AppSettings.getAutosaveIntervalSeconds(context)
@@ -489,7 +490,7 @@ fun EditorScreen(
                             withContext(Dispatchers.Main.immediate) {
                                 Toast.makeText(
                                     context,
-                                    if (saved) "Saved ${ProjectStorage.manualSaveFileName(projectTitle)}"
+                                    if (saved) "Saved lyrics"
                                     else "Couldn't save lyrics",
                                     Toast.LENGTH_SHORT,
                                 ).show()

@@ -38,8 +38,12 @@ Application sources are under
 
 `Settings.kt` stores preferences in `SharedPreferences`. `ProjectStorage.kt`
 coordinates project files in app-specific external storage. Each project
-contains lyric snapshots, `project.json` metadata, an optional copied beat,
-and its waveform cache. Metadata uses Android's `org.json`.
+uses a UUID directory and contains lyric snapshots, `project.json` metadata,
+and an optional copied beat. The display title lives in metadata; renaming
+updates metadata without moving the directory or lyric files. Legacy title
+directories migrate automatically, preserving snapshots and their ages.
+Regenerable waveform peaks use a versioned binary format with two bytes per
+peak in Android's cache directory, excluded from backups. Metadata uses Android's `org.json`.
 
 Global lyric-pad typography is stored with those preferences. `LyricTextSettings`
 keeps defaults and bounds; the editor and Settings preview share a Compose text
@@ -73,10 +77,10 @@ missing or malformed metadata does not prevent opening a project.
 
 Lyrics are saved manually, periodically, and on editor exit. Loading selects
 the newest readable manual or autosave snapshot. Storage mutations are
-synchronized, and staged writes replace files through a temporary file.
-Manual snapshots use `<title>.txt`; titles reserved for backup slots
-(`autosave1` through `autosave10`, ignoring case) use `<title>.manual.txt`.
-Legacy snapshots remain readable. Failed older backup copies do not prevent
+synchronized, and staged writes sync the complete temporary file before
+renaming it over the previous copy. Manual snapshots use `lyrics.txt`.
+Legacy title-based snapshots remain readable, including after UUID migration
+and later title changes. Failed older backup copies do not prevent
 the newest autosave, and count reductions prune backups only after that save
 succeeds.
 Replacing a beat invalidates its waveform cache and markers.

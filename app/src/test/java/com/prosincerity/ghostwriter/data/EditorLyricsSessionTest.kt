@@ -18,8 +18,8 @@ class EditorLyricsSessionTest {
         val session = EditorLyricsSession(project, "song")
 
         assertTrue(session.saveManual("first verse", 3))
-        assertEquals("first verse", File(project, "song.txt").readText())
-        assertTrue(File(project, "song.txt").setLastModified(1_000L))
+        assertEquals("first verse", File(project, "lyrics.txt").readText())
+        assertTrue(File(project, "lyrics.txt").setLastModified(1_000L))
         session.autosave("second verse", 3)
         assertEquals("second verse", File(project, "autosave1.txt").readText())
         session.finish("final verse", 3)
@@ -31,14 +31,14 @@ class EditorLyricsSessionTest {
         val project = temporaryFolder.newFolder("song")
         val session = EditorLyricsSession(project, "song")
         assertTrue(session.saveManual("saved verse", 3))
-        assertTrue(File(project, "song.txt").setLastModified(1_000L))
+        assertTrue(File(project, "lyrics.txt").setLastModified(1_000L))
 
         session.finish("new lyrics typed before leaving", 3)
         // An IO callback already queued by the Save button can run after disposal.
         assertFalse(session.saveManual("older button snapshot", 3))
 
         assertEquals("new lyrics typed before leaving", ProjectStorage.loadLatest(project))
-        assertEquals("saved verse", File(project, "song.txt").readText())
+        assertEquals("saved verse", File(project, "lyrics.txt").readText())
     }
 
     @Test

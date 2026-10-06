@@ -68,16 +68,17 @@ internal fun HomeScreen(
     onRenameProject: (currentTitle: String, renamedTitle: String) -> Unit,
     onOpenSettings: () -> Unit,
     projectSummaries: Map<String, ProjectSummary> = emptyMap(),
+    projectTitles: Map<String, String> = emptyMap(),
 ) {
     var showTitleDialog by remember { mutableStateOf(false) }
     var projectMenuFor by remember { mutableStateOf<String?>(null) }
     var projectToDelete by remember { mutableStateOf<String?>(null) }
     var projectToRename by remember { mutableStateOf<String?>(null) }
 
-    val recentProjects = remember(existingProjects, projectSummaries) {
+    val recentProjects = remember(existingProjects, projectSummaries, projectTitles) {
         existingProjects.sortedWith(
             compareByDescending<String> { projectSummaries[it]?.lastEditedAt ?: 0L }
-                .thenBy { it.lowercase(Locale.ROOT) },
+                .thenBy { (projectTitles[it] ?: it).lowercase(Locale.ROOT) },
         )
     }
     val dateFormat = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
@@ -160,6 +161,7 @@ internal fun HomeScreen(
                 LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     items(recentProjects, key = { it }) { title ->
                         val summary = projectSummaries[title]
+                        val displayTitle = projectTitles[title] ?: title
                         Row(
                             modifier = Modifier.fillMaxWidth().clickable { onOpenProject(title) }
                                 .padding(vertical = 12.dp),
@@ -178,7 +180,7 @@ internal fun HomeScreen(
                             }
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    title, style = MaterialTheme.typography.titleMedium,
+                                    displayTitle, style = MaterialTheme.typography.titleMedium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 )
                                 summary?.let {
@@ -198,7 +200,7 @@ internal fun HomeScreen(
                             }
                             Box {
                                 IconButton(shape = GhostButtonShape, onClick = { projectMenuFor = title }) {
-                                    Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $title")
+                                    Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $displayTitle")
                                 }
                                 DropdownMenu(
                                     expanded = projectMenuFor == title,
@@ -224,7 +226,7 @@ internal fun HomeScreen(
 
     if (showTitleDialog) {
         NewProjectDialog(
-            existingProjects = existingProjects,
+            existingProjects = existingProjects.map { projectTitles[it] ?: it },
             onConfirm = { title ->
                 showTitleDialog = false
                 onCreateProject(title)
@@ -235,8 +237,8 @@ internal fun HomeScreen(
 
     projectToRename?.let { title ->
         RenameProjectDialog(
-            projectTitle = title,
-            existingProjects = existingProjects,
+            projectTitle = projectTitles[title] ?: title,
+            existingProjects = existingProjects.map { projectTitles[it] ?: it },
             onConfirm = { renamedTitle ->
                 projectToRename = null
                 onRenameProject(title, renamedTitle)
@@ -251,7 +253,7 @@ internal fun HomeScreen(
             title = { Text("Delete project?") },
             text = {
                 Text(
-                    "Delete \"$title\" and all of its lyrics, autosaves, project info, and beat? This cannot be undone."
+                    "Delete \"${projectTitles[title] ?: title}\" and all of its lyrics, autosaves, project info, and beat? This cannot be undone."
                 )
             },
             confirmButton = {
@@ -282,7 +284,7 @@ private fun RenameProjectDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember(projectTitle) { mutableStateOf(projectTitle) }
-    val candidate = ProjectStorage.sanitizeTitle(text)
+    val candidate = ProjectStorage.normalizeTitle(text)
     val alreadyExists = existingProjects.any { existingTitle ->
         existingTitle != projectTitle && existingTitle.equals(candidate, ignoreCase = true)
     }

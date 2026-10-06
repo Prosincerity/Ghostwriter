@@ -47,11 +47,11 @@ import kotlinx.coroutines.withContext
  */
 private sealed class Screen {
     data object Home : Screen()
-    data class Editor(val projectTitle: String) : Screen()
+    data class Editor(val projectId: String) : Screen()
     data class Settings(val returnTo: Screen) : Screen()
     data class About(val returnTo: Settings) : Screen()
     data class DictionaryDownloads(val returnTo: Screen) : Screen()
-    data class Dictionary(val projectTitle: String) : Screen()
+    data class Dictionary(val projectId: String) : Screen()
 }
 
 class MainActivity : ComponentActivity() {
@@ -87,7 +87,7 @@ private fun GhostwriterApp(
         if (screen == Screen.Home) {
             value = withContext(Dispatchers.IO) {
                 val root = ProjectStorage.rootDir(context)
-                projects.associateWith { title -> ProjectSummary.fromDirectory(File(root, title)) }
+                projects.associateWith { id -> ProjectSummary.fromDirectory(File(root, id)) }
             }
         }
     }
@@ -107,11 +107,22 @@ private fun GhostwriterApp(
         is Screen.Home -> HomeScreen(
             existingProjects = projects,
             projectSummaries = projectSummaries,
+            projectTitles = projectSummaries.mapValues { it.value.title },
             onCreateProject = { title ->
-                val cleanTitle = ProjectStorage.resolveProjectTitle(title, projects)
-                ProjectStorage.projectDir(context, cleanTitle) // creates the folder immediately
-                projects = ProjectStorage.listProjects(context)
-                screen = Screen.Editor(cleanTitle)
+                coroutineScope.launch {
+                    runCatching {
+                        val directory = withContext(Dispatchers.IO) {
+                            val existing = projects.firstOrNull {
+                                ProjectStorage.loadMetadata(File(ProjectStorage.rootDir(context), it), it)
+                                    .title.equals(title, ignoreCase = true)
+                            }
+                            if (existing != null) File(ProjectStorage.rootDir(context), existing)
+                            else ProjectStorage.createProject(context, title)
+                        }
+                        refreshProjects()
+                        screen = Screen.Editor(directory.name)
+                    }.onFailure { Toast.makeText(context, "Couldn't create project", Toast.LENGTH_SHORT).show() }
+                }
             },
             onOpenProject = { title -> screen = Screen.Editor(title) },
             onDeleteProject = { title ->
@@ -149,17 +160,20 @@ private fun GhostwriterApp(
         )
 
         is Screen.Editor -> EditorScreen(
-            projectTitle = current.projectTitle,
+            projectTitle = ProjectStorage.loadMetadata(
+                File(ProjectStorage.rootDir(context), current.projectId), current.projectId,
+            ).title,
+            projectId = current.projectId,
             onBack = {
                 projects = ProjectStorage.listProjects(context)
                 screen = Screen.Home
             },
-            onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Editor(current.projectTitle)) },
-            onOpenDictionary = { screen = Screen.Dictionary(current.projectTitle) },
+            onOpenSettings = { screen = Screen.Settings(returnTo = Screen.Editor(current.projectId)) },
+            onOpenDictionary = { screen = Screen.Dictionary(current.projectId) },
         )
 
         is Screen.Dictionary -> DictionaryScreen(
-            onBack = { screen = Screen.Editor(current.projectTitle) },
+            onBack = { screen = Screen.Editor(current.projectId) },
             onOpenDownloads = { screen = Screen.DictionaryDownloads(returnTo = current) },
         )
 

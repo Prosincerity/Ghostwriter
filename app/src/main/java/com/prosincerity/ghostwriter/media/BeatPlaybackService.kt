@@ -46,6 +46,7 @@ class BeatPlaybackService : Service() {
     private var destroying = false
     private var pausingForFocus = false
     private var project: String? = null
+    private var projectTitle: String? = null
     private var beatTitle = ""
     private val notificationHandler = Handler(Looper.getMainLooper())
     private val notificationUpdates = PlaybackNotificationUpdater(
@@ -65,7 +66,7 @@ class BeatPlaybackService : Service() {
 
     private val playbackTitle get() = beatTitle.ifBlank { getString(R.string.app_name) }
     private val playbackSubtitle get() = listOfNotNull(
-        getString(R.string.beat_playback_source), project?.takeIf { it.isNotBlank() },
+        getString(R.string.beat_playback_source), projectTitle?.takeIf { it.isNotBlank() },
         loopLabel,
     ).joinToString(" · ")
     private val loopLabel get() = getString(player.loopMode.labelRes)
@@ -141,11 +142,15 @@ class BeatPlaybackService : Service() {
 
     override fun onBind(intent: Intent?): IBinder = LocalBinder()
 
-    fun selectProject(title: String) {
-        if (project == title) return
+    fun selectProject(title: String, displayTitle: String = title) {
+        if (project == title) {
+            projectTitle = displayTitle
+            return
+        }
         focus.onPauseRequested()
         player.release()
         project = title
+        projectTitle = displayTitle
         beatTitle = ""
     }
 
@@ -164,6 +169,7 @@ class BeatPlaybackService : Service() {
             ACTION_FORGET -> if (project == intent.getStringExtra(EXTRA_PROJECT)) {
                 player.release()
                 project = null
+                projectTitle = null
             }
         }
         if (!advertised) stopSelf(startId)

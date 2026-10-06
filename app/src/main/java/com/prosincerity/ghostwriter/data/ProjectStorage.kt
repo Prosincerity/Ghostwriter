@@ -5,29 +5,9 @@ import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CancellationException
+import java.util.UUID
 
-/**
- * Handles the on-disk layout for lyric projects.
- *
- * Layout, under the app's own external files directory (no storage
- * permission needed, private to this app, removed on uninstall):
- *
- *   <externalFilesDir>/ghostwriter/<project title>/autosave1.txt   (newest)
- *   <externalFilesDir>/ghostwriter/<project title>/autosave2.txt
- *   ...
- *
- * autosave1.txt is always the most recent snapshot. On each autosave
- * tick, older files shift up by one index (oldest beyond the configured
- * count is dropped) and autosave1.txt is overwritten with the current
- * text — a small rolling backup ring buffer.
- *
- * NOTE: this directory isn't easily browsable from a stock file manager
- * (Android's scoped storage rules hide other apps' external-files
- * directories from general browsing). That's fine for autosave/backup
- * purposes, but when real Import/Export is built, that feature should
- * use the Storage Access Framework so the user can point at a folder
- * they actually see and manage themselves.
- */
+/** App-local project working copies, addressed by UUID rather than display title. */
 object ProjectStorage {
 
     private const val MAX_PROJECT_TITLE_UTF8_BYTES = 251
@@ -37,34 +17,79 @@ object ProjectStorage {
     fun rootDir(context: Context): File =
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
 
-    fun projectDir(context: Context, title: String): File =
-        File(rootDir(context), sanitizeTitle(title)).apply { mkdirs() }
+    /** UUIDs are path components; legacy title callers resolve through metadata. */
+    @Synchronized
+    fun projectDir(context: Context, projectId: String): File {
+        val root = rootDir(context)
+        migrateLegacyProjects(root)
+        if (isProjectId(projectId)) return File(root, projectId).also {
+            require(it.isDirectory) { "Project no longer exists" }
+        }
+        val title = normalizeTitle(projectId)
+        return root.listFiles()?.firstOrNull {
+            it.isDirectory && loadMetadata(it, it.name).title == title
+        } ?: createProjectDirectory(root, title)
+    }
 
-    fun listProjects(context: Context): List<String> =
-        rootDir(context).listFiles { f -> f.isDirectory && !f.name.startsWith(".") }
-            ?.map { it.name }
-            ?.sorted()
-            ?: emptyList()
+    @Synchronized
+    fun listProjects(context: Context): List<String> {
+        val root = rootDir(context)
+        migrateLegacyProjects(root)
+        return root.listFiles { f -> f.isDirectory && isProjectId(f.name) }
+            ?.map { it.name }?.sorted() ?: emptyList()
+    }
 
-    /**
-     * Permanently deletes the project directory for [title], including all
-     * lyrics, autosaves, metadata, and any copied beat file.
-     */
-    fun deleteProject(context: Context, title: String): Boolean =
-        deleteProjectDirectory(File(rootDir(context), sanitizeTitle(title)))
+    fun createProject(context: Context, title: String): File =
+        createProjectDirectory(rootDir(context), title)
 
-    /**
-     * Renames a project without changing its contents. The title-based manual
-     * save file and the metadata title are updated to match the new folder.
-     *
-     * @return the renamed project title, or null if the source is missing, the
-     * destination already exists, or the rename cannot be completed safely.
-     */
-    fun renameProject(context: Context, currentTitle: String, requestedTitle: String): String? =
-        renameProjectDirectory(
-            projectDir = File(rootDir(context), sanitizeTitle(currentTitle)),
-            requestedTitle = requestedTitle,
-        )?.name
+    @Synchronized
+    internal fun createProjectDirectory(root: File, title: String): File {
+        val directory = File(root, UUID.randomUUID().toString())
+        check(directory.mkdir()) { "Couldn't create project" }
+        if (!saveMetadata(directory, ProjectMetadata(title = normalizeTitle(title)))) {
+            directory.delete()
+            throw IOException("Couldn't save project information")
+        }
+        return directory
+    }
+
+    internal fun isProjectId(value: String): Boolean =
+        runCatching { UUID.fromString(value).toString() == value }.getOrDefault(false)
+
+    fun normalizeTitle(title: String): String = title.trim().ifBlank { "Untitled" }
+
+    /** Convert old title folders once; keep every lyric/beat file and snapshot age. */
+    @Synchronized
+    internal fun migrateLegacyProjects(root: File) {
+        root.listFiles { file -> file.isDirectory && !file.name.startsWith(".") && !isProjectId(file.name) }
+            ?.forEach { source ->
+                val metadata = loadMetadata(source, source.name)
+                val destination = File(root, UUID.randomUUID().toString())
+                // Persist the display title before changing its fallback folder name.
+                // A failed migration leaves the original directory available for retry.
+                runCatching {
+                    StagedFileWriter.writeText(metadataFile(source), metadata.toJsonObject().toString(2))
+                    if (!source.renameTo(destination)) throw IOException("Couldn't migrate ${source.name}")
+                }.getOrThrow()
+            }
+    }
+
+    fun deleteProject(context: Context, projectId: String): Boolean {
+        val root = rootDir(context)
+        val directory = if (isProjectId(projectId)) File(root, projectId) else
+            root.listFiles()?.firstOrNull { it.isDirectory && loadMetadata(it, it.name).title == projectId }
+                ?: return false
+        return deleteProjectDirectory(directory)
+    }
+
+    /** Renaming changes metadata only; project identity, lyrics and playback paths stay stable. */
+    fun renameProject(context: Context, projectId: String, requestedTitle: String): String? {
+        val root = rootDir(context)
+        val directory = if (isProjectId(projectId)) File(root, projectId) else
+            root.listFiles()?.firstOrNull { it.isDirectory && loadMetadata(it, it.name).title == projectId }
+                ?: return null
+        return renameProjectDirectory(directory, requestedTitle)?.name
+    }
 
     @Synchronized
     internal fun deleteProjectDirectory(projectDir: File): Boolean {
@@ -75,45 +100,21 @@ object ProjectStorage {
     @Synchronized
     internal fun renameProjectDirectory(projectDir: File, requestedTitle: String): File? {
         if (!projectDir.isDirectory) return null
-
-        val renamedTitle = sanitizeTitle(requestedTitle)
-        if (projectDir.name == renamedTitle) return projectDir
-
-        val renamedProjectDir = File(projectDir.parentFile ?: return null, renamedTitle)
-        if (renamedProjectDir.exists()) return null
-
-        val originalManualSave = File(projectDir, ProjectLyricsStorage.manualFileName(projectDir.name))
-        val renamedManualSave = File(projectDir, ProjectLyricsStorage.manualFileName(renamedTitle))
-        val manualSaveWasRenamed = originalManualSave.isFile && originalManualSave != renamedManualSave
-        if (manualSaveWasRenamed && renamedManualSave.exists()) return null
-        if (manualSaveWasRenamed && !originalManualSave.renameTo(renamedManualSave)) return null
-
-        if (!projectDir.renameTo(renamedProjectDir)) {
-            if (manualSaveWasRenamed) renamedManualSave.renameTo(originalManualSave)
-            return null
-        }
-
-        val renamedMetadata = loadMetadata(renamedProjectDir, renamedTitle).copy(title = renamedTitle)
-        if (!saveMetadata(renamedProjectDir, renamedMetadata)) {
-            // Keep the old project intact if its metadata cannot be updated.
-            if (renamedProjectDir.renameTo(projectDir) && manualSaveWasRenamed) {
-                File(projectDir, renamedManualSave.name).renameTo(originalManualSave)
-            }
-            return null
-        }
-
-        return renamedProjectDir
+        val metadata = loadMetadata(projectDir, projectDir.name)
+        val title = normalizeTitle(requestedTitle)
+        if (metadata.title == title) return projectDir
+        return projectDir.takeIf { saveMetadata(it, metadata.copy(title = title)) }
     }
 
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String = ProjectLyricsStorage.loadLatest(projectDir)
 
-    /** Saves a title-based manual snapshot and updates the autosave ring. */
+    /** Saves a fixed-name manual snapshot and updates the autosave ring. */
     @Synchronized
     fun saveManual(projectDir: File, title: String, content: String, keepCount: Int): Boolean =
         ProjectLyricsStorage.saveManual(
             projectDir,
-            manualSaveFileName(title),
+            ProjectLyricsStorage.MANUAL_FILE_NAME,
             content,
             keepCount,
         )
@@ -155,8 +156,8 @@ object ProjectStorage {
 
     /** Match the folder name used on disk, including an existing name's casing. */
     fun resolveProjectTitle(title: String, existingProjects: List<String>): String {
-        val sanitized = sanitizeTitle(title)
-        return existingProjects.firstOrNull { it.equals(sanitized, ignoreCase = true) } ?: sanitized
+        val normalized = normalizeTitle(title)
+        return existingProjects.firstOrNull { it.equals(normalized, ignoreCase = true) } ?: normalized
     }
 
     fun metadataFile(projectDir: File): File =

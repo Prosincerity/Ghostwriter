@@ -187,9 +187,9 @@ class MainActivityTest {
             waitUntilTextDoesNotExist(renamedTitle)
 
             assertFalse(
-                ProjectStorage.listProjects(composeRule.activity).contains(
-                    ProjectStorage.sanitizeTitle(renamedTitle),
-                ),
+                ProjectStorage.listProjects(composeRule.activity).any { id ->
+                    ProjectStorage.loadMetadata(ProjectStorage.projectDir(composeRule.activity, id), "").title == renamedTitle
+                },
             )
         } finally {
             ProjectStorage.deleteProject(composeRule.activity, projectTitle)

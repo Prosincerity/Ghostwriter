@@ -53,9 +53,9 @@ class ProjectStorageTest {
             ProjectStorage.rotateAndSave(project, "first", 3)
             assertTrue(ProjectStorage.saveManual(project, title, "manual", 3))
             assertEquals("first", File(project, "autosave2.txt").readText())
-            assertTrue(File(project, "$title.manual.txt").setLastModified(1_000L))
+            assertTrue(File(project, "lyrics.txt").setLastModified(1_000L))
             ProjectStorage.rotateAndSave(project, "latest", 3)
-            assertEquals("manual", File(project, "$title.manual.txt").readText())
+            assertEquals("manual", File(project, "lyrics.txt").readText())
             assertEquals("manual", File(project, "autosave2.txt").readText())
             assertEquals("first", File(project, "autosave3.txt").readText())
             assertEquals("latest", ProjectStorage.loadLatest(project))
@@ -66,17 +66,15 @@ class ProjectStorageTest {
     fun renameToAndFromAutosaveName_preservesManualSaveAndBackupRing() {
         val project = tempFolder.newFolder("track")
         assertTrue(ProjectStorage.saveManual(project, "track", "manual", 3))
+        File(project, "lyrics.txt").setLastModified(1000L)
         ProjectStorage.rotateAndSave(project, "latest", 3)
-
-        val reserved = ProjectStorage.renameProjectDirectory(project, "autosave2")!!
-        assertEquals("manual", File(reserved, "autosave2.manual.txt").readText())
-        assertEquals("latest", File(reserved, "autosave1.txt").readText())
-        assertEquals("manual", File(reserved, "autosave2.txt").readText())
-
-        val renamed = ProjectStorage.renameProjectDirectory(reserved, "renamed")!!
-        assertEquals("manual", File(renamed, "renamed.txt").readText())
-        assertEquals("latest", File(renamed, "autosave1.txt").readText())
-        assertEquals("manual", File(renamed, "autosave2.txt").readText())
+        for (title in listOf("autosave2", "renamed")) {
+            assertEquals(project, ProjectStorage.renameProjectDirectory(project, title))
+            assertEquals(title, ProjectStorage.loadMetadata(project, "fallback").title)
+            assertEquals("manual", File(project, "lyrics.txt").readText())
+            assertEquals("latest", ProjectStorage.loadLatest(project))
+            assertEquals("manual", File(project, "autosave2.txt").readText())
+        }
     }
 
     @Test
@@ -143,20 +141,18 @@ class ProjectStorageTest {
     }
 
     @Test
-    fun renameWithTheSameManualFilename_preservesContentsInBothDirections() {
+    fun renameDoesNotDependOnManualFilename() {
         val project = tempFolder.newFolder("autosave1")
         assertTrue(ProjectStorage.saveManual(project, "autosave1", "manual", 3))
-
-        val renamed = ProjectStorage.renameProjectDirectory(project, "autosave1.manual")!!
-        assertEquals("manual", File(renamed, "autosave1.manual.txt").readText())
-        val restored = ProjectStorage.renameProjectDirectory(renamed, "autosave1")!!
-        assertEquals("manual", File(restored, "autosave1.manual.txt").readText())
+        assertEquals(project, ProjectStorage.renameProjectDirectory(project, "autosave1.manual"))
+        assertEquals(project, ProjectStorage.renameProjectDirectory(project, "autosave1"))
+        assertEquals("manual", File(project, "lyrics.txt").readText())
     }
 
     @Test
     fun resolveProjectTitle_reusesExistingCasingAndSanitizedName() {
-        assertEquals("My_Track", ProjectStorage.resolveProjectTitle("my/track", listOf("My_Track")))
-        assertEquals("New_Track", ProjectStorage.resolveProjectTitle("New/Track", emptyList()))
+        assertEquals("My/Track", ProjectStorage.resolveProjectTitle("my/track", listOf("My/Track")))
+        assertEquals("New/Track", ProjectStorage.resolveProjectTitle("New/Track", emptyList()))
     }
 
     @Test
@@ -164,7 +160,7 @@ class ProjectStorageTest {
         val project = tempFolder.newFolder("replace")
         assertTrue(ProjectStorage.saveManual(project, "replace", "first", 3))
         assertTrue(ProjectStorage.saveManual(project, "replace", "second", 3))
-        assertEquals("second", File(project, "replace.txt").readText())
+        assertEquals("second", File(project, "lyrics.txt").readText())
         assertEquals("second", ProjectStorage.loadLatest(project))
         assertFalse(project.list()!!.any { it.endsWith(".tmp") })
     }
@@ -366,65 +362,43 @@ class ProjectStorageTest {
     // --- project renaming tests ---
 
     @Test
-    fun renameProjectDirectory_movesContentsAndUpdatesTitleBasedFiles() {
-        val projectDir = tempFolder.newFolder("Old Track")
-        assertTrue(ProjectStorage.saveManual(projectDir, "Old Track", "saved lyrics", 3))
-        File(projectDir, "autosave2.txt").apply {
-            writeText("older lyrics")
-            assertTrue(setLastModified(1_000L))
-        }
-        File(projectDir, "beat.mp3").writeText("beat data")
-        assertTrue(
-            ProjectStorage.saveMetadata(
-                projectDir,
-                ProjectMetadata(title = "Old Track", bpm = 90, beatFile = "beat.mp3"),
-            )
-        )
-
-        val renamedDir = ProjectStorage.renameProjectDirectory(projectDir, "New/Track")
-
-        assertNotNull(renamedDir)
-        val destination = renamedDir!!
-        assertEquals("New_Track", destination.name)
-        assertFalse(projectDir.exists())
-        assertEquals("saved lyrics", File(destination, "New_Track.txt").readText())
-        assertFalse(File(destination, "Old Track.txt").exists())
-        assertEquals("older lyrics", File(destination, "autosave2.txt").readText())
-        assertEquals("beat data", File(destination, "beat.mp3").readText())
-        assertEquals("saved lyrics", ProjectStorage.loadLatest(destination))
-
-        val metadata = ProjectStorage.loadMetadata(destination, destination.name)
-        assertEquals("New_Track", metadata.title)
+    fun renameProjectDirectory_changesOnlyMetadataAndKeepsLegacyLyricsReadable() {
+        val project = tempFolder.newFolder("Old Track")
+        File(project, "Old Track.txt").writeText("saved lyrics")
+        File(project, "beat.mp3").writeText("beat data")
+        assertTrue(ProjectStorage.saveMetadata(project,
+            ProjectMetadata(title = "Old Track", bpm = 90, beatFile = "beat.mp3")))
+        val renamed = ProjectStorage.renameProjectDirectory(project, "New/Track")
+        assertEquals(project, renamed)
+        assertTrue(File(project, "Old Track.txt").isFile)
+        assertEquals("saved lyrics", ProjectStorage.loadLatest(project))
+        assertEquals("beat data", File(project, "beat.mp3").readText())
+        val metadata = ProjectStorage.loadMetadata(project, project.name)
+        assertEquals("New/Track", metadata.title)
         assertEquals(90, metadata.bpm)
         assertEquals("beat.mp3", metadata.beatFile)
     }
 
     @Test
-    fun renameProjectDirectory_rejectsAnExistingDestination() {
+    fun renameDoesNotCollideWithAnotherFolder() {
         val source = tempFolder.newFolder("source")
         File(source, "source.txt").writeText("source lyrics")
         val existing = tempFolder.newFolder("existing")
         File(existing, "existing.txt").writeText("existing lyrics")
-
-        assertNull(ProjectStorage.renameProjectDirectory(source, "existing"))
-        assertEquals("source lyrics", File(source, "source.txt").readText())
-        assertEquals("existing lyrics", File(existing, "existing.txt").readText())
+        assertEquals(source, ProjectStorage.renameProjectDirectory(source, "existing"))
+        assertEquals("source lyrics", ProjectStorage.loadLatest(source))
+        assertEquals("existing lyrics", ProjectStorage.loadLatest(existing))
     }
 
     @Test
-    fun renameProjectDirectory_preservesAnExistingManualSaveWithTheNewName() {
+    fun renamePreservesEveryExistingSnapshotFilename() {
         val source = tempFolder.newFolder("old_title")
         File(source, "old_title.txt").writeText("current lyrics")
         File(source, "new_title.txt").writeText("other saved lyrics")
-
-        assertNull(ProjectStorage.renameProjectDirectory(source, "new_title"))
-        assertTrue(source.isDirectory)
+        assertEquals(source, ProjectStorage.renameProjectDirectory(source, "new_title"))
         assertEquals("current lyrics", File(source, "old_title.txt").readText())
         assertEquals("other saved lyrics", File(source, "new_title.txt").readText())
-        assertFalse(File(tempFolder.root, "new_title").exists())
     }
-
-    // --- rotateAndSave tests ---
 
     @Test
     fun rotateAndSave_firstWrite_createsAutosave1() {
@@ -535,11 +509,11 @@ class ProjectStorageTest {
     // --- saveManual tests ---
 
     @Test
-    fun saveManual_createsNamedTextFileAndSynchronizesAutosave() {
+    fun saveManual_createsFixedTextFileAndSynchronizesAutosave() {
         val projectDir = tempFolder.newFolder("Summer_Bars")
         ProjectStorage.saveManual(projectDir, "Summer Bars", "Spitting heat", keepCount = 3)
 
-        val manualFile = File(projectDir, "${ProjectStorage.sanitizeTitle("Summer Bars")}.txt")
+        val manualFile = File(projectDir, "lyrics.txt")
         assertTrue("Manual file should exist", manualFile.exists())
         assertEquals("Spitting heat", manualFile.readText())
 

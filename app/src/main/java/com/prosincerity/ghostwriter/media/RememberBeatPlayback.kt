@@ -17,10 +17,10 @@ import kotlinx.coroutines.awaitCancellation
 
 /** Unbinding a screen leaves started playback running in the service. */
 @Composable
-internal fun rememberBeatPlayback(projectTitle: String): BeatPlaybackService? {
+internal fun rememberBeatPlayback(projectId: String, projectTitle: String = projectId): BeatPlaybackService? {
     val context = LocalContext.current.applicationContext
-    var service by remember(projectTitle) { mutableStateOf<BeatPlaybackService?>(null) }
-    LaunchedEffect(context, projectTitle) {
+    var service by remember(projectId) { mutableStateOf<BeatPlaybackService?>(null) }
+    LaunchedEffect(context, projectId, projectTitle) {
         // Frame callbacks run before drawing. Wait for the following frame as
         // well so the editor can draw once before service creation starts.
         withFrameNanos { }
@@ -28,7 +28,7 @@ internal fun rememberBeatPlayback(projectTitle: String): BeatPlaybackService? {
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
                 service = (binder as BeatPlaybackService.LocalBinder).service.also {
-                    it.selectProject(projectTitle)
+                    it.selectProject(projectId, projectTitle)
                 }
             }
             override fun onServiceDisconnected(name: ComponentName?) { service = null }
