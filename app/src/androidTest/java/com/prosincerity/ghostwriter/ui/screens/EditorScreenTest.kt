@@ -65,6 +65,95 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class EditorScreenTest {
+    @Test
+    fun documentImport_handlesCancellationFailuresSuccessfulCopyAndLongImportCancellation() {
+        val title = uniqueProjectTitle("Document import")
+        val visible = mutableStateOf(true)
+        val project = ProjectStorage.projectDir(context, title)
+        var result: android.net.Uri? = null
+        val registry = object : androidx.activity.result.ActivityResultRegistry() {
+            override fun <I, O> onLaunch(requestCode: Int,
+                contract: androidx.activity.result.contract.ActivityResultContract<I, O>, input: I,
+                options: androidx.core.app.ActivityOptionsCompat?) {
+                dispatchResult(requestCode, if (result == null) android.app.Activity.RESULT_CANCELED else android.app.Activity.RESULT_OK,
+                    Intent().setData(result))
+            }
+        }
+        val owner = object : androidx.activity.result.ActivityResultRegistryOwner {
+            override val activityResultRegistry = registry
+        }
+        composeRule.setContent {
+            CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                if (visible.value) GhostwriterTheme { EditorScreen(title, {}, {}) }
+            }
+        }
+        fun choose(name: String?, query: String = "") {
+            result = name?.let { android.net.Uri.parse("content://com.prosincerity.ghostwriter.test.beat-import/$it$query") }
+            composeRule.onNodeWithText("Import beat").performClick()
+        }
+        fun reassign() {
+            composeRule.onNodeWithText("Reassign").performClick()
+            composeRule.onNodeWithText("Cancel").performClick()
+            composeRule.onNodeWithText("Reassign").performClick()
+            val buttons = composeRule.onAllNodesWithText("Reassign")
+            buttons[buttons.fetchSemanticsNodes().lastIndex].performClick()
+            waitUntilTextExists("Import beat")
+        }
+        try {
+            waitUntilTextExists("Import beat")
+            choose(null)
+            composeRule.onNodeWithText("Import beat").assertIsEnabled()
+            choose("unsupported.txt")
+            composeRule.waitUntil(5000) { composeRule.onAllNodesWithText("Import beat").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(null, ProjectStorage.getProjectBeatFile(project))
+            choose("missing.wav")
+            composeRule.waitUntil(5000) { composeRule.onAllNodesWithText("Import beat").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(null, ProjectStorage.getProjectBeatFile(project))
+            choose("short.wav")
+            waitUntilTextExists("short")
+            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(project, 1000) != null }
+            assertEquals("short.wav", ProjectStorage.loadMetadata(project, title).beatOriginalName)
+            reassign()
+            choose("long.wav", "?duration=300000")
+            waitUntilTextExists("Long audio file")
+            composeRule.onNodeWithText("Cancel import").performClick()
+            waitUntilTextExists("Import beat")
+            assertEquals(null, ProjectStorage.getProjectBeatFile(project))
+            assertEquals(null, ProjectStorage.loadMetadata(project, title).beatFile)
+            choose("short.wav", "?name=missing")
+            waitUntilTextExists("beat")
+            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(project, 1000) != null }
+            assertEquals("beat.mp3", ProjectStorage.loadMetadata(project, title).beatOriginalName)
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
+    fun autosaveTickPersistsEditsAndMetadataFailureKeepsExistingInformation() {
+        val title = uniqueProjectTitle("Autosave coverage")
+        val project = ProjectStorage.projectDir(context, title)
+        val visible = mutableStateOf(true)
+        val oldInterval = com.prosincerity.ghostwriter.data.Settings.getAutosaveIntervalSeconds(context)
+        try {
+            com.prosincerity.ghostwriter.data.Settings.setAutosaveIntervalSeconds(context, 1)
+            setEditorContent(title, visible)
+            composeRule.onNode(hasSetTextAction()).performTextReplacement("Autosaved verse")
+            composeRule.mainClock.advanceTimeBy(1000)
+            composeRule.waitUntil(5000) { ProjectStorage.loadLatest(project) == "Autosaved verse" }
+            File(project, "project.json").delete()
+            File(project, "project.json/keep").apply { parentFile!!.mkdir(); writeText("keep") }
+            composeRule.onNodeWithContentDescription("Project Info").performClick()
+            composeRule.onNodeWithText("BPM (optional)").performTextReplacement("123")
+            composeRule.onNodeWithText("Save").performClick()
+            composeRule.waitForIdle()
+            assertEquals(null, ProjectStorage.loadMetadata(project, title).bpm)
+            assertEquals("keep", File(project, "project.json/keep").readText())
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+            com.prosincerity.ghostwriter.data.Settings.setAutosaveIntervalSeconds(context, oldInterval)
+        }
+    }
 
     @get:Rule
     // Queue resumptions after IO instead of running recomposition on the IO worker.
