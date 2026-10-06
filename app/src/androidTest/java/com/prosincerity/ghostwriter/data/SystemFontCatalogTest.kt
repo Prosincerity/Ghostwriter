@@ -25,6 +25,20 @@ import java.util.Locale
 class SystemFontCatalogTest {
     @Test
     @SdkSuppress(minSdkVersion = 29)
+    fun savedFaceLabels_handleMissingFilesDifferentFacesAndFamilyMatches() {
+        val regular = SystemFontCatalog.availableFonts(Locale.ENGLISH).filterIsInstance<SystemFontFile>().first()
+        assertEquals("System default", SystemFontCatalog.selectionLabel(LyricFontFamily.SYSTEM_DEFAULT, emptyList()))
+        val missing = regular.copy(path = "/missing/font.ttf")
+        assertEquals("${missing.label} (unavailable)", SystemFontCatalog.selectionLabel(missing, emptyList()))
+        assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, emptyList()))
+        val otherFace = regular.copy(ttcIndex = regular.ttcIndex + 1, familyName = "Another family")
+        assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, listOf(otherFace, regular)))
+        val sameFamily = regular.copy(path = "/other/file.ttf")
+        assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, listOf(sameFamily)))
+        assertFalse(SystemFontCatalog.matchesLanguage("und-Qaaa", Locale.ENGLISH))
+    }
+    @Test
+    @SdkSuppress(minSdkVersion = 29)
     fun discoveryFailure_keepsOnlySystemDefault() {
         assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), SystemFontCatalog.availableFonts {
             throw IllegalStateException("System font discovery unavailable")

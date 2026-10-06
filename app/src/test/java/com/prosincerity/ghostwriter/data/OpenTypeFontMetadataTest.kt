@@ -10,6 +10,96 @@ import org.junit.Test
 
 class OpenTypeFontMetadataTest {
     @Test
+    fun invalidDirectoryOffsetsAndCollectionIndices_areRejected() {
+        val valid = font(0x6e616d65 to names(Triple(1, "Valid", 0x0409)))
+        assertNull(OpenTypeFontMetadata(valid, 1).familyName())
+        for (field in listOf(20, 24)) {
+            val malformed = ByteBuffer.wrap(valid.array().copyOf()).putInt(field, -1)
+            assertNull(OpenTypeFontMetadata(malformed, 0).familyName())
+        }
+        val collection = ByteBuffer.allocate(16).putInt(0x74746366).putInt(0x10000)
+            .putInt(1).putInt(16)
+        assertNull(OpenTypeFontMetadata(collection, -1).familyName())
+    }
+
+    @Test
+    fun names_rejectInvalidHeadersAndUnusableStrings() {
+        for (format in listOf(-1, 2)) {
+            val table = names(Triple(1, "Valid", 0x0409))
+            ByteBuffer.wrap(table).putShort(0, format.toShort())
+            assertNull(OpenTypeFontMetadata(font(0x6e616d65 to table), 0).familyName())
+        }
+        val truncated = names(Triple(1, "Valid", 0x0409))
+        ByteBuffer.wrap(truncated).putShort(2, 100)
+        assertNull(OpenTypeFontMetadata(font(0x6e616d65 to truncated), 0).familyName())
+        for (text in listOf("", "   ", "Bad\u0000Name", "Bad\uFFFDName")) {
+            assertNull(OpenTypeFontMetadata(font(0x6e616d65 to names(Triple(1, text, 0x0409))), 0)
+                .familyName())
+        }
+        val outOfBounds = names(Triple(1, "Valid", 0x0409))
+        ByteBuffer.wrap(outOfBounds).putShort(16, 1000)
+        assertNull(OpenTypeFontMetadata(font(0x6e616d65 to outOfBounds), 0).familyName())
+    }
+
+    @Test
+    fun names_supportUnicodeAndMacRomanAndSkipUnsupportedEncodings() {
+        for ((platform, encoding) in listOf(0 to 0, 3 to 0, 3 to 10, 1 to 0)) {
+            val table = names(Triple(1, "Family", 0))
+            val buffer = ByteBuffer.wrap(table).putShort(6, platform.toShort()).putShort(8, encoding.toShort())
+            if (platform == 1) {
+                val text = "Family".toByteArray(java.nio.charset.Charset.forName("x-MacRoman"))
+                buffer.putShort(14, text.size.toShort())
+                buffer.position(18)
+                buffer.put(text)
+            }
+            assertEquals("Family", OpenTypeFontMetadata(font(0x6e616d65 to table), 0).familyName())
+        }
+        for ((platform, encoding) in listOf(2 to 0, 1 to 1, 3 to 2)) {
+            val table = names(Triple(1, "Unsupported", 0))
+            ByteBuffer.wrap(table).putShort(6, platform.toShort()).putShort(8, encoding.toShort())
+            assertNull(OpenTypeFontMetadata(font(0x6e616d65 to table), 0).familyName())
+        }
+    }
+
+    @Test
+    fun coverage_rejectsMalformedSubtablesAndZeroGlyphs() {
+        fun covers(table: ByteArray, cp: Int = 65) =
+            OpenTypeFontMetadata(font(0x636d6170 to table), 0).covers(listOf(cp))
+        assertFalse(covers(cmap12(65, 0)))
+        assertFalse(covers(cmap4(65, 1, false), 0x12000))
+        for (offset in listOf(-1, 1000)) {
+            val table = cmap12(65, 1)
+            ByteBuffer.wrap(table).putInt(8, offset)
+            assertFalse(covers(table))
+        }
+        for (length in listOf(0, 1000)) {
+            val table = cmap12(65, 1)
+            ByteBuffer.wrap(table).putInt(16, length)
+            assertFalse(covers(table))
+        }
+        for (count in listOf(-1, 100)) {
+            val table = cmap12(65, 1)
+            ByteBuffer.wrap(table).putInt(24, count)
+            assertFalse(covers(table))
+        }
+        val truncated = cmap12(65, 1)
+        ByteBuffer.wrap(truncated).putShort(2, 100)
+        assertFalse(covers(truncated))
+        val unsupported = cmap12(65, 1)
+        ByteBuffer.wrap(unsupported).putShort(12, 6)
+        assertFalse(covers(unsupported))
+        val unicode = cmap12(65, 1)
+        ByteBuffer.wrap(unicode).putShort(4, 0)
+        assertTrue(covers(unicode))
+        val invalidSegments = cmap4(65, 1, false)
+        ByteBuffer.wrap(invalidSegments).putShort(18, 100)
+        assertFalse(covers(invalidSegments))
+        val wrappedGlyph = cmap4(65, 1, true)
+        ByteBuffer.wrap(wrappedGlyph).putShort(36, -1)
+        assertFalse(covers(wrappedGlyph))
+    }
+
+    @Test
     fun names_preferTypographicFamilyOverWeightFullAndPostScriptNames() {
         val font = font(0x6e616d65 to names(
             Triple(1, "Roboto Black", 0x0409), Triple(4, "Roboto Black Regular", 0x0409),
