@@ -12,6 +12,39 @@ import java.io.File
 import kotlin.text.Charsets.UTF_8
 
 class ProjectStorageTest {
+    @Test
+    fun renameFailure_rollsBackDirectoryAndManualSaveWhenMetadataCannotBeWritten() {
+        for (hasManualSave in listOf(false, true)) {
+            val project = tempFolder.newFolder("rollback_$hasManualSave")
+            if (hasManualSave) File(project, "${project.name}.txt").writeText("keep lyrics")
+            File(project, "project.json/keep").apply { parentFile!!.mkdir(); writeText("keep metadata") }
+
+            assertNull(ProjectStorage.renameProjectDirectory(project, "renamed_$hasManualSave"))
+            assertTrue(project.isDirectory)
+            assertFalse(File(project.parentFile, "renamed_$hasManualSave").exists())
+            assertEquals("keep metadata", File(project, "project.json/keep").readText())
+            if (hasManualSave) assertEquals("keep lyrics", File(project, "${project.name}.txt").readText())
+        }
+    }
+
+    @Test
+    fun renameSameTitle_preservesDirectoryAndMetadata() {
+        val project = tempFolder.newFolder("same")
+        File(project, "project.json").writeText("unchanged")
+        assertEquals(project, ProjectStorage.renameProjectDirectory(project, "same"))
+        assertEquals("unchanged", File(project, "project.json").readText())
+    }
+
+    @Test
+    fun sanitizeTitle_truncatesTwoAndThreeByteCharactersAndTrailingSpaces() {
+        for (character in listOf("é", "字")) {
+            val sanitized = ProjectStorage.sanitizeTitle(character.repeat(300))
+            assertTrue(sanitized.toByteArray(UTF_8).size <= 251)
+            assertEquals(character.repeat(251 / character.toByteArray(UTF_8).size), sanitized)
+        }
+        assertEquals("a".repeat(250), ProjectStorage.sanitizeTitle("a".repeat(250) + " .suffix"))
+    }
+
 
     @Test
     fun autosaveNamedProject_keepsManualSnapshotAndBackupHistorySeparate() {

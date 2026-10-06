@@ -15,6 +15,37 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class ProjectStorageBeatTest {
+    @Test
+    fun waveformRejectsInvalidResolutionMissingFilesAndBeatsOutsideProject() {
+        val project = tempFolder.newFolder("invalid_waveform")
+        val beat = File(project, "beat.wav").apply { writeText("audio") }
+        val external = tempFolder.newFile("external.wav")
+        for ((file, count) in listOf(beat to 0, beat to -1, beat to 100_001,
+            File(project, "missing.wav") to 3, external to 3)) {
+            val result = ProjectStorage.loadOrExtractWaveform(project, file, count) { _, _ ->
+                throw AssertionError("Invalid request must not decode")
+            }
+            assertTrue(result.isEmpty())
+        }
+        assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+    }
+
+    @Test
+    fun fileBasedImportUsesSourceNameAndReportsMetadataFailure() {
+        val project = tempFolder.newFolder("file_import")
+        val source = tempFolder.newFile("original.wav").apply { writeText("audio") }
+        val copied = ProjectStorage.assignBeatToProject(project, source)
+        assertEquals("audio", copied.readText())
+        assertEquals(copied, ProjectStorage.getProjectBeatFile(project))
+        assertEquals("original.wav", ProjectStorage.loadMetadata(project, project.name).beatOriginalName)
+        assertTrue(File(project, "project.json").delete())
+        File(project, "project.json/keep").apply { parentFile!!.mkdir(); writeText("metadata") }
+        val result = runCatching { ProjectStorage.assignBeatToProject(project, source) }
+        assertTrue(result.exceptionOrNull() is java.io.IOException)
+        assertEquals("audio", copied.readText())
+        assertEquals("metadata", File(project, "project.json/keep").readText())
+    }
+
 
     @Test
     fun loadOrExtractWaveform_cancelledBeforeExtractionDoesNotCreateCache() {
