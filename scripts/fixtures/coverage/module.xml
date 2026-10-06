@@ -1,0 +1,8 @@
+<report name="app">
+  <package name="p">
+    <sourcefile name="Bad.kt"><line nr="1" mi="10" ci="0" mb="0" cb="0"/></sourcefile>
+    <sourcefile name="Good.kt"><line nr="1" mi="0" ci="90" mb="0" cb="0"/></sourcefile>
+  </package>
+  <counter type="INSTRUCTION" missed="10" covered="90"/>
+  <counter type="BRANCH" missed="2" covered="8"/>
+</report>

@@ -1,0 +1,32 @@
+{
+  "classExclusions": [
+    "**/R.class", "**/R$*.class", "**/BuildConfig.class",
+    "com/prosincerity/ghostwriter/ui/screens/HomeScreenPreviewsKt*.class",
+    "com/prosincerity/ghostwriter/ui/screens/ComposableSingletons$HomeScreenPreviewsKt*.class",
+    "com/prosincerity/ghostwriter/Screen$Editor.class",
+    "com/prosincerity/ghostwriter/Screen$Settings.class",
+    "com/prosincerity/ghostwriter/Screen$About.class",
+    "com/prosincerity/ghostwriter/Screen$DictionaryDownloads.class",
+    "com/prosincerity/ghostwriter/Screen$Dictionary.class",
+    "com/prosincerity/ghostwriter/data/DictionaryMatch.class",
+    "com/prosincerity/ghostwriter/data/DictionarySearchResult.class",
+    "com/prosincerity/ghostwriter/data/DictionaryAsset.class",
+    "com/prosincerity/ghostwriter/data/DictionaryDownloadProgress.class",
+    "com/prosincerity/ghostwriter/data/PronunciationResult.class",
+    "com/prosincerity/ghostwriter/data/DictionarySearchPlan$Prefix.class",
+    "com/prosincerity/ghostwriter/data/DocumentProjectArchive$Entry.class",
+    "com/prosincerity/ghostwriter/data/DocumentProjectArchive$Saved.class",
+    "com/prosincerity/ghostwriter/data/DocumentProjectArchive$Checkpoint.class",
+    "com/prosincerity/ghostwriter/logic/IpaSearchKeys$Keys.class",
+    "com/prosincerity/ghostwriter/logic/CompoundRhymeFilter$Entry.class",
+    "com/prosincerity/ghostwriter/logic/CompoundRhymeFilter$Pronounced.class",
+    "com/prosincerity/ghostwriter/logic/AssonanceFormFilter$Entry.class",
+    "com/prosincerity/ghostwriter/logic/AssonanceFormFilter$Pronounced.class",
+    "com/prosincerity/ghostwriter/media/PcmRingBuffer$Loop.class",
+    "com/prosincerity/ghostwriter/media/PcmRingBuffer$Region.class",
+    "com/prosincerity/ghostwriter/ui/screens/PendingBeatPreparation.class"
+  ],
+  "sourceExclusions": [
+    "com/prosincerity/ghostwriter/ui/screens/HomeScreenPreviews.kt"
+  ]
+}

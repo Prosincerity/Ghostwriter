@@ -23,7 +23,7 @@ Before modifying code, read:
 - Work against the dev branch.
 - Make focused changes; do not opportunistically refactor unrelated code.
 - Inspect existing architecture before introducing abstractions.
-- Add or update tests for behavior changes.
+- Follow the testing policy below and in documentation/TESTING.md.
 - In this Distrobox environment, always invoke ADB through
   `~/Android/Sdk/platform-tools/adb`, never an `adb` resolved from `PATH`.
   Run every ADB command with elevated execution permission
@@ -42,6 +42,49 @@ Before modifying code, read:
   waits; if a tool requires continuation, use long blocking waits and inspect
   the exit status and captured output only after completion.
 - Do not modify main unless explicitly requested.
+
+## Testing policy
+
+- For bug fixes, write a failing regression test first. Run it and confirm it
+  fails for the intended reason before fixing the code, then confirm it passes.
+- For new logic, write tests alongside the code; use test-first development
+  where the design is clear. Keep one behavior per test.
+- Test behavior and observable outcomes, not private methods or internal call
+  order unless that order is part of the contract. Every test must contain
+  meaningful assertions. Tests solely to increase coverage are forbidden;
+  a no-throw check is valid only when not throwing is the specified behavior.
+- Cover happy paths, boundaries (empty, null, maximum, off-by-one), errors,
+  invalid input, and both outcomes of each decision where applicable.
+- Keep Activities, Fragments, Composables, and DI glue thin. Move logic into
+  ViewModels or use cases so it can be unit-tested. Do not force UI or wiring
+  into unit-test coverage; test UI behavior with UI tests.
+- Follow the test pyramid: many fast unit tests, fewer integration tests,
+  and very few end-to-end tests.
+- Tests must be deterministic and independent: no shared mutable state or
+  test-order dependency, and no reliance on real time, network, randomness,
+  or existing filesystem state. Use controlled clocks, dispatchers, fakes,
+  and isolated temporary storage when testing file behavior.
+- Never fix flaky tests with retries or sleeps. Report flakiness and remove
+  its source of nondeterminism. No @Ignore or disabled tests without a written
+  reason and a linked tracked issue.
+- Tests must run headless and offline. CI should run unit tests on every PR
+  and instrumented tests on an emulator at least on merge. Keep the unit suite
+  fast and report any test taking more than a few seconds.
+- Keep minimal fixtures next to their tests; use committed sample files for
+  parser tests. Never include secrets, real user data, or production endpoints.
+- Coverage is a safety net, not a goal. Use JaCoCo instruction and branch
+  coverage, reporting unit and instrumented results separately and retaining
+  the aggregated coverage dashboard. Enforce module gates on combined coverage
+  so Android UI does not have to satisfy unit-test coverage.
+- Gate coverage per module, not per file: 80% instruction / 70% branch as the
+  default baseline, and 90% / 85% for logic-heavy domain, data, or parsing
+  modules. New or changed executable lines require at least 80% diff coverage;
+  overall instruction and branch coverage must not decrease (ratchet).
+- Exclude non-logic generated code (Hilt/Dagger, Room, Data Binding, BuildConfig,
+  R), Compose previews, plain data classes, and trivial DI modules from reports.
+  Do not exclude handwritten logic simply because it shares those names.
+- If coverage drops or a gate fails, add meaningful tests. Do not lower
+  thresholds or add exclusions without explicitly stating the justification.
 
 ## Commit rules
 
