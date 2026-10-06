@@ -46,12 +46,16 @@ expected classes appear in the generated XML before accepting the result.
 
 ## Coverage and regression guidance
 
-- **JVM tests** (`app/src/test/`) cover project storage, metadata, playback
+- **JVM tests** (`app/src/test/`) cover project storage, UUID migration, binary
+  waveform caches, checksummed persistent snapshots, save failures, metadata, playback
   state, waveform calculations, input normalization, IPA keys, search-stage
   ordering, filtering, and pagination. Dictionary search tests exercise the
   production loop through an offline row adapter. Archive tests cover gzip
   output, progress, failures, and cancellation.
-- **Android tests** (`app/src/androidTest/`) cover SQLite installation and
+- **Android tests** (`app/src/androidTest/`) cover shared-folder lyric recovery
+  through an isolated document provider, including simulated removal of local
+  working copies, failed writes, corrupted saves, and newer local drafts. They
+  also cover SQLite installation and
   lookup, staging cleanup, real native IPA, playback, and Compose screens.
   Dictionary UI tests cover input changes, stale errors, and superseded
   searches. An integration test exercises real JNI after a database miss.

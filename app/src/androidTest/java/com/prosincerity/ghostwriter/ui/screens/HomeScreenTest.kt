@@ -27,6 +27,26 @@ class HomeScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    @Test fun stableIdsUseDisplayTitlesAndActionsKeepTheirIdentity() {
+        val id = "2ecbf67a-9271-459f-9e31-77b40b15e1ba"
+        var opened: String? = null
+        var renamed: Pair<String, String>? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(listOf(id), {}, { opened = it }, {}, { old, new -> renamed = old to new }, {},
+                    projectTitles = mapOf(id to "Verse / chorus"))
+            }
+        }
+        composeRule.onNodeWithText(id).assertDoesNotExist()
+        composeRule.onNodeWithText("Verse / chorus").performClick()
+        composeRule.runOnIdle { assertEquals(id, opened) }
+        composeRule.onNodeWithContentDescription("Project options for Verse / chorus").performClick()
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("New / title")
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.runOnIdle { assertEquals(id to "New / title", renamed) }
+    }
+
     @Test fun duplicateNamesAndDialogCancellation_preserveProjects() {
         var created: String? = null
         var renamed: Pair<String, String>? = null

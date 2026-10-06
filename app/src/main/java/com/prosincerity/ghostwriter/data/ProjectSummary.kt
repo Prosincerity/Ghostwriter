@@ -20,7 +20,7 @@ internal data class ProjectSummary(
             }?.maxOfOrNull { it.lastModified() } ?: 0L
             val editTime = maxOf(snapshotTime, metadata?.optLong("updatedAt", 0L) ?: 0L)
             return ProjectSummary(
-                title = metadata?.optString("title")?.takeIf { it.isNotBlank() } ?: directory.name,
+                title = metadata?.optString("title")?.takeIf { it.isNotBlank() } ?: if (ProjectStorage.isProjectId(directory.name)) "Untitled" else directory.name,
                 lastEditedAt = editTime.takeIf { it > 0L } ?: directory.lastModified(),
                 bpm = metadata?.optInt("bpm", 0)?.takeIf { it > 0 },
                 key = metadata?.takeUnless { it.isNull("key") }?.optString("key")

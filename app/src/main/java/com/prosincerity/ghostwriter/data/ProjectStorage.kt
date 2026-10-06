@@ -6,6 +6,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.CancellationException
 import java.util.UUID
+import org.json.JSONObject
 
 /** App-local project working copies, addressed by UUID rather than display title. */
 object ProjectStorage {
@@ -35,8 +36,10 @@ object ProjectStorage {
     fun listProjects(context: Context): List<String> {
         val root = rootDir(context)
         migrateLegacyProjects(root)
-        return root.listFiles { f -> f.isDirectory && isProjectId(f.name) }
-            ?.map { it.name }?.sorted() ?: emptyList()
+        val directories = root.listFiles { f -> f.isDirectory && isProjectId(f.name) }.orEmpty()
+        // Old releases kept this regenerable cache alongside backed-up project data.
+        directories.forEach { WaveformCache.invalidate(it) }
+        return directories.map { it.name }.sorted()
     }
 
     fun createProject(context: Context, title: String): File =
@@ -68,7 +71,18 @@ object ProjectStorage {
                 // Persist the display title before changing its fallback folder name.
                 // A failed migration leaves the original directory available for retry.
                 runCatching {
-                    StagedFileWriter.writeText(metadataFile(source), metadata.toJsonObject().toString(2))
+                    val json = runCatching { JSONObject(metadataFile(source).readText()) }
+                        .getOrElse { metadata.toJsonObject() }
+                    json.put("title", metadata.title)
+                    // Freeze old missing timestamps once; otherwise the tolerant
+                    // reader invents new times on every shared save/checkpoint.
+                    val metadataTime = metadataFile(source).lastModified().takeIf { it > 0L }
+                        ?: source.lastModified()
+                    if (!json.has("createdAt")) json.put("createdAt", metadataTime)
+                    if (!json.has("updatedAt")) json.put("updatedAt", maxOf(metadataTime,
+                        source.listFiles { it.isFile && it.extension == "txt" }
+                            ?.maxOfOrNull { it.lastModified() } ?: 0L))
+                    StagedFileWriter.writeText(metadataFile(source), json.toString(2))
                     if (!source.renameTo(destination)) throw IOException("Couldn't migrate ${source.name}")
                 }.getOrThrow()
             }
@@ -119,12 +133,12 @@ object ProjectStorage {
             keepCount,
         )
 
-    fun manualSaveFileName(title: String): String =
-        ProjectLyricsStorage.manualFileName(sanitizeTitle(title))
+    fun manualSaveFileName(@Suppress("UNUSED_PARAMETER") title: String): String =
+        ProjectLyricsStorage.MANUAL_FILE_NAME
 
     /** Rotates the backup ring only when the lyrics have changed. */
     @Synchronized
-    fun rotateAndSave(projectDir: File, content: String, keepCount: Int) =
+    fun rotateAndSave(projectDir: File, content: String, keepCount: Int): Boolean =
         ProjectLyricsStorage.rotateAndSave(projectDir, content, keepCount)
 
     fun sanitizeTitle(title: String): String {
@@ -252,9 +266,10 @@ object ProjectStorage {
     }
 
     fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {
+        val title = if (isProjectId(fallbackTitle)) "Untitled" else fallbackTitle
         val contents = runCatching { metadataFile(projectDir).readText() }.getOrNull()
-            ?: return ProjectMetadata(title = fallbackTitle)
-        return ProjectMetadata.fromJsonString(contents, fallbackTitle)
+            ?: return ProjectMetadata(title = title)
+        return ProjectMetadata.fromJsonString(contents, title)
     }
 
     @Synchronized

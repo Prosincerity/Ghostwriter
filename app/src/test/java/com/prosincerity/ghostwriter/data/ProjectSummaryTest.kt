@@ -60,6 +60,12 @@ class ProjectSummaryTest {
         assertTrue(project.listFiles()!!.isEmpty())
     }
 
+    @Test fun missingMetadataUsesAHumanTitleForUuidProjects() {
+        val project = temporaryFolder.newFolder(java.util.UUID.randomUUID().toString())
+        assertEquals("Untitled", ProjectSummary.fromDirectory(project).title)
+        assertEquals("Untitled", ProjectStorage.loadMetadata(project, project.name).title)
+    }
+
     private fun timedFile(directory: File, name: String, time: Long) {
         File(directory, name).apply {
             writeText("fixture")

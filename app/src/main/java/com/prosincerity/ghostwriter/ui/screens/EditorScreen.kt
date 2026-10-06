@@ -93,6 +93,8 @@ fun EditorScreen(
     onOpenSettings: () -> Unit,
     onOpenDictionary: () -> Unit = {},
     projectId: String = projectTitle,
+    persistLyrics: (File, Int) -> Boolean = { _, _ -> true },
+    onStorageFailure: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
     val playback = rememberBeatPlayback(projectId, projectTitle)
@@ -103,7 +105,7 @@ fun EditorScreen(
     val coroutineScope = rememberCoroutineScope()
     val projectDir = remember(projectId) { ProjectStorage.projectDir(context, projectId) }
     val waveformDirectory = remember(projectDir) { ProjectStorage.waveformCacheDirectory(context, projectDir) }
-    val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle) }
+    val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle, persistLyrics) }
 
     var lyrics by rememberSaveable(projectId) {
         mutableStateOf(ProjectStorage.loadLatest(projectDir))
@@ -143,6 +145,15 @@ fun EditorScreen(
     val latestLyrics = rememberUpdatedState(lyrics)
     val latestKeepCount = rememberUpdatedState(keepCount)
     val latestWaveformCancellation = rememberUpdatedState(waveformCancellation)
+    fun reportStorageFailure() {
+        val report = {
+            onStorageFailure()
+            Toast.makeText(context, "Couldn't update the lyric folder. Local draft kept; reconnect before uninstalling.", Toast.LENGTH_LONG).show()
+        }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) report()
+        else android.os.Handler(android.os.Looper.getMainLooper()).post { report() }
+    }
+
     val projectMutationMutex = remember(projectId) { Mutex() }
     val projectMutationRevision = remember(projectId) { AtomicLong(0L) }
 
@@ -150,6 +161,7 @@ fun EditorScreen(
         projectMutationMutex.withLock {
             withContext(Dispatchers.IO) {
                 ProjectStorage.removeBeatFromProject(projectDir, waveformDirectory)
+                if (!persistLyrics(projectDir, keepCount)) throw java.io.IOException("Couldn't update the lyric folder; local draft kept")
                 ProjectStorage.loadMetadata(projectDir, projectTitle)
             }
         }
@@ -168,7 +180,7 @@ fun EditorScreen(
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             val saved = projectMutationMutex.withLock {
                 withContext(Dispatchers.IO) {
-                    ProjectStorage.saveMetadata(projectDir, updatedMetadata)
+                    ProjectStorage.saveMetadata(projectDir, updatedMetadata) && persistLyrics(projectDir, keepCount)
                 }
             }
             // Compose test scopes can resume off the UI thread after IO.
@@ -183,6 +195,7 @@ fun EditorScreen(
                     metadata = withContext(Dispatchers.IO) {
                         ProjectStorage.loadMetadata(projectDir, projectTitle)
                     }
+                    reportStorageFailure()
                     Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -375,6 +388,7 @@ fun EditorScreen(
                                     destination.outputStream().use { output -> input.copyTo(output) }
                                 } ?: error("Couldn't read the selected beat")
                             }
+                            if (!persistLyrics(projectDir, keepCount)) throw java.io.IOException("Couldn't update the lyric folder; local draft kept")
                             Pair(
                                 assigned,
                                 ProjectStorage.loadMetadata(projectDir, projectTitle),
@@ -415,9 +429,10 @@ fun EditorScreen(
             keepCount = AppSettings.getAutosaveCount(context)
             val contentToSave = lyrics
             val backupsToKeep = keepCount
-            withContext(Dispatchers.IO) {
+            val saved = withContext(Dispatchers.IO) {
                 lyricsSession.autosave(contentToSave, backupsToKeep)
             }
+            if (!saved) reportStorageFailure()
         }
     }
 
@@ -427,10 +442,10 @@ fun EditorScreen(
     DisposableEffect(lyricsSession) {
         onDispose {
             latestWaveformCancellation.value?.set(true)
-            lyricsSession.finish(
+            if (!lyricsSession.finish(
                 latestLyrics.value,
                 latestKeepCount.value,
-            )
+            )) reportStorageFailure()
         }
     }
 
@@ -488,6 +503,7 @@ fun EditorScreen(
                                 lyricsSession.saveManual(contentToSave, backupsToKeep)
                             }
                             withContext(Dispatchers.Main.immediate) {
+                                if (!saved) reportStorageFailure()
                                 Toast.makeText(
                                     context,
                                     if (saved) "Saved lyrics"

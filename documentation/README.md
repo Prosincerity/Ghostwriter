@@ -85,8 +85,22 @@ the newest autosave, and count reductions prune backups only after that save
 succeeds.
 Replacing a beat invalidates its waveform cache and markers.
 
-Future import and export should use the Storage Access Framework to let users
-choose a destination. Autosaves remain in app storage.
+Before editing, users select an on-device lyric folder through Android's Storage
+Access Framework. Selecting Documents creates a Ghostwriter subfolder; selecting
+an existing Ghostwriter folder uses it directly. Manual saves, autosaves, editor
+exit, and project-information changes also save lyrics and metadata to that
+folder. The folder survives uninstall. After reinstall, users select the same
+folder to restore projects with their original UUIDs and titles. Beats remain
+app-specific and must be reassigned after reinstall.
+
+Shared saves are immutable, checksummed JSON snapshots containing lyrics and
+project metadata. A new save is synced and read back before older verified saves
+are pruned to the configured backup count. Corrupt or incomplete saves fall back
+to earlier verified snapshots. Reconnecting preserves newer local drafts. A
+failed shared save keeps the local working copy and reports the failure; users
+must reconnect the folder before uninstalling to preserve those drafts. Folder
+access is remembered in SharedPreferences and must be granted again after
+reinstall. Arbitrary plain-text import/export remains planned.
 
 ### Playback and waveforms
 

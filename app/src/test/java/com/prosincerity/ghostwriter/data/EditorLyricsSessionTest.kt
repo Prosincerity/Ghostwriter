@@ -13,6 +13,39 @@ class EditorLyricsSessionTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun persistentSaveFailureReportsFailureButKeepsLocalDraftAndAllowsRetry() {
+        val project = temporaryFolder.newFolder("song")
+        var available = false
+        val archived = mutableListOf<String>()
+        val session = EditorLyricsSession(project, "song") { directory, _ ->
+            if (available) archived.add(ProjectStorage.loadLatest(directory))
+            available
+        }
+        assertFalse(session.saveManual("first", 3))
+        assertEquals("first", ProjectStorage.loadLatest(project))
+        assertFalse(session.autosave("second", 3))
+        assertEquals("second", ProjectStorage.loadLatest(project))
+        available = true
+        assertTrue(session.autosave("second", 3))
+        assertEquals(listOf("second"), archived)
+        assertTrue(session.finish("final", 3))
+        assertFalse(session.saveManual("stale", 3))
+        assertEquals(listOf("second", "final"), archived)
+    }
+
+    @Test
+    fun failedLocalSaveDoesNotArchiveOldLyricsAsTheNewSave() {
+        val project = temporaryFolder.newFolder("blocked")
+        File(project, "autosave1.txt").mkdir()
+        File(project, "autosave1.txt/keep").writeText("unrelated")
+        var persisted = false
+        val session = EditorLyricsSession(project, "blocked") { _, _ -> persisted = true; true }
+        assertFalse(session.autosave("new", 3))
+        assertFalse(persisted)
+        assertFalse(session.finish("final", 3))
+    }
+
+    @Test
     fun manualAndPeriodicSaves_persistLyricsBeforeExit() {
         val project = temporaryFolder.newFolder("song")
         val session = EditorLyricsSession(project, "song")

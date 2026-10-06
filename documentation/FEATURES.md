@@ -19,7 +19,10 @@ release schedule.
 - [x] **Modern, dark-friendly UI** — Material 3 with dark-theme support.
 - [x] **Lyric projects** — create, rename, and delete projects.
 - [x] **Local persistence** — manual saves and loading saved lyrics after an
-  app restart.
+  app restart. Projects use stable UUIDs; titles and renames live in metadata.
+- [x] **Lyrics retained after uninstall** — choose an on-device folder once;
+  lyrics and project metadata are saved there automatically. After reinstall,
+  select the same folder to restore projects. Beat files remain in app storage.
 
 ## Phase 2 — Songwriting environment
 
@@ -106,7 +109,7 @@ release schedule.
 
 - [ ] **Import and export** — plain text first, using Android's Storage Access
   Framework to choose files and destinations; consider `.docx` and `.pdf`
-  export later. Autosaves remain in app storage.
+  export later. Automatic lyric-folder persistence is implemented separately.
 - [ ] **Optional cloud sync** — a user-provided backend/account without Google
   Play Services; local writing and playback remain usable offline.
 

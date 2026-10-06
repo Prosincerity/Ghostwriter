@@ -6,25 +6,27 @@ import java.io.File
 internal class EditorLyricsSession(
     private val projectDir: File,
     private val projectTitle: String,
+    private val persistLyrics: (File, Int) -> Boolean = { _, _ -> true },
 ) {
     private var finished = false
 
     @Synchronized
     fun saveManual(lyrics: String, keepCount: Int): Boolean =
-        !finished && ProjectStorage.saveManual(projectDir, projectTitle, lyrics, keepCount)
+        !finished && ProjectStorage.saveManual(projectDir, projectTitle, lyrics, keepCount) &&
+            persistLyrics(projectDir, keepCount)
 
     @Synchronized
-    fun autosave(lyrics: String, keepCount: Int) {
-        if (finished) return
-        ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount)
-    }
+    fun autosave(lyrics: String, keepCount: Int): Boolean =
+        !finished && ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount) &&
+            persistLyrics(projectDir, keepCount)
 
     @Synchronized
-    fun finish(lyrics: String, keepCount: Int) {
-        if (finished) return
+    fun finish(lyrics: String, keepCount: Int): Boolean {
+        if (finished) return true
         // A coroutine already dispatched to IO may resume after screen disposal.
         // Finish under the same monitor as ongoing writes and reject later ones.
         finished = true
-        ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount)
+        return ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount) &&
+            persistLyrics(projectDir, keepCount)
     }
 }

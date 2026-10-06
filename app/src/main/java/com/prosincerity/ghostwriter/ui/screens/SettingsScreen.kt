@@ -77,6 +77,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenDictionaryDownloads: () -> Unit,
+    onChooseLyricsFolder: (() -> Unit)? = null,
 ) {
     BackHandler(onBack = onBack)
 
@@ -116,6 +117,13 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
+            onChooseLyricsFolder?.let { chooseFolder ->
+                SettingsSection(title = "Lyric storage") {
+                    Text("Lyrics are saved automatically in your chosen folder and remain after uninstall. Select the same folder after reinstall to restore them. Beat files stay in app storage.")
+                    TextButton(shape = GhostButtonShape, onClick = chooseFolder) { Text("Choose lyric folder") }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
             SettingsSection("Saving") {
                 SettingsDropdownRow(
                     description = "Autosave interval",

@@ -25,7 +25,7 @@ class ProjectIdentityTest {
         File(legacy, "My Track.txt").apply { writeText("manual"); setLastModified(1000L) }
         File(legacy, "autosave2.txt").apply { writeText("latest"); setLastModified(2000L) }
         File(legacy, "beat.wav").writeText("beat")
-        File(legacy, "project.json").writeText("""{"title":"My Track","updatedAt":500,"notes":"keep me"}""")
+        File(legacy, "project.json").writeText("""{"title":"My Track","updatedAt":500,"notes":"keep me","unknownLegacyField":"preserve"}""")
         ProjectStorage.migrateLegacyProjects(root)
         val migrated = root.listFiles()!!.single()
         assertTrue(ProjectStorage.isProjectId(migrated.name))
@@ -37,10 +37,26 @@ class ProjectIdentityTest {
         assertEquals("My Track", metadata.title)
         assertEquals("keep me", metadata.notes)
         assertEquals(500L, metadata.updatedAt)
+        assertEquals("preserve", org.json.JSONObject(File(migrated, "project.json").readText()).getString("unknownLegacyField"))
         ProjectStorage.migrateLegacyProjects(root)
         assertEquals(listOf(migrated.name), root.list()!!.toList())
         assertEquals(migrated, ProjectStorage.renameProjectDirectory(migrated, "Renamed / song"))
         assertEquals("latest", ProjectStorage.loadLatest(migrated))
+    }
+
+    @Test fun missingLegacyTimestampsBecomeStableWithoutDroppingUnknownFields() {
+        val legacy = temporaryFolder.newFolder("Older")
+        File(legacy, "Older.txt").apply { writeText("lyrics"); setLastModified(1000L) }
+        File(legacy, "project.json").apply {
+            writeText("""{"title":"Older","unknown":"keep"}""")
+            setLastModified(1500L)
+        }
+        ProjectStorage.migrateLegacyProjects(temporaryFolder.root)
+        val project = temporaryFolder.root.listFiles()!!.single()
+        val metadata = ProjectStorage.loadMetadata(project, project.name)
+        assertEquals(1500L, metadata.createdAt)
+        assertEquals(1500L, metadata.updatedAt)
+        assertEquals(metadata, ProjectStorage.loadMetadata(project, project.name))
     }
 
     @Test fun failedLegacyMigrationLeavesAllOriginalFilesForRetry() {

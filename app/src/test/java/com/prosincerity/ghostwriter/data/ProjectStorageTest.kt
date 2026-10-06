@@ -136,8 +136,8 @@ class ProjectStorageTest {
         assertTrue(newest.mkdir())
 
         assertEquals("manual", ProjectStorage.loadLatest(project))
-        assertEquals("autosave1.manual.txt", ProjectStorage.manualSaveFileName("autosave1"))
-        assertEquals("song.txt", ProjectStorage.manualSaveFileName("song"))
+        assertEquals("lyrics.txt", ProjectStorage.manualSaveFileName("autosave1"))
+        assertEquals("lyrics.txt", ProjectStorage.manualSaveFileName("song"))
     }
 
     @Test

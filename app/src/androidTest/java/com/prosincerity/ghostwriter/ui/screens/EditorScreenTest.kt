@@ -111,7 +111,7 @@ class EditorScreenTest {
             assertEquals(null, ProjectStorage.getProjectBeatFile(project))
             choose("short.wav")
             waitUntilTextExists("short")
-            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(project, 1000) != null }
+            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(ProjectStorage.waveformCacheDirectory(context, project), 1000) != null }
             assertEquals("short.wav", ProjectStorage.loadMetadata(project, title).beatOriginalName)
             reassign()
             choose("long.wav", "?duration=300000")
@@ -122,7 +122,7 @@ class EditorScreenTest {
             assertEquals(null, ProjectStorage.loadMetadata(project, title).beatFile)
             choose("short.wav", "?name=missing")
             waitUntilTextExists("beat")
-            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(project, 1000) != null }
+            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(ProjectStorage.waveformCacheDirectory(context, project), 1000) != null }
             assertEquals("beat.mp3", ProjectStorage.loadMetadata(project, title).beatOriginalName)
         } finally {
             disposeEditorAndDeleteProject(visible, title)
@@ -648,7 +648,7 @@ class EditorScreenTest {
                         // Supply the cache before extraction resumes to keep this
                         // navigation test independent of decoder speed.
                         ProjectStorage.saveCachedWaveform(
-                            projectDir,
+                            ProjectStorage.waveformCacheDirectory(context, projectDir),
                             WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
                             cachedWaveform(),
                         )
@@ -697,7 +697,7 @@ class EditorScreenTest {
 
             assertTrue(
                 ProjectStorage.saveCachedWaveform(
-                    projectDir,
+                    ProjectStorage.waveformCacheDirectory(context, projectDir),
                     WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
                     cachedWaveform(),
                 ),
@@ -745,7 +745,7 @@ class EditorScreenTest {
         if (cacheWaveform) {
             assertTrue(
                 ProjectStorage.saveCachedWaveform(
-                    projectDir,
+                    ProjectStorage.waveformCacheDirectory(context, projectDir),
                     WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
                     cachedWaveform(),
                 ),

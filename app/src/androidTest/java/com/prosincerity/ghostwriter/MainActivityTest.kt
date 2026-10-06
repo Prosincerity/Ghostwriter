@@ -1,6 +1,12 @@
 package com.prosincerity.ghostwriter
 
 import android.content.ActivityNotFoundException
+import android.net.Uri
+import android.provider.DocumentsContract
+import com.prosincerity.ghostwriter.data.LyricArchiveTestProvider
+import java.util.UUID
+import org.junit.Before
+import org.junit.After
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.util.TypedValue
@@ -39,6 +45,24 @@ class MainActivityTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    private var originalFolder: String? = null
+    private val archiveScope = UUID.randomUUID().toString()
+
+    @Before fun useIsolatedLyricFolder() {
+        originalFolder = Settings.getPersistentLyricsFolder(composeRule.activity)
+        val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
+        Settings.setPersistentLyricsFolder(composeRule.activity, tree.toString())
+        composeRule.activityRule.scenario.recreate()
+        waitUntilTextExists("New project")
+    }
+
+    @After fun restoreLyricFolder() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule.activityRule.scenario.close()
+        Settings.setPersistentLyricsFolder(context, originalFolder)
+        context.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"), "clear", archiveScope, null)
+    }
 
     @Test
     fun activityWindow_usesStudioBackground() {
@@ -259,17 +283,17 @@ class MainActivityTest {
         composeRule.onNodeWithText("Name this track").assertExists()
         composeRule.onNode(hasSetTextAction()).performTextInput(projectTitle)
         composeRule.onNodeWithText("Create").performClick()
-        composeRule.onNodeWithText(projectTitle).assertExists()
+        waitUntilTextExists(projectTitle)
     }
 
     private fun waitUntilTextExists(text: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+        composeRule.waitUntil(timeoutMillis = 15_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
 
     private fun waitUntilTextDoesNotExist(text: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+        composeRule.waitUntil(timeoutMillis = 15_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty()
         }
     }

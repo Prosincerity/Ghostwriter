@@ -71,7 +71,7 @@ class ProjectStorageBeatTest {
         val project = tempFolder.newFolder("cancel_during_extraction")
         val beat = File(project, "beat.mp3").apply { writeText("beat") }
         assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(7, 8)))
-        val cacheBefore = ProjectStorage.waveformCacheFile(project).readText()
+        val cacheBefore = ProjectStorage.waveformCacheFile(project).readBytes().toList()
         var cancelled = false
         var extractionCalled = false
 
@@ -85,7 +85,7 @@ class ProjectStorageBeatTest {
 
         assertTrue(extractionCalled)
         assertTrue(result.exceptionOrNull() is CancellationException)
-        assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readText())
+        assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readBytes().toList())
         assertEquals("beat", beat.readText())
     }
 
@@ -103,7 +103,7 @@ class ProjectStorageBeatTest {
     fun saveCachedWaveform_invalidReplacementPreservesExistingCache() {
         val project = tempFolder.newFolder("preserve_valid_cache")
         assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(0, 32_768)))
-        val cacheBefore = ProjectStorage.waveformCacheFile(project).readText()
+        val cacheBefore = ProjectStorage.waveformCacheFile(project).readBytes().toList()
         val invalidReplacements = listOf(
             0 to IntArray(0),
             -1 to IntArray(0),
@@ -116,7 +116,7 @@ class ProjectStorageBeatTest {
 
         for ((targetCount, samples) in invalidReplacements) {
             assertFalse(ProjectStorage.saveCachedWaveform(project, targetCount, samples))
-            assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readText())
+            assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readBytes().toList())
         }
     }
 

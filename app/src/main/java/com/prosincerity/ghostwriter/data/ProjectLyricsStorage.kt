@@ -5,12 +5,6 @@ import java.io.File
 /** Manual lyric snapshots and the rolling autosave backup ring. */
 internal object ProjectLyricsStorage {
     const val MANUAL_FILE_NAME = "lyrics.txt"
-    private val backupTitle = Regex("autosave(?:[1-9]|10)", RegexOption.IGNORE_CASE)
-
-    /** Reserved backup names need a separate manual snapshot, including on case-insensitive storage. */
-    fun manualFileName(title: String): String =
-        if (backupTitle.matches(title)) "$title.manual.txt" else "$title.txt"
-
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         // Legacy title snapshots remain readable after UUID migration and rename.
@@ -52,7 +46,7 @@ internal object ProjectLyricsStorage {
         }.isSuccess
 
     /** An unchanged autosave does not consume another backup slot. */
-    fun rotateAndSave(projectDir: File, content: String, keepCount: Int) {
+    fun rotateAndSave(projectDir: File, content: String, keepCount: Int): Boolean =
         runCatching {
             require(keepCount in Settings.COUNT_OPTIONS)
             val newest = File(projectDir, "autosave1.txt")
@@ -80,6 +74,5 @@ internal object ProjectLyricsStorage {
                 val oldBackup = File(projectDir, "autosave$i.txt")
                 if (oldBackup.isFile) oldBackup.delete()
             }
-        }
-    }
+        }.isSuccess
 }
