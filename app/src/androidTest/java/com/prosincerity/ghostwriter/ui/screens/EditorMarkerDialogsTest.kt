@@ -19,8 +19,87 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EditorMarkerDialogsTest {
+    private companion object {
+        val staticMarkers = mutableStateOf<List<WaveformMarker>>(emptyList())
+        val staticEditing = mutableStateOf<WaveformMarker?>(null)
+    }
+
     @get:Rule val composeRule = createComposeRule()
     private val requestedFeedback = mutableListOf<HapticFeedbackType?>()
+
+    @Test fun staticHandlers_saveAndDeleteTheCurrentMarker() {
+        val marker = WaveformMarker("Original", 500)
+        staticMarkers.value = listOf(marker)
+        staticEditing.value = marker
+        composeRule.setContent {
+            GhostwriterTheme {
+                EditorMarkerDialogs(
+                    staticMarkers.value, null, staticEditing.value,
+                    { updated, _, _, _ -> staticMarkers.value = updated },
+                    {}, { staticEditing.value = null },
+                )
+            }
+        }
+        composeRule.onNodeWithText("Marker name").performTextReplacement("Renamed")
+        composeRule.onNodeWithText("Save").performClick()
+        composeRule.runOnIdle {
+            assertEquals(listOf(marker.copy(label = "Renamed")), staticMarkers.value)
+            assertNull(staticEditing.value)
+            staticEditing.value = staticMarkers.value.single()
+        }
+        composeRule.onNodeWithText("Delete marker").performClick()
+        composeRule.runOnIdle {
+            assertEquals(emptyList<WaveformMarker>(), staticMarkers.value)
+            assertNull(staticEditing.value)
+        }
+    }
+
+    @Test fun staleSelection_saveAndDeleteDoNotMutateNewerMarkers() {
+        val selected = WaveformMarker("Gone", 1000)
+        val remaining = WaveformMarker("Keep", 2000)
+        val markers = mutableStateOf(listOf(remaining))
+        val editing = mutableStateOf<WaveformMarker?>(selected)
+        render(markers, editing)
+        composeRule.onNodeWithText("Save").performClick()
+        composeRule.runOnIdle {
+            assertEquals(listOf(remaining), markers.value)
+            assertNull(editing.value)
+            editing.value = selected
+        }
+        composeRule.onNodeWithText("Delete marker").performClick()
+        composeRule.runOnIdle {
+            assertEquals(listOf(remaining), markers.value)
+            assertNull(editing.value)
+            assertEquals(emptyList<HapticFeedbackType?>(), requestedFeedback)
+        }
+    }
+
+    @Test fun addingMarkerWithDefaultSampleRate_transfersLoopRoleAndDismisses() {
+        val markers = mutableStateOf(listOf(WaveformMarker("Old start", 100, MarkerLoopRole.START)))
+        val position = mutableStateOf<Long?>(500)
+        composeRule.setContent {
+            GhostwriterTheme {
+                EditorMarkerDialogs(
+                    markers = markers.value, positionToAdd = position.value, markerToEdit = null,
+                    onMarkersChange = { updated, _, _, feedback ->
+                        markers.value = updated
+                        requestedFeedback += feedback
+                    },
+                    onAddDismiss = { position.value = null }, onEditDismiss = {},
+                )
+            }
+        }
+        composeRule.onNodeWithText("Marker name").performTextReplacement("New start")
+        composeRule.onNodeWithText("Looping").performClick()
+        composeRule.onNodeWithText("Start").performClick()
+        composeRule.onNodeWithText("Add").performClick()
+        composeRule.runOnIdle {
+            assertNull(position.value)
+            assertEquals(MarkerLoopRole.NONE, markers.value.first().loopRole)
+            assertEquals(WaveformMarker("New start", 500, MarkerLoopRole.START), markers.value.last())
+            assertEquals(listOf(HapticFeedbackType.SegmentTick), requestedFeedback)
+        }
+    }
 
     @Test fun saveAfterFrameMigration_keepsExactPositionAndEndMarker() {
         val selected = WaveformMarker("Start", 1000, MarkerLoopRole.START)
