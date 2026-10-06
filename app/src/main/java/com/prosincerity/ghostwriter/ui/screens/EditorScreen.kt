@@ -101,6 +101,7 @@ fun EditorScreen(
     val lyricTextSettings = remember(context) { AppSettings.getLyricTextSettings(context) }
     val coroutineScope = rememberCoroutineScope()
     val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
+    val waveformDirectory = remember(projectDir) { ProjectStorage.waveformCacheDirectory(context, projectDir) }
     val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle) }
 
     var lyrics by rememberSaveable(projectTitle) {
@@ -147,7 +148,7 @@ fun EditorScreen(
     suspend fun removeBeatAndLoadMetadata(): ProjectMetadata =
         projectMutationMutex.withLock {
             withContext(Dispatchers.IO) {
-                ProjectStorage.removeBeatFromProject(projectDir)
+                ProjectStorage.removeBeatFromProject(projectDir, waveformDirectory)
                 ProjectStorage.loadMetadata(projectDir, projectTitle)
             }
         }
@@ -274,7 +275,7 @@ fun EditorScreen(
         try {
             val cachedWaveform = withContext(Dispatchers.IO) {
                 ProjectStorage.loadCachedWaveform(
-                    projectDir,
+                    waveformDirectory,
                     WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
                 )
             }
@@ -297,6 +298,7 @@ fun EditorScreen(
                     projectDir = projectDir,
                     beatFile = currentBeat,
                     shouldCancel = cancellation::get,
+                    waveformDirectory = waveformDirectory,
                 )
             }
             if (cancellation.get()) throw CancellationException()
@@ -366,6 +368,7 @@ fun EditorScreen(
                             val assigned = ProjectStorage.assignBeatToProject(
                                 projectDir = projectDir,
                                 originalName = originalName,
+                                waveformDirectory = waveformDirectory,
                             ) { destination ->
                                 context.contentResolver.openInputStream(uri)?.use { input ->
                                     destination.outputStream().use { output -> input.copyTo(output) }

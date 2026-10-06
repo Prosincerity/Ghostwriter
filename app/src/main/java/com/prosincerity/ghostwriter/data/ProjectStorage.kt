@@ -162,6 +162,10 @@ object ProjectStorage {
     fun metadataFile(projectDir: File): File =
         File(projectDir, "project.json")
 
+    /** Regenerable peaks stay outside project data and Android backups. */
+    fun waveformCacheDirectory(context: Context, projectDir: File): File =
+        File(context.cacheDir, "waveforms/${projectDir.name}").apply { mkdirs() }
+
     /** Project-local waveform cache for the currently assigned beat. */
     fun waveformCacheFile(projectDir: File): File =
         WaveformCache.file(projectDir)
@@ -195,11 +199,13 @@ object ProjectStorage {
         beatFile: File,
         targetSampleCount: Int = WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
         shouldCancel: () -> Boolean = { false },
+        waveformDirectory: File = projectDir,
     ): IntArray = loadOrExtractWaveform(
         projectDir = projectDir,
         beatFile = beatFile,
         targetSampleCount = targetSampleCount,
         shouldCancel = shouldCancel,
+        waveformDirectory = waveformDirectory,
         extract = { file, sampleCount ->
             WaveformExtractor.extractAmplitudes(file, sampleCount, shouldCancel)
         },
@@ -210,6 +216,7 @@ object ProjectStorage {
         beatFile: File,
         targetSampleCount: Int,
         shouldCancel: () -> Boolean = { false },
+        waveformDirectory: File = projectDir,
         extract: (File, Int) -> IntArray,
     ): IntArray {
         if (targetSampleCount !in 1..WaveformCache.MAX_SAMPLES || !beatFile.isFile) {
@@ -222,7 +229,7 @@ object ProjectStorage {
 
         val beatRevisionAtStart = synchronized(this) { beatMutationRevision }
         throwIfWaveformCancelled(shouldCancel)
-        loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
+        loadCachedWaveform(waveformDirectory, targetSampleCount)?.let { return it }
 
         // Decoding can take tens of seconds on some devices. Do not hold the
         // ProjectStorage monitor while it runs: lyrics and metadata use that
@@ -232,7 +239,7 @@ object ProjectStorage {
         if (amplitudes.size == targetSampleCount) {
             synchronized(this) {
                 if (beatMutationRevision == beatRevisionAtStart) {
-                    saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+                    saveCachedWaveform(waveformDirectory, targetSampleCount, amplitudes)
                 }
             }
         }
@@ -303,6 +310,7 @@ object ProjectStorage {
     fun assignBeatToProject(
         projectDir: File,
         originalName: String,
+        waveformDirectory: File = projectDir,
         copyAction: (destination: File) -> Unit,
     ): File {
         val ext = originalName.substringAfterLast('.', "").lowercase()
@@ -327,6 +335,7 @@ object ProjectStorage {
             ?.forEach { it.delete() }
 
         invalidateWaveformCache(projectDir)
+        if (waveformDirectory != projectDir) invalidateWaveformCache(waveformDirectory)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(
@@ -347,10 +356,11 @@ object ProjectStorage {
      * Unassigns and removes the beat from [projectDir], updating `project.json`.
      */
     @Synchronized
-    fun removeBeatFromProject(projectDir: File) {
+    fun removeBeatFromProject(projectDir: File, waveformDirectory: File = projectDir) {
         projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
         beatMutationRevision++
         invalidateWaveformCache(projectDir)
+        if (waveformDirectory != projectDir) invalidateWaveformCache(waveformDirectory)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(
