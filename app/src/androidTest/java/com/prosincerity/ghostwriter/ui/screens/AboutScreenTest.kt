@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -26,6 +27,28 @@ class AboutScreenTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun changingLinkTarget_keepsLabelAndOpensCurrentUrl() {
+        var url by mutableStateOf(GHOSTWRITER_REPOSITORY_URL)
+        var opened: String? = null
+        val callback: (String) -> Unit = { opened = it }
+        // The screen's links are fixed. Exercise its private link boundary
+        // with a changing target to check the remembered click captures.
+        val link = Class.forName("com.prosincerity.ghostwriter.ui.screens.AboutScreenKt")
+            .getDeclaredMethod("AboutLink", String::class.java, String::class.java,
+                Function1::class.java, androidx.compose.runtime.Composer::class.java,
+                Int::class.javaPrimitiveType).apply { isAccessible = true }
+        composeRule.setContent {
+            GhostwriterTheme {
+                link.invoke(null, "Project link", url, callback, currentComposer, 0)
+            }
+        }
+        composeRule.onNodeWithText("Project link").performClick()
+        composeRule.runOnIdle { assertEquals(GHOSTWRITER_REPOSITORY_URL, opened); url = GHOSTWRITER_LICENSE_URL }
+        composeRule.onNodeWithText("Project link").performClick()
+        composeRule.runOnIdle { assertEquals(GHOSTWRITER_LICENSE_URL, opened) }
+    }
 
     @Test fun staticLinkHandler_survivesThemeChanges() {
         var color by mutableStateOf(GhostColorScheme.surfaceContainer)

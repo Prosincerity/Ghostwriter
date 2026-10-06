@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,43 @@ class LyricsNotepadTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test
+    fun restartingNotepads_preservesDefaultAndExplicitSettingsAndEditing() {
+        val probe = RecompositionProbe()
+        var defaultLyrics by mutableStateOf("")
+        var explicitLyrics by mutableStateOf("Explicit verse")
+        val settings = LyricTextSettings(fontSizeSp = 24, alignment = LyricTextAlignment.RIGHT)
+        try {
+            composeRule.setContent {
+                GhostwriterTheme {
+                    Column {
+                        probe.captureNext(currentComposer)
+                        LyricsNotepad(defaultLyrics, { defaultLyrics = it })
+                        probe.captureNext(currentComposer)
+                        LyricsNotepad(explicitLyrics, { explicitLyrics = it }, Modifier, settings)
+                    }
+                }
+            }
+            composeRule.runOnIdle {
+                assertEquals(2, probe.scopes.size)
+                probe.scopes.forEach { it.invalidate() }
+            }
+            composeRule.onNodeWithText("Start writing...").assertExists()
+            composeRule.onNodeWithText("Explicit verse").performTextReplacement("Updated verse")
+            composeRule.runOnIdle { probe.scopes.take(2).forEach { it.invalidate() } }
+            composeRule.onNodeWithText("Updated verse").assertExists()
+            composeRule.onNodeWithText("Start writing...").assertExists()
+            val results = mutableListOf<TextLayoutResult>()
+            composeRule.onNodeWithText("Updated verse")
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+            assertEquals(24.sp, results.first().layoutInput.style.fontSize)
+            assertEquals(TextAlign.Right, results.first().layoutInput.style.textAlign)
+            composeRule.runOnIdle { assertEquals("Updated verse", explicitLyrics) }
+        } finally {
+            composeRule.runOnIdle { probe.dispose() }
+        }
+    }
 
     @Test fun themeChanges_preserveDefaultAndExplicitNotepadTextAndEditing() {
         var color by mutableStateOf(GhostColorScheme.background)

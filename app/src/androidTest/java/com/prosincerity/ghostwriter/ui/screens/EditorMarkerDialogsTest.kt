@@ -1,5 +1,6 @@
 package com.prosincerity.ghostwriter.ui.screens
 
+import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -26,6 +27,105 @@ class EditorMarkerDialogsTest {
 
     @get:Rule val composeRule = createComposeRule()
     private val requestedFeedback = mutableListOf<HapticFeedbackType?>()
+
+    @Test
+    fun addingAfterPositionAndRateChange_usesCurrentFramesAndCallbacks() {
+        val markers = mutableStateOf<List<WaveformMarker>>(emptyList())
+        val position = mutableStateOf<Long?>(250)
+        val rate = mutableStateOf(8000)
+        var oldChanges = 0
+        var oldDismissals = 0
+        var newDismissals = 0
+        val change = mutableStateOf<(List<WaveformMarker>, String, String, HapticFeedbackType?) -> Unit>(
+            { _, _, _, _ -> oldChanges++ },
+        )
+        val dismiss = mutableStateOf<() -> Unit>({ oldDismissals++ })
+        composeRule.setContent {
+            GhostwriterTheme {
+                EditorMarkerDialogs(markers.value, position.value, null, change.value,
+                    dismiss.value, {}, rate.value)
+            }
+        }
+        composeRule.runOnIdle {
+            position.value = 1500
+            rate.value = 44100
+            markers.value = listOf(WaveformMarker("Existing end", 2000, MarkerLoopRole.END))
+            change.value = { updated, success, failure, feedback ->
+                assertEquals("Marker added", success)
+                assertEquals("Couldn't save marker", failure)
+                markers.value = updated
+                requestedFeedback += feedback
+            }
+            dismiss.value = { newDismissals++; position.value = null }
+        }
+        composeRule.onNodeWithText("Marker name").performTextReplacement("New end")
+        composeRule.onNodeWithText("Looping").performClick()
+        composeRule.onNodeWithText("End").performClick()
+        composeRule.onNodeWithText("Add").performClick()
+        composeRule.runOnIdle {
+            assertEquals(0, oldChanges)
+            assertEquals(0, oldDismissals)
+            assertEquals(1, newDismissals)
+            assertNull(position.value)
+            assertEquals(MarkerLoopRole.NONE, markers.value.first().loopRole)
+            assertEquals(WaveformMarker("New end", 1500, MarkerLoopRole.END).withSampleRate(44100), markers.value.last())
+            assertEquals(listOf(HapticFeedbackType.SegmentTick), requestedFeedback)
+        }
+    }
+
+    @Test
+    fun changingEditSelectionAndHandlers_savesAndDeletesWithCurrentOwner() {
+        val first = WaveformMarker("First", 500)
+        val second = WaveformMarker("Second", 1000)
+        val markers = mutableStateOf(listOf(first, second))
+        val editing = mutableStateOf<WaveformMarker?>(first)
+        var oldChanges = 0
+        var oldDismissals = 0
+        var newDismissals = 0
+        val change = mutableStateOf<(List<WaveformMarker>, String, String, HapticFeedbackType?) -> Unit>(
+            { _, _, _, _ -> oldChanges++ },
+        )
+        val dismiss = mutableStateOf<() -> Unit>({ oldDismissals++ })
+        // Exercise the compiled component with an unstable list hint, so
+        // Compose compares snapshot identity when refreshing remembered actions.
+        val unstableMarkerListMask = 0b1000
+        val dialogs = Class.forName("com.prosincerity.ghostwriter.ui.screens.EditorMarkerDialogsKt")
+            .getDeclaredMethod("EditorMarkerDialogs", List::class.java, Long::class.javaObjectType,
+                WaveformMarker::class.java, Function4::class.java, Function0::class.java,
+                Function0::class.java, Int::class.javaPrimitiveType,
+                androidx.compose.runtime.Composer::class.java, Int::class.javaPrimitiveType,
+                Int::class.javaPrimitiveType).apply { isAccessible = true }
+        composeRule.setContent {
+            GhostwriterTheme {
+                dialogs.invoke(null, markers.value, null, editing.value, change.value, {}, dismiss.value,
+                    0, currentComposer, unstableMarkerListMask, 64)
+            }
+        }
+        composeRule.runOnIdle {
+            editing.value = second
+            change.value = { updated, _, _, feedback ->
+                markers.value = updated
+                requestedFeedback += feedback
+            }
+            dismiss.value = { newDismissals++; editing.value = null }
+        }
+        composeRule.onNodeWithText("Marker name").performTextReplacement("Renamed second")
+        composeRule.onNodeWithText("Save").performClick()
+        composeRule.runOnIdle {
+            assertEquals(listOf(first, second.copy(label = "Renamed second")), markers.value)
+            assertNull(editing.value)
+            editing.value = first
+        }
+        composeRule.onNodeWithText("Delete marker").performClick()
+        composeRule.runOnIdle {
+            assertEquals(listOf(second.copy(label = "Renamed second")), markers.value)
+            assertNull(editing.value)
+            assertEquals(0, oldChanges)
+            assertEquals(0, oldDismissals)
+            assertEquals(2, newDismissals)
+            assertEquals(listOf(null, HapticFeedbackType.LongPress), requestedFeedback)
+        }
+    }
 
     @Test fun staticHandlers_saveAndDeleteTheCurrentMarker() {
         val marker = WaveformMarker("Original", 500)
