@@ -24,9 +24,15 @@ Before modifying code, read:
 - Make focused changes; do not opportunistically refactor unrelated code.
 - Inspect existing architecture before introducing abstractions.
 - Add or update tests for behavior changes.
+- In this Distrobox environment, always invoke ADB through
+  `~/Android/Sdk/platform-tools/adb`, never an `adb` resolved from `PATH`.
+  Run every ADB command with elevated execution permission
+  (`sandbox_permissions="require_escalated"`); sandboxed ADB can crash here.
+  Apply the same SDK path and execution permission to tools that invoke ADB.
 - Agents may run relevant instrumented tests on an already connected emulator
   or physical device, including devices connected over wireless debugging.
-  Confirm the target with `adb devices -l` and select it with `ANDROID_SERIAL`.
+  Confirm the target with `~/Android/Sdk/platform-tools/adb devices -l` using
+  elevated execution permission, and select it with `ANDROID_SERIAL`.
   If no device is available, compile the tests and leave execution to the maintainer.
 - Before completing a task, run the relevant non-device tests, including JVM tests.
 - Run ./gradlew test and ./gradlew lint when practical.
