@@ -10,6 +10,17 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class PcmBeatDecoderTest {
+    @Test fun unsupportedPcmEncoding_preservesExistingOutput() {
+        val file = folder.newFile().apply { writeBytes(byteArrayOf(1, 2)) }
+        RandomAccessFile(file, "rw").use { pcm ->
+            assertThrows(IllegalArgumentException::class.java) {
+                PcmBeatDecoder.appendDecodedBuffer(pcm, ByteBuffer.allocate(4), 0, 4, 0,
+                    44100, 1, AudioFormat.ENCODING_INVALID)
+            }
+        }
+        assertArrayEquals(byteArrayOf(1, 2), file.readBytes())
+    }
+
     @get:Rule val folder = TemporaryFolder()
 
     @Test fun roundedContainerDuration_preservesEveryDecodedFrame() {

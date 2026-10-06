@@ -13,6 +13,16 @@ import java.nio.ByteOrder
 import java.util.concurrent.CancellationException
 
 class WaveformExtractorTest {
+    @Test
+    fun decoderProgressGuard_requiresAPositiveStallLimit() {
+        for (limit in listOf(0, -1)) {
+            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+                WaveformExtractor.DecoderProgressGuard(limit)
+            }
+        }
+        assertEquals(null, WaveformExtractor.durationMs(File(tempFolder.root, "missing.wav")))
+    }
+
 
     @get:Rule
     val tempFolder = TemporaryFolder()

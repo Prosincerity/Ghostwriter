@@ -17,6 +17,64 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PcmBeatDecoderTest {
+    @Test fun changingAacSampleRate_neverReturnsPcmWithMixedFrameFormats() {
+        val source = File(directory, "rate-change.aac")
+        source.outputStream().use { output ->
+            for ((rate, frequencyIndex) in listOf(44100 to 4, 48000 to 3)) {
+                val extractor = android.media.MediaExtractor()
+                try {
+                    extractor.setDataSource(encodeAac(rate).absolutePath)
+                    extractor.selectTrack(0)
+                    val packet = ByteBuffer.allocate(8192)
+                    while (true) {
+                        packet.clear()
+                        val size = extractor.readSampleData(packet, 0)
+                        if (size < 0) break
+                        val length = size + 7
+                        output.write(byteArrayOf(0xff.toByte(), 0xf1.toByte(),
+                            ((1 shl 6) or (frequencyIndex shl 2)).toByte(),
+                            ((1 shl 6) or (length shr 11)).toByte(), (length shr 3).toByte(),
+                            (((length and 7) shl 5) or 0x1f).toByte(), 0xfc.toByte()))
+                        output.write(packet.array(), 0, size)
+                        extractor.advance()
+                    }
+                } finally { extractor.release() }
+            }
+        }
+        val result = runCatching { PcmBeatDecoder.decode(source, directory) { false } }
+        if (result.isSuccess) {
+            // Some Android codecs normalize rate changes to their configured
+            // output rate. In that case all returned frames use that rate.
+            val pcm = result.getOrThrow()
+            assertEquals(44100, pcm.sampleRate)
+            assertEquals(1, pcm.channels)
+            assertEquals(pcm.frames * 2, pcm.file.length())
+            assertTrue(pcm.frames > 0)
+        } else {
+            assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+            assertEquals("Audio format changed during decoding", result.exceptionOrNull()!!.message)
+            assertTrue(directory.listFiles()!!.none { it.extension == "pcm" })
+        }
+    }
+
+    @Test fun unsupportedChannelCount_releasesDecoderAndDeletesFailedOutput() {
+        val source = wav("nine-channel.wav", 1, 16, 9, ByteArray(8000 * 9 * 2))
+        assertThrows(IllegalArgumentException::class.java) {
+            PcmBeatDecoder.decode(source, directory) { false }
+        }
+        assertTrue(directory.listFiles()!!.none { it.extension == "pcm" })
+    }
+    @Test fun cancellationAfterSetup_deletesPartialPcmAndAllowsRetry() {
+        val file = wav("cancel.wav", 1, 16, 1, ByteArray(16000))
+        val before = directory.listFiles()!!.map { it.name }.toSet()
+        assertThrows(java.util.concurrent.CancellationException::class.java) {
+            PcmBeatDecoder.decode(file, directory) { true }
+        }
+        assertEquals(before, directory.listFiles()!!.map { it.name }.toSet())
+        val pcm = PcmBeatDecoder.decode(file, directory) { false }
+        assertEquals(8000L, pcm.frames)
+        assertEquals(16000L, pcm.file.length())
+    }
     private val directory = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,
         "decoder-tests-${System.nanoTime()}").apply { check(mkdirs()) }
 
@@ -111,14 +169,14 @@ class PcmBeatDecoderTest {
     }
 
     /** Generate the compressed fixture with AOSP APIs so this test stays offline. */
-    private fun encodeAac(): File {
-        val file = File(directory, "encoded.m4a")
+    private fun encodeAac(sampleRate: Int = 44100): File {
+        val file = File(directory, "encoded-$sampleRate.m4a")
         val encoder = MediaCodec.createEncoderByType("audio/mp4a-latm")
         val muxer = MediaMuxer(file.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
         var encoderStarted = false
         var muxerStarted = false
         try {
-            val format = MediaFormat.createAudioFormat("audio/mp4a-latm", 44100, 1).apply {
+            val format = MediaFormat.createAudioFormat("audio/mp4a-latm", sampleRate, 1).apply {
                 setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
                 setInteger(MediaFormat.KEY_BIT_RATE, 64000)
             }
@@ -139,7 +197,7 @@ class PcmBeatDecoderTest {
                         val input = requireNotNull(encoder.getInputBuffer(index)).apply { clear(); order(ByteOrder.LITTLE_ENDIAN) }
                         val count = minOf(input.remaining() / 2, 4096 - inputFrame)
                         repeat(count) { input.putShort(if ((inputFrame + it) % 32 < 16) 10000 else -10000) }
-                        val pts = inputFrame * 1000000L / 44100
+                        val pts = inputFrame * 1000000L / sampleRate
                         encoder.queueInputBuffer(index, 0, count * 2, pts,
                             if (count == 0) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0)
                         inputEnded = count == 0
