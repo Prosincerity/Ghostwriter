@@ -86,18 +86,14 @@ in the change. This policy replaces the former blanket per-file requirement:
 module gates and focused tests protect logic without demanding artificial
 unit coverage of Android UI and generated wiring.
 
-### Execution and CI
+### Local execution
 
-Tests must run headless and offline. CI should run JVM unit tests on every PR
-and instrumented tests on a headless emulator at least on merge. Provision
-SDK components, dependencies, and emulator images before the offline test
-step; test execution must not require downloads or production services.
-Retain test and coverage reports for review, including any flakiness or slow
-tests. `.github/workflows/android-tests.yml` runs unit tests and lint on every
-PR and pushes to `dev`/`main`, plus emulator suites on both PRs and those pushes.
-The emulator runs in airplane mode without Wi-Fi. A separate provisioning
-step resolves dependencies before Gradle runs the tests with `--offline`.
-See the commands below for local verification.
+Tests must run headless and offline. Verification runs locally; there are no
+GitHub Actions workflows. Install SDK components, dependencies, and any
+emulator images before offline verification, then pass `--offline` to Gradle
+once dependencies are cached. Test execution must not require downloads or
+production services. Retain test and coverage reports for review, including
+any flakiness or slow tests. See the commands below for local verification.
 
 ## Checks without a device
 
@@ -214,12 +210,11 @@ The app uses 80% instruction / 70% branch. Modules named `domain`, `data`,
 `parsing`, or `logic` automatically use 90% / 85%; other logic-heavy modules
 must be passed to the verifier with `--logic-module MODULE`.
 
-CI's `scripts/ci_coverage.sh` builds fresh reports for the current revision.
-CI checks fixed module minimums in both combined XML and the aggregated
-dashboard, and at least 80% coverage of changed executable production
-Kotlin/Java lines in the combined XML. It does not apply that JVM line metric
-to documentation, Gradle scripts, or Python tooling; the tooling has its own
-behavior tests.
+The coverage checker verifies fixed module minimums in both combined XML and
+the aggregated dashboard. With `--base-ref`, it also checks at least 80%
+coverage of changed executable production Kotlin/Java lines in the combined
+XML. This JVM line metric does not apply to documentation, Gradle scripts, or
+Python tooling; the tooling has its own behavior tests.
 
 To check fresh local reports and changed lines against a chosen revision:
 

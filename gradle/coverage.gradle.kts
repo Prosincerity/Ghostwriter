@@ -1,5 +1,4 @@
 import groovy.json.JsonSlurper
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.testing.jacoco.tasks.JacocoReport
 
 // Apply in each Android module. These paths are the uninstrumented outputs
@@ -64,26 +63,4 @@ tasks.register<Exec>("verifyDebugCoverage") {
     inputs.files(reportFile, policyFile, rootProject.file("scripts/coverage_policy.py"))
     commandLine("python3", rootProject.file("scripts/coverage_policy.py"),
         "--report", "${project.name}=${reportFile.get().asFile}")
-}
-
-// Resolve test, lint, and JaCoCo dependencies while network access is available.
-// CI executes the tests themselves with --offline after this provisioning step.
-tasks.register("prepareOfflineTests") {
-    group = "verification"
-    description = "Resolves dependencies before headless offline CI test execution."
-    notCompatibleWithConfigurationCache("Resolves project configurations during provisioning")
-    doLast {
-        configurations.filter {
-            it.isCanBeResolved && (it.name in setOf("jacocoAnt", "jacocoAgent") ||
-                (it.name.startsWith("debug") &&
-                    (it.name.endsWith("CompileClasspath") || it.name.endsWith("RuntimeClasspath"))))
-        }.forEach { configuration ->
-            // Android test configurations also contain the app's own artifact
-            // variants. Provision external dependencies; assemble tasks build
-            // project artifacts with AGP's required artifact attributes.
-            configuration.incoming.artifactView {
-                componentFilter { it is ModuleComponentIdentifier }
-            }.files.files
-        }
-    }
 }

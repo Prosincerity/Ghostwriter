@@ -67,9 +67,9 @@ Before modifying code, read:
 - Never fix flaky tests with retries or sleeps. Report flakiness and remove
   its source of nondeterminism. No @Ignore or disabled tests without a written
   reason and a linked tracked issue.
-- Tests must run headless and offline. CI should run unit tests on every PR
-  and instrumented tests on an emulator at least on merge. Keep the unit suite
-  fast and report any test taking more than a few seconds.
+- Tests must run headless and offline. Run verification locally; GitHub Actions
+  workflows are not configured. Keep the unit suite fast and report any test
+  taking more than a few seconds.
 - Keep minimal fixtures next to their tests; use committed sample files for
   parser tests. Never include secrets, real user data, or production endpoints.
 - Coverage is a safety net, not a goal. Use JaCoCo instruction and branch
