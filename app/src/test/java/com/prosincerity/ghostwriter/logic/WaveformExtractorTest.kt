@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.logic
 import android.media.AudioFormat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -15,7 +16,7 @@ class WaveformExtractorTest {
     @Test
     fun decoderProgressGuard_requiresAPositiveStallLimit() {
         for (limit in listOf(0, -1)) {
-            org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            assertThrows(IllegalArgumentException::class.java) {
                 WaveformExtractor.DecoderProgressGuard(limit)
             }
         }
@@ -109,11 +110,13 @@ class WaveformExtractorTest {
         assertTrue(WaveformExtractor.extractAmplitudes(source, -1).isEmpty())
     }
 
-    @Test(expected = CancellationException::class)
+    @Test
     fun extractAmplitudes_stopsBeforeDecodingWhenCancellationIsRequested() {
         val source = tempFolder.newFile("cancelled.wav").apply { writeText("audio") }
 
-        WaveformExtractor.extractAmplitudes(source, 100) { true }
+        assertThrows(CancellationException::class.java) {
+            WaveformExtractor.extractAmplitudes(source, 100) { true }
+        }
     }
 
     @Test
@@ -123,9 +126,8 @@ class WaveformExtractorTest {
         guard.record(madeProgress = false)
         guard.record(madeProgress = true)
         guard.record(madeProgress = false)
-        val error = org.junit.Assert.assertThrows(IllegalStateException::class.java) {
+        assertThrows(IllegalStateException::class.java) {
             guard.record(madeProgress = false)
         }
-        assertEquals("Audio decoder stopped making progress", error.message)
     }
 }

@@ -61,6 +61,17 @@ class PcmSourceTest {
         assertFalse(file.exists())
     }
 
+    @Test fun preparation_aboveMemoryLimitRetainsTheBackingFileForStreaming() {
+        val file = folder.newFile()
+        val bytes = PcmSources.MEMORY_LIMIT_BYTES + 4
+        RandomAccessFile(file, "rw").use { it.setLength(bytes) }
+        val source = PcmSources.prepare(PcmBeat(file, 48000, 2, bytes / 4)) { false }
+        try {
+            assertTrue(file.exists())
+            assertEquals(bytes, file.length())
+        } finally { source.close() }
+    }
+
     @Test fun cancelledDiskPreparation_throwsAndRemovesTemporaryPcm() {
         val file = folder.newFile()
         val bytes = PcmSources.MEMORY_LIMIT_BYTES + 4

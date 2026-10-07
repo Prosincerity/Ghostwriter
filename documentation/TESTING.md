@@ -281,6 +281,20 @@ Android typeface rather than unchanged fixture properties. Player input
 validation retains missing-file, directory, valid-volume, and NaN cases with
 fresh players for each invalid load. No UI code is added to the JVM suite.
 
+PCM buffer tests control the worker's prefetch passes with semaphores and join
+the worker before checking cleanup, avoiding wall-clock polling and repeated
+copy attempts. They assert the returned samples, nonblocking page misses,
+live edits, and failed-file cleanup. Large-source selection checks retained
+backing files; sample correctness belongs to the buffer tests. Metadata saves
+use an injected clock for exact edit-time assertions. Download and editor
+fixtures remain blocked until the test releases them in `finally`; elapsed
+time cannot accidentally advance those scenarios. Synchronization timeouts
+are failure guards, not inputs to the expected result.
+HTTP tests require finite timeouts without pinning tuning constants. Ledger
+overflow and decoder-stall tests assert rejection and preserved behavior
+rather than internal diagnostic wording. Cancellation assertions surround
+the operation itself so fixture failures cannot satisfy the expected error.
+
 After removing redundant tests, run the affected suites and review fresh
 reports to confirm the surviving tests still protect the intended behavior
 and satisfy the fixed module minimums and changed-line coverage requirement.

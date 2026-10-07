@@ -646,15 +646,14 @@ class EditorScreenTest {
             storageThread = Thread {
                 synchronized(ProjectStorage) {
                     storageLocked.countDown()
-                    if (releaseStorage.await(30, TimeUnit.SECONDS)) {
-                        // Supply the cache before extraction resumes to keep this
-                        // navigation test independent of decoder speed.
-                        ProjectStorage.saveCachedWaveform(
-                            ProjectStorage.waveformCacheDirectory(context, projectDir),
-                            WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
-                            cachedWaveform(),
-                        )
-                    }
+                    releaseStorage.await()
+                    // Supply the cache before extraction resumes to keep this
+                    // navigation test independent of decoder speed.
+                    ProjectStorage.saveCachedWaveform(
+                        ProjectStorage.waveformCacheDirectory(context, projectDir),
+                        WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+                        cachedWaveform(),
+                    )
                 }
             }.apply { start() }
             assertTrue(storageLocked.await(5, TimeUnit.SECONDS))

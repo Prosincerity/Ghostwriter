@@ -273,11 +273,15 @@ object ProjectStorage {
     }
 
     @Synchronized
-    fun saveMetadata(projectDir: File, metadata: ProjectMetadata): Boolean =
+    fun saveMetadata(
+        projectDir: File,
+        metadata: ProjectMetadata,
+        now: () -> Long = System::currentTimeMillis,
+    ): Boolean =
         runCatching {
             val file = metadataFile(projectDir)
             val updated = metadata.copy(
-                updatedAt = System.currentTimeMillis(),
+                updatedAt = now(),
                 version = maxOf(metadata.version, ProjectMetadata.CURRENT_VERSION),
             )
             StagedFileWriter.writeText(file, updated.toJsonObject().toString(2))

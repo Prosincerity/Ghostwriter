@@ -23,8 +23,8 @@ class DictionaryArchiveSourceTest {
         val connection = TestConnection(body)
 
         val archive = openDictionaryArchive(connection)
-        assertEquals(15_000, connection.connectTimeout)
-        assertEquals(30_000, connection.readTimeout)
+        assertTrue("Connection attempts must have a finite timeout", connection.connectTimeout > 0)
+        assertTrue("Archive reads must have a finite timeout", connection.readTimeout > 0)
         assertTrue(connection.instanceFollowRedirects)
         assertEquals(0, connection.disconnects)
         assertFalse(bodyClosed)

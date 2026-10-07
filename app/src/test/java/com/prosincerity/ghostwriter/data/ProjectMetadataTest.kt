@@ -164,7 +164,7 @@ class ProjectMetadataTest {
             version = 1,
         )
 
-        ProjectStorage.saveMetadata(projectDir, initial)
+        assertTrue(ProjectStorage.saveMetadata(projectDir, initial, now = { 3000L }))
 
         val loaded = ProjectStorage.loadMetadata(projectDir, "HitTrack")
         assertEquals("HitTrack", loaded.title)
@@ -179,8 +179,7 @@ class ProjectMetadataTest {
             loaded.markers,
         )
         assertEquals(1000L, loaded.createdAt)
-        // updatedAt should be refreshed on save
-        assertTrue("updatedAt should be updated on save", loaded.updatedAt >= 2000L)
+        assertEquals(3000L, loaded.updatedAt)
         assertEquals(ProjectMetadata.CURRENT_VERSION, loaded.version)
     }
 

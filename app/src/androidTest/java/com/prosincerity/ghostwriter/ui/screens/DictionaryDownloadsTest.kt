@@ -123,7 +123,7 @@ class DictionaryDownloadsTest {
         val release = CountDownLatch(1)
         val installer = DictionaryInstaller(context, DictionaryArchiveSource {
             started.countDown()
-            release.await(10, TimeUnit.SECONDS)
+            release.await()
             ByteArrayInputStream(valid)
         })
         composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
@@ -172,7 +172,7 @@ class DictionaryDownloadsTest {
                     if (offset >= archive.size) return -1
                     if (offset >= 380_000) {
                         paused.countDown()
-                        release.await(10, TimeUnit.SECONDS)
+                        release.await()
                     }
                     val beforePause = if (offset < 380_000) 380_000 - offset else length
                     val count = minOf(length, archive.size - offset, beforePause)
