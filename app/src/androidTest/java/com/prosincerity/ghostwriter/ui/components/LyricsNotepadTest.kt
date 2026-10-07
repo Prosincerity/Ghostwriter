@@ -39,30 +39,17 @@ class LyricsNotepadTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun replacingEditingCallback_keepsTextAndUsesLatestOwner() {
-        var lyrics by mutableStateOf("First")
-        var owner = "first"
-        var callback by mutableStateOf<(String) -> Unit>({ lyrics = it; owner = "first" })
-        composeRule.setContent {
-            GhostwriterTheme { LyricsNotepad(lyrics, callback) }
-        }
-        composeRule.runOnIdle { callback = { lyrics = it; owner = "second" } }
-        composeRule.onNodeWithText("First").performTextReplacement("Second")
-        composeRule.runOnIdle { assertEquals("Second", lyrics); assertEquals("second", owner) }
-    }
-
-    @Test
     fun notepad_typographyChangesPreserveLyricsAndEditingUpdatesHoistedState() {
         var lyrics by mutableStateOf("")
-        var latestLyrics = lyrics
+        var owner = "first"
         var useDefaults by mutableStateOf(true)
         var settings by mutableStateOf(
             LyricTextSettings(LyricFontFamily.SERIF, 20, 1.75f, 0.5f, LyricTextAlignment.CENTER),
         )
-        val onLyricsChange: (String) -> Unit = {
+        var onLyricsChange by mutableStateOf<(String) -> Unit>({
             lyrics = it
-            latestLyrics = it
-        }
+            owner = "first"
+        })
         composeRule.setContent {
             GhostwriterTheme {
                 if (useDefaults) {
@@ -102,12 +89,16 @@ class LyricsNotepadTest {
         val changed = textLayout().layoutInput.style
         assertEquals(FontFamily.Monospace, changed.fontFamily)
         assertEquals(TextAlign.Right, changed.textAlign)
+        composeRule.runOnIdle { onLyricsChange = { lyrics = it; owner = "second" } }
         composeRule.onNodeWithText("First line\nSecond line").assertExists()
 
         composeRule.onNodeWithText("First line\nSecond line").performTextReplacement("Updated line")
         composeRule.onNodeWithText("First line\nSecond line").assertDoesNotExist()
         composeRule.onNodeWithText("Updated line").assertExists()
-        composeRule.runOnIdle { assertEquals("Updated line", latestLyrics) }
+        composeRule.runOnIdle {
+            assertEquals("Updated line", lyrics)
+            assertEquals("second", owner)
+        }
     }
 
     @Test

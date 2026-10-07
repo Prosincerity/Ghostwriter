@@ -261,9 +261,6 @@ class MainActivityTest {
             assertTrue(theme.resolveAttribute(android.R.attr.windowBackground, background, true))
             val drawable = composeRule.activity.getDrawable(background.resourceId) as ColorDrawable
             assertEquals(GhostColorScheme.background.toArgb(), drawable.color)
-            val lightTheme = TypedValue()
-            assertTrue(theme.resolveAttribute(android.R.attr.isLightTheme, lightTheme, true))
-            assertEquals(0, lightTheme.data)
         }
     }
 

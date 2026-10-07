@@ -26,28 +26,17 @@ class SlimSliderTest {
         var value by mutableStateOf(0.25f)
         var range by mutableStateOf(0f..1f)
         var enabled by mutableStateOf(true)
-        var explicit by mutableStateOf(false)
         var owner = "first"
         var callback by mutableStateOf<(Float) -> Unit>({ value = it })
         composeRule.setContent {
             GhostwriterTheme {
-                if (explicit) {
-                    SlimSlider(value, callback, Modifier.testTag("slider"), range, enabled)
-                } else {
-                    SlimSlider(value, callback, Modifier.testTag("slider"))
-                }
+                SlimSlider(value, callback, Modifier.testTag("slider"), range, enabled)
             }
         }
         composeRule.onNodeWithTag("slider")
             .performSemanticsAction(SemanticsActions.SetProgress) { it(0.75f) }
         composeRule.runOnIdle {
             assertEquals(0.75f, value)
-            explicit = true
-        }
-        composeRule.onNodeWithTag("slider")
-            .performSemanticsAction(SemanticsActions.SetProgress) { it(0.5f) }
-        composeRule.runOnIdle {
-            assertEquals(0.5f, value)
             range = -2f..10f
             callback = { value = it; owner = "second" }
         }

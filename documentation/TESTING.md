@@ -264,7 +264,8 @@ Exact typography-size snapshots and constant-only settings assertions are
 removed; bundled fonts, rendered typography, and selectable autosave defaults
 remain checked. Home folder-selection and slider-reconfiguration scenarios
 retain their unique callbacks and state assertions in consolidated tests.
-Separate callback-replacement and zoom-limit regressions remain independent.
+Notepad callback replacement shares the typography/editing scenario; slider
+callback replacement and waveform zoom-limit regressions remain independent.
 Theme-only recompositions without visual assertions and playback clicks
 without outcome assertions are removed. Explicit contracts such as deferred
 playback binding and allocation-free audio rendering still have dedicated tests.
@@ -330,3 +331,20 @@ Activities or Composables are invoked there, and coverage thresholds are unchang
 Waveform decoding failure and cancellation assert decoded results and recovery
 rather than cancellation-check counts. Waveform and service audio fixtures use
 isolated temporary directories instead of fixed names in the shared app cache.
+
+Loaded-player setup and idempotent release share the Android transport scenario.
+Mute restoration after UI recreation shares the ready-player volume scenario.
+Focus cancellation also checks that a later playback request must reacquire
+focus. Search-plan tests retain ordered search stages and matching tokens,
+without asserting redundant counts or nullable storage choices. Slider tests
+exercise changing input ranges and owners without repeating equivalent default
+and explicit argument calls; the Activity background test checks its visible
+window color without pinning the theme's implementation flags.
+
+`SmoothLoopPlaybackTest` synchronizes with output-start, completion, and worker
+termination callbacks instead of sleep-based polling. AudioTrack/MediaPlayer
+integration still requires real Android audio output; `BeatPlayerInstrumentedTest`
+also retains position polling and a delayed-start cancellation barrier. These
+are hardware timing risks, not deterministic unit checks. Keep frame arithmetic,
+loop rendering, and handoff timing on the JVM with controlled inputs; do not add
+retries or longer sleeps to compensate for device failures.

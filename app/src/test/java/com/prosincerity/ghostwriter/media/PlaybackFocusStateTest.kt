@@ -21,20 +21,6 @@ class PlaybackFocusStateTest {
     }
 
     @Test
-    fun gainQueuedBeforeUserPause_doesNotRestoreAbandonedFocus() {
-        val focus = playingFocus()
-        focus.onTransientLoss(wasPlaying = true)
-        focus.onPauseRequested()
-        focus.onAbandoned()
-
-        assertFalse(focus.onGain())
-        focus.onPlaybackRequested()
-
-        // preparePlayback must request focus again, rather than playing over its current owner.
-        assertFalse(focus.hasFocus)
-    }
-
-    @Test
     fun repeatedTransientLoss_stillResumesExactlyOnce() {
         val focus = playingFocus()
         focus.onTransientLoss(wasPlaying = true)
@@ -56,6 +42,9 @@ class PlaybackFocusStateTest {
         assertFalse(focus.resumeOnFocusGain)
         assertFalse(focus.shouldKeepForeground(playing = false))
         assertFalse(focus.onGain())
+        focus.onPlaybackRequested()
+        // A new user request must acquire focus again, even after a queued gain.
+        assertFalse(focus.hasFocus)
     }
 
     @Test

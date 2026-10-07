@@ -591,27 +591,18 @@ class BeatPlayerInstrumentedTest {
     }
 
     @Test
-    fun load_validPcmWav_preparesPlayerWithConfiguredState() {
+    fun playbackControls_loadedPlayer_startPauseToggleAndClampSeeks() {
         val player = createPlayer()
-        val wavFile = createPcm16Wav("beat-player-valid.wav", durationMs = 1_000)
+        val wavFile = createPcm16Wav("beat-player-controls.wav", durationMs = 5_000)
         player.setLoopMode(BeatLoopMode.OFF)
         player.setVolume(0.25f)
-
         assertTrue(player.load(wavFile))
-
         assertTrue(player.isReady)
         assertFalse(player.isPlaying)
         assertFalse(player.isLooping)
         assertEquals(0.25f, player.volume)
-        assertTrue("Expected a duration near 1 second, got ${player.durationMs}", player.durationMs in 900..1_100)
+        assertTrue("Expected a duration near 5 seconds, got ${player.durationMs}", player.durationMs in 4_900..5_100)
         assertEquals(0, player.currentPositionMs)
-    }
-
-    @Test
-    fun playbackControls_loadedPlayer_startPauseToggleAndClampSeeks() {
-        val player = createPlayer()
-        val wavFile = createPcm16Wav("beat-player-controls.wav", durationMs = 5_000)
-        assertTrue(player.load(wavFile))
 
         player.play()
         waitUntil("Player did not start") { player.isPlaying }
@@ -633,10 +624,13 @@ class BeatPlayerInstrumentedTest {
             player.currentPositionMs >= player.durationMs - SEEK_TOLERANCE_MS
         }
 
-        player.setLoopMode(BeatLoopMode.OFF)
-        player.setVolume(0.4f)
-        assertFalse(player.isLooping)
-        assertEquals(0.4f, player.volume)
+        player.release()
+        player.release()
+
+        assertFalse(player.isReady)
+        assertFalse(player.isPlaying)
+        assertEquals(0, player.currentPositionMs)
+        assertEquals(0, player.durationMs)
     }
 
     @Test
@@ -647,21 +641,6 @@ class BeatPlayerInstrumentedTest {
         }
 
         assertFalse(player.load(corruptFile))
-        assertFalse(player.isReady)
-        assertFalse(player.isPlaying)
-        assertEquals(0, player.currentPositionMs)
-        assertEquals(0, player.durationMs)
-    }
-
-    @Test
-    fun release_loadedPlayer_resetsStateAndRemainsIdempotent() {
-        val player = createPlayer()
-        val wavFile = createPcm16Wav("beat-player-release.wav", durationMs = 1_000)
-        assertTrue(player.load(wavFile))
-
-        player.release()
-        player.release()
-
         assertFalse(player.isReady)
         assertFalse(player.isPlaying)
         assertEquals(0, player.currentPositionMs)

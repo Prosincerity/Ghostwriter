@@ -1,12 +1,13 @@
 package com.prosincerity.ghostwriter.media
 
-import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.logic.MarkerLoopFrames
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.*
@@ -49,23 +50,33 @@ class SmoothLoopPlaybackTest {
     @Test fun stereoPlayback_completesAndRestartsAtBeginning() {
         val source = ObservedSource(MemoryPcmSource(ShortArray(16000) { if (it % 2 == 0) 1000 else -1000 }, 2))
         val failure = AtomicReference<Exception?>()
+        val startedPositions = LinkedBlockingQueue<Int>()
+        val completed = CountDownLatch(1)
         lateinit var playback: SmoothLoopPlayback
         instrumentation.runOnMainSync {
-            playback = playback(source, range = null, looping = false, onFailure = { failure.set(it) })
+            playback = playback(source, range = null, looping = false,
+                onStateChanged = { if (!playback.isPlaying) completed.countDown() },
+                onOutputStarted = { startedPositions.offer(playback.currentPositionMs) },
+                onFailure = { failure.set(it) })
             playback.play()
         }
         try {
-            awaitCondition { playback.currentPositionMs > 50 || failure.get() != null }
+            assertNotNull("Stereo output did not start", startedPositions.poll(5, TimeUnit.SECONDS))
+            assertTrue("Stereo output did not complete", completed.await(5, TimeUnit.SECONDS))
             assertNull(failure.get())
-            awaitCondition { !playback.isPlaying || failure.get() != null }
-            assertNull(failure.get())
-            assertTrue(playback.currentPositionMs >= 990)
-            instrumentation.runOnMainSync { playback.pause(); playback.play() }
-            awaitCondition { playback.isPlaying && playback.currentPositionMs in 1..500 || failure.get() != null }
-            assertNull(failure.get())
-            instrumentation.runOnMainSync { playback.pause(); playback.seekTo(2000); playback.play() }
-            awaitCondition { playback.isPlaying && playback.currentPositionMs in 1..500 || failure.get() != null }
-            assertNull(failure.get())
+            assertFalse(playback.isPlaying)
+            assertEquals(1000, playback.currentPositionMs)
+            for (seekPastEnd in listOf(false, true)) {
+                instrumentation.runOnMainSync {
+                    playback.pause()
+                    if (seekPastEnd) playback.seekTo(2000)
+                    playback.play()
+                }
+                val position = startedPositions.poll(5, TimeUnit.SECONDS)
+                assertNotNull("Restarted output did not start (seekPastEnd=$seekPastEnd)", position)
+                assertTrue("Restart must return to the beat (position=$position)", position!! in 0 until 1000)
+                assertNull(failure.get())
+            }
         } finally {
             instrumentation.runOnMainSync { playback.close(); assertFalse(playback.isPlaying) }
             assertTrue("Playback did not close its PCM source", source.closed.await(5, TimeUnit.SECONDS))
@@ -99,14 +110,16 @@ class SmoothLoopPlaybackTest {
     @Test fun eightChannelPlayback_advancesInFramesAndPausesCleanly() {
         val source = ObservedSource(MemoryPcmSource(ShortArray(64000) { 1000 }, 8))
         val failure = AtomicReference<Exception?>()
+        val started = CountDownLatch(1)
         lateinit var playback: SmoothLoopPlayback
         instrumentation.runOnMainSync {
-            playback = playback(source, null, true) { failure.set(it) }
+            playback = playback(source, null, true, onOutputStarted = { started.countDown() }) { failure.set(it) }
             playback.play()
         }
         try {
-            awaitCondition { playback.currentPositionMs > 50 || failure.get() != null }
+            assertTrue("Eight-channel output did not start", started.await(5, TimeUnit.SECONDS))
             assertNull(failure.get())
+            assertTrue("Output must advance in audio frames", playback.currentPositionMs > 0)
             instrumentation.runOnMainSync { playback.pause() }
             assertFalse(playback.isPlaying)
         } finally {
@@ -148,12 +161,18 @@ class SmoothLoopPlaybackTest {
 
     @Test fun prefetchWorkerFailure_stopsStreamAndPublishesOriginalException() {
         val missing = File(folder.root, "missing.pcm")
-        val source = PcmRingBuffer(missing, 1, 8000)
+        val workerStopped = CountDownLatch(1)
+        val source = PcmRingBuffer(missing, 1, 8000, workerFactory = ThreadFactory { task ->
+            Thread {
+                try { task.run() } finally { workerStopped.countDown() }
+            }
+        })
         val observed = AtomicReference<Exception?>()
         val notified = CountDownLatch(1)
         var playback: SmoothLoopPlayback? = null
         try {
-            awaitCondition { source.failure != null }
+            assertTrue("Prefetch worker did not finish", workerStopped.await(5, TimeUnit.SECONDS))
+            assertTrue(source.failure is java.io.FileNotFoundException)
             instrumentation.runOnMainSync {
                 playback = playback(source, null, true) { observed.set(it); notified.countDown() }.also { it.play() }
             }
@@ -213,6 +232,8 @@ class SmoothLoopPlaybackTest {
         source: PcmSource,
         range: MarkerLoopFrames?,
         looping: Boolean,
+        onStateChanged: () -> Unit = {},
+        onOutputStarted: () -> Unit = {},
         onFailure: (Exception) -> Unit,
     ) = SmoothLoopPlayback(
         pcm = PcmBeat(File(instrumentation.targetContext.cacheDir, "memory-only.pcm"), 8000, source.channels, source.frames),
@@ -221,15 +242,10 @@ class SmoothLoopPlaybackTest {
         range = range,
         looping = looping,
         initialVolume = 1f,
-        onStateChanged = {},
+        onStateChanged = onStateChanged,
+        onOutputStarted = onOutputStarted,
         onFailure = onFailure,
     )
-
-    private fun awaitCondition(condition: () -> Boolean) {
-        val deadline = SystemClock.uptimeMillis() + 5000
-        while (!condition() && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(10)
-        assertTrue("Playback did not reach expected state", condition())
-    }
 
     private class ObservedSource(private val delegate: PcmSource) : PcmSource by delegate {
         val closed = CountDownLatch(1)
