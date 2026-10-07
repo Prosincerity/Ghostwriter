@@ -280,20 +280,24 @@ class BeatComponentsTest {
     }
 
     @Test
-    fun beatPlayerLoadingState_onlyOffersCancellation() {
+    fun unreadyPlayer_offersCancellationWhileLoadingAndRetryOrRemovalAfterFailure() {
+        val loading = mutableStateOf(true)
         var cancelled = false
+        var retried = false
+        var removed = false
+        val player = BeatPlayer()
         composeRule.setContent {
             GhostwriterTheme {
                 BeatPlayerPanel(
-                    beatPlayer = BeatPlayer(),
+                    beatPlayer = player,
                     isBeatReady = false,
                     isImporting = false,
                     beatDisplayName = "",
                     onImportBeat = {},
-                    onReassignBeat = {},
+                    onReassignBeat = { removed = true },
                     isReassigningBeat = false,
                     waveformAmplitudes = intArrayOf(),
-                    isWaveformLoading = true,
+                    isWaveformLoading = loading.value,
                     markers = emptyList(),
                     onAddMarker = {},
                     onMarkerClick = {},
@@ -301,16 +305,29 @@ class BeatComponentsTest {
                     onCancelWaveformPreparation = { cancelled = true },
                     cancelRemovesImportedBeat = true,
                     waveformPreparationCancelled = false,
-                    waveformPreparationFailed = false,
-                    onRetryWaveformPreparation = {},
+                    waveformPreparationFailed = !loading.value,
+                    onRetryWaveformPreparation = { retried = true },
                 )
             }
         }
 
         composeRule.onNodeWithText("Preparing waveform…").assertExists()
         composeRule.onNodeWithText("Import beat").assertDoesNotExist()
+        composeRule.onNodeWithText("Retry").assertDoesNotExist()
+        composeRule.onNodeWithText("Remove beat").assertDoesNotExist()
         composeRule.onNodeWithText("Cancel import").performClick()
-        composeRule.runOnIdle { assertTrue(cancelled) }
+        composeRule.runOnIdle {
+            assertTrue(cancelled)
+            loading.value = false
+        }
+        composeRule.onNodeWithText("Preparing waveform…").assertDoesNotExist()
+        composeRule.onNodeWithText("Cancel import").assertDoesNotExist()
+        composeRule.onNodeWithText("Retry").performClick()
+        composeRule.onNodeWithText("Remove beat").performClick()
+        composeRule.runOnIdle {
+            assertTrue(retried)
+            assertTrue(removed)
+        }
     }
 
     @Test
@@ -371,43 +388,6 @@ class BeatComponentsTest {
         composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
         composeRule.onNodeWithContentDescription("Mute").performClick()
         composeRule.runOnIdle { assertEquals(0f, player.volume) }
-    }
-
-    @Test
-    fun beatPlayerFailureState_offersRetryAndBeatRemoval() {
-        var retried = false
-        var removed = false
-        composeRule.setContent {
-            GhostwriterTheme {
-                BeatPlayerPanel(
-                    beatPlayer = BeatPlayer(),
-                    isBeatReady = false,
-                    isImporting = false,
-                    beatDisplayName = "",
-                    onImportBeat = {},
-                    onReassignBeat = { removed = true },
-                    isReassigningBeat = false,
-                    waveformAmplitudes = intArrayOf(),
-                    isWaveformLoading = false,
-                    markers = emptyList(),
-                    onAddMarker = {},
-                    onMarkerClick = {},
-                    onMarkerMove = { _, _ -> },
-                    onCancelWaveformPreparation = {},
-                    cancelRemovesImportedBeat = false,
-                    waveformPreparationCancelled = false,
-                    waveformPreparationFailed = true,
-                    onRetryWaveformPreparation = { retried = true },
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Retry").performClick()
-        composeRule.onNodeWithText("Remove beat").performClick()
-        composeRule.runOnIdle {
-            assertTrue(retried)
-            assertTrue(removed)
-        }
     }
 
     @Test

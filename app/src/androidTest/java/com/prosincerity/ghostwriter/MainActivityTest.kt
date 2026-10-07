@@ -269,8 +269,8 @@ class MainActivityTest {
         val title = uniqueProjectTitle("Editor round trips")
         try {
             createProject(title)
-            for (destination in listOf("Settings", "Dictionary", "Settings", "Dictionary")) {
-                val lyrics = "Latest lyrics before $destination"
+            for ((visit, destination) in listOf("Settings", "Dictionary", "Settings", "Dictionary").withIndex()) {
+                val lyrics = "Visit $visit: latest lyrics before $destination"
                 composeRule.onNode(hasSetTextAction()).performTextReplacement(lyrics)
                 composeRule.onNodeWithContentDescription(destination).performClick()
                 composeRule.onNodeWithContentDescription("Back").performClick()
@@ -285,7 +285,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun navigation_homeToAboutAndBack_returnsHome() {
+    fun settingsDestinations_returnThroughSettingsToHome() {
         composeRule.onNodeWithText("New project").assertExists()
         composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
         composeRule.onNodeWithText("Change folder").assertDoesNotExist()
@@ -293,6 +293,19 @@ class MainActivityTest {
         composeRule.onNodeWithContentDescription("Settings").performClick()
         composeRule.onNodeWithText("Choose lyric folder").assertExists()
         composeRule.onNodeWithText("Settings").assertExists()
+
+        composeRule.onNodeWithText("Download Dictionaries").performScrollTo().performClick()
+        composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.").assertExists()
+        composeRule.onNode(
+            hasContentDescription("Download Wiktionary Kaikki for English") or
+                hasContentDescription("Wiktionary Kaikki installed for English"),
+        ).assertExists()
+        composeRule.onNode(
+            hasContentDescription("Download eSpeak NG generated for English") or
+                hasContentDescription("eSpeak NG generated installed for English"),
+        ).assertExists()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("About Ghostwriter").assertExists()
 
         composeRule.onNodeWithText("About Ghostwriter").performScrollTo().performClick()
         composeRule.onNodeWithText("About").assertExists()
@@ -312,23 +325,6 @@ class MainActivityTest {
 
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("New project").assertExists()
-    }
-
-    @Test
-    fun settings_dictionaryDownloadsOpensListAndReturns() {
-        composeRule.onNodeWithContentDescription("Settings").performClick()
-        composeRule.onNodeWithText("Download Dictionaries").performScrollTo().performClick()
-        composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.").assertExists()
-        composeRule.onNode(
-            hasContentDescription("Download Wiktionary Kaikki for English") or
-                hasContentDescription("Wiktionary Kaikki installed for English"),
-        ).assertExists()
-        composeRule.onNode(
-            hasContentDescription("Download eSpeak NG generated for English") or
-                hasContentDescription("eSpeak NG generated installed for English"),
-        ).assertExists()
-        composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("About Ghostwriter").assertExists()
     }
 
     @Test
@@ -366,17 +362,12 @@ class MainActivityTest {
     }
 
     @Test
-    fun projectLifecycle_createNavigateRenameAndDelete() {
+    fun projectLifecycle_createReopenRenameAndDelete() {
         val projectTitle = uniqueProjectTitle("Main activity project")
         val renamedTitle = "$projectTitle renamed"
 
         try {
             createProject(projectTitle)
-            composeRule.onNodeWithText(projectTitle).assertExists()
-
-            composeRule.onNodeWithContentDescription("Settings").performClick()
-            composeRule.onNodeWithText("Settings").assertExists()
-            composeRule.onNodeWithContentDescription("Back").performClick()
             composeRule.onNodeWithText(projectTitle).assertExists()
 
             composeRule.onNodeWithContentDescription("Back").performClick()

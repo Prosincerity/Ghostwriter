@@ -357,3 +357,14 @@ archives; they assert installation and lookup results rather than download count
 Reinstalling an already installed source must still work when downloads are
 unavailable. Service focus-loss checks omit unobserved play/stop calls; notification
 and media-session scenarios retain their transport outcome checks.
+
+The latest review replaces redundant waveform decoder counts with returned
+peaks, cache contents, and successful recovery after an empty extraction.
+File-import name cases share their success assertions, while metadata-write
+failure checks the error, retained copied audio, and untouched blocked metadata.
+The unready player panel checks loading
+and failure actions in one UI scenario. Settings destination navigation shares
+one Activity journey; project lifecycle retains reopening, renaming, and
+deletion, and repeated editor visits use distinct lyrics to catch stale drafts.
+Unknown-script rejection belongs with language matching rather than font labels.
+No production UI logic, coverage exclusions, or thresholds change in this review.

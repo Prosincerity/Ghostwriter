@@ -30,18 +30,33 @@ class ProjectStorageBeatTest {
     }
 
     @Test
-    fun fileBasedImportUsesSourceNameAndReportsMetadataFailure() {
+    fun fileBasedImport_preservesDefaultAndExplicitOriginalNames() {
+        val source = tempFolder.newFile("original.wav").apply { writeText("audio") }
+        for (name in listOf(source.name, "Cool Sample (90 BPM).mp3")) {
+            val project = tempFolder.newFolder()
+            val copied = if (name == source.name) ProjectStorage.assignBeatToProject(project, source)
+                else ProjectStorage.assignBeatToProject(project, source, name)
+
+            assertEquals("beat.${File(name).extension}", copied.name)
+            assertEquals("audio", copied.readText())
+            val metadata = ProjectStorage.loadMetadata(project, project.name)
+            assertEquals(copied.name, metadata.beatFile)
+            assertEquals(name, metadata.beatOriginalName)
+            assertEquals(copied, ProjectStorage.getProjectBeatFile(project))
+        }
+    }
+
+    @Test
+    fun fileBasedImport_metadataFailureReportsErrorAndKeepsCopiedAudio() {
         val project = tempFolder.newFolder("file_import")
         val source = tempFolder.newFile("original.wav").apply { writeText("audio") }
         val copied = ProjectStorage.assignBeatToProject(project, source)
-        assertEquals("audio", copied.readText())
-        assertEquals(copied, ProjectStorage.getProjectBeatFile(project))
-        assertEquals("original.wav", ProjectStorage.loadMetadata(project, project.name).beatOriginalName)
         assertTrue(File(project, "project.json").delete())
         File(project, "project.json/keep").apply { parentFile!!.mkdir(); writeText("metadata") }
+        source.writeText("replacement audio")
         val result = runCatching { ProjectStorage.assignBeatToProject(project, source) }
         assertTrue(result.exceptionOrNull() is java.io.IOException)
-        assertEquals("audio", copied.readText())
+        assertEquals("replacement audio", copied.readText())
         assertEquals("metadata", File(project, "project.json/keep").readText())
     }
 
@@ -50,17 +65,14 @@ class ProjectStorageBeatTest {
     fun loadOrExtractWaveform_cancelledBeforeExtractionDoesNotCreateCache() {
         val project = tempFolder.newFolder("cancel_before_extraction")
         val beat = File(project, "beat.mp3").apply { writeText("beat") }
-        var extractionCalled = false
 
         val result = runCatching {
             ProjectStorage.loadOrExtractWaveform(project, beat, 3, shouldCancel = { true }) { _, _ ->
-                extractionCalled = true
-                intArrayOf(1, 2, 3)
+                throw AssertionError("A cancelled request must not decode")
             }
         }
 
         assertTrue(result.exceptionOrNull() is CancellationException)
-        assertFalse(extractionCalled)
         assertFalse(ProjectStorage.waveformCacheFile(project).exists())
         assertEquals("beat", beat.readText())
     }
@@ -72,17 +84,14 @@ class ProjectStorageBeatTest {
         assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(7, 8)))
         val cacheBefore = ProjectStorage.waveformCacheFile(project).readBytes().toList()
         var cancelled = false
-        var extractionCalled = false
 
         val result = runCatching {
             ProjectStorage.loadOrExtractWaveform(project, beat, 3, shouldCancel = { cancelled }) { _, _ ->
-                extractionCalled = true
                 cancelled = true
                 intArrayOf(1, 2, 3)
             }
         }
 
-        assertTrue(extractionCalled)
         assertTrue(result.exceptionOrNull() is CancellationException)
         assertEquals(cacheBefore, ProjectStorage.waveformCacheFile(project).readBytes().toList())
         assertEquals("beat", beat.readText())
@@ -92,10 +101,8 @@ class ProjectStorageBeatTest {
     fun loadOrExtractWaveform_reusesACachedWaveformBeforeDecodingAgain() {
         val project = tempFolder.newFolder("cached_waveform")
         val beat = File(project, "beat.mp3").apply { writeText("beat") }
-        var extractionCount = 0
 
         val first = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, targetCount ->
-            extractionCount++
             IntArray(targetCount) { it + 1 }
         }
         val second = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ ->
@@ -104,7 +111,6 @@ class ProjectStorageBeatTest {
 
         assertEquals(listOf(1, 2, 3), first.toList())
         assertEquals(first.toList(), second.toList())
-        assertEquals(1, extractionCount)
         assertNull(ProjectStorage.loadCachedWaveform(project, 4))
     }
 
@@ -126,22 +132,15 @@ class ProjectStorageBeatTest {
     }
 
     @Test
-    fun loadOrExtractWaveform_doesNotCacheFailedEmptyExtraction() {
+    fun loadOrExtractWaveform_failedEmptyExtractionAllowsSuccessfulRetry() {
         val project = tempFolder.newFolder("failed_waveform")
         val beat = File(project, "beat.mp3").apply { writeText("beat") }
-        var extractionCount = 0
-
-        repeat(2) {
-            assertTrue(
-                ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ ->
-                    extractionCount++
-                    IntArray(0)
-                }.isEmpty(),
-            )
-        }
-
-        assertEquals(2, extractionCount)
+        assertTrue(ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ -> IntArray(0) }.isEmpty())
         assertFalse(ProjectStorage.waveformCacheFile(project).exists())
+
+        val recovered = ProjectStorage.loadOrExtractWaveform(project, beat, 3) { _, _ -> intArrayOf(4, 5, 6) }
+        assertEquals(listOf(4, 5, 6), recovered.toList())
+        assertEquals(listOf(4, 5, 6), ProjectStorage.loadCachedWaveform(project, 3)?.toList())
     }
 
     @Test
@@ -306,29 +305,6 @@ class ProjectStorageBeatTest {
         assertEquals("keep", File(project, "beat.txt").readText())
         assertEquals("keep", File(project, "beat-remix.mp3").readText())
         assertTrue(File(project, "beat.flac").isDirectory)
-    }
-
-    @Test
-    fun assignBeatToProject_copiesBeatAndUpdatesMetadata() {
-        val projectDir = tempFolder.newFolder("MySong")
-        val sourceBeat = tempFolder.newFile("sample_source_90bpm.mp3")
-        sourceBeat.writeText("fake mp3 audio content")
-
-        val assigned = ProjectStorage.assignBeatToProject(
-            projectDir = projectDir,
-            sourceFile = sourceBeat,
-            originalName = "Cool Sample (90 BPM).mp3"
-        )
-
-        assertEquals("beat.mp3", assigned.name)
-        assertTrue(assigned.exists())
-        assertEquals("fake mp3 audio content", assigned.readText())
-
-        val meta = ProjectStorage.loadMetadata(projectDir, "MySong")
-        assertEquals("beat.mp3", meta.beatFile)
-        assertEquals("Cool Sample (90 BPM).mp3", meta.beatOriginalName)
-
-        assertEquals(assigned, ProjectStorage.getProjectBeatFile(projectDir, meta))
     }
 
     @Test

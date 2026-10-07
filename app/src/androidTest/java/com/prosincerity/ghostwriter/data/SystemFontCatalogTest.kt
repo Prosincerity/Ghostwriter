@@ -52,7 +52,6 @@ class SystemFontCatalogTest {
         assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, listOf(otherFace, regular)))
         val sameFamily = regular.copy(path = "/other/file.ttf")
         assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, listOf(sameFamily)))
-        assertFalse(SystemFontCatalog.matchesLanguage("und-Qaaa", Locale.ENGLISH))
     }
     @Test
     @SdkSuppress(minSdkVersion = 29)
@@ -106,6 +105,7 @@ class SystemFontCatalogTest {
 
     @Test
     fun languageTags_matchWritingScriptsAndRespectRegionalChineseAndSerbianScripts() {
+        assertFalse(SystemFontCatalog.matchesLanguage("und-Qaaa", Locale.ENGLISH))
         assertTrue(SystemFontCatalog.matchesLanguage("und-Latn", Locale.GERMAN))
         assertTrue(SystemFontCatalog.matchesLanguage("und-Arab", Locale.forLanguageTag("ar")))
         assertFalse(SystemFontCatalog.matchesLanguage("und-Arab", Locale.ENGLISH))
