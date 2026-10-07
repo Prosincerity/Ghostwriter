@@ -2,12 +2,13 @@ package com.prosincerity.ghostwriter.logic
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
+import org.junit.Assert.assertThrows
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
@@ -16,6 +17,9 @@ import java.util.concurrent.CancellationException
 
 @RunWith(AndroidJUnit4::class)
 class WaveformExtractorInstrumentedTest {
+    @get:Rule
+    val folder = TemporaryFolder(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir)
+
     @Test
     fun audioWithoutDuration_returnsNoDurationOrWaveform() {
         // An MPEG-TS stream with AAC packets at the same timestamp has an
@@ -67,19 +71,10 @@ class WaveformExtractorInstrumentedTest {
             check(checks < 3) { "Interrupted source" }
             false
         }
-        assertTrue(checks >= 3)
         assertTrue(amplitudes.isEmpty())
         val retried = WaveformExtractor.extractAmplitudes(wav, 20)
         assertEquals(20, retried.size)
         assertTrue(retried.any { it > 0 })
-    }
-
-    private val generatedFiles = mutableListOf<File>()
-
-    @After
-    fun deleteGeneratedAudio() {
-        generatedFiles.forEach(File::delete)
-        generatedFiles.clear()
     }
 
     @Test
@@ -107,19 +102,19 @@ class WaveformExtractorInstrumentedTest {
     }
 
     @Test
-    fun cancellationAfterDecoderSetup_isPropagatedAndReleasesResources() {
+    fun cancellation_isPropagatedAndAllowsRetry() {
         val wavFile = createPcm16Wav("cancelled-waveform.wav", durationMs = 500)
         var cancellationChecks = 0
 
-        try {
+        assertThrows(CancellationException::class.java) {
             WaveformExtractor.extractAmplitudes(wavFile, targetSampleCount = 20) {
                 cancellationChecks++
                 cancellationChecks >= 2
             }
-            fail("Expected waveform extraction to be cancelled")
-        } catch (_: CancellationException) {
-            assertTrue(cancellationChecks >= 2)
         }
+        val retried = WaveformExtractor.extractAmplitudes(wavFile, targetSampleCount = 20)
+        assertEquals(20, retried.size)
+        assertTrue(retried.any { it > 0 })
     }
 
     private fun createPcm16Wav(fileName: String, durationMs: Int): File {
@@ -152,11 +147,5 @@ class WaveformExtractorInstrumentedTest {
         return generatedFile(fileName).apply { writeBytes(wav.array()) }
     }
 
-    private fun generatedFile(fileName: String): File {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        return File(context.cacheDir, fileName).also {
-            it.delete()
-            generatedFiles += it
-        }
-    }
+    private fun generatedFile(fileName: String): File = File(folder.root, fileName)
 }

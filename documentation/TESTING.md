@@ -314,3 +314,19 @@ directory and a controlled unrelated file that must survive a failed preparation
 If Gradle cannot see the emulator, check `adb devices` or launch the task from
 Android Studio's Gradle tool window. Failed runs do not produce complete
 combined reports. Generated reports stay in `app/build/` and can be recreated.
+
+Installation fault fixtures use filesystem conditions rather than asset-access
+counts, so changing copy order cannot choose a different failure. They retain
+blocked-directory, corrupt-staging, activation, preservation, and retry checks;
+fixture setup failures cannot satisfy an expected installation error. Download
+cancellation shares setup and outcome assertions while keeping independent
+cases before reading and after progress. Dictionary fallback covers both absent
+databases and installed-database misses in the source-precedence scenario.
+Invalid release tags share one input table. Browser-launch failure runs without
+an Activity; successful link navigation remains in the Activity workflow.
+Unobserved audio-volume changes and repeated invalid-font lookups are removed.
+Pure formatting, typography mapping, and contrast checks remain JVM tests; no
+Activities or Composables are invoked there, and coverage thresholds are unchanged.
+Waveform decoding failure and cancellation assert decoded results and recovery
+rather than cancellation-check counts. Waveform and service audio fixtures use
+isolated temporary directories instead of fixed names in the shared app cache.
