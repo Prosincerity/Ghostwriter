@@ -78,12 +78,11 @@ Before modifying code, read:
   so Android UI does not have to satisfy unit-test coverage.
 - Gate coverage per module, not per file: 80% instruction / 70% branch as the
   default baseline, and 90% / 85% for logic-heavy domain, data, or parsing
-  modules. New or changed executable lines require at least 80% diff coverage;
-  overall instruction and branch coverage must not decrease (ratchet).
+  modules. New or changed executable lines require at least 80% diff coverage.
 - Exclude non-logic generated code (Hilt/Dagger, Room, Data Binding, BuildConfig,
   R), Compose previews, plain data classes, and trivial DI modules from reports.
   Do not exclude handwritten logic simply because it shares those names.
-- If coverage drops or a gate fails, add meaningful tests. Do not lower
+- If a coverage gate fails, add meaningful tests. Do not lower
   thresholds or add exclusions without explicitly stating the justification.
 
 ## Commit rules

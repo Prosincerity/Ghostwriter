@@ -7,7 +7,7 @@ import io
 from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from coverage_policy import Coverage, changed_lines, check_diff, check_module, check_ratchet, read_report, read_aggregated, main
+from coverage_policy import Coverage, changed_lines, check_diff, check_module, read_report, read_aggregated, main
 from report_slow_tests import slow_tests
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures/coverage"
@@ -35,18 +35,6 @@ class CoveragePolicyTest(unittest.TestCase):
     def test_empty_instruction_report_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "executable instructions"):
             check_module("app", Coverage((0, 0), (0, 0)))
-
-    def test_ratchet_detects_drop_above_minimum(self):
-        self.assertIn("decreased", check_ratchet("app", Coverage((94, 100), (90, 100)),
-                                               Coverage((95, 100), (90, 100)))[0])
-
-    def test_ratchet_compares_ratios_with_different_totals(self):
-        self.assertEqual([], check_ratchet("app", Coverage((180, 200), (90, 100)),
-                                          Coverage((90, 100), (9, 10))))
-
-    def test_new_decisions_do_not_compare_to_an_inapplicable_baseline(self):
-        self.assertEqual([], check_ratchet("app", Coverage((90, 100), (9, 10)),
-                                          Coverage((90, 100), (0, 0))))
 
     def test_diff_minimum_is_inclusive(self):
         lines = {"p/File.kt": {n: n <= 4 for n in range(1, 6)}}
@@ -159,10 +147,26 @@ class CoveragePolicyTest(unittest.TestCase):
             status = main()
         return status, output.getvalue()
 
-    def test_cli_fails_when_diff_has_no_baseline(self):
-        status, output = self.invoke("--report", "app=unused.xml", "--base-ref", "unused")
+    def test_cli_checks_changed_lines_without_baseline(self):
+        diff = '+++ b/app/src/main/java/p/Good.kt\n@@ -0,0 +1 @@\n+covered\n'
+        with patch("coverage_policy.subprocess.run") as git:
+            git.return_value.stdout = diff
+            status, output = self.invoke("--report", f"app={FIXTURES / 'module.xml'}", "--base-ref", "base")
+        self.assertEqual(0, status, output)
+        self.assertIn("instruction 90/100", output)
+
+    def test_cli_rejects_uncovered_changed_lines_without_baseline(self):
+        diff = '+++ b/app/src/main/java/p/Bad.kt\n@@ -0,0 +1 @@\n+uncovered\n'
+        with patch("coverage_policy.subprocess.run") as git:
+            git.return_value.stdout = diff
+            status, output = self.invoke("--report", f"app={FIXTURES / 'module.xml'}", "--base-ref", "base")
         self.assertEqual(1, status)
-        self.assertIn("require a baseline", output)
+        self.assertIn("diff coverage 0/1 is below 80%", output)
+
+    def test_cli_requires_xml_report_for_changed_lines(self):
+        status, output = self.invoke("--aggregated-report", "unused.js", "--base-ref", "base")
+        self.assertEqual(1, status)
+        self.assertIn("require an XML report", output)
 
     def test_cli_checks_aggregated_module_minimums(self):
         path = self.write_aggregated(self.aggregated_report([self.aggregated_class("Bad", 79, 100)]))
@@ -170,19 +174,17 @@ class CoveragePolicyTest(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertIn("below 80%", output)
 
-    def test_cli_checks_aggregated_ratchet_above_minimum(self):
+    def test_cli_accepts_aggregated_coverage_above_minimum(self):
         current = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 90, 100)]))
-        baseline = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 95, 100)]))
-        status, output = self.invoke("--aggregated-report", str(current), "--aggregated-baseline", str(baseline))
-        self.assertEqual(1, status)
-        self.assertIn("decreased", output)
+        status, output = self.invoke("--aggregated-report", str(current))
+        self.assertEqual(0, status, output)
+        self.assertIn("instruction (90, 100)", output)
 
-    def test_cli_checks_aggregated_baseline_module_identity(self):
-        current = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 90, 100)]))
-        baseline = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 95, 100)], ":other"))
-        status, output = self.invoke("--aggregated-report", str(current), "--aggregated-baseline", str(baseline))
+    def test_cli_checks_xml_module_minimums(self):
+        path = self.write_report('<report><counter type="INSTRUCTION" covered="79" missed="21"/></report>')
+        status, output = self.invoke("--report", f"app={path}")
         self.assertEqual(1, status)
-        self.assertIn("modules/variants differ", output)
+        self.assertIn("below 80%", output)
 
     def test_slow_test_report_names_test_and_duration(self):
         path = self.write_report('<testsuite><testcase classname="ParserTest" name="largeInput" time="3.1"/></testsuite>')

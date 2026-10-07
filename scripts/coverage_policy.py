@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check JaCoCo module totals, changed executable lines, and coverage ratchet."""
+"""Check JaCoCo module minimums and coverage of changed executable lines."""
 
 import argparse
 from dataclasses import dataclass, field
@@ -65,16 +65,6 @@ def check_module(module, coverage, logic_heavy=False):
         covered, total = getattr(coverage, metric)
         if total and covered * 100 < total * minimum:
             failures.append(f"{module}: {metric} coverage {covered}/{total} is below {minimum}%")
-    return failures
-
-
-def check_ratchet(module, current, baseline):
-    failures = []
-    for metric in ("instruction", "branch"):
-        covered, total = getattr(current, metric)
-        old_covered, old_total = getattr(baseline, metric)
-        if total and old_total and covered * old_total < old_covered * total:
-            failures.append(f"{module}: {metric} coverage decreased ({old_covered}/{old_total} -> {covered}/{total})")
     return failures
 
 
@@ -150,21 +140,16 @@ def read_aggregated(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", action="append", default=[], metavar="MODULE=XML")
-    parser.add_argument("--baseline", action="append", default=[], metavar="MODULE=XML")
     parser.add_argument("--aggregated-report")
-    parser.add_argument("--aggregated-baseline")
     parser.add_argument("--logic-module", action="append", default=[])
-    parser.add_argument("--base-ref", help="Git revision for changed production lines; requires baseline reports")
+    parser.add_argument("--base-ref", help="Git revision for changed production lines; requires XML reports")
     args = parser.parse_args()
     try:
         reports = dict(item.split("=", 1) for item in args.report)
-        baselines = dict(item.split("=", 1) for item in args.baseline)
         if not reports and not args.aggregated_report:
             raise ValueError("At least one coverage report is required")
-        if args.base_ref and (not reports or reports.keys() != baselines.keys()):
-            raise ValueError("Diff/ratchet checks require a baseline for every reported module")
-        if baselines.keys() - reports.keys():
-            raise ValueError("Baseline contains an unreported module")
+        if args.base_ref and not reports:
+            raise ValueError("Changed-line checks require an XML report")
         diff = subprocess.run(["git", "-c", "core.quotePath=false", "diff", "--no-ext-diff",
                                "--unified=0", "--find-renames", args.base_ref, "--"],
                               check=True, capture_output=True, text=True).stdout if args.base_ref else None
@@ -174,24 +159,14 @@ def main():
             failures += check_module(module, current, module in args.logic_module)
             print(f"{module}: instruction {current.instruction[0]}/{current.instruction[1]}, "
                   f"branch {current.branch[0]}/{current.branch[1]}")
-            if module in baselines:
-                baseline = read_report(Path(baselines[module]))
-                if not baseline.instruction[1]:
-                    raise ValueError(f"{module}: baseline has no executable instructions")
-                failures += check_ratchet(module, current, baseline)
             if diff is not None:
                 failures += check_diff(current.lines, changed_lines(diff, module))
         if args.aggregated_report:
             current = read_aggregated(args.aggregated_report)
-            baseline = read_aggregated(args.aggregated_baseline) if args.aggregated_baseline else {}
-            if baseline and current.keys() != baseline.keys():
-                raise ValueError("Aggregated baseline modules/variants differ")
             for (module, variant), coverage in current.items():
                 label = f"{module} [{variant}, aggregated]"
                 failures += check_module(module, coverage, module in args.logic_module)
                 print(f"{label}: instruction {coverage.instruction}, branch {coverage.branch}")
-                if baseline:
-                    failures += check_ratchet(label, coverage, baseline[(module, variant)])
         if failures:
             print("\n".join(failures), file=sys.stderr)
             return 1

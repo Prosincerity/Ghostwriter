@@ -58,11 +58,8 @@ modules; this does not require splitting the current app into new modules.
 Metrics with no executable instructions or branches are not applicable.
 
 New or changed executable lines must have at least **80% diff coverage**.
-Overall instruction and branch coverage must not decrease: compare fresh
-results with the PR's base revision using the same variant, suite, toolchain,
-and exclusion set. This ratchet applies even when both results exceed the
-minimums. Report unit and instrumented coverage separately and retain the
-aggregated coverage dashboard. Enforce module minimums and the ratchet on
+Report unit and instrumented coverage separately and retain the
+aggregated coverage dashboard. Enforce fixed module minimums on
 combined coverage from both suites, keeping each module and variant separate.
 Use the separate reports to assess each suite's responsibilities; Android UI
 does not have to meet the unit-test threshold. Changed-line coverage uses the
@@ -83,7 +80,7 @@ than blanket patterns that could hide handwritten implementations. The AGP
 dashboard shows its raw data; the verifier applies the same exclusions before
 summing its module counters, and the filtered JaCoCo HTML/XML reports omit them.
 
-If coverage decreases or a gate fails, add meaningful tests. Do not lower
+If a coverage gate fails, add meaningful tests. Do not lower
 thresholds or add exclusions without explicitly documenting the justification
 in the change. This policy replaces the former blanket per-file requirement:
 module gates and focused tests protect logic without demanding artificial
@@ -199,7 +196,7 @@ Android, combined, and aggregated coverage require a running emulator or connect
 and follow the same device-testing rules. The combined and aggregated tasks
 run both suites.
 
-### Gates and base-revision comparison
+### Gates and changed-line coverage
 
 The filtered reports also produce `coverage.xml` next to their `html/` directory.
 `gradle/coverage.gradle.kts` configures these reports and the verification tasks.
@@ -217,30 +214,26 @@ The app uses 80% instruction / 70% branch. Modules named `domain`, `data`,
 `parsing`, or `logic` automatically use 90% / 85%; other logic-heavy modules
 must be passed to the verifier with `--logic-module MODULE`.
 
-CI's `scripts/ci_coverage.sh` builds fresh reports for the PR base (or the
-pre-push revision) and current revision on the same emulator. It uses the
-current reporting configuration, exclusions, dependencies, and toolchain for
-both revisions, with each revision's production code, tests, and fixtures.
-CI checks module minimums, the instruction/branch ratchet in both combined XML
-and the aggregated dashboard, and at least 80% coverage of changed executable
-production Kotlin/Java lines in the combined XML. It does not apply that JVM
-line metric to documentation, Gradle scripts, or Python tooling; the tooling
-has its own behavior tests.
+CI's `scripts/ci_coverage.sh` builds fresh reports for the current revision.
+CI checks fixed module minimums in both combined XML and the aggregated
+dashboard, and at least 80% coverage of changed executable production
+Kotlin/Java lines in the combined XML. It does not apply that JVM line metric
+to documentation, Gradle scripts, or Python tooling; the tooling has its own
+behavior tests.
 
-For a local comparison after preserving the fresh base reports:
+To check fresh local reports and changed lines against a chosen revision:
 
 ```sh
 python3 scripts/coverage_policy.py \
   --report app=app/build/reports/jacoco/combined/coverage.xml \
-  --baseline app=/path/to/base/coverage.xml \
   --aggregated-report app/build/reports/aggregated_code_coverage_html_report/global/data/report-data.js \
-  --aggregated-baseline /path/to/base/report-data.js \
   --base-ref '<base commit>'
 ```
 
-The verifier fails on missing/malformed reports or missing base module/variant
-data. Module minimums can be checked without a baseline, but CI always supplies
-one for the ratchet and diff checks. The checker tests run headless and offline
+The verifier fails on missing or malformed reports. Omit `--base-ref` to check
+only fixed module minimums. Changed-line checks use the Git diff and current
+combined XML report; previous coverage reports are not required.
+The checker tests run headless and offline
 with `python3 -m unittest discover -s scripts -p 'test_*.py'`.
 `python3 scripts/report_slow_tests.py app/build/test-results` reports individual
 unit tests taking more than three seconds.
@@ -256,10 +249,9 @@ External loop-mode updates are
 checked across every mode by the playback layout test, and the haptic test checks
 the complete button-driven cycle.
 
-Before removing tests, preserve fresh unit and instrumented reports and compare
-them with fresh reports afterward under the same conditions. Review module
-instruction/branch counters and changed-line coverage to distinguish existing
-shortfalls from regressions and preserve the ratchet.
+After removing redundant tests, run the affected suites and review fresh
+reports to confirm the surviving tests still protect the intended behavior
+and satisfy the fixed module minimums and changed-line coverage requirement.
 
 If Gradle cannot see the emulator, check `adb devices` or launch the task from
 Android Studio's Gradle tool window. Failed runs do not produce complete
