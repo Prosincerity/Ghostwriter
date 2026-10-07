@@ -37,7 +37,7 @@ class BeatPlaybackServiceTest {
     private val context get() = instrumentation.targetContext
 
     @Test
-    fun permanentFocusLossAndStartCommands_pauseRestartForgetAndStop() {
+    fun permanentFocusLoss_allowsExplicitRestartAndProjectRemoval() {
         withService { service, _ ->
             onMain { service.player.play() }
             val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Whole beat"))
@@ -49,12 +49,10 @@ class BeatPlaybackServiceTest {
             controller.transportControls.skipToPrevious()
             waitUntil { service.player.isPlaying }
             onMain {
-                service.onStartCommand(Intent(context, BeatPlaybackService::class.java).setAction("com.prosincerity.ghostwriter.PLAY_BEAT"), 0, 1)
                 service.onStartCommand(Intent(context, BeatPlaybackService::class.java)
                     .setAction("com.prosincerity.ghostwriter.FORGET_PROJECT")
                     .putExtra("project", "Service test"), 0, 2)
                 assertFalse(service.player.isReady)
-                service.onStartCommand(Intent(context, BeatPlaybackService::class.java).setAction("com.prosincerity.ghostwriter.STOP_BEAT"), 0, 3)
             }
         }
     }

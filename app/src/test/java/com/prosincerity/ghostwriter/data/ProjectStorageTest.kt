@@ -402,36 +402,27 @@ class ProjectStorageTest {
     fun rotateAndSave_retainsNewestSnapshotsWithinBackupLimit() {
         val projectDir = tempFolder.newFolder("test_track")
         ProjectStorage.rotateAndSave(projectDir, "Take 1", keepCount = 3)
+        assertTrue(File(projectDir, "autosave1.txt").setLastModified(1_000L))
         assertEquals("Take 1", ProjectStorage.loadLatest(projectDir))
         ProjectStorage.rotateAndSave(projectDir, "Take 2", keepCount = 3)
 
         assertEquals("Take 2", File(projectDir, "autosave1.txt").readText())
         assertEquals("Take 2", ProjectStorage.loadLatest(projectDir))
         assertEquals("Take 1", File(projectDir, "autosave2.txt").readText())
+        assertEquals(1_000L, File(projectDir, "autosave2.txt").lastModified())
         assertFalse(File(projectDir, "autosave3.txt").exists())
 
         ProjectStorage.rotateAndSave(projectDir, "Take 3", keepCount = 3)
         assertEquals("Take 3", File(projectDir, "autosave1.txt").readText())
         assertEquals("Take 2", File(projectDir, "autosave2.txt").readText())
         assertEquals("Take 1", File(projectDir, "autosave3.txt").readText())
+        assertEquals(1_000L, File(projectDir, "autosave3.txt").lastModified())
 
         ProjectStorage.rotateAndSave(projectDir, "Take 4", keepCount = 3)
         assertEquals("Take 4", File(projectDir, "autosave1.txt").readText())
         assertEquals("Take 3", File(projectDir, "autosave2.txt").readText())
         assertEquals("Take 2", File(projectDir, "autosave3.txt").readText())
         assertFalse("Oldest backup beyond keepCount should not exist", File(projectDir, "autosave4.txt").exists())
-    }
-
-    @Test
-    fun rotateAndSave_preservesTheTimestampOfOlderSnapshots() {
-        val project = tempFolder.newFolder("backup_timestamps")
-        val first = File(project, "autosave1.txt")
-        first.writeText("older lyrics")
-        assertTrue(first.setLastModified(1_000L))
-
-        ProjectStorage.rotateAndSave(project, "newer lyrics", keepCount = 3)
-
-        assertEquals(1_000L, File(project, "autosave2.txt").lastModified())
     }
 
     @Test

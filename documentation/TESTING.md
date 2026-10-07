@@ -348,3 +348,12 @@ also retains position polling and a delayed-start cancellation barrier. These
 are hardware timing risks, not deterministic unit checks. Keep frame arithmetic,
 loop rendering, and handoff timing on the JVM with controlled inputs; do not add
 retries or longer sleeps to compensate for device failures.
+
+About attribution and link-handler replacement share one UI scenario. Beat
+replacement checks both matching and different file extensions, including stale
+waveform/marker removal and staging cleanup. Backup rotation also checks preserved
+snapshot ages. Dictionary retry fixtures switch explicitly from invalid to valid
+archives; they assert installation and lookup results rather than download counts.
+Reinstalling an already installed source must still work when downloads are
+unavailable. Service focus-loss checks omit unobserved play/stop calls; notification
+and media-session scenarios retain their transport outcome checks.

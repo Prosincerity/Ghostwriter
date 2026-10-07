@@ -253,23 +253,6 @@ class ProjectStorageBeatTest {
     }
 
     @Test
-    fun assignBeatToProject_sameExtensionReplacesContentsWithoutLeavingStagedFile() {
-        val project = tempFolder.newFolder("same_extension_replacement")
-        ProjectStorage.assignBeatToProject(project, "old.mp3") { it.writeText("old") }
-
-        val assigned = ProjectStorage.assignBeatToProject(project, "new.mp3") {
-            it.writeText("new")
-        }
-
-        assertEquals("beat.mp3", assigned.name)
-        assertEquals("new", assigned.readText())
-        assertEquals(
-            setOf("beat.mp3", "project.json"),
-            project.listFiles().orEmpty().map { it.name }.toSet(),
-        )
-    }
-
-    @Test
     fun getProjectBeatFile_rejectsOutsideFilesAndDirectories() {
         val project = tempFolder.newFolder("bounded_beat")
         File(tempFolder.root, "outside.mp3").writeText("outside")
@@ -350,28 +333,26 @@ class ProjectStorageBeatTest {
 
     @Test
     fun assignBeatToProject_replacesOldBeatAndInvalidatesItsTimeline() {
-        val projectDir = tempFolder.newFolder("ReplacedBeatSong")
-        val oldWav = File(projectDir, "beat.wav")
-        oldWav.writeText("old wav content")
-        assertTrue(ProjectStorage.saveMetadata(projectDir, ProjectMetadata(
-            title = "ReplacedBeatSong", beatFile = "beat.wav",
-            markers = listOf(WaveformMarker("Hook", 12_000L)),
-        )))
-        assertTrue(ProjectStorage.saveCachedWaveform(projectDir, 2, intArrayOf(1, 2)))
+        for (oldExtension in listOf("mp3", "wav")) {
+            val projectDir = tempFolder.newFolder("replace_$oldExtension")
+            File(projectDir, "beat.$oldExtension").writeText("old beat content")
+            assertTrue(ProjectStorage.saveMetadata(projectDir, ProjectMetadata(
+                title = "ReplacedBeatSong", beatFile = "beat.$oldExtension",
+                markers = listOf(WaveformMarker("Hook", 12_000L)),
+            )))
+            assertTrue(ProjectStorage.saveCachedWaveform(projectDir, 2, intArrayOf(1, 2)))
 
-        val newMp3Source = tempFolder.newFile("new_beat.mp3")
-        newMp3Source.writeText("new mp3 content")
+            val source = tempFolder.newFile().apply { writeText("new mp3 content") }
+            val assigned = ProjectStorage.assignBeatToProject(projectDir, source, "new_beat.mp3")
 
-        val assigned = ProjectStorage.assignBeatToProject(projectDir, newMp3Source, "new_beat.mp3")
-
-        assertEquals("beat.mp3", assigned.name)
-        assertEquals("new mp3 content", assigned.readText())
-        assertFalse("Old wav beat should have been deleted", oldWav.exists())
-        assertFalse(ProjectStorage.waveformCacheFile(projectDir).exists())
-
-        val meta = ProjectStorage.loadMetadata(projectDir, "ReplacedBeatSong")
-        assertEquals("beat.mp3", meta.beatFile)
-        assertTrue(meta.markers.isEmpty())
+            assertEquals("beat.mp3", assigned.name)
+            assertEquals("new mp3 content", assigned.readText())
+            assertFalse(ProjectStorage.waveformCacheFile(projectDir).exists())
+            assertEquals(setOf("beat.mp3", "project.json"), projectDir.list()!!.toSet())
+            val meta = ProjectStorage.loadMetadata(projectDir, "ReplacedBeatSong")
+            assertEquals("beat.mp3", meta.beatFile)
+            assertTrue(meta.markers.isEmpty())
+        }
     }
 
     @Test

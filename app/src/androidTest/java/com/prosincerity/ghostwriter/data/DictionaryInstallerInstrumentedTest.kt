@@ -26,9 +26,9 @@ class DictionaryInstallerInstrumentedTest {
         val wiki = dictionaryArchive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/",
             "d'accord" to "/dakɔʁ/"))
         val espeak = dictionaryArchive(context, listOf("hammer" to "/hamɚ/", "fallback" to "/fɔlbæk/"))
-        var opens = 0
+        var downloadsAllowed = true
         val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
-            opens++
+            check(downloadsAllowed) { "An installed source must remain available without downloading again" }
             ByteArrayInputStream(if ("_espeak_" in url) espeak else wiki)
         })
         var generatedCalls = 0
@@ -42,7 +42,6 @@ class DictionaryInstallerInstrumentedTest {
         assertEquals(generated, runBlocking { withFallback.lookup("absent", "en") })
         assertEquals(1, generatedCalls)
         runBlocking { installer.install("en", DictionarySource.ESPEAK) }
-        assertEquals(1, opens)
         assertEquals(listOf("en"), installer.availableLanguages())
         assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
         assertTrue(installer.installedDatabase("en", DictionarySource.ESPEAK) != null)
@@ -51,7 +50,6 @@ class DictionaryInstallerInstrumentedTest {
             lookup(installer, "hammer", "en"),
         )
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
-        assertEquals(2, opens)
         assertEquals(
             PronunciationResult(listOf("/ˈhæmə/", "/ˈhæmɚ/"), PronunciationSource.WIKTIONARY),
             lookup(installer, "hammer", "en"),
@@ -70,8 +68,9 @@ class DictionaryInstallerInstrumentedTest {
         assertEquals(generated, runBlocking { withFallback.lookup("absent", "en") })
         assertEquals(2, generatedCalls)
         assertNull(lookup(installer, "absent", "en"))
+        downloadsAllowed = false
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
-        assertEquals(2, opens)
+        assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "hammer", "en")?.source)
     }
 
     @Test
@@ -100,9 +99,9 @@ class DictionaryInstallerInstrumentedTest {
             GZIPOutputStream(output).use { it.write("not a SQLite database".toByteArray()) }
             output.toByteArray()
         }
-        var opens = 0
+        var archive = invalid
         val installer = DictionaryInstaller(context, DictionaryArchiveSource {
-            ByteArrayInputStream(if (++opens == 1) invalid else valid)
+            ByteArrayInputStream(archive)
         })
 
         val failure = runCatching {
@@ -112,17 +111,15 @@ class DictionaryInstallerInstrumentedTest {
         assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
         assertTrue(installer.availableLanguages().isEmpty())
 
+        archive = valid
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
-        assertEquals(2, opens)
         assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "en")?.source)
     }
 
     @Test
     fun corruptInstalledDatabaseCanBeReplaced() = withDictionaryTestContext { context ->
         val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
-        var opens = 0
         val installer = DictionaryInstaller(context, DictionaryArchiveSource {
-            opens++
             ByteArrayInputStream(valid)
         })
         val version = File(context.filesDir, "dictionaries/en/${installer.release.tag}")
@@ -132,7 +129,6 @@ class DictionaryInstallerInstrumentedTest {
         assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
         assertTrue(installer.availableLanguages().isEmpty())
         runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
-        assertEquals(1, opens)
         assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "word", "en")?.source)
     }
 

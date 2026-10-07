@@ -41,6 +41,7 @@ import java.io.InputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import java.util.zip.GZIPOutputStream
 import kotlin.random.Random
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -90,9 +91,9 @@ class DictionaryDownloadsTest {
             GZIPOutputStream(output).use { it.write("not a database".toByteArray()) }
             output.toByteArray()
         }
-        val attempts = AtomicInteger()
+        val archive = AtomicReference(invalid)
         val installer = DictionaryInstaller(context, DictionaryArchiveSource {
-            ByteArrayInputStream(if (attempts.incrementAndGet() == 1) invalid else valid)
+            ByteArrayInputStream(archive.get())
         })
         composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
 
@@ -103,13 +104,13 @@ class DictionaryDownloadsTest {
                 .fetchSemanticsNodes().isNotEmpty()
         }
         waitForDownloadButton()
+        archive.set(valid)
         composeRule.onNodeWithContentDescription(DOWNLOAD_ENGLISH_WIKTIONARY).performClick()
         composeRule.waitUntil(5_000) {
             composeRule.onAllNodesWithContentDescription(INSTALLED_ENGLISH_WIKTIONARY)
                 .fetchSemanticsNodes().isNotEmpty()
         }
 
-        assertEquals(2, attempts.get())
         assertNotNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
         composeRule.onNodeWithText("Installed · Available offline").assertExists()
         composeRule.onNodeWithText("Could not download Wiktionary Kaikki for English: Downloaded dictionary is invalid")

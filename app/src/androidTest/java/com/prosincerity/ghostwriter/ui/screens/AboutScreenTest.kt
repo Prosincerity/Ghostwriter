@@ -20,32 +20,16 @@ class AboutScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    @Test fun changingLinkHandler_usesLatestCallbackAfterRecomposition() {
-        var opened = ""
-        var callback by mutableStateOf<(String) -> Unit>({ opened = "old:$it" })
-        composeRule.setContent {
-            GhostwriterTheme {
-                AboutScreen("test", {}, callback)
-            }
-        }
-        composeRule.onNodeWithText("Source code").performScrollTo().performClick()
-        composeRule.runOnIdle {
-            assertEquals("old:$GHOSTWRITER_REPOSITORY_URL", opened)
-            callback = { opened = "new:$it" }
-        }
-        composeRule.onNodeWithText("Source code").performScrollTo().performClick()
-        composeRule.runOnIdle { assertEquals("new:$GHOSTWRITER_REPOSITORY_URL", opened) }
-    }
-
     @Test
-    fun aboutScreen_showsProjectAndDictionaryAttribution() {
+    fun attributionLinks_openTheirUrlsAndUseTheCurrentHandler() {
         var openedUrl: String? = null
+        var onOpenLink by mutableStateOf<(String) -> Unit>({ openedUrl = it })
         composeRule.setContent {
             GhostwriterTheme {
                 AboutScreen(
                     versionName = "1.2.3",
                     onBack = {},
-                    onOpenLink = { openedUrl = it },
+                    onOpenLink = onOpenLink,
                 )
             }
         }
@@ -75,6 +59,9 @@ class AboutScreenTest {
             composeRule.onNodeWithText(label).performScrollTo().performClick()
             composeRule.runOnIdle { assertEquals(url, openedUrl) }
         }
+        composeRule.runOnIdle { onOpenLink = { openedUrl = "updated:$it" } }
+        composeRule.onNodeWithText("Source code").performScrollTo().performClick()
+        composeRule.runOnIdle { assertEquals("updated:$GHOSTWRITER_REPOSITORY_URL", openedUrl) }
     }
 
 }
