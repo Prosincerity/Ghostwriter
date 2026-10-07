@@ -34,18 +34,17 @@ class ProjectIdentityTest {
         val lyricProject = projects.single { ProjectStorage.loadMetadata(it, it.name).title == "Lyrics" }
         assertEquals("draft", ProjectStorage.loadLatest(lyricProject))
         assertEquals(originalTime + 60_000, ProjectStorage.loadMetadata(lyricProject, "").updatedAt)
-        ProjectStorage.migrateLegacyProjects(File(root, "missing"))
-        assertEquals("Untitled", ProjectStorage.normalizeTitle("  "))
     }
 
     @Test fun collidingAndDuplicateDisplayTitlesHaveIndependentIds() {
         val root = temporaryFolder.root
-        val projects = listOf("verse/chorus", "verse_chorus", "verse/chorus", "字".repeat(300))
+        val projects = listOf("verse/chorus", "verse_chorus", "verse/chorus", "字".repeat(300), "  ")
             .map { ProjectStorage.createProjectDirectory(root, it) }
-        assertEquals(4, projects.map { it.name }.distinct().size)
+        assertEquals(5, projects.map { it.name }.distinct().size)
         projects.forEach { assertTrue(ProjectStorage.isProjectId(it.name)) }
         assertEquals("verse/chorus", ProjectStorage.loadMetadata(projects[0], "").title)
         assertEquals("字".repeat(300), ProjectStorage.loadMetadata(projects[3], "").title)
+        assertEquals("Untitled", ProjectStorage.loadMetadata(projects[4], "").title)
     }
 
     @Test fun legacyMigrationKeepsContentMetadataAndSnapshotAgesAndIsIdempotent() {

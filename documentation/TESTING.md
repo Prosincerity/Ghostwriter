@@ -269,6 +269,18 @@ Theme-only recompositions without visual assertions and playback clicks
 without outcome assertions are removed. Explicit contracts such as deferred
 playback binding and allocation-free audio rendering still have dedicated tests.
 
+Further storage consolidation keeps beat cache/marker invalidation with the
+replacement and removal scenarios, manual-save replacement with autosave
+synchronization, and backup overflow with rotation. Missing-newest recovery
+checks both an absent manual save and an older manual save. Marker parsing
+retains every malformed-entry case in one ordered-result test; optional JSON
+null fields are checked in the saved file alongside their loaded values.
+Notepad defaults are checked through the rendered text style instead of a
+data-class constructor snapshot. Saved font-style checks inspect the loaded
+Android typeface rather than unchanged fixture properties. Player input
+validation retains missing-file, directory, valid-volume, and NaN cases with
+fresh players for each invalid load. No UI code is added to the JVM suite.
+
 After removing redundant tests, run the affected suites and review fresh
 reports to confirm the surviving tests still protect the intended behavior
 and satisfy the fixed module minimums and changed-line coverage requirement.

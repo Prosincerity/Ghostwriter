@@ -1,7 +1,6 @@
 package com.prosincerity.ghostwriter.data
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
@@ -51,6 +50,9 @@ class ProjectMetadataTest {
         val json = ProjectMetadata("Loop", markers = markers).toJsonObject()
         assertEquals(markers, ProjectMetadata.fromJsonObject(json, "Fallback").markers)
         val entries = json.getJSONArray("markers")
+        assertEquals(3, entries.length())
+        assertEquals("Start", entries.getJSONObject(0).getString("label"))
+        assertEquals(1000L, entries.getJSONObject(0).getLong("positionMs"))
         assertEquals("start", entries.getJSONObject(0).getString("loopRole"))
         entries.getJSONObject(0).remove("loopRole")
         entries.getJSONObject(1).put("loopRole", "future-role")
@@ -201,11 +203,9 @@ class ProjectMetadataTest {
         assertNull(loaded.key)
         assertNull(loaded.timeSignature)
         assertNull(loaded.notes)
-    }
-
-    @Test
-    fun toJsonObject_writesJsonNullForEveryOptionalField() {
-        val json = ProjectMetadata(title = "Acapella").toJsonObject()
+        assertNull(loaded.beatFile)
+        assertNull(loaded.beatOriginalName)
+        val json = JSONObject(File(projectDir, "project.json").readText())
 
         for (field in listOf("bpm", "key", "timeSignature", "notes", "beatFile", "beatOriginalName")) {
             assertTrue("Expected $field to be present", json.has(field))
@@ -264,6 +264,9 @@ class ProjectMetadataTest {
             put(JSONObject().put("positionMs", 100L))
             put(JSONObject().put("label", JSONObject.NULL).put("positionMs", 100L))
             put(JSONObject().put("label", "   ").put("positionMs", 100L))
+            put(JSONObject().put("label", "").put("positionMs", 2000L))
+            put(JSONObject().put("label", "Negative").put("positionMs", -1L))
+            put("not an object")
             put(JSONObject.NULL)
             put(JSONObject().put("label", "Hook").put("positionMs", 32_000L))
         })
@@ -276,31 +279,4 @@ class ProjectMetadataTest {
         )
     }
 
-    @Test
-    fun metadata_serializesMarkersAndIgnoresMalformedMarkerEntries() {
-        val metadata = ProjectMetadata(
-            title = "Marked Track",
-            markers = listOf(WaveformMarker("Bridge", 45_000L)),
-        )
-
-        val serializedMarkers = metadata.toJsonObject().getJSONArray("markers")
-        assertEquals(1, serializedMarkers.length())
-        assertEquals("Bridge", serializedMarkers.getJSONObject(0).getString("label"))
-        assertEquals(45_000L, serializedMarkers.getJSONObject(0).getLong("positionMs"))
-
-        val malformed = JSONObject().apply {
-            put("title", "Marked Track")
-            put("markers", JSONArray().apply {
-                put(JSONObject().put("label", "Valid").put("positionMs", 1_000L))
-                put(JSONObject().put("label", "").put("positionMs", 2_000L))
-                put(JSONObject().put("label", "Negative").put("positionMs", -1L))
-                put("not an object")
-            })
-        }
-
-        assertEquals(
-            listOf(WaveformMarker("Valid", 1_000L)),
-            ProjectMetadata.fromJsonObject(malformed, "Fallback").markers,
-        )
-    }
 }

@@ -1,23 +1,9 @@
 package com.prosincerity.ghostwriter.data
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LyricTextSettingsTest {
-    @Test
-    fun defaults_preserveExistingNotepadTypography() {
-        val defaults = LyricTextSettings()
-        assertEquals(LyricFontFamily.MONOSPACE, defaults.fontFamily)
-        assertEquals(16, defaults.fontSizeSp)
-        assertEquals(1.5f, defaults.lineHeightMultiplier)
-        assertEquals(0f, defaults.letterSpacingSp)
-        assertEquals(LyricTextAlignment.START, defaults.alignment)
-        assertTrue(defaults.fontSizeSp in LyricTextSettings.FONT_SIZE_OPTIONS)
-        assertTrue(defaults.lineHeightMultiplier in LyricTextSettings.LINE_HEIGHT_RANGE)
-        assertTrue(defaults.letterSpacingSp in LyricTextSettings.LETTER_SPACING_RANGE)
-    }
-
     @Test
     fun normalization_boundsSizesAndSpacingWithoutChangingFontOrAlignment() {
         val tooSmall = LyricTextSettings(

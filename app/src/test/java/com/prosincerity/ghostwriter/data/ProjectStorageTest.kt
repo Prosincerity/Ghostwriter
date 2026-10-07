@@ -2,7 +2,6 @@ package com.prosincerity.ghostwriter.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -68,7 +67,7 @@ class ProjectStorageTest {
         assertTrue(ProjectStorage.saveManual(project, "track", "manual", 3))
         File(project, "lyrics.txt").setLastModified(1000L)
         ProjectStorage.rotateAndSave(project, "latest", 3)
-        for (title in listOf("autosave2", "renamed")) {
+        for (title in listOf("autosave1", "autosave1.manual", "autosave1", "autosave2", "renamed")) {
             assertEquals(project, ProjectStorage.renameProjectDirectory(project, title))
             assertEquals(title, ProjectStorage.loadMetadata(project, "fallback").title)
             assertEquals("manual", File(project, "lyrics.txt").readText())
@@ -136,16 +135,6 @@ class ProjectStorageTest {
         assertTrue(newest.mkdir())
 
         assertEquals("manual", ProjectStorage.loadLatest(project))
-        assertEquals("lyrics.txt", ProjectStorage.manualSaveFileName("autosave1"))
-        assertEquals("lyrics.txt", ProjectStorage.manualSaveFileName("song"))
-    }
-
-    @Test
-    fun renameDoesNotDependOnManualFilename() {
-        val project = tempFolder.newFolder("autosave1")
-        assertTrue(ProjectStorage.saveManual(project, "autosave1", "manual", 3))
-        assertEquals(project, ProjectStorage.renameProjectDirectory(project, "autosave1.manual"))
-        assertEquals(project, ProjectStorage.renameProjectDirectory(project, "autosave1"))
         assertEquals("manual", File(project, "lyrics.txt").readText())
     }
 
@@ -153,16 +142,6 @@ class ProjectStorageTest {
     fun resolveProjectTitle_reusesExistingCasingAndSanitizedName() {
         assertEquals("My/Track", ProjectStorage.resolveProjectTitle("my/track", listOf("My/Track")))
         assertEquals("New/Track", ProjectStorage.resolveProjectTitle("New/Track", emptyList()))
-    }
-
-    @Test
-    fun manualSave_replacesExistingContentsWithoutLeavingTemporaryFiles() {
-        val project = tempFolder.newFolder("replace")
-        assertTrue(ProjectStorage.saveManual(project, "replace", "first", 3))
-        assertTrue(ProjectStorage.saveManual(project, "replace", "second", 3))
-        assertEquals("second", File(project, "lyrics.txt").readText())
-        assertEquals("second", ProjectStorage.loadLatest(project))
-        assertFalse(project.list()!!.any { it.endsWith(".tmp") })
     }
 
     @Test
@@ -188,17 +167,21 @@ class ProjectStorageTest {
 
     @Test
     fun loadLatest_missingNewestAutosaveUsesNewerBackupInsteadOfOldManualSave() {
-        val project = tempFolder.newFolder("missing_newest")
-        File(project, "missing_newest.txt").apply {
-            writeText("old manual save")
-            assertTrue(setLastModified(1_000L))
-        }
-        File(project, "autosave2.txt").apply {
-            writeText("newer autosave")
-            assertTrue(setLastModified(2_000L))
-        }
+        for (hasManualSave in listOf(false, true)) {
+            val project = tempFolder.newFolder("missing_newest_$hasManualSave")
+            if (hasManualSave) {
+                File(project, "${project.name}.txt").apply {
+                    writeText("old manual save")
+                    assertTrue(setLastModified(1_000L))
+                }
+            }
+            File(project, "autosave2.txt").apply {
+                writeText("newer autosave")
+                assertTrue(setLastModified(2_000L))
+            }
 
-        assertEquals("newer autosave", ProjectStorage.loadLatest(project))
+            assertEquals("newer autosave", ProjectStorage.loadLatest(project))
+        }
     }
 
     @Test
@@ -416,12 +399,14 @@ class ProjectStorageTest {
     }
 
     @Test
-    fun rotateAndSave_multipleWrites_shiftsFilesUp() {
+    fun rotateAndSave_retainsNewestSnapshotsWithinBackupLimit() {
         val projectDir = tempFolder.newFolder("test_track")
         ProjectStorage.rotateAndSave(projectDir, "Take 1", keepCount = 3)
+        assertEquals("Take 1", ProjectStorage.loadLatest(projectDir))
         ProjectStorage.rotateAndSave(projectDir, "Take 2", keepCount = 3)
 
         assertEquals("Take 2", File(projectDir, "autosave1.txt").readText())
+        assertEquals("Take 2", ProjectStorage.loadLatest(projectDir))
         assertEquals("Take 1", File(projectDir, "autosave2.txt").readText())
         assertFalse(File(projectDir, "autosave3.txt").exists())
 
@@ -429,6 +414,12 @@ class ProjectStorageTest {
         assertEquals("Take 3", File(projectDir, "autosave1.txt").readText())
         assertEquals("Take 2", File(projectDir, "autosave2.txt").readText())
         assertEquals("Take 1", File(projectDir, "autosave3.txt").readText())
+
+        ProjectStorage.rotateAndSave(projectDir, "Take 4", keepCount = 3)
+        assertEquals("Take 4", File(projectDir, "autosave1.txt").readText())
+        assertEquals("Take 3", File(projectDir, "autosave2.txt").readText())
+        assertEquals("Take 2", File(projectDir, "autosave3.txt").readText())
+        assertFalse("Oldest backup beyond keepCount should not exist", File(projectDir, "autosave4.txt").exists())
     }
 
     @Test
@@ -441,20 +432,6 @@ class ProjectStorageTest {
         ProjectStorage.rotateAndSave(project, "newer lyrics", keepCount = 3)
 
         assertEquals(1_000L, File(project, "autosave2.txt").lastModified())
-    }
-
-    @Test
-    fun rotateAndSave_exceedsKeepCount_dropsOldestBackup() {
-        val projectDir = tempFolder.newFolder("test_track")
-        ProjectStorage.rotateAndSave(projectDir, "Line 1", keepCount = 3)
-        ProjectStorage.rotateAndSave(projectDir, "Line 2", keepCount = 3)
-        ProjectStorage.rotateAndSave(projectDir, "Line 3", keepCount = 3)
-        ProjectStorage.rotateAndSave(projectDir, "Line 4", keepCount = 3)
-
-        assertEquals("Line 4", File(projectDir, "autosave1.txt").readText())
-        assertEquals("Line 3", File(projectDir, "autosave2.txt").readText())
-        assertEquals("Line 2", File(projectDir, "autosave3.txt").readText())
-        assertFalse("Oldest backup beyond keepCount should not exist", File(projectDir, "autosave4.txt").exists())
     }
 
     @Test
@@ -484,26 +461,15 @@ class ProjectStorageTest {
         assertEquals("", ProjectStorage.loadLatest(projectDir))
     }
 
-    @Test
-    fun loadLatest_readsAutosave1WhenPresent() {
-        val projectDir = tempFolder.newFolder("test_track")
-        ProjectStorage.rotateAndSave(projectDir, "Latest Verse", keepCount = 3)
-        assertEquals("Latest Verse", ProjectStorage.loadLatest(projectDir))
-    }
-
-    @Test
-    fun loadLatest_fallsBackToOlderAutosaveIfNewestMissing() {
-        val projectDir = tempFolder.newFolder("test_track")
-        File(projectDir, "autosave2.txt").writeText("Recovered Take")
-        assertEquals("Recovered Take", ProjectStorage.loadLatest(projectDir))
-    }
-
     // --- saveManual tests ---
 
     @Test
-    fun saveManual_createsFixedTextFileAndSynchronizesAutosave() {
+    fun saveManual_replacesLyricsAndSynchronizesAutosaveWithoutTemporaryFiles() {
         val projectDir = tempFolder.newFolder("Summer_Bars")
-        ProjectStorage.saveManual(projectDir, "Summer Bars", "Spitting heat", keepCount = 3)
+        assertTrue(ProjectStorage.saveManual(projectDir, "Summer Bars", "first draft", keepCount = 3))
+        assertEquals("first draft", File(projectDir, "lyrics.txt").readText())
+        assertEquals("first draft", File(projectDir, "autosave1.txt").readText())
+        assertTrue(ProjectStorage.saveManual(projectDir, "Summer Bars", "Spitting heat", keepCount = 3))
 
         val manualFile = File(projectDir, "lyrics.txt")
         assertTrue("Manual file should exist", manualFile.exists())
@@ -514,5 +480,6 @@ class ProjectStorageTest {
         assertEquals("Spitting heat", autosaveFile.readText())
 
         assertEquals("loadLatest should load manual save", "Spitting heat", ProjectStorage.loadLatest(projectDir))
+        assertFalse(projectDir.list()!!.any { it.endsWith(".tmp") })
     }
 }

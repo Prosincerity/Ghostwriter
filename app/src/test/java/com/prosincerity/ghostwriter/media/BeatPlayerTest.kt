@@ -31,19 +31,22 @@ class BeatPlayerTest {
     }
 
     @Test
-    fun setVolume_ignoresNaNAndKeepsPreviousVolume() {
+    fun setVolume_preservesValidVolumeWhenNaNIsRejected() {
         val player = BeatPlayer()
-        player.setVolume(0.5f)
+        player.setVolume(0.35f)
+        assertEquals(0.35f, player.volume)
         player.setVolume(Float.NaN)
-        assertEquals(0.5f, player.volume)
+        assertEquals(0.35f, player.volume)
     }
 
     @Test
-    fun load_rejectsDirectoryAndLeavesPlaybackUnprepared() {
-        val player = BeatPlayer()
-        assertFalse(player.load(tempFolder.root))
-        assertFalse(player.isReady)
-        assertFalse(player.isPlaying)
+    fun load_rejectsMissingFilesAndDirectoriesWithoutPreparingPlayback() {
+        for (file in listOf(tempFolder.root, File(tempFolder.root, "nonexistent.mp3"))) {
+            val player = BeatPlayer()
+            assertFalse(player.load(file))
+            assertFalse(player.isReady)
+            assertFalse(player.isPlaying)
+        }
     }
 
     @get:Rule
@@ -112,13 +115,6 @@ class BeatPlayerTest {
     // --- Volume ---
 
     @Test
-    fun setVolume_updatesVolumeWithinValidRange() {
-        val player = BeatPlayer()
-        player.setVolume(0.35f)
-        assertEquals(0.35f, player.volume)
-    }
-
-    @Test
     fun setVolume_clampsValuesOutsideValidRange() {
         val player = BeatPlayer()
 
@@ -149,17 +145,6 @@ class BeatPlayerTest {
 
         player.toggleMute()
         assertEquals(0.35f, player.volume)
-    }
-
-    // --- load() with a missing file ---
-
-    @Test
-    fun load_returnsFalse_whenFileDoesNotExist() {
-        val player = BeatPlayer()
-        val missing = File(tempFolder.root, "nonexistent.mp3")
-        val result = player.load(missing)
-        assertFalse("load() must return false for missing file", result)
-        assertFalse(player.isReady)
     }
 
     // --- release() ---

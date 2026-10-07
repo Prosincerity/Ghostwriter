@@ -150,8 +150,9 @@ class SystemFontCatalogTest {
         val regular = options.filterIsInstance<SystemFontFile>().first()
         val legacy = regular.copy(familyName = "", weight = 700)
         assertEquals(regular.label, SystemFontCatalog.selectionLabel(legacy, options))
-        assertEquals(700, legacy.weight)
-        assertEquals("", legacy.familyName)
+        val typeface = SystemFontCatalog.typeface(legacy)
+        assertNotNull(typeface)
+        assertEquals(700, typeface!!.weight)
     }
 
     @Test

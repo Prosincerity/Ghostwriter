@@ -80,10 +80,15 @@ class LyricsNotepadTest {
 
         // An empty notepad shows the writing prompt.
         composeRule.onNodeWithText("Start writing...").assertExists()
-        composeRule.runOnIdle {
-            lyrics = "First line\nSecond line"
-            useDefaults = false
-        }
+        composeRule.runOnIdle { lyrics = "First line\nSecond line" }
+        val defaults = textLayout().layoutInput.style
+        assertEquals(FontFamily.Monospace, defaults.fontFamily)
+        assertEquals(16.sp, defaults.fontSize)
+        assertEquals(1.5.em, defaults.lineHeight)
+        assertEquals(0.sp, defaults.letterSpacing)
+        assertEquals(TextAlign.Start, defaults.textAlign)
+
+        composeRule.runOnIdle { useDefaults = false }
         val initial = textLayout().layoutInput.style
         assertEquals(FontFamily.Serif, initial.fontFamily)
         assertEquals(20.sp, initial.fontSize)

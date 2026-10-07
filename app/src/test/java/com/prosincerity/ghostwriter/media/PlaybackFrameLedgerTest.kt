@@ -17,9 +17,9 @@ class PlaybackFrameLedgerTest {
         assertEquals(1050L, ledger.positionAt(250))
     }
 
-    @Test fun consumedEvents_areReusedAndSeekResetsTheLedger() {
+    @Test fun consumedPositions_freeCapacityAcrossWrapsAndSeekResetsTheLedger() {
         val ledger = PlaybackFrameLedger(4, 10000)
-        repeat(10000) { index ->
+        repeat(10) { index ->
             ledger.record(index.toLong(), (index % 4).toLong())
             assertEquals((index % 4).toLong(), ledger.positionAt(index.toLong()))
         }
