@@ -1,5 +1,6 @@
 package com.prosincerity.ghostwriter.media
 
+import android.content.ContextWrapper
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -10,7 +11,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
@@ -21,6 +24,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 class BeatPlayerInstrumentedTest {
+    @get:Rule val folder = TemporaryFolder(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir)
+    private val testContext = object : ContextWrapper(InstrumentationRegistry.getInstrumentation().targetContext) {
+        override fun getCacheDir(): File = folder.root
+    }
+
     @Test
     fun markerEditsDuringHandoff_preservePauseSeekAndModeChangeIntent() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -29,7 +37,7 @@ class BeatPlayerInstrumentedTest {
             var handled = false
             val applied = CountDownLatch(1)
             lateinit var player: BeatPlayer
-            player = BeatPlayer(instrumentation.targetContext, onStateChanged = {
+            player = BeatPlayer(testContext, onStateChanged = {
                 if (player.isHandingOff && !handled) {
                     handled = true
                     player.setMarkers(listOf(
@@ -212,9 +220,8 @@ class BeatPlayerInstrumentedTest {
     @Test
     fun diskBackedPcm_survivesModeChangesAndIsDeletedOnBeatReplacement() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val directory = instrumentation.targetContext.cacheDir
-        val before = directory.listFiles()!!.filter { it.extension == "pcm" }.toSet()
-        val player = BeatPlayer(instrumentation.targetContext).also { beatPlayer = it }
+        val directory = folder.root
+        val player = BeatPlayer(testContext).also { beatPlayer = it }
         val decodes = countLoopDecodes(player)
         val source = createPcm16Wav("beat-player-cached-disk.wav", 550000)
         instrumentation.runOnMainSync {
@@ -222,7 +229,7 @@ class BeatPlayerInstrumentedTest {
             player.setMarkers(listOf(WaveformMarker("End", 2000, MarkerLoopRole.END)))
         }
         waitUntil("Disk-backed PCM was not prepared in whole beat mode", 20000) { !player.isPreparingLoop }
-        val pcm = directory.listFiles()!!.filter { it.extension == "pcm" && it !in before }.single()
+        val pcm = directory.listFiles()!!.single { it.extension == "pcm" }
         instrumentation.runOnMainSync {
             player.setLoopMode(BeatLoopMode.MARKERS)
             player.setLoopMode(BeatLoopMode.OFF)
@@ -349,11 +356,11 @@ class BeatPlayerInstrumentedTest {
     @Test
     fun failedLoopPreparation_keepsPlayerReadyAndExplicitPlayRetriesAfterRepair() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val context = instrumentation.targetContext
+        val context = testContext
         val player = BeatPlayer(context).also { beatPlayer = it; it.setLoopMode(BeatLoopMode.MARKERS) }
         val file = createPcm16Wav("beat-loop-retry.wav", 2000)
         val original = file.readBytes()
-        val cacheBefore = context.cacheDir.listFiles()?.filter { it.name.startsWith("beat-loop-") }?.map { it.name }?.toSet()
+        val unrelated = File(folder.root, "keep.pcm").apply { writeText("unrelated audio") }
         instrumentation.runOnMainSync {
             assertTrue(player.load(file))
             assertTrue(file.delete())
@@ -363,8 +370,8 @@ class BeatPlayerInstrumentedTest {
         waitUntil("Failed preparation remained pending", 10000) { !player.isPreparingLoop }
         assertTrue(player.isReady)
         assertFalse(player.isPlaying)
-        assertEquals(cacheBefore?.minus(file.name), context.cacheDir.listFiles()
-            ?.filter { it.name.startsWith("beat-loop-") }?.map { it.name }?.toSet())
+        assertEquals(listOf(unrelated), folder.root.listFiles()!!.toList())
+        assertEquals("unrelated audio", unrelated.readText())
         file.writeBytes(original)
         instrumentation.runOnMainSync { player.play() }
         waitUntil("Retry did not prepare loop audio", 10000) { !player.isPreparingLoop }
@@ -550,9 +557,8 @@ class BeatPlayerInstrumentedTest {
     @Test
     fun streamingPcmFailure_releasesPlayerAndDeletesTemporaryAudio() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val directory = instrumentation.targetContext.cacheDir
-        val before = directory.listFiles()!!.filter { it.extension == "pcm" }.toSet()
-        val player = BeatPlayer(instrumentation.targetContext).also { beatPlayer = it; it.setLoopMode(BeatLoopMode.MARKERS) }
+        val directory = folder.root
+        val player = BeatPlayer(testContext).also { beatPlayer = it; it.setLoopMode(BeatLoopMode.MARKERS) }
         // Exceed the memory limit so playback depends on the prefetch worker.
         val file = createPcm16Wav("beat-player-disk-failure.wav", 550000)
         assertTrue("Fixture must exceed the PCM memory limit", file.length() - WAV_HEADER_SIZE > PcmSources.MEMORY_LIMIT_BYTES)
@@ -562,7 +568,7 @@ class BeatPlayerInstrumentedTest {
         }
         waitUntil("Disk-backed preparation did not finish", 20000) { !player.isPreparingLoop }
         assertTrue(player.isReady)
-        val pcm = directory.listFiles()!!.filter { it.extension == "pcm" && it !in before }.single()
+        val pcm = directory.listFiles()!!.single { it.extension == "pcm" }
         assertTrue(pcm.length() > PcmSources.MEMORY_LIMIT_BYTES)
         java.io.RandomAccessFile(pcm, "rw").use { it.setLength(0) }
         instrumentation.runOnMainSync { player.seekTo(400000); player.play() }
@@ -574,17 +580,14 @@ class BeatPlayerInstrumentedTest {
     }
 
     private val pendingDecodes = mutableListOf<CountDownLatch>()
-    private val generatedFiles = mutableListOf<File>()
     private var beatPlayer: BeatPlayer? = null
 
     @After
-    fun releasePlayerAndDeleteGeneratedAudio() {
+    fun releasePlayer() {
         beatPlayer?.release()
         beatPlayer = null
         pendingDecodes.forEach { it.countDown() }
         pendingDecodes.clear()
-        generatedFiles.forEach(File::delete)
-        generatedFiles.clear()
     }
 
     @Test
@@ -741,13 +744,7 @@ class BeatPlayerInstrumentedTest {
         return generatedFile(fileName).apply { writeBytes(bytes) }
     }
 
-    private fun generatedFile(fileName: String): File {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        return File(context.cacheDir, fileName).also {
-            it.delete()
-            generatedFiles += it
-        }
-    }
+    private fun generatedFile(fileName: String): File = File(folder.root, fileName)
 
     private companion object {
         private const val WAV_HEADER_SIZE = 44

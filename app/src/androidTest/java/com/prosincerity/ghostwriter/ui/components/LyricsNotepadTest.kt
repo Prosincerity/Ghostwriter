@@ -138,8 +138,6 @@ class LyricsNotepadTest {
         // Compare relative line height with the converted font size, including nonlinear scaling.
         assertEquals("Normal line spacing", normalFontSizePx * 2f, normalBaselineGap, 2f)
         assertEquals("Scaled line spacing", scaledFontSizePx * 2f, scaledBaselineGap, 2f)
-        assertEquals(1f, normal.layoutInput.density.fontScale, 0f)
-        assertEquals(2f, scaled.layoutInput.density.fontScale, 0f)
         assertEquals(20.sp, scaled.layoutInput.style.fontSize)
         composeRule.onNodeWithText("One\nTwo").assertExists()
     }

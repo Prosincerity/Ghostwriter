@@ -299,6 +299,18 @@ After removing redundant tests, run the affected suites and review fresh
 reports to confirm the surviving tests still protect the intended behavior
 and satisfy the fixed module minimums and changed-line coverage requirement.
 
+The remaining cleanup folds repeated unprepared-player release into the transport
+cases and keeps disabled-loop end-of-beat checks in the intro/disable scenario;
+the one-frame-loop test checks only its distinct progress behavior. The focus
+state suite checks pause/abandon behavior once; permanent Android focus loss
+remains covered through the service. Home summary updates also check musical
+details and ordering when both projects have summaries. The waveform cancellation
+scenario retains retry-content alignment, and font scaling checks rendered height
+and baseline spacing rather than echoing the injected density. Font preference
+labels are checked on the restored value. Beat-player Android fixtures and decoded
+PCM use a temporary directory per test, with cleanup assertions restricted to that
+directory and a controlled unrelated file that must survive a failed preparation.
+
 If Gradle cannot see the emulator, check `adb devices` or launch the task from
 Android Studio's Gradle tool window. Failed runs do not produce complete
 combined reports. Generated reports stay in `app/build/` and can be recreated.

@@ -351,11 +351,16 @@ class BeatComponentsTest {
             }
         }
         composeRule.onNodeWithText("Preparing waveform…").assertExists()
-        composeRule.onNodeWithContentDescription("Play").assertIsEnabled().performClick()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
         composeRule.onNodeWithContentDescription("Play from start").assertIsEnabled()
         composeRule.onNodeWithText("Cancel preparation").performClick()
         composeRule.onNodeWithText("Waveform preparation canceled").assertExists()
         composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        val messageBounds = composeRule.onNodeWithText("Waveform preparation canceled")
+            .fetchSemanticsNode().boundsInRoot
+        val retryBounds = composeRule.onNodeWithText("Retry")
+            .fetchSemanticsNode().boundsInRoot
+        assertEquals(messageBounds.center.x, retryBounds.center.x, 1f)
         composeRule.onNodeWithText("Retry").performClick()
         composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
         composeRule.runOnIdle {
@@ -366,41 +371,6 @@ class BeatComponentsTest {
         composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
         composeRule.onNodeWithContentDescription("Mute").performClick()
         composeRule.runOnIdle { assertEquals(0f, player.volume) }
-    }
-
-    @Test
-    fun beatPlayerCancelledState_centersRetryContent() {
-        composeRule.setContent {
-            GhostwriterTheme {
-                BeatPlayerPanel(
-                    beatPlayer = BeatPlayer(),
-                    isBeatReady = false,
-                    isImporting = false,
-                    beatDisplayName = "",
-                    onImportBeat = {},
-                    onReassignBeat = {},
-                    isReassigningBeat = false,
-                    waveformAmplitudes = intArrayOf(),
-                    isWaveformLoading = false,
-                    markers = emptyList(),
-                    onAddMarker = {},
-                    onMarkerClick = {},
-                    onMarkerMove = { _, _ -> },
-                    onCancelWaveformPreparation = {},
-                    cancelRemovesImportedBeat = false,
-                    waveformPreparationCancelled = true,
-                    waveformPreparationFailed = false,
-                    onRetryWaveformPreparation = {},
-                )
-            }
-        }
-
-        val messageBounds = composeRule.onNodeWithText("Waveform preparation canceled")
-            .fetchSemanticsNode().boundsInRoot
-        val retryBounds = composeRule.onNodeWithText("Retry")
-            .fetchSemanticsNode().boundsInRoot
-
-        assertEquals(messageBounds.center.x, retryBounds.center.x, 1f)
     }
 
     @Test

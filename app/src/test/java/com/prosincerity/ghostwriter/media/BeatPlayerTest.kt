@@ -17,6 +17,7 @@ class BeatPlayerTest {
     fun unpreparedTransport_keepsPlaybackStoppedWithoutStartingTheService() {
         val actions = listOf<(BeatPlayer) -> Unit>(
             { it.play() }, { it.pause() }, { it.togglePlayPause() }, { it.seekTo(5000) },
+            { it.release(); it.release() },
         )
         for (action in actions) {
             var starts = 0
@@ -145,18 +146,5 @@ class BeatPlayerTest {
 
         player.toggleMute()
         assertEquals(0.35f, player.volume)
-    }
-
-    // --- release() ---
-
-    @Test
-    fun release_repeatedlyKeepsUnpreparedPlayerStopped() {
-        val player = BeatPlayer()
-        player.release()
-        player.release()
-        assertFalse(player.isReady)
-        assertFalse(player.isPlaying)
-        assertEquals(0, player.currentPositionMs)
-        assertEquals(0, player.durationMs)
     }
 }

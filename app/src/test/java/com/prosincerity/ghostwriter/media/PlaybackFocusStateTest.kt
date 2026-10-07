@@ -59,17 +59,6 @@ class PlaybackFocusStateTest {
     }
 
     @Test
-    fun permanentLoss_doesNotResumeOnGain() {
-        val focus = playingFocus()
-        // Permanent loss takes the same pause/abandon path as an explicit pause.
-        focus.onPauseRequested()
-        focus.onAbandoned()
-
-        assertFalse(focus.onGain())
-        assertFalse(focus.shouldKeepForeground(playing = false))
-    }
-
-    @Test
     fun lossWhileAlreadyPaused_doesNotScheduleResume() {
         val focus = PlaybackFocusState()
 

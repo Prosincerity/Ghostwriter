@@ -25,7 +25,7 @@ class LyricFontTest {
         val restored = lyricFontFromPreference(font.toPreferenceValue())
         assertEquals(font, restored)
         assertEquals(font, LyricTextSettings(fontFamily = restored).normalized().fontFamily)
-        assertEquals("Device Font", font.label)
+        assertEquals("Device Font", (restored as SystemFontFile).label)
     }
 
     @Test

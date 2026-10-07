@@ -158,15 +158,19 @@ class HomeScreenTest {
         composeRule.runOnIdle { assertEquals(null, deleted) }
     }
 
-    @Test fun summaryUpdates_resortProjectsAndMissingSummariesSortAlphabetically() {
+    @Test fun summaryUpdates_showMusicalDetailsAndResortProjectsByLatestEdit() {
         var summaries by mutableStateOf(emptyMap<String, ProjectSummary>())
         composeRule.setContent {
             GhostwriterTheme { HomeScreen(listOf("Zulu", "Alpha"), {}, {}, {}, { _, _ -> }, {}, summaries) }
         }
         fun top(title: String) = composeRule.onNodeWithText(title).fetchSemanticsNode().boundsInRoot.top
         assertTrue(top("Alpha") < top("Zulu"))
-        composeRule.runOnIdle { summaries = mapOf("Zulu" to ProjectSummary("Zulu", 2000)) }
+        composeRule.runOnIdle { summaries = mapOf("Zulu" to ProjectSummary("Zulu", 2000, 92, "C minor")) }
+        composeRule.onNodeWithText("92 BPM", substring = true).assertExists()
+        composeRule.onNodeWithText("C minor", substring = true).assertExists()
         assertTrue(top("Zulu") < top("Alpha"))
+        composeRule.runOnIdle { summaries = summaries + ("Alpha" to ProjectSummary("Alpha", 3000)) }
+        assertTrue(top("Alpha") < top("Zulu"))
     }
 
     @Test
@@ -199,28 +203,6 @@ class HomeScreenTest {
             assertTrue(openedSettings)
             assertEquals("New Track", createdProject)
         }
-    }
-
-    @Test
-    fun projectRowsShowMusicalDetailsAndSortByLatestEdit() {
-        composeRule.setContent {
-            GhostwriterTheme {
-                HomeScreen(
-                    existingProjects = listOf("Older", "Newest"),
-                    projectSummaries = mapOf(
-                        "Older" to ProjectSummary("Older", 1000),
-                        "Newest" to ProjectSummary("Newest", 2000, 92, "C minor"),
-                    ),
-                    onCreateProject = {}, onOpenProject = {}, onDeleteProject = {},
-                    onRenameProject = { _, _ -> }, onOpenSettings = {},
-                )
-            }
-        }
-        composeRule.onNodeWithText("92 BPM", substring = true).assertExists()
-        composeRule.onNodeWithText("C minor", substring = true).assertExists()
-        val newest = composeRule.onNodeWithText("Newest").fetchSemanticsNode().boundsInRoot
-        val older = composeRule.onNodeWithText("Older").fetchSemanticsNode().boundsInRoot
-        assertTrue(newest.top < older.top)
     }
 
 }

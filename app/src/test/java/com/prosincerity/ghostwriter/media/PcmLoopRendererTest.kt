@@ -168,13 +168,8 @@ class PcmLoopRendererTest {
         assertEquals(listOf(18, 19, 3, 4), output.map { it.toInt() })
     }
 
-    @Test fun disabledLoop_stopsAtPhysicalEndAndTinyLoopsMakeProgress() {
-        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, false, 1000)), 10, noEvents)
-        renderer.seek(17)
+    @Test fun oneFrameLoop_fillsEveryRequestedFrame() {
         val output = ShortArray(10)
-        assertEquals(3, renderer.render(output))
-        assertEquals(listOf(17, 18, 19), output.take(3).map { it.toInt() })
-        assertEquals(0, renderer.render(output))
         val tiny = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(4, 5, true, 1000)), 10, noEvents)
         tiny.seek(4)
         assertEquals(10, tiny.render(output))
