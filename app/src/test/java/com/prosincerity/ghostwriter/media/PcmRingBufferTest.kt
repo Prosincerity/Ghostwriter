@@ -79,16 +79,6 @@ class PcmRingBufferTest {
         } finally { source.close() }
     }
 
-    @Test fun cancelledMemoryPreparation_removesPartialCache() {
-        val file = audio()
-        try {
-            PcmSources.prepare(PcmBeat(file, 48000, 2, 2048)) { true }
-            fail("Expected cancellation")
-        } catch (_: java.util.concurrent.CancellationException) {
-            assertFalse(file.exists())
-        }
-    }
-
     @Test fun playingAndPausedWorker_copyPartialFinalPageAtDestinationOffset() {
         val source = PcmRingBuffer(audio(frames = 35), 2, 35, pageFrames = 16, regionLimitBytes = 0)
         try {

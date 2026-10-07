@@ -30,23 +30,6 @@ class HomeScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    @Test fun missingFolder_keepsHomeAndSettingsVisibleWithInlineSelection() {
-        var selected = false
-        var settings = false
-        composeRule.setContent {
-            GhostwriterTheme {
-                HomeScreen(emptyList(), {}, {}, {}, { _, _ -> }, { settings = true },
-                    onChooseLyricsFolder = { selected = true }, lyricsFolderReady = false)
-            }
-        }
-        composeRule.onNodeWithText("Start your next track").assertIsDisplayed()
-        composeRule.onNodeWithText("Keep your lyrics").assertDoesNotExist()
-        composeRule.onNodeWithText("New project").assertIsNotEnabled()
-        composeRule.onNodeWithText("Choose folder").performClick()
-        composeRule.onNodeWithContentDescription("Settings").performClick()
-        composeRule.runOnIdle { assertTrue(selected); assertTrue(settings) }
-    }
-
     @Test fun folderPreparationAndFailure_stayOnHomeAndAllowReconnection() {
         var loading by mutableStateOf(true)
         var ready by mutableStateOf(false)
@@ -80,13 +63,16 @@ class HomeScreenTest {
 
     @Test fun folderSelection_isCenteredBelowThePromptAndDisappearsWhenReady() {
         var selected = false
+        var settings = false
         var ready by mutableStateOf(false)
         composeRule.setContent {
             GhostwriterTheme {
-                HomeScreen(emptyList(), {}, {}, {}, { _, _ -> }, {},
+                HomeScreen(emptyList(), {}, {}, {}, { _, _ -> }, { settings = true },
                     onChooseLyricsFolder = { selected = true }, lyricsFolderReady = ready)
             }
         }
+        composeRule.onNodeWithText("Start your next track").assertIsDisplayed()
+        composeRule.onNodeWithText("Keep your lyrics").assertDoesNotExist()
         composeRule.onNodeWithText("Create a project for your lyrics and beat.").assertDoesNotExist()
         composeRule.onNodeWithText("New project").assertIsNotEnabled()
         val heading = composeRule.onNodeWithText("Start your next track").fetchSemanticsNode().boundsInRoot
@@ -99,7 +85,12 @@ class HomeScreenTest {
         assertTrue(heading.bottom < prompt.top)
         assertTrue(prompt.bottom < button.top)
         composeRule.onNodeWithText("Choose folder").assertIsDisplayed().performClick()
-        composeRule.runOnIdle { assertTrue(selected); ready = true }
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.runOnIdle {
+            assertTrue(selected)
+            assertTrue(settings)
+            ready = true
+        }
         composeRule.onNodeWithText("Choose a lyric folder").assertDoesNotExist()
         composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
         composeRule.onNodeWithText("Change folder").assertDoesNotExist()

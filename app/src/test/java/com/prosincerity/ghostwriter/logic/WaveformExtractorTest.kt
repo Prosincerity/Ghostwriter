@@ -3,7 +3,6 @@ package com.prosincerity.ghostwriter.logic
 import android.media.AudioFormat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -60,21 +59,16 @@ class WaveformExtractorTest {
     }
 
     @Test
-    fun pcm8Amplitude_staysWithinTheCachedWaveformRange() {
-        assertEquals(32_768, WaveformExtractor.pcm8Amplitude(0x00))
-        assertEquals(0, WaveformExtractor.pcm8Amplitude(0x80.toByte()))
-        assertEquals(32_512, WaveformExtractor.pcm8Amplitude(0xFF.toByte()))
-    }
-
-    @Test
     fun pcmAmplitude_decodesSupportedSampleFormats() {
-        assertEquals(
-            32_768,
-            WaveformExtractor.pcmAmplitude(
-                ByteBuffer.wrap(byteArrayOf(0x00)),
-                AudioFormat.ENCODING_PCM_8BIT,
-            ),
-        )
+        for ((sample, amplitude) in listOf(0x00 to 32_768, 0x80 to 0, 0xFF to 32_512)) {
+            assertEquals(
+                amplitude,
+                WaveformExtractor.pcmAmplitude(
+                    ByteBuffer.wrap(byteArrayOf(sample.toByte())),
+                    AudioFormat.ENCODING_PCM_8BIT,
+                ),
+            )
+        }
         assertEquals(
             32_768,
             WaveformExtractor.pcmAmplitude(
@@ -115,13 +109,6 @@ class WaveformExtractorTest {
         assertTrue(WaveformExtractor.extractAmplitudes(source, -1).isEmpty())
     }
 
-    @Test
-    fun extractAmplitudes_returnsEmptyForCorruptFileWithoutThrowing() {
-        val corrupt = tempFolder.newFile("corrupt.wav").apply { writeText("not audio") }
-
-        assertTrue(WaveformExtractor.extractAmplitudes(corrupt, 100).isEmpty())
-    }
-
     @Test(expected = CancellationException::class)
     fun extractAmplitudes_stopsBeforeDecodingWhenCancellationIsRequested() {
         val source = tempFolder.newFile("cancelled.wav").apply { writeText("audio") }
@@ -130,7 +117,7 @@ class WaveformExtractorTest {
     }
 
     @Test
-    fun decoderProgressGuard_resetsItsStallCountAfterProgress() {
+    fun decoderProgressGuard_resetsAfterProgressAndRejectsConsecutiveStalls() {
         val guard = WaveformExtractor.DecoderProgressGuard(maxConsecutiveStalls = 2)
 
         guard.record(madeProgress = false)
@@ -140,18 +127,5 @@ class WaveformExtractorTest {
             guard.record(madeProgress = false)
         }
         assertEquals("Audio decoder stopped making progress", error.message)
-    }
-
-    @Test
-    fun decoderProgressGuard_rejectsAStalledDecoder() {
-        val guard = WaveformExtractor.DecoderProgressGuard(maxConsecutiveStalls = 2)
-
-        guard.record(madeProgress = false)
-        try {
-            guard.record(madeProgress = false)
-            fail("Expected a stalled decoder to be rejected")
-        } catch (expected: IllegalStateException) {
-            assertEquals("Audio decoder stopped making progress", expected.message)
-        }
     }
 }

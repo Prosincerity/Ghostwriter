@@ -100,7 +100,7 @@ class WaveformViewTest {
         }
         drag(0.8f, 0.9f)
         composeRule.runOnIdle {
-            assertSame(start, markers.value[0])
+            assertEquals(start, markers.value[0])
             assertTrue(markers.value[1].positionMs > 8500)
         }
         drag(0.3f, 0.4f)
@@ -125,7 +125,7 @@ class WaveformViewTest {
         drag(0.4f, 0.2f)
         composeRule.runOnIdle {
             assertTrue(markers.value[0].positionMs < 2500)
-            assertSame(end, markers.value[1])
+            assertEquals(end, markers.value[1])
         }
         drag(0.43f, 0.6f)
         composeRule.runOnIdle { assertTrue(markers.value[1].positionMs > 5500) }

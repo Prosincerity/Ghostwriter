@@ -7,11 +7,8 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.Color
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
-import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -25,13 +22,10 @@ class AboutScreenTest {
 
     @Test fun changingLinkHandler_usesLatestCallbackAfterRecomposition() {
         var opened = ""
-        var color by mutableStateOf(GhostColorScheme.surfaceContainer)
         var callback by mutableStateOf<(String) -> Unit>({ opened = "old:$it" })
         composeRule.setContent {
             GhostwriterTheme {
-                MaterialTheme(colorScheme = GhostColorScheme.copy(surfaceContainer = color)) {
-                    AboutScreen("test", {}, callback)
-                }
+                AboutScreen("test", {}, callback)
             }
         }
         composeRule.onNodeWithText("Source code").performScrollTo().performClick()
@@ -39,8 +33,6 @@ class AboutScreenTest {
             assertEquals("old:$GHOSTWRITER_REPOSITORY_URL", opened)
             callback = { opened = "new:$it" }
         }
-        composeRule.onNodeWithText("Source code").performScrollTo().performClick()
-        composeRule.runOnIdle { assertEquals("new:$GHOSTWRITER_REPOSITORY_URL", opened); color = Color.DarkGray }
         composeRule.onNodeWithText("Source code").performScrollTo().performClick()
         composeRule.runOnIdle { assertEquals("new:$GHOSTWRITER_REPOSITORY_URL", opened) }
     }

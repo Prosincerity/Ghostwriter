@@ -488,7 +488,7 @@ class BeatComponentsTest {
     }
 
     @Test
-    fun beatPlayerReadyState_controlsPlaybackLoopVolumeAndReassignment() {
+    fun beatPlayerReadyState_controlsVolumeAndReassignment() {
         val beatPlayer = BeatPlayer()
         var reassigned = false
         composeRule.setContent {
@@ -518,16 +518,6 @@ class BeatComponentsTest {
 
         composeRule.onNodeWithText("Midnight instrumental").assertExists()
         composeRule.onNodeWithText("0:00 / 0:00").assertExists()
-        composeRule.onNodeWithContentDescription("Play from start").performClick()
-        composeRule.onNodeWithContentDescription("Play").performClick()
-
-        composeRule.onNodeWithContentDescription("Loop: Whole beat").performClick()
-        composeRule.onNodeWithContentDescription("Loop: Markers").assertExists()
-        composeRule.runOnIdle { assertEquals(BeatLoopMode.MARKERS, beatPlayer.loopMode) }
-        composeRule.onNodeWithContentDescription("Loop: Markers").performClick()
-        composeRule.onNodeWithContentDescription("Loop: Off").assertExists()
-        composeRule.runOnIdle { assertTrue(!beatPlayer.isLooping) }
-
         composeRule.onNodeWithContentDescription("Mute").performClick()
         composeRule.onNodeWithContentDescription("Unmute").assertExists()
         composeRule.runOnIdle { assertEquals(0f, beatPlayer.volume) }

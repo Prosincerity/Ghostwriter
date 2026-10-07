@@ -20,11 +20,12 @@ class WaveformCacheTest {
         for (count in listOf(-1, 0, WaveformCache.MAX_SAMPLES + 1)) {
             assertNull(WaveformCache.load(temporaryFolder.root, count))
             assertFalse(WaveformCache.save(temporaryFolder.root, count, peaks))
+            assertArrayEquals(peaks, WaveformCache.load(temporaryFolder.root, 2))
         }
-        for (invalid in listOf(intArrayOf(1), intArrayOf(-1, 0), intArrayOf(0, 32_769))) {
+        for (invalid in listOf(intArrayOf(), intArrayOf(1), intArrayOf(-1, 0), intArrayOf(0, 32_769))) {
             assertFalse(WaveformCache.save(temporaryFolder.root, 2, invalid))
+            assertArrayEquals(peaks, WaveformCache.load(temporaryFolder.root, 2))
         }
-        assertArrayEquals(peaks, WaveformCache.load(temporaryFolder.root, 2))
     }
 
     @Test fun mismatchedBinaryHeadersAreRejectedEvenWithTheRightFileLength() {

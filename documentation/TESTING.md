@@ -244,6 +244,31 @@ External loop-mode updates are
 checked across every mode by the playback layout test, and the haptic test checks
 the complete button-driven cycle.
 
+The behavior-focused review also consolidates player defaults, unprepared
+transport actions, and loop-state callbacks. Each unprepared action gets a
+fresh player. PCM preparation cancellation is checked before and during
+memory loading in `PcmSourceTest`; disk cancellation remains a separate case.
+`WaveformCacheTest` owns malformed-cache and invalid-write checks, including
+preserving the last good waveform after each rejected replacement. Storage
+tests retain cache reuse, resolution, and invalidation integration checks.
+PCM amplitude boundaries go through the format-dispatching decoder, and the
+stall-guard test checks both reset and rejection. Real corrupt-audio decoding
+is checked on Android rather than against JVM framework stubs.
+
+Marker normalization and unchanged-marker checks assert preserved values
+rather than reference reuse; dragging and editing regressions remain covered
+by UI tests. Selection callbacks still identify the original marker so equal
+copies cannot edit the wrong marker. Notification tests assert
+published updates and cancellation rather than the fake scheduler's queue.
+Exact typography-size snapshots and constant-only settings assertions are
+removed; bundled fonts, rendered typography, and selectable autosave defaults
+remain checked. Home folder-selection and slider-reconfiguration scenarios
+retain their unique callbacks and state assertions in consolidated tests.
+Separate callback-replacement and zoom-limit regressions remain independent.
+Theme-only recompositions without visual assertions and playback clicks
+without outcome assertions are removed. Explicit contracts such as deferred
+playback binding and allocation-free audio rendering still have dedicated tests.
+
 After removing redundant tests, run the affected suites and review fresh
 reports to confirm the surviving tests still protect the intended behavior
 and satisfy the fixed module minimums and changed-line coverage requirement.

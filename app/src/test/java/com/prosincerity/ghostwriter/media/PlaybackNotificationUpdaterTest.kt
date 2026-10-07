@@ -22,7 +22,8 @@ class PlaybackNotificationUpdaterTest {
         assertTrue(published.isEmpty())
         queue.advanceTo(500)
         assertEquals(listOf("Pause, Restart, Loop: Off"), published)
-        assertTrue(queue.tasks.isEmpty())
+        queue.advanceTo(1_000)
+        assertEquals(listOf("Pause, Restart, Loop: Off"), published)
     }
 
     @Test
@@ -54,7 +55,6 @@ class PlaybackNotificationUpdaterTest {
         queue.advanceTo(1_000)
 
         assertEquals(0, posts)
-        assertTrue(queue.tasks.isEmpty())
     }
 
     @Test

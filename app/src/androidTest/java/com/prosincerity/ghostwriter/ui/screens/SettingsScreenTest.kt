@@ -78,8 +78,6 @@ class SettingsScreenTest {
 
     @Test
     fun typographyControls_saveAllChoicesAndLeaveAutosaveSettingsIntact() {
-        Settings.setAutosaveIntervalSeconds(testContext, 120)
-        Settings.setAutosaveCount(testContext, 4)
         composeRule.setContent {
             CompositionLocalProvider(LocalContext provides testContext) {
                 GhostwriterTheme {
@@ -87,6 +85,16 @@ class SettingsScreenTest {
                 }
             }
         }
+
+        composeRule.onNodeWithText("1 minute").performScrollTo().assertExists()
+        composeRule.onNodeWithText("3").performScrollTo().assertExists()
+        select("Autosave interval", "2 minutes")
+        select("Autosave backups", "4")
+        // Defaults must remain selectable after choosing other values.
+        select("Autosave interval", "1 minute")
+        select("Autosave backups", "3")
+        select("Autosave interval", "2 minutes")
+        select("Autosave backups", "4")
 
         select("Font family", "System default")
         select("Font size", "24 sp")

@@ -74,11 +74,6 @@ class WaveformExtractorInstrumentedTest {
         assertTrue(retried.any { it > 0 })
     }
 
-    @Test fun defaultResolution_producesOneThousandPeaks() {
-        val wav = createPcm16Wav("default-resolution.wav", 100)
-        assertEquals(1000, WaveformExtractor.extractAmplitudes(wav).size)
-    }
-
     private val generatedFiles = mutableListOf<File>()
 
     @After
@@ -96,6 +91,7 @@ class WaveformExtractorInstrumentedTest {
 
         assertTrue("Expected a duration near 500 ms, got $durationMs", durationMs in 450L..550L)
         assertEquals(20, amplitudes.size)
+        assertEquals(1_000, WaveformExtractor.extractAmplitudes(wavFile).size)
         assertTrue("Expected decoded audio to contain a non-zero peak", amplitudes.any { it > 0 })
         assertTrue(amplitudes.all { it in 0..32_768 })
     }

@@ -401,20 +401,12 @@ class ProjectStorageTest {
     }
 
     @Test
-    fun rotateAndSave_firstWrite_createsAutosave1() {
-        val projectDir = tempFolder.newFolder("test_track")
-        ProjectStorage.rotateAndSave(projectDir, "Verse 1", keepCount = 3)
-
-        val autosave1 = File(projectDir, "autosave1.txt")
-        assertTrue(autosave1.exists())
-        assertEquals("Verse 1", autosave1.readText())
-        assertFalse(File(projectDir, "autosave2.txt").exists())
-    }
-
-    @Test
     fun rotateAndSave_identicalContent_noOpsWithoutRotating() {
         val projectDir = tempFolder.newFolder("test_track")
         ProjectStorage.rotateAndSave(projectDir, "Verse 1", keepCount = 3)
+        assertEquals("Verse 1", File(projectDir, "autosave1.txt").readText())
+        assertFalse(File(projectDir, "autosave2.txt").exists())
+
         ProjectStorage.rotateAndSave(projectDir, "Verse 1", keepCount = 3)
 
         val autosave1 = File(projectDir, "autosave1.txt")
