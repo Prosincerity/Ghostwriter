@@ -117,48 +117,27 @@ class DictionaryDownloadsTest {
     }
 
     @Test
-    fun cancelDownloadRestoresControlsWithoutInstalling() = withDictionaryTestContext { context ->
-        val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
-        val started = CountDownLatch(1)
-        val release = CountDownLatch(1)
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
-            started.countDown()
-            release.await()
-            ByteArrayInputStream(valid)
-        })
-        composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
-
-        try {
-            waitForDownloadButton()
-            composeRule.onNodeWithContentDescription(DOWNLOAD_ENGLISH_WIKTIONARY).performClick()
-            composeRule.waitForIdle()
-            assertTrue(started.await(5, TimeUnit.SECONDS))
-            composeRule.onNodeWithText("Downloading Wiktionary Kaikki...").assertExists()
-            composeRule.onNode(SemanticsMatcher.expectValue(
-                SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo.Indeterminate,
-            )).assertExists()
-            composeRule.onNodeWithContentDescription("Download eSpeak NG generated for English")
-                .assertIsNotEnabled()
-            composeRule.onNodeWithText("Cancel download").performClick()
-        } finally {
-            release.countDown()
-        }
-
-        waitForDownloadButton()
-        composeRule.onNodeWithText("Cancel download").assertDoesNotExist()
-        composeRule.onNodeWithContentDescription(INSTALLED_ENGLISH_WIKTIONARY).assertDoesNotExist()
-        assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
-    }
+    fun cancelBeforeReading_restoresControlsWithoutInstalling() = checkDownloadCancellation(afterProgress = false)
 
     @Test
-    fun showsProgressUntilDownloadIsCanceled() = withDictionaryTestContext { context ->
-        val archive = ByteArrayOutputStream().use { output ->
-            GZIPOutputStream(output).use { it.write(Random(7).nextBytes(500_000)) }
-            output.toByteArray()
+    fun cancelAfterProgress_restoresControlsWithoutInstalling() = checkDownloadCancellation(afterProgress = true)
+
+    private fun checkDownloadCancellation(afterProgress: Boolean) = withDictionaryTestContext { context ->
+        val archive = if (afterProgress) {
+            ByteArrayOutputStream().use { output ->
+                GZIPOutputStream(output).use { it.write(Random(7).nextBytes(500_000)) }
+                output.toByteArray()
+            }
+        } else {
+            dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         }
+        val started = CountDownLatch(1)
+        val beginReading = CountDownLatch(1)
         val paused = CountDownLatch(1)
         val release = CountDownLatch(1)
         val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+            started.countDown()
+            beginReading.await()
             object : InputStream() {
                 private var offset = 0
 
@@ -188,19 +167,33 @@ class DictionaryDownloadsTest {
             waitForDownloadButton()
             composeRule.onNodeWithContentDescription(DOWNLOAD_ENGLISH_WIKTIONARY).performClick()
             composeRule.waitForIdle()
-            assertTrue(paused.await(5, TimeUnit.SECONDS))
-            composeRule.waitUntil(5_000) {
-                composeRule.onAllNodesWithText("%", substring = true).fetchSemanticsNodes().isNotEmpty()
+            assertTrue(started.await(5, TimeUnit.SECONDS))
+            composeRule.onNodeWithText("Downloading Wiktionary Kaikki...").assertExists()
+            composeRule.onNode(SemanticsMatcher.expectValue(
+                SemanticsProperties.ProgressBarRangeInfo, ProgressBarRangeInfo.Indeterminate,
+            )).assertExists()
+            composeRule.onNodeWithContentDescription("Download eSpeak NG generated for English")
+                .assertIsNotEnabled()
+            if (afterProgress) {
+                beginReading.countDown()
+                assertTrue(paused.await(5, TimeUnit.SECONDS))
+                composeRule.waitUntil(5_000) {
+                    composeRule.onAllNodesWithText("%", substring = true).fetchSemanticsNodes().isNotEmpty()
+                }
+                val indicator = composeRule.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+                    .fetchSemanticsNodes().single().config[SemanticsProperties.ProgressBarRangeInfo]
+                assertTrue(indicator.current > 0f && indicator.current <= 1f)
             }
-            val indicator = composeRule.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
-                .fetchSemanticsNodes().single().config[SemanticsProperties.ProgressBarRangeInfo]
-            assertTrue(indicator.current > 0f && indicator.current <= 1f)
             composeRule.onNodeWithText("Cancel download").performClick()
         } finally {
+            beginReading.countDown()
             release.countDown()
         }
 
         waitForDownloadButton()
+        composeRule.onNodeWithText("Cancel download").assertDoesNotExist()
+        composeRule.onNodeWithText("Could not download", substring = true).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(INSTALLED_ENGLISH_WIKTIONARY).assertDoesNotExist()
         assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
     }
 

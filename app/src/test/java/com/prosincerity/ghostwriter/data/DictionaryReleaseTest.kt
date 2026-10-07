@@ -22,17 +22,8 @@ class DictionaryReleaseTest {
     }
 
     @Test
-    fun rejectsEmptyOrPathLikeReleaseTags() {
-        listOf("", "../outside", "release/name", "tag with spaces").forEach { tag ->
-            assertThrows("tag: $tag", IllegalArgumentException::class.java) {
-                DictionaryRelease.parse(manifest().put("tag", tag))
-            }
-        }
-    }
-
-    @Test
-    fun rejectsHiddenOrDotDirectoryReleaseTags() {
-        listOf(".", "..", ".release-v1").forEach { tag ->
+    fun rejectsEmptyPathLikeAndHiddenReleaseTags() {
+        listOf("", "../outside", "release/name", "tag with spaces", ".", "..", ".release-v1").forEach { tag ->
             assertThrows("tag: $tag", IllegalArgumentException::class.java) {
                 DictionaryRelease.parse(manifest().put("tag", tag))
             }

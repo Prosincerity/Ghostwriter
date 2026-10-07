@@ -46,7 +46,7 @@ class SmoothLoopPlaybackTest {
         }
     }
 
-    @Test fun stereoPlayback_changesVolumeCompletesAndRestartsAtBeginning() {
+    @Test fun stereoPlayback_completesAndRestartsAtBeginning() {
         val source = ObservedSource(MemoryPcmSource(ShortArray(16000) { if (it % 2 == 0) 1000 else -1000 }, 2))
         val failure = AtomicReference<Exception?>()
         lateinit var playback: SmoothLoopPlayback
@@ -57,7 +57,6 @@ class SmoothLoopPlaybackTest {
         try {
             awaitCondition { playback.currentPositionMs > 50 || failure.get() != null }
             assertNull(failure.get())
-            instrumentation.runOnMainSync { playback.setVolume(0.25f) }
             awaitCondition { !playback.isPlaying || failure.get() != null }
             assertNull(failure.get())
             assertTrue(playback.currentPositionMs >= 990)

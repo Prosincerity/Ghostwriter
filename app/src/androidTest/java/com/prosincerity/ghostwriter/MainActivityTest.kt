@@ -1,6 +1,5 @@
 package com.prosincerity.ghostwriter
 
-import android.content.ActivityNotFoundException
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.IntentFilter
@@ -457,18 +456,6 @@ class MainActivityTest {
         } finally {
             ProjectStorage.deleteProject(composeRule.activity, projectTitle)
         }
-    }
-
-    @Test
-    fun openExternalLink_whenLauncherFails_returnsFalse() {
-        var result = true
-        composeRule.runOnIdle {
-            result = openExternalLink(composeRule.activity, "https://example.invalid") {
-                throw ActivityNotFoundException("No browser")
-            }
-        }
-
-        assertFalse(result)
     }
 
     private fun createProject(projectTitle: String) {

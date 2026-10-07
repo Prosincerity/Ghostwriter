@@ -167,7 +167,6 @@ class SystemFontCatalogTest {
         val valid = fixtureOptions().filterIsInstance<SystemFontFile>().single()
         val malformed = valid.copy(variationSettings = "'wght' not-a-number")
         assertNull(SystemFontCatalog.typeface(malformed))
-        assertNull(SystemFontCatalog.typeface(malformed))
         assertEquals(FontFamily.Monospace, LyricTextSettings(fontFamily = malformed).toTextStyle(TextStyle()).fontFamily)
         assertNotNull(SystemFontCatalog.typeface(valid))
     }
