@@ -1,6 +1,6 @@
 package com.prosincerity.ghostwriter.ui
 
-import com.prosincerity.ghostwriter.ui.screens.shouldWarnBeforeWaveformExtraction
+import com.prosincerity.ghostwriter.logic.shouldWarnBeforeWaveformExtraction
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

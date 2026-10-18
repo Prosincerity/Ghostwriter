@@ -50,6 +50,8 @@ import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import com.prosincerity.ghostwriter.logic.moveMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
+import com.prosincerity.ghostwriter.logic.WaveformPreparationState
+import com.prosincerity.ghostwriter.logic.prepareWaveform
 import com.prosincerity.ghostwriter.media.rememberBeatPlayback
 import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
@@ -68,14 +70,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-
-private const val LONG_BEAT_WARNING_MS = 5 * 60 * 1_000L
-
-private data class PendingBeatPreparation(
-    val file: File,
-    val durationMs: Long,
-    val removeBeatOnCancel: Boolean,
-)
 
 /**
  * The Phase 1 notepad, now with a title bar (back + settings) and a
@@ -127,18 +121,16 @@ fun EditorScreen(
     var isImporting by remember(projectId) { mutableStateOf(false) }
     var isReassigningBeat by remember(projectId) { mutableStateOf(false) }
     var waveformAmplitudes by remember(projectId) { mutableStateOf(IntArray(0)) }
-    var isWaveformLoading by remember(projectId) { mutableStateOf(false) }
+    var waveformPreparation by remember(projectId) {
+        mutableStateOf<WaveformPreparationState>(WaveformPreparationState.Idle)
+    }
+    val isWaveformLoading = waveformPreparation is WaveformPreparationState.Loading
     var waveformRevision by remember(projectId) { mutableIntStateOf(0) }
     var waveformCancellation by remember(projectId) { mutableStateOf<AtomicBoolean?>(null) }
     var cancellationRequested by remember(projectId) { mutableStateOf(false) }
-    var waveformPreparationCancelled by remember(projectId) { mutableStateOf(false) }
-    var waveformPreparationFailed by remember(projectId) { mutableStateOf(false) }
     var autoPlayWhenBeatReady by remember(projectId) { mutableStateOf(false) }
     var isImportedBeatPreparation by remember(projectId) { mutableStateOf(false) }
     var approvedLongBeatPath by remember(projectId) { mutableStateOf<String?>(null) }
-    var pendingLongBeatPreparation by remember(projectId) {
-        mutableStateOf<PendingBeatPreparation?>(null)
-    }
     var showReassignConfirmation by rememberSaveable(projectId) { mutableStateOf(false) }
     var markerPositionToAdd by remember(projectId) { mutableStateOf<Long?>(null) }
     var markerToEdit by remember(projectId) { mutableStateOf<WaveformMarker?>(null) }
@@ -257,13 +249,10 @@ fun EditorScreen(
         val currentBeat = beatFile
         if (currentBeat == null) {
             waveformAmplitudes = IntArray(0)
-            isWaveformLoading = false
+            waveformPreparation = WaveformPreparationState.Idle
             isBeatReady = false
             autoPlayWhenBeatReady = false
             isImportedBeatPreparation = false
-            waveformPreparationCancelled = false
-            waveformPreparationFailed = false
-            pendingLongBeatPreparation = null
             return@LaunchedEffect
         }
         if (playback == null || beatPlayer == null) {
@@ -275,9 +264,7 @@ fun EditorScreen(
         val cancellation = AtomicBoolean(false)
         waveformCancellation = cancellation
         cancellationRequested = false
-        waveformPreparationCancelled = false
-        waveformPreparationFailed = false
-        isWaveformLoading = true
+        waveformPreparation = WaveformPreparationState.Loading
         playback.setBeatTitle(metadata.beatOriginalName ?: currentBeat.nameWithoutExtension)
         isBeatReady = beatPlayer.ensureLoaded(currentBeat)
         if (isBeatReady) beatPlayer.setMarkers(metadata.markers)
@@ -287,42 +274,40 @@ fun EditorScreen(
         if (isBeatReady && autoPlayWhenBeatReady) beatPlayer.play()
         autoPlayWhenBeatReady = false
         try {
-            val cachedWaveform = withContext(Dispatchers.IO) {
-                ProjectStorage.loadCachedWaveform(
-                    waveformDirectory,
-                    WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
-                )
-            }
-            if (cachedWaveform == null && approvedLongBeatPath != currentBeat.absolutePath) {
-                val durationMs = withContext(Dispatchers.IO) {
-                    WaveformExtractor.durationMs(currentBeat)
-                }
-                if (durationMs != null && shouldWarnBeforeWaveformExtraction(durationMs)) {
-                    pendingLongBeatPreparation = PendingBeatPreparation(
-                        file = currentBeat,
-                        durationMs = durationMs,
-                        removeBeatOnCancel = isImportedBeatPreparation,
-                    )
-                    return@LaunchedEffect
-                }
-            }
-
-            waveformAmplitudes = cachedWaveform ?: withContext(Dispatchers.IO) {
-                ProjectStorage.loadOrExtractWaveform(
-                    projectDir = projectDir,
-                    beatFile = currentBeat,
+            val approvedPath = approvedLongBeatPath
+            val result = withContext(Dispatchers.IO) {
+                prepareWaveform(
+                    file = currentBeat,
+                    removeBeatOnCancel = removeBeatOnCancellation,
+                    approvedLongBeatPath = approvedPath,
+                    loadCached = {
+                        ProjectStorage.loadCachedWaveform(
+                            waveformDirectory,
+                            WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+                        )
+                    },
+                    readDurationMs = { WaveformExtractor.durationMs(currentBeat) },
+                    extract = {
+                        ProjectStorage.loadOrExtractWaveform(
+                            projectDir = projectDir,
+                            beatFile = currentBeat,
+                            shouldCancel = cancellation::get,
+                            waveformDirectory = waveformDirectory,
+                        )
+                    },
                     shouldCancel = cancellation::get,
-                    waveformDirectory = waveformDirectory,
                 )
             }
-            if (cancellation.get()) throw CancellationException()
-            if (waveformAmplitudes.isEmpty()) {
-                waveformPreparationFailed = true
-                autoPlayWhenBeatReady = false
-                isImportedBeatPreparation = false
-                return@LaunchedEffect
+            // A cancellation can arrive while the result waits to resume on Main.
+            if (result !is WaveformPreparationState.AwaitingApproval && cancellation.get()) {
+                throw CancellationException()
             }
-
+            waveformPreparation = result
+            when (result) {
+                is WaveformPreparationState.Ready -> waveformAmplitudes = result.amplitudes
+                WaveformPreparationState.Failed -> waveformAmplitudes = IntArray(0)
+                else -> return@LaunchedEffect
+            }
             isImportedBeatPreparation = false
         } catch (cancellation: CancellationException) {
             if (!cancellationRequested) throw cancellation
@@ -339,7 +324,7 @@ fun EditorScreen(
                         isImportedBeatPreparation = false
                     }
                 } else {
-                    waveformPreparationCancelled = true
+                    waveformPreparation = WaveformPreparationState.Cancelled
                 }
                 waveformAmplitudes = IntArray(0)
                 autoPlayWhenBeatReady = false
@@ -347,7 +332,7 @@ fun EditorScreen(
         } finally {
             if (waveformCancellation === cancellation) {
                 waveformCancellation = null
-                isWaveformLoading = false
+                waveformPreparation = waveformPreparation.finish()
             }
         }
     }
@@ -574,8 +559,8 @@ fun EditorScreen(
                     waveformCancellation?.set(true)
                 },
                 cancelRemovesImportedBeat = isImportedBeatPreparation,
-                waveformPreparationCancelled = waveformPreparationCancelled,
-                waveformPreparationFailed = waveformPreparationFailed,
+                waveformPreparationCancelled = waveformPreparation is WaveformPreparationState.Cancelled,
+                waveformPreparationFailed = waveformPreparation is WaveformPreparationState.Failed,
                 onRetryWaveformPreparation = { waveformRevision++ },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -618,7 +603,7 @@ fun EditorScreen(
         )
     }
 
-    pendingLongBeatPreparation?.let { pendingBeat ->
+    (waveformPreparation as? WaveformPreparationState.AwaitingApproval)?.let { pendingBeat ->
         LongBeatWarningDialog(
             durationMs = pendingBeat.durationMs,
             cancelRemovesImportedBeat = pendingBeat.removeBeatOnCancel,
@@ -627,12 +612,12 @@ fun EditorScreen(
                 isImportedBeatPreparation = pendingBeat.removeBeatOnCancel
                 beatFile = pendingBeat.file
                 waveformRevision++
-                pendingLongBeatPreparation = null
+                waveformPreparation = WaveformPreparationState.Idle
             },
             onCancel = {
-                pendingLongBeatPreparation = null
+                waveformPreparation = WaveformPreparationState.Idle
                 if (!pendingBeat.removeBeatOnCancel) {
-                    waveformPreparationCancelled = true
+                    waveformPreparation = WaveformPreparationState.Cancelled
                 } else {
                     beatPlayer?.release()
                     isBeatReady = false
@@ -645,10 +630,6 @@ fun EditorScreen(
         )
     }
 }
-
-
-internal fun shouldWarnBeforeWaveformExtraction(durationMs: Long?): Boolean =
-    durationMs != null && durationMs >= LONG_BEAT_WARNING_MS
 
 private fun displayNameFor(context: Context, uri: Uri): String? {
     return context.contentResolver.query(
