@@ -77,6 +77,37 @@ class LyricFontTest {
     }
 
     @Test
+    fun options_prioritizeFamilyFaceThenUprightStyleWeightAndWidth() {
+        val regular = SystemFontFile("/fonts/Device.ttf", familyName = "Device")
+        val preferredPairs = listOf(
+            regular.copy(italic = true, weight = 700) to regular.copy(familyName = "Device UI"),
+            regular.copy(weight = 700) to regular.copy(italic = true),
+            regular.copy(weight = 500, variationSettings = "'wdth' 75") to regular.copy(weight = 700),
+            regular to regular.copy(variationSettings = "'wdth' 75"),
+        )
+        for ((preferred, other) in preferredPairs) {
+            val expected = listOf(LyricFontFamily.SYSTEM_DEFAULT, preferred)
+            assertEquals(expected, systemFontOptions(listOf(other, preferred)))
+            assertEquals(expected, systemFontOptions(listOf(preferred, other)))
+        }
+    }
+
+    @Test
+    fun equivalentFaces_chooseByPathCollectionIndexThenVariationSettings() {
+        val regular = SystemFontFile("/fonts/a.ttc", familyName = "Device")
+        val preferredPairs = listOf(
+            regular.copy(ttcIndex = 2) to regular.copy(path = "/fonts/b.ttf"),
+            regular to regular.copy(ttcIndex = 1),
+            regular.copy(variationSettings = "'opsz' 12") to regular.copy(variationSettings = "'wght' 400"),
+        )
+        for ((preferred, other) in preferredPairs) {
+            val expected = listOf(LyricFontFamily.SYSTEM_DEFAULT, preferred)
+            assertEquals(expected, systemFontOptions(listOf(other, preferred)))
+            assertEquals(expected, systemFontOptions(listOf(preferred, other)))
+        }
+    }
+
+    @Test
     fun legacySavedFace_keepsMetadataAndGetsACleanFallbackLabel() {
         val old = """{"path":"/system/fonts/NotoNaskhArabicUI-Bold.ttf","ttcIndex":0,"weight":700,"italic":false,"variationSettings":""}"""
         val restored = lyricFontFromPreference(old) as SystemFontFile

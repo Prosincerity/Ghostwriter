@@ -52,6 +52,9 @@ class SystemFontCatalogTest {
         assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, listOf(otherFace, regular)))
         val sameFamily = regular.copy(path = "/other/file.ttf")
         assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, listOf(sameFamily)))
+        val renamedFace = regular.copy(familyName = "Renamed family")
+        assertEquals(regular.label, SystemFontCatalog.selectionLabel(regular, listOf(sameFamily, renamedFace)))
+        assertEquals(renamedFace.label, SystemFontCatalog.selectionLabel(regular, listOf(renamedFace, sameFamily)))
     }
     @Test
     @SdkSuppress(minSdkVersion = 29)
