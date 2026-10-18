@@ -147,4 +147,40 @@ class BeatPlayerTest {
         player.toggleMute()
         assertEquals(0.35f, player.volume)
     }
+
+    @Test
+    fun toggleMute_withoutAnAudibleSelectionRestoresFullVolume() {
+        val player = BeatPlayer()
+        player.setVolume(0f)
+
+        player.toggleMute()
+
+        assertEquals(1f, player.volume)
+    }
+
+    @Test
+    fun rejectedAndSilentVolumes_preserveTheLastAudibleSelection() {
+        val player = BeatPlayer()
+        player.setVolume(0.6f)
+        player.setVolume(-1f)
+        player.setVolume(Float.NaN)
+        assertEquals(0f, player.volume)
+
+        player.toggleMute()
+
+        assertEquals(0.6f, player.volume)
+    }
+
+    @Test
+    fun infiniteVolumes_clampAndRestoreTheClampedAudibleSelection() {
+        val player = BeatPlayer()
+        player.setVolume(Float.POSITIVE_INFINITY)
+        assertEquals(1f, player.volume)
+        player.setVolume(Float.NEGATIVE_INFINITY)
+        assertEquals(0f, player.volume)
+
+        player.toggleMute()
+
+        assertEquals(1f, player.volume)
+    }
 }
