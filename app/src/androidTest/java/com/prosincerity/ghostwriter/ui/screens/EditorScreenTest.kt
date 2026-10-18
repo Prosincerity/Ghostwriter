@@ -234,7 +234,7 @@ class EditorScreenTest {
         val visible = mutableStateOf(true)
         val title = uniqueProjectTitle("Pending playback")
         val projectDir = ProjectStorage.projectDir(context, title)
-        assertTrue(ProjectStorage.saveManual(projectDir, title, "Saved lyrics", keepCount = 2))
+        assertTrue(ProjectStorage.saveManual(projectDir, title, "Saved lyrics", keepCount = 3))
         try {
             composeRule.setContent {
                 // Capture the host Activity's owner before replacing its context
