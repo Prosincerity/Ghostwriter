@@ -26,6 +26,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -39,12 +40,10 @@ import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.DictionaryInstaller
 import com.prosincerity.ghostwriter.data.DictionarySource
 import com.prosincerity.ghostwriter.logic.DictionaryDownloadState
+import com.prosincerity.ghostwriter.logic.DictionaryDownloadSession
 import com.prosincerity.ghostwriter.ui.components.SettingsSection
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,27 +93,14 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
         installed.putAll(status)
         checkingDictionaries = false
     }
-    var downloadState by remember { mutableStateOf<DictionaryDownloadState>(DictionaryDownloadState.Idle) }
+    val downloadSession = remember(scope) { DictionaryDownloadSession(scope) }
+    val downloadState by downloadSession.state.collectAsState()
     val active = downloadState as? DictionaryDownloadState.Downloading
-    var downloadJob by remember { mutableStateOf<Job?>(null) }
 
     fun startDownload(language: String, source: DictionarySource) {
         val key = language to source
-        downloadState = DictionaryDownloadState.Downloading(key)
-        downloadJob = scope.launch {
-            try {
-                installer.install(language, source) { value ->
-                    withContext(Dispatchers.Main.immediate) { downloadState = downloadState.withProgress(value) }
-                }
-                installed[key] = true
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Exception) {
-                downloadState = downloadState.fail(failure.message)
-            } finally {
-                downloadState = downloadState.finish()
-                downloadJob = null
-            }
+        downloadSession.start(key, onInstalled = { installed[key] = true }) { onProgress ->
+            installer.install(language, source, onProgress)
         }
     }
 
@@ -185,7 +171,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp),
                         )
-                        TextButton(shape = GhostButtonShape, onClick = { downloadJob?.cancel() }) {
+                        TextButton(shape = GhostButtonShape, onClick = downloadSession::cancel) {
                             Text("Cancel download")
                         }
                     }
