@@ -8,10 +8,11 @@ internal object ProjectLyricsStorage {
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         // Legacy title snapshots remain readable after UUID migration and rename.
-        val manualFiles = projectDir.listFiles { file ->
+        val projectFiles = projectDir.listFiles().orEmpty()
+        val manualFiles = projectFiles.filter { file ->
             file.isFile && file.extension == "txt" &&
                 !Regex("autosave(?:[1-9]|10)\\.txt", RegexOption.IGNORE_CASE).matches(file.name)
-        }.orEmpty()
+        }
         val manualFile = manualFiles.filter { it.readTextIfFile() != null }
             .maxWithOrNull(compareBy<File> { it.lastModified() }.thenBy { it.name == MANUAL_FILE_NAME })
             ?: File(projectDir, MANUAL_FILE_NAME)
@@ -19,8 +20,13 @@ internal object ProjectLyricsStorage {
         // leave slot ages out of order, so compare every readable snapshot.
         // Scanning in slot order keeps the earlier slot when timestamps tie.
         val newestReadableAutosave = (1..10).asSequence()
-            .mapNotNull { i ->
-                val file = File(projectDir, "autosave$i.txt")
+            .flatMap { i ->
+                // Match the exclusion above so mixed-case legacy title files
+                // remain readable after their project directory becomes a UUID.
+                projectFiles.asSequence().filter { it.name.equals("autosave$i.txt", ignoreCase = true) }
+                    .sortedBy { it.name != "autosave$i.txt" }
+            }
+            .mapNotNull { file ->
                 file.readTextIfFile()?.let { file to it }
             }
             .maxByOrNull { it.first.lastModified() }

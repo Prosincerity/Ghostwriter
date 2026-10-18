@@ -180,6 +180,42 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun loadLatest_comparesMixedCaseLegacySnapshotWithAutosaveAges() {
+        for (manualTime in listOf(1_000L, 2_000L, 3_000L)) {
+            val project = tempFolder.newFolder("mixed_case_$manualTime")
+            File(project, "AUTOSAVE2.txt").apply {
+                writeText("manual lyrics")
+                assertTrue(setLastModified(manualTime))
+            }
+            File(project, "autosave1.txt").apply {
+                writeText("autosaved lyrics")
+                assertTrue(setLastModified(2_000L))
+            }
+
+            assertEquals(if (manualTime > 2_000L) "manual lyrics" else "autosaved lyrics",
+                ProjectStorage.loadLatest(project))
+        }
+    }
+
+    @Test
+    fun loadLatest_tiedCaseVariantsPreferCanonicalAutosave() {
+        val directory = tempFolder.newFolder("case_variants")
+        val legacy = File(directory, "AUTOSAVE1.txt").apply {
+            writeText("legacy lyrics")
+            assertTrue(setLastModified(2_000L))
+        }
+        val canonical = File(directory, "autosave1.txt").apply {
+            writeText("current lyrics")
+            assertTrue(setLastModified(2_000L))
+        }
+        val project = object : File(directory.path) {
+            override fun listFiles(): Array<File> = arrayOf(legacy, canonical)
+        }
+
+        assertEquals("current lyrics", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
     fun loadLatest_recoversManualSaveWhenAutosavesAreUnreadable() {
         val project = tempFolder.newFolder("recovery")
         File(project, "recovery.txt").apply {

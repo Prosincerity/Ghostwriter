@@ -72,6 +72,25 @@ class ProjectIdentityTest {
         assertEquals("latest", ProjectStorage.loadLatest(migrated))
     }
 
+    @Test fun migrationKeepsMixedCaseAutosaveTitlesReadable() {
+        for (title in listOf("AUTOSAVE1", "Autosave2", "AutoSave10")) {
+            val root = temporaryFolder.newFolder()
+            val legacy = File(root, title).apply { assertTrue(mkdir()) }
+            File(legacy, "$title.txt").apply {
+                writeText("saved lyrics for $title")
+                assertTrue(setLastModified(1_000L))
+            }
+            assertEquals("saved lyrics for $title", ProjectStorage.loadLatest(legacy))
+
+            ProjectStorage.migrateLegacyProjects(root)
+
+            val migrated = root.listFiles()!!.single()
+            assertTrue(ProjectStorage.isProjectId(migrated.name))
+            assertEquals("saved lyrics for $title", ProjectStorage.loadLatest(migrated))
+            assertEquals(1_000L, File(migrated, "$title.txt").lastModified())
+        }
+    }
+
     @Test fun missingLegacyTimestampsBecomeStableWithoutDroppingUnknownFields() {
         val legacy = temporaryFolder.newFolder("Older")
         File(legacy, "Older.txt").apply { writeText("lyrics"); setLastModified(1000L) }
