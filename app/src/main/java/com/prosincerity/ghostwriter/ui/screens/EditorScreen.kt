@@ -47,7 +47,7 @@ import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.MarkerLoopRole
-import com.prosincerity.ghostwriter.logic.indexOfSelectedMarker
+import com.prosincerity.ghostwriter.logic.moveMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import com.prosincerity.ghostwriter.media.rememberBeatPlayback
@@ -560,11 +560,8 @@ fun EditorScreen(
                 onAddMarker = { positionMs -> markerPositionToAdd = positionMs },
                 onMarkerClick = { marker -> markerToEdit = marker },
                 onMarkerMove = { marker, positionMs ->
-                    val markerIndex = indexOfSelectedMarker(metadata.markers, marker)
-                    if (markerIndex >= 0 && marker.positionMs != positionMs) {
-                        val updatedMarkers = metadata.markers.toMutableList().apply {
-                            this[markerIndex] = marker.atPositionMs(positionMs, beatPlayer?.sampleRate ?: 0)
-                        }
+                    val updatedMarkers = moveMarker(metadata.markers, marker, positionMs, beatPlayer?.sampleRate ?: 0)
+                    if (updatedMarkers != null) {
                         persistMarkers(
                             markers = updatedMarkers,
                             successMessage = null,
