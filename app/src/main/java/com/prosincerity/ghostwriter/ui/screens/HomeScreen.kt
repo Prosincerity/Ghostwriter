@@ -62,12 +62,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.ProjectSummary
+import com.prosincerity.ghostwriter.logic.homeProjectRows
 import com.prosincerity.ghostwriter.logic.ProjectTitleRules
 import com.prosincerity.ghostwriter.logic.ProjectTitleState
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 
 /** Local projects, ordered by their most recent lyric or metadata edit. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,13 +91,12 @@ internal fun HomeScreen(
     var projectToDelete by remember { mutableStateOf<String?>(null) }
     var projectToRename by remember { mutableStateOf<String?>(null) }
 
-    val recentProjects = remember(existingProjects, projectSummaries, projectTitles) {
-        existingProjects.sortedWith(
-            compareByDescending<String> { projectSummaries[it]?.lastEditedAt ?: 0L }
-                .thenBy { (projectTitles[it] ?: it).lowercase(Locale.ROOT) },
-        )
-    }
     val dateFormat = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
+    val recentProjects = remember(existingProjects, projectSummaries, projectTitles, dateFormat) {
+        homeProjectRows(existingProjects, projectSummaries, projectTitles) { timestamp ->
+            dateFormat.format(Date(timestamp))
+        }
+    }
     val projectsEnabled = lyricsFolderReady && !storageLoading
 
     Scaffold(
@@ -220,11 +219,11 @@ internal fun HomeScreen(
                     )
                 }
                 LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    items(recentProjects, key = { it }) { title ->
-                        val summary = projectSummaries[title]
-                        val displayTitle = projectTitles[title] ?: title
+                    items(recentProjects, key = { it.projectId }) { project ->
+                        val projectId = project.projectId
+                        val displayTitle = project.title
                         Row(
-                            modifier = Modifier.fillMaxWidth().clickable(enabled = projectsEnabled) { onOpenProject(title) }
+                            modifier = Modifier.fillMaxWidth().clickable(enabled = projectsEnabled) { onOpenProject(projectId) }
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -244,14 +243,9 @@ internal fun HomeScreen(
                                     displayTitle, style = MaterialTheme.typography.titleMedium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 )
-                                summary?.let {
-                                    val details = buildList {
-                                        if (it.lastEditedAt > 0) add("Edited ${dateFormat.format(Date(it.lastEditedAt))}")
-                                        it.bpm?.let { bpm -> add("$bpm BPM") }
-                                        it.key?.let { key -> add(key) }
-                                    }
-                                    if (details.isNotEmpty()) Text(
-                                        details.joinToString(" · "),
+                                project.details?.let { details ->
+                                    Text(
+                                        details,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -260,20 +254,20 @@ internal fun HomeScreen(
                                 }
                             }
                             Box {
-                                IconButton(shape = GhostButtonShape, enabled = projectsEnabled, onClick = { projectMenuFor = title }) {
+                                IconButton(shape = GhostButtonShape, enabled = projectsEnabled, onClick = { projectMenuFor = projectId }) {
                                     Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $displayTitle")
                                 }
                                 DropdownMenu(
-                                    expanded = projectMenuFor == title,
+                                    expanded = projectMenuFor == projectId,
                                     onDismissRequest = { projectMenuFor = null },
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Rename") },
-                                        onClick = { projectMenuFor = null; projectToRename = title },
+                                        onClick = { projectMenuFor = null; projectToRename = projectId },
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
-                                        onClick = { projectMenuFor = null; projectToDelete = title },
+                                        onClick = { projectMenuFor = null; projectToDelete = projectId },
                                     )
                                 }
                             }

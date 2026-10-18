@@ -192,6 +192,37 @@ class HomeScreenTest {
         assertTrue(top("Alpha") < top("Zulu"))
     }
 
+    @Test fun equalEditTimes_followDisplayTitleChangesBeforeProjectsWithoutSummaries() {
+        var titles by mutableStateOf(mapOf("first-id" to "Beta", "second-id" to "Alpha"))
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(
+                    existingProjects = listOf("first-id", "legacy", "second-id"),
+                    onCreateProject = {},
+                    onOpenProject = {},
+                    onDeleteProject = {},
+                    onRenameProject = { _, _ -> },
+                    onOpenSettings = {},
+                    projectSummaries = mapOf(
+                        "first-id" to ProjectSummary("Old first title", 2000),
+                        "second-id" to ProjectSummary("Old second title", 2000),
+                    ),
+                    projectTitles = titles,
+                )
+            }
+        }
+        fun top(title: String) = composeRule.onNodeWithText(title).fetchSemanticsNode().boundsInRoot.top
+
+        assertTrue(top("Alpha") < top("Beta"))
+        assertTrue(top("Beta") < top("legacy"))
+        composeRule.onNodeWithText("Old first title").assertDoesNotExist()
+
+        composeRule.runOnIdle { titles = titles + ("first-id" to "Aardvark") }
+
+        assertTrue(top("Aardvark") < top("Alpha"))
+        assertTrue(top("Alpha") < top("legacy"))
+    }
+
     @Test
     fun emptyHome_createsNamedProjectAndOpensSettings() {
         var createdProject: String? = null
