@@ -74,14 +74,8 @@ internal object SystemFontCatalog {
         return samples
     }
 
-    fun selectionLabel(font: LyricFont, options: List<LyricFont>): String {
-        if (font !is SystemFontFile) return font.label // Keep existing generic preferences readable.
-        if (!File(font.path).isFile) return "${font.label} (unavailable)"
-        val discovered = options.filterIsInstance<SystemFontFile>().firstOrNull {
-            (it.path == font.path && it.ttcIndex == font.ttcIndex) || it.label == font.label
-        }
-        return discovered?.label ?: font.label
-    }
+    fun selectionLabel(font: LyricFont, options: List<LyricFont>): String =
+        systemFontSelectionLabel(font, options) { path -> File(path).isFile }
 
     // Keep only the current face cached; slider changes must not reload the font file.
     private var cachedFont: SystemFontFile? = null
