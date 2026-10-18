@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -57,12 +58,9 @@ import com.prosincerity.ghostwriter.data.DictionarySearch
 import com.prosincerity.ghostwriter.data.DictionarySearchMode
 import com.prosincerity.ghostwriter.data.DictionarySearchResult
 import com.prosincerity.ghostwriter.data.PronunciationSource
-import com.prosincerity.ghostwriter.logic.DictionarySearchState
+import com.prosincerity.ghostwriter.logic.DictionarySearchSession
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -93,38 +91,20 @@ internal fun DictionaryScreen(
     val mode = DictionarySearchMode.valueOf(modeName)
     var languageMenu by remember { mutableStateOf(false) }
     var modeMenu by remember { mutableStateOf(false) }
-    var searchState by remember { mutableStateOf(DictionarySearchState()) }
+    val searchSession = remember(scope) { DictionarySearchSession(scope) }
+    val searchState by searchSession.state.collectAsState()
     val result = searchState.result
     val page = searchState.page
     val loading = searchState.loading
     val error = searchState.error
-    var job by remember { mutableStateOf<Job?>(null) }
-
-    fun resetSearch() {
-        searchState = searchState.reset()
-        job?.cancel()
-        job = null
-    }
 
     fun submit(requestedPage: Int = 0) {
         val input = word.trim()
         if (input.isEmpty() || language !in availableLanguages) return
         keyboard?.hide()
         focusManager.clearFocus()
-        searchState = searchState.start()
-        val requested = searchState.revision
-        job?.cancel()
-        job = scope.launch {
-            try {
-                val found = searchAction(input, language, mode, requestedPage)
-                searchState = searchState.complete(requested, found, requestedPage)
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Exception) {
-                searchState = searchState.fail(requested, failure.message)
-            } finally {
-                searchState = searchState.finish(requested)
-            }
+        searchSession.submit(requestedPage) {
+            searchAction(input, language, mode, requestedPage)
         }
     }
 
@@ -181,7 +161,7 @@ internal fun DictionaryScreen(
                                     value = word,
                                     onValueChange = {
                                         word = it
-                                        resetSearch()
+                                        searchSession.reset()
                                     },
                                     label = { Text("Word") },
                                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
@@ -223,7 +203,7 @@ internal fun DictionaryScreen(
                                                     onClick = {
                                                         selectedLanguage = code
                                                         languageMenu = false
-                                                        resetSearch()
+                                                        searchSession.reset()
                                                     },
                                                 )
                                             }
@@ -250,7 +230,7 @@ internal fun DictionaryScreen(
                                                     onClick = {
                                                         modeName = option.name
                                                         modeMenu = false
-                                                        resetSearch()
+                                                        searchSession.reset()
                                                     },
                                                 )
                                             }
