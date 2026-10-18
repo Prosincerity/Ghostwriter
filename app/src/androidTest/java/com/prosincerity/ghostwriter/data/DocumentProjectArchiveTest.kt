@@ -235,6 +235,70 @@ class DocumentProjectArchiveTest {
         assertEquals("latest shared lyrics", ProjectStorage.loadLatest(project))
     }
 
+    @Test fun restoringOldAppDataWithExtraBackupsLoadsTheLatestSharedLyrics() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        for (index in 1..5) {
+            assertTrue(ProjectStorage.saveManual(project, "song", "old take $index", 5))
+        }
+        archive.save(project, 3)
+        val oldWorkingCopy = File(localRoot, ".app-backup")
+        assertTrue(project.copyRecursively(oldWorkingCopy))
+        draft(project, "latest shared lyrics")
+        archive.save(project, 3)
+        assertTrue(project.deleteRecursively())
+        assertTrue(oldWorkingCopy.renameTo(project))
+        val resetTime = latestArchiveTime(project.name) + 60_000L
+        project.listFiles { it.extension == "txt" }!!.forEach {
+            assertTrue(it.setLastModified(resetTime))
+        }
+
+        assertEquals(1, archive.restore(localRoot))
+
+        assertEquals("latest shared lyrics", ProjectStorage.loadLatest(project))
+        for (slot in 3..5) {
+            assertEquals("old take ${6 - slot}", File(project, "autosave$slot.txt").readText())
+        }
+        archive.save(project, 3)
+        val recoveredRoot = File(localRoot, ".reinstall").apply { assertTrue(mkdir()) }
+        assertEquals(1, archive.restore(recoveredRoot))
+        assertEquals("latest shared lyrics", ProjectStorage.loadLatest(File(recoveredRoot, project.name)))
+    }
+
+    @Test fun restoringOldAppDataKeepsLegacyLyricsBehindTheSharedSnapshot() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "renamed song")
+        draft(project, "old lyrics")
+        archive.save(project, 3)
+        val legacy = File(project, "original title.txt").apply { writeText("old lyrics") }
+        val oldWorkingCopy = File(localRoot, ".app-backup")
+        assertTrue(project.copyRecursively(oldWorkingCopy))
+        draft(project, "latest shared lyrics")
+        archive.save(project, 3)
+        // Leave one verified snapshot to cover restoring without archive history.
+        val newestTime = latestArchiveTime(project.name)
+        for (uri in savedFiles(project.name)) {
+            val snapshot = resolver.openInputStream(uri)!!.bufferedReader().use {
+                PersistentProjectSnapshot.decode(it.readText(), project.name)!!
+            }
+            if (snapshot.savedAt != newestTime) assertTrue(DocumentsContract.deleteDocument(resolver, uri))
+        }
+        assertTrue(project.deleteRecursively())
+        assertTrue(oldWorkingCopy.renameTo(project))
+        project.listFiles { it.extension == "txt" }!!.forEach {
+            assertTrue(it.setLastModified(newestTime + 60_000L))
+        }
+        val older = File(project, "earlier title.txt").apply {
+            writeText("earliest lyrics")
+            assertTrue(setLastModified(1_000L))
+        }
+
+        assertEquals(1, archive.restore(localRoot))
+
+        assertEquals("latest shared lyrics", ProjectStorage.loadLatest(project))
+        assertEquals("old lyrics", legacy.readText())
+        assertEquals("earliest lyrics", older.readText())
+        assertEquals(1_000L, older.lastModified())
+    }
+
     @Test fun clockChangesCannotOverwriteAnUnarchivedLocalDraft() {
         val project = ProjectStorage.createProjectDirectory(localRoot, "song")
         draft(project, "archived"); archive.save(project, 3)

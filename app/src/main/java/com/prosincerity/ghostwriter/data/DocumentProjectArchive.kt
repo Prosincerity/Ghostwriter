@@ -155,7 +155,8 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                     return@synchronized
                 }
                 check(project.isDirectory || project.mkdirs()) { "Couldn't restore project" }
-                for ((index, record) in saved.take(10).withIndex()) {
+                val restoredSnapshots = saved.take(10)
+                for ((index, record) in restoredSnapshots.withIndex()) {
                     val file = File(project, "autosave${index + 1}.txt")
                     StagedFileWriter.writeText(file, record.snapshot.lyrics)
                     file.setLastModified(record.snapshot.savedAt)
@@ -164,6 +165,18 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                 StagedFileWriter.writeText(manual, latest.lyrics)
                 manual.setLastModified(latest.savedAt)
                 StagedFileWriter.writeText(ProjectStorage.metadataFile(project), latest.metadata)
+                // App-backup restores can reset local file ages. Keep extra backups
+                // and legacy title snapshots, but rank them behind the verified set.
+                // Only change their ages after the restored lyrics are safely written.
+                val restoredNames = restoredSnapshots.indices.map { "autosave${it + 1}.txt" }.toSet() + manual.name
+                val olderThanRestored = restoredSnapshots.last().snapshot.savedAt - 1L
+                project.listFiles { file ->
+                    file.isFile && file.extension == "txt" && file.name !in restoredNames
+                }?.forEach { file ->
+                    if (file.lastModified() > olderThanRestored && !file.setLastModified(olderThanRestored)) {
+                        throw IOException("Couldn't restore the age of ${file.name}")
+                    }
+                }
                 rememberSave(project, latest)
                 restored++
             }
