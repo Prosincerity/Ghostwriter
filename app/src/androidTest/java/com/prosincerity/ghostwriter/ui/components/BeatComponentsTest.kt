@@ -280,6 +280,60 @@ class BeatComponentsTest {
     }
 
     @Test
+    fun playerPanel_prioritizesConnectionThenLoadingCancellationAndFailure() {
+        val connected = mutableStateOf(false)
+        val loading = mutableStateOf(true)
+        val cancelled = mutableStateOf(true)
+        val failed = mutableStateOf(true)
+        val player = BeatPlayer()
+        composeRule.setContent {
+            GhostwriterTheme {
+                BeatPlayerPanel(
+                    beatPlayer = player.takeIf { connected.value },
+                    isBeatReady = true,
+                    isImporting = false,
+                    beatDisplayName = "Assigned beat",
+                    onImportBeat = {},
+                    onReassignBeat = {},
+                    isReassigningBeat = false,
+                    waveformAmplitudes = intArrayOf(),
+                    isWaveformLoading = loading.value,
+                    markers = emptyList(),
+                    onAddMarker = {},
+                    onMarkerClick = {},
+                    onMarkerMove = { _, _ -> },
+                    onCancelWaveformPreparation = {},
+                    cancelRemovesImportedBeat = false,
+                    waveformPreparationCancelled = cancelled.value,
+                    waveformPreparationFailed = failed.value,
+                    onRetryWaveformPreparation = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Connecting beat player…").assertExists()
+        composeRule.onNodeWithText("Preparing waveform…").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Play").assertDoesNotExist()
+
+        composeRule.runOnIdle { connected.value = true }
+        composeRule.onNodeWithText("Preparing waveform…").assertExists()
+        composeRule.onNodeWithText("Waveform preparation canceled").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+
+        composeRule.runOnIdle { loading.value = false }
+        composeRule.onNodeWithText("Waveform preparation canceled").assertExists()
+        composeRule.onNodeWithText("Couldn't create waveform").assertDoesNotExist()
+
+        composeRule.runOnIdle { cancelled.value = false }
+        composeRule.onNodeWithText("Couldn't create waveform").assertExists()
+        composeRule.onNodeWithText("Assigned beat").assertDoesNotExist()
+
+        composeRule.runOnIdle { failed.value = false }
+        composeRule.onNodeWithText("Assigned beat").assertExists()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+    }
+
+    @Test
     fun unreadyPlayer_offersCancellationWhileLoadingAndRetryOrRemovalAfterFailure() {
         val loading = mutableStateOf(true)
         var cancelled = false
