@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.EditorLyricsSession
+import com.prosincerity.ghostwriter.data.importProjectBeat
 import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
@@ -358,37 +359,28 @@ fun EditorScreen(
                 val imported = projectMutationMutex.withLock {
                     withContext(Dispatchers.IO) {
                         runCatching {
-                            val originalName = displayNameFor(context, uri) ?: "beat.mp3"
-                            val extension = originalName.substringAfterLast('.', "").lowercase()
-                            require(extension in ProjectStorage.SUPPORTED_AUDIO_EXTENSIONS) {
-                                "Choose an MP3, WAV, OGG, FLAC, M4A, or AAC file"
-                            }
-
-                            val assigned = ProjectStorage.assignBeatToProject(
+                            importProjectBeat(
                                 projectDir = projectDir,
-                                originalName = originalName,
+                                projectTitle = projectTitle,
+                                originalName = displayNameFor(context, uri),
                                 waveformDirectory = waveformDirectory,
+                                persistLyrics = { directory -> persistLyrics(directory, keepCount) },
                             ) { destination ->
                                 context.contentResolver.openInputStream(uri)?.use { input ->
                                     destination.outputStream().use { output -> input.copyTo(output) }
                                 } ?: error("Couldn't read the selected beat")
                             }
-                            if (!persistLyrics(projectDir, keepCount)) throw java.io.IOException("Couldn't update the lyric folder; local draft kept")
-                            Pair(
-                                assigned,
-                                ProjectStorage.loadMetadata(projectDir, projectTitle),
-                            )
                         }
                     }
                 }
                 if (importRevision != projectMutationRevision.get()) return@launch
 
-                imported.onSuccess { (assigned, updatedMetadata) ->
-                    metadata = updatedMetadata
+                imported.onSuccess { importedBeat ->
+                    metadata = importedBeat.metadata
                     approvedLongBeatPath = null
                     autoPlayWhenBeatReady = true
                     isImportedBeatPreparation = true
-                    beatFile = assigned
+                    beatFile = importedBeat.file
                     waveformRevision++
                 }.onFailure {
                     if (it is CancellationException) throw it
