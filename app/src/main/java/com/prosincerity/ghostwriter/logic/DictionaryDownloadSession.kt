@@ -27,7 +27,7 @@ internal class DictionaryDownloadSession(private val scope: CoroutineScope) {
         install: suspend (suspend (DictionaryDownloadProgress) -> Unit) -> Unit,
     ) {
         mutableState.value = DictionaryDownloadState.Downloading(key)
-        downloadJob = scope.launch {
+        val job = scope.launch {
             try {
                 install { progress ->
                     currentCoroutineContext().ensureActive()
@@ -38,10 +38,13 @@ internal class DictionaryDownloadSession(private val scope: CoroutineScope) {
                 throw cancelled
             } catch (failure: Exception) {
                 mutableState.update { it.fail(failure.message) }
-            } finally {
-                mutableState.update { it.finish() }
-                downloadJob = null
             }
+        }
+        downloadJob = job
+        // Completion also runs when cancellation prevents the coroutine body from starting.
+        job.invokeOnCompletion {
+            mutableState.update { it.finish() }
+            downloadJob = null
         }
     }
 

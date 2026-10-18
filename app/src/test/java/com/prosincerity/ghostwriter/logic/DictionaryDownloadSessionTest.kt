@@ -68,6 +68,40 @@ class DictionaryDownloadSessionTest {
     }
 
     @Test
+    fun cancellationBeforeDispatchClearsThePendingDownloadAndAllowsRetry() = withSession { session, owner ->
+        var installations = 0
+        var completions = 0
+        session.start(key, onInstalled = { completions++ }) { installations++ }
+
+        session.cancel()
+        owner.children.toList().joinAll()
+
+        assertEquals(0, installations)
+        assertEquals(0, completions)
+        assertEquals(DictionaryDownloadState.Idle, session.state.value)
+
+        session.start(key, onInstalled = { completions++ }) { installations++ }
+        owner.children.toList().joinAll()
+
+        assertEquals(1, installations)
+        assertEquals(1, completions)
+        assertEquals(DictionaryDownloadState.Idle, session.state.value)
+    }
+
+    @Test
+    fun ownerCancellationBeforeDispatchClearsThePendingDownload() = withSession { session, owner ->
+        var installed = false
+        var started = false
+        session.start(key, onInstalled = { installed = true }) { started = true }
+
+        owner.cancelAndJoin()
+
+        assertFalse(started)
+        assertFalse(installed)
+        assertEquals(DictionaryDownloadState.Idle, session.state.value)
+    }
+
+    @Test
     fun cancellationBeforeOrAfterProgressClearsTheDownloadWithoutAnnouncingInstallation() = withSession { session, owner ->
         for (reported in listOf(null, progress)) {
             val started = CompletableDeferred<Unit>()
