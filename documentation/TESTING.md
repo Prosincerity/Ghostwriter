@@ -5,12 +5,40 @@
 Coverage is a safety net, not the goal. Write tests that protect behavior and
 observable outcomes; never add tests solely to reach a coverage number.
 
+### Verification scope
+
+Run the smallest check that can catch the change. Never run the full suite
+per step.
+
+- **Per code step:** compile and run unit tests for the touched class only:
+  `./gradlew --offline testDebugUnitTest --tests "*ClassName*"`. Gradle compiles
+  the code and tests as part of this task. For Android-only code, use the
+  relevant compile task and the focused device check below.
+- **Per logical batch of code changes:** run the full JVM unit suite once with
+  `./gradlew --offline testDebugUnitTest`.
+- **Instrumented/device tests during development:** run only for changes to
+  Android-bound code, such as MediaPlayer/MediaCodec lifecycle, SAF, Compose UI,
+  or permissions. Select one class or method with
+  `-Pandroid.testInstrumentationRunnerArguments.class=package.ClassName[#method]`.
+  Never run the whole Android suite per step or commit.
+- **Documentation-only changes:** review the diff and referenced commands;
+  Gradle and device tests are unnecessary.
+- Do not rerun a passing check unless the code it covers changed.
+- If a test fails, fix the cause or report it. Never skip, delete, or weaken a
+  failing test to get green.
+
+Prefer JVM tests by keeping logic UI-free. Each code commit must compile and
+pass its focused checks. Before merging, the full JVM and Android suites and
+combined/aggregated coverage gates must pass for the final code.
+Full Android runs take more than five minutes, so reserve them and full
+coverage verification for the merge gate.
+
 ### Workflow and assertions
 
 - **Bug fixes:** write a failing regression test first, run it, and confirm
   that it fails for the intended bug rather than a setup or compilation error.
-  Then fix the production code and confirm the test passes. Run the relevant
-  suite to check for regressions.
+  Then fix the production code and confirm the test passes. Keep regression
+  checks within the verification scope above.
 - **New logic:** write tests alongside the code, using test-first development
   where the design is clear. Keep one behavior per test; multiple assertions
   are appropriate when they describe the same outcome.
@@ -38,8 +66,9 @@ Tests must be deterministic and independent. Do not share mutable state,
 rely on test order, or depend on real time, network access, randomness, or
 existing filesystem state. Use controlled clocks and coroutine dispatchers,
 fixed inputs, and fakes. Tests of storage behavior may use isolated temporary
-files initialized and cleaned up by the test. Synchronize explicitly with
-workers and UI idling; never fix a flaky test by adding retries or sleeps.
+files initialized and cleaned up by the test. Use tiny fixtures and no real
+network. Do not use sleeps; use waitUntil, idling, controlled dispatchers, or
+explicit synchronization. Never fix a flaky test by adding retries.
 Report flaky tests and find and remove the nondeterminism.
 
 Keep the unit suite fast. Report any test taking more than a few seconds with
@@ -60,7 +89,8 @@ Metrics with no executable instructions or branches are not applicable.
 New or changed executable lines must have at least **80% diff coverage**.
 Report unit and instrumented coverage separately and retain the
 aggregated coverage dashboard. Enforce fixed module minimums on
-combined coverage from both suites, keeping each module and variant separate.
+combined coverage from both suites before merging, keeping each module and
+variant separate. Focused development runs need not satisfy module-wide gates.
 Use the separate reports to assess each suite's responsibilities; Android UI
 does not have to meet the unit-test threshold. Changed-line coverage uses the
 combined JaCoCo XML report.
@@ -97,16 +127,18 @@ any flakiness or slow tests. See the commands below for local verification.
 
 ## Checks without a device
 
-Run from the repository root:
+Run a focused step check from the repository root:
 
 ```sh
-./gradlew test lint assembleDebugAndroidTest
+./gradlew --offline testDebugUnitTest --tests "*ClassName*"
 ```
 
-This runs JVM tests and lint, then builds the instrumented test APK without
-running it. JVM reports are under `app/build/reports/tests/`; lint reports are
-under `app/build/reports/`. Use the generated reports for current results
-rather than maintaining test or warning totals in documentation.
+Run `./gradlew --offline testDebugUnitTest` once per logical batch of code changes.
+Use `./gradlew --offline assembleDebugAndroidTest` when affected instrumented
+tests need compiling without a device. Run lint when relevant to the change.
+JVM reports are under `app/build/reports/tests/`;
+lint reports are under `app/build/reports/`. Use generated reports for current
+results rather than maintaining test or warning totals in documentation.
 
 ## Android tests
 
@@ -116,10 +148,10 @@ including devices connected over wireless debugging, as allowed by
 [AGENTS.md](../AGENTS.md). If no device is available, compile the tests and leave
 execution to the maintainer.
 
-To run the full suite:
+For the merge gate only, run the full Android suite:
 
 ```sh
-./gradlew connectedDebugAndroidTest
+./gradlew --offline connectedDebugAndroidTest
 ```
 
 In this Distrobox environment, agents must confirm the target with
@@ -128,12 +160,15 @@ permission and select it with `ANDROID_SERIAL`. Every ADB command and any
 tool invoking ADB, including connected Gradle tasks, must use that SDK path
 and elevated execution permission as required by [AGENTS.md](../AGENTS.md).
 
-For a sample test on one device, use the serial from that command:
+For development, select a single class on the confirmed device:
 
 ```sh
-ANDROID_SERIAL='<device serial>' ./gradlew :app:connectedDebugAndroidTest \
+ANDROID_SERIAL='<device serial>' ./gradlew --offline :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.ui.screens.HomeScreenTest
 ```
+
+To select one method, append `#methodName` to the fully qualified class name.
+Do not run an unfiltered device task during development.
 
 Wireless debugging must already be paired and connected. Outside this
 Distrobox agent environment, use the ADB binary from the SDK configured in
@@ -190,7 +225,8 @@ Debug builds enable JaCoCo for JVM and instrumented tests.
 
 Android, combined, and aggregated coverage require a running emulator or connected device
 and follow the same device-testing rules. The combined and aggregated tasks
-run both suites.
+run both suites. Reserve these full-suite report tasks for the merge gate;
+they are not required per step or commit.
 
 ### Gates and changed-line coverage
 
@@ -202,10 +238,11 @@ branch totals per module and variant with the policy exclusions. A failing file
 does not independently fail the gate. Dashboard percentages are rounded, so
 verification uses the exact covered/total counters.
 
-Run `./gradlew :app:verifyDebugCoverage` on a selected connected target to run
-both suites, generate separate, combined, and aggregated reports, and check
-module minimums. Run `./gradlew :app:verifyAggregatedCoverage` to check an
-existing dashboard without rerunning tests; saved results are not fresh coverage.
+Before merging, run `./gradlew --offline :app:verifyDebugCoverage` on a selected
+connected target to run both suites, generate separate, combined, and aggregated
+reports, and check module minimums. Run `./gradlew :app:verifyAggregatedCoverage`
+to check an existing dashboard without rerunning tests; saved results are not
+fresh coverage.
 The app uses 80% instruction / 70% branch. Modules named `domain`, `data`,
 `parsing`, or `logic` automatically use 90% / 85%; other logic-heavy modules
 must be passed to the verifier with `--logic-module MODULE`.
@@ -296,9 +333,10 @@ overflow and decoder-stall tests assert rejection and preserved behavior
 rather than internal diagnostic wording. Cancellation assertions surround
 the operation itself so fixture failures cannot satisfy the expected error.
 
-After removing redundant tests, run the affected suites and review fresh
-reports to confirm the surviving tests still protect the intended behavior
-and satisfy the fixed module minimums and changed-line coverage requirement.
+After removing redundant tests, run focused checks for the affected classes
+and the full JVM suite once for the logical batch. Before merging, review fresh
+combined reports to confirm the surviving tests protect the intended behavior
+and satisfy the module minimums and changed-line coverage requirement.
 
 The remaining cleanup folds repeated unprepared-player release into the transport
 cases and keeps disabled-loop end-of-beat checks in the intro/disable scenario;

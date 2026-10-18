@@ -34,8 +34,8 @@ Before modifying code, read:
   Confirm the target with `~/Android/Sdk/platform-tools/adb devices -l` using
   elevated execution permission, and select it with `ANDROID_SERIAL`.
   If no device is available, compile the tests and leave execution to the maintainer.
-- Before completing a task, run the relevant non-device tests, including JVM tests.
-- Run ./gradlew test and ./gradlew lint when practical.
+- Choose verification scope using the testing policy below. For documentation-only
+  changes, review the diff and referenced commands; do not run Gradle or device tests.
 - During Gradle tests and builds, wait for the process to finish before
   inspecting results. Do not repeatedly poll status, read partial logs, or
   stream intermediate output. Prefer completion notifications or blocking
@@ -45,6 +45,25 @@ Before modifying code, read:
 
 ## Testing policy
 
+- Run the smallest check that can catch the change. Never run the full suite
+  per step.
+- Per code step: compile and run JVM tests for the touched class only:
+  `./gradlew --offline testDebugUnitTest --tests "*ClassName*"`. This task also
+  compiles the code and tests; use the relevant compile task for Android-only code.
+- Per logical batch of code changes: run the full JVM unit suite once with
+  `./gradlew --offline testDebugUnitTest`.
+- During development, run instrumented/device tests only when the change touches
+  Android-bound code (MediaPlayer/MediaCodec lifecycle, SAF, Compose UI, or
+  permissions). Select a single class or method with
+  `-Pandroid.testInstrumentationRunnerArguments.class=package.ClassName[#method]`;
+  never run the whole Android suite per step or commit.
+- Prefer JVM tests: keep logic UI-free so it needs no device.
+- Do not rerun a passing check unless the code it covers changed.
+- If a test fails, fix the cause or report it. Never skip, delete, or weaken a
+  failing test to get green.
+- Before merging, the full JVM and Android suites and combined/aggregated
+  coverage gates must pass for the final code. Reserve full Android suite runs
+  and full coverage verification for this merge gate, not individual commits.
 - For bug fixes, write a failing regression test first. Run it and confirm it
   fails for the intended reason before fixing the code, then confirm it passes.
 - For new logic, write tests alongside the code; use test-first development
@@ -64,9 +83,10 @@ Before modifying code, read:
   test-order dependency, and no reliance on real time, network, randomness,
   or existing filesystem state. Use controlled clocks, dispatchers, fakes,
   and isolated temporary storage when testing file behavior.
-- Never fix flaky tests with retries or sleeps. Report flakiness and remove
-  its source of nondeterminism. No @Ignore or disabled tests without a written
-  reason and a linked tracked issue.
+- Do not use sleeps in tests; use waitUntil, idling, controlled dispatchers, or
+  explicit synchronization. Never fix flaky tests with retries. Report flakiness
+  and remove its source of nondeterminism. No @Ignore or disabled tests without
+  a written reason and a linked tracked issue.
 - Tests must run headless and offline. Run verification locally; GitHub Actions
   workflows are not configured. Keep the unit suite fast and report any test
   taking more than a few seconds.
@@ -75,7 +95,8 @@ Before modifying code, read:
 - Coverage is a safety net, not a goal. Use JaCoCo instruction and branch
   coverage, reporting unit and instrumented results separately and retaining
   the aggregated coverage dashboard. Enforce module gates on combined coverage
-  so Android UI does not have to satisfy unit-test coverage.
+  before merging, so Android UI does not have to satisfy unit-test coverage.
+  Focused development checks need not satisfy module-wide coverage gates.
 - Gate coverage per module, not per file: 80% instruction / 70% branch as the
   default baseline, and 90% / 85% for logic-heavy domain, data, or parsing
   modules. New or changed executable lines require at least 80% diff coverage.
@@ -97,7 +118,8 @@ Before modifying code, read:
 - If the working tree contains unrelated changes, leave them unstaged and
   tell the maintainer.
 - Commit as you go, after each working step, not one big commit at the end.
-- Every commit must build and pass tests.
+- Each code commit must compile and pass the focused checks required above.
+  The full Android suite is required before merging, not for every commit.
 
 ## Current architecture
 
