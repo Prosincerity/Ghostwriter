@@ -43,7 +43,7 @@ internal object ProjectLyricsStorage {
         runCatching {
             StagedFileWriter.writeText(File(projectDir, fileName), content)
             rotateAndSave(projectDir, content, keepCount)
-        }.isSuccess
+        }.getOrDefault(false)
 
     /** An unchanged autosave does not consume another backup slot. */
     fun rotateAndSave(projectDir: File, content: String, keepCount: Int): Boolean =

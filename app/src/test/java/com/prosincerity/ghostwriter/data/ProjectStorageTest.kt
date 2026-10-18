@@ -495,6 +495,22 @@ class ProjectStorageTest {
     // --- saveManual tests ---
 
     @Test
+    fun saveManual_reportsAutosaveFailureAndRetainsTheManualCopy() {
+        val project = tempFolder.newFolder("blocked_manual_autosave")
+        val blockedAutosave = File(project, "autosave1.txt")
+        assertTrue(blockedAutosave.mkdir())
+        File(blockedAutosave, "keep").writeText("blocked autosave")
+
+        val saved = ProjectStorage.saveManual(project, "song", "new lyrics", 3)
+
+        assertFalse("An incomplete manual save must report failure", saved)
+        assertEquals("new lyrics", File(project, "lyrics.txt").readText())
+        assertEquals("new lyrics", ProjectStorage.loadLatest(project))
+        assertEquals("blocked autosave", File(blockedAutosave, "keep").readText())
+        assertFalse(project.list()!!.any { it.endsWith(".tmp") })
+    }
+
+    @Test
     fun saveManual_replacesLyricsAndSynchronizesAutosaveWithoutTemporaryFiles() {
         val projectDir = tempFolder.newFolder("Summer_Bars")
         assertTrue(ProjectStorage.saveManual(projectDir, "Summer Bars", "first draft", keepCount = 3))
