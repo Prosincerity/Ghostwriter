@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.MarkerLoopRange
 import com.prosincerity.ghostwriter.logic.MarkerLoopFrames
+import com.prosincerity.ghostwriter.logic.PlaybackVolume
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -82,10 +83,8 @@ class BeatPlayer(
     val isLooping: Boolean get() = loopMode != BeatLoopMode.OFF
 
     /** Playback volume, from silent (0f) to full volume (1f). */
-    var volume: Float = 1f
-        private set
-
-    private var lastAudibleVolume = 1f
+    val volume: Float get() = volumeState.level
+    private var volumeState = PlaybackVolume()
 
     /**
      * Current playback position in milliseconds.
@@ -241,8 +240,7 @@ class BeatPlayer(
      */
     fun setVolume(volume: Float) {
         if (volume.isNaN()) return
-        this.volume = volume.coerceIn(0f, 1f)
-        if (this.volume > 0f) lastAudibleVolume = this.volume
+        volumeState = volumeState.withLevel(volume)
         applyVolume()
         smoothPlayback?.setVolume(this.volume)
     }
@@ -467,7 +465,7 @@ class BeatPlayer(
 
     /** Mutes or restores the last audible level, even if the controls are recreated. */
     fun toggleMute() {
-        setVolume(if (volume == 0f) lastAudibleVolume else 0f)
+        setVolume(volumeState.toggleMute().level)
     }
 
     /**
