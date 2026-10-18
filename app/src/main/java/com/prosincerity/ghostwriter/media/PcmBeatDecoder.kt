@@ -5,10 +5,11 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
+import com.prosincerity.ghostwriter.logic.PcmEncoding
+import com.prosincerity.ghostwriter.logic.PcmFormat
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.concurrent.CancellationException
 
 internal data class PcmBeat(val file: File, val sampleRate: Int, val channels: Int, val frames: Long) {
@@ -136,55 +137,20 @@ internal object PcmBeatDecoder {
         channels: Int,
         encoding: Int,
     ) {
-        require(encoding == AudioFormat.ENCODING_PCM_16BIT || encoding == AudioFormat.ENCODING_PCM_FLOAT ||
-            encoding == AudioFormat.ENCODING_PCM_8BIT) { "Unsupported decoder PCM format" }
-        val bytesPerSample = when (encoding) {
-            AudioFormat.ENCODING_PCM_FLOAT -> 4
-            AudioFormat.ENCODING_PCM_8BIT -> 1
-            else -> 2
+        val pcmEncoding = when (encoding) {
+            AudioFormat.ENCODING_PCM_16BIT -> PcmEncoding.PCM_16BIT
+            AudioFormat.ENCODING_PCM_FLOAT -> PcmEncoding.PCM_FLOAT
+            AudioFormat.ENCODING_PCM_8BIT -> PcmEncoding.PCM_8BIT
+            else -> throw IllegalArgumentException("Unsupported decoder PCM format")
         }
-        val buffer = decoded.duplicate().order(ByteOrder.LITTLE_ENDIAN)
-        buffer.position(offset)
-        buffer.limit(offset + size)
-        val timestampFrame = nearestFrame(presentationTimeUs, rate)
-        val skipFrames = (-timestampFrame).coerceAtLeast(0)
-            .coerceAtMost((buffer.remaining() / (bytesPerSample * channels)).toLong())
-        buffer.position(buffer.position() + (skipFrames * bytesPerSample * channels).toInt())
-        // Append decoder output in order. Timestamp rounding must not overwrite samples.
-        val data = ByteArray(buffer.remaining() / bytesPerSample * 2)
-        // PCM16 is already in the signed little-endian output format. Copy it
-        // in bulk while keeping the same offset, preroll and whole-sample bounds.
-        if (encoding == AudioFormat.ENCODING_PCM_16BIT) {
-            buffer.get(data)
-            pcm.write(data)
-            return
-        }
-        var written = 0
-        while (buffer.remaining() >= bytesPerSample) {
-            val sample = when (encoding) {
-                AudioFormat.ENCODING_PCM_FLOAT -> (buffer.float.coerceIn(-1f, 1f) * 32767).toInt()
-                AudioFormat.ENCODING_PCM_8BIT -> ((buffer.get().toInt() and 255) - 128) shl 8
-                else -> buffer.short.toInt()
-            }
-            data[written++] = sample.toByte()
-            data[written++] = (sample shr 8).toByte()
-        }
-        pcm.write(data)
+        pcm.write(Pcm16Conversion.convertBuffer(
+            decoded, offset, size, presentationTimeUs, PcmFormat(channels, rate, pcmEncoding),
+        ))
     }
 
     internal fun trimToDuration(pcm: RandomAccessFile, sampleRate: Int, channels: Int, durationUs: Long): Long {
-        val frames = pcm.length() / (channels * 2)
-        val durationFrames = nearestFrame(durationUs, sampleRate)
-        val trimmedFrames = if (durationFrames > 0) minOf(frames, durationFrames) else frames
+        val trimmedFrames = Pcm16Conversion.trimmedFrames(pcm.length(), sampleRate, channels, durationUs)
         pcm.setLength(trimmedFrames * channels * 2)
         return trimmedFrames
-    }
-
-    private fun nearestFrame(timeUs: Long, sampleRate: Int): Long {
-        // Container/codec times lose sub-microsecond precision. Truncating again
-        // loses one frame at both the duration and the negative preroll boundary.
-        val remainder = timeUs % 1_000_000L * sampleRate
-        val rounding = if (remainder < 0) -500_000L else 500_000L
-        return timeUs / 1_000_000L * sampleRate + (remainder + rounding) / 1_000_000L
     }
 }

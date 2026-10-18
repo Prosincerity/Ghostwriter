@@ -208,9 +208,9 @@ object WaveformExtractor {
             AudioFormat.ENCODING_PCM_16BIT,
         )
         val encoding = when (pcmEncoding) {
-            AudioFormat.ENCODING_PCM_8BIT -> WaveformPcmEncoding.PCM_8BIT
-            AudioFormat.ENCODING_PCM_FLOAT -> WaveformPcmEncoding.PCM_FLOAT
-            else -> WaveformPcmEncoding.PCM_16BIT
+            AudioFormat.ENCODING_PCM_8BIT -> PcmEncoding.PCM_8BIT
+            AudioFormat.ENCODING_PCM_FLOAT -> PcmEncoding.PCM_FLOAT
+            else -> PcmEncoding.PCM_16BIT
         }
 
         val start = bufferInfo.offset.coerceIn(0, buffer.capacity())
@@ -225,7 +225,7 @@ object WaveformExtractor {
 
         return WaveformPeaks.appendFrames(
             buffer = readable,
-            format = WaveformPcmFormat(channelCount, sampleRate, encoding),
+            format = PcmFormat(channelCount, sampleRate, encoding),
             timestampUs = bufferInfo.presentationTimeUs,
             durationUs = durationUs,
             buckets = buckets,

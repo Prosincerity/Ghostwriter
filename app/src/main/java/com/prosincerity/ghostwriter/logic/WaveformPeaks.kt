@@ -4,16 +4,6 @@ import java.nio.ByteBuffer
 import java.util.concurrent.CancellationException
 import kotlin.math.abs
 
-internal enum class WaveformPcmEncoding(val bytesPerSample: Int) {
-    PCM_8BIT(1), PCM_16BIT(2), PCM_FLOAT(4),
-}
-
-internal data class WaveformPcmFormat(
-    val channelCount: Int,
-    val sampleRate: Int,
-    val encoding: WaveformPcmEncoding,
-)
-
 /** PCM peak accumulation without Android media types, decoding, or I/O. */
 internal object WaveformPeaks {
     fun bucketIndexForTimestamp(
@@ -35,7 +25,7 @@ internal object WaveformPeaks {
     /** Consume complete interleaved frames from a bounded, little-endian buffer. */
     fun appendFrames(
         buffer: ByteBuffer,
-        format: WaveformPcmFormat,
+        format: PcmFormat,
         timestampUs: Long,
         durationUs: Long,
         buckets: IntArray,
@@ -62,10 +52,10 @@ internal object WaveformPeaks {
         return frameIndex
     }
 
-    fun pcmAmplitude(buffer: ByteBuffer, encoding: WaveformPcmEncoding): Int = when (encoding) {
-        WaveformPcmEncoding.PCM_8BIT -> abs((buffer.get().toInt() and 0xFF) - 128) * 256
-        WaveformPcmEncoding.PCM_FLOAT -> (abs(buffer.float).coerceAtMost(1f) * 32_767f).toInt()
-        WaveformPcmEncoding.PCM_16BIT -> abs(buffer.short.toInt())
+    fun pcmAmplitude(buffer: ByteBuffer, encoding: PcmEncoding): Int = when (encoding) {
+        PcmEncoding.PCM_8BIT -> abs((buffer.get().toInt() and 0xFF) - 128) * 256
+        PcmEncoding.PCM_FLOAT -> (abs(buffer.float).coerceAtMost(1f) * 32_767f).toInt()
+        PcmEncoding.PCM_16BIT -> abs(buffer.short.toInt())
     }
 }
 

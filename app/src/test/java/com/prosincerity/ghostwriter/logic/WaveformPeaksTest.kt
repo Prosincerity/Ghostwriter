@@ -49,7 +49,7 @@ class WaveformPeaksTest {
                 amplitude,
                 WaveformPeaks.pcmAmplitude(
                     ByteBuffer.wrap(byteArrayOf(sample.toByte())),
-                    WaveformPcmEncoding.PCM_8BIT,
+                    PcmEncoding.PCM_8BIT,
                 ),
             )
         }
@@ -57,14 +57,14 @@ class WaveformPeaksTest {
             32_768,
             WaveformPeaks.pcmAmplitude(
                 ByteBuffer.wrap(byteArrayOf(0x00, 0x80.toByte())).order(ByteOrder.LITTLE_ENDIAN),
-                WaveformPcmEncoding.PCM_16BIT,
+                PcmEncoding.PCM_16BIT,
             ),
         )
         val floatSample = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             .putFloat(-0.5f).apply { flip() }
         assertEquals(
             16_383,
-            WaveformPeaks.pcmAmplitude(floatSample, WaveformPcmEncoding.PCM_FLOAT),
+            WaveformPeaks.pcmAmplitude(floatSample, PcmEncoding.PCM_FLOAT),
         )
     }
 
@@ -73,18 +73,18 @@ class WaveformPeaksTest {
         for (value in listOf(-2f, 2f)) {
             val sample = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
                 .putFloat(value).apply { flip() }
-            assertEquals(32_767, WaveformPeaks.pcmAmplitude(sample, WaveformPcmEncoding.PCM_FLOAT))
+            assertEquals(32_767, WaveformPeaks.pcmAmplitude(sample, PcmEncoding.PCM_FLOAT))
         }
     }
 
     @Test
     fun appendFrames_decodesEachSupportedFormatIntoTimestampedBuckets() {
         val inputs = listOf(
-            Triple(WaveformPcmEncoding.PCM_8BIT, ByteBuffer.wrap(byteArrayOf(128.toByte(), 0, 255.toByte())),
+            Triple(PcmEncoding.PCM_8BIT, ByteBuffer.wrap(byteArrayOf(128.toByte(), 0, 255.toByte())),
                 intArrayOf(0, 32768, 32512)),
-            Triple(WaveformPcmEncoding.PCM_16BIT, pcm16(0, Short.MIN_VALUE, Short.MAX_VALUE),
+            Triple(PcmEncoding.PCM_16BIT, pcm16(0, Short.MIN_VALUE, Short.MAX_VALUE),
                 intArrayOf(0, 32768, 32767)),
-            Triple(WaveformPcmEncoding.PCM_FLOAT,
+            Triple(PcmEncoding.PCM_FLOAT,
                 ByteBuffer.allocate(12).order(ByteOrder.LITTLE_ENDIAN)
                     .putFloat(0f).putFloat(-1f).putFloat(0.5f).apply { flip() },
                 intArrayOf(0, 32767, 16383)),
@@ -93,7 +93,7 @@ class WaveformPeaksTest {
             val buckets = IntArray(3)
 
             val frames = WaveformPeaks.appendFrames(
-                buffer, WaveformPcmFormat(1, 1000, encoding), 0L, 3000L, buckets, { false },
+                buffer, PcmFormat(1, 1000, encoding), 0L, 3000L, buckets, { false },
             )
 
             assertEquals(3L, frames)
@@ -107,7 +107,7 @@ class WaveformPeaksTest {
 
         val frames = WaveformPeaks.appendFrames(
             pcm16(10, -400, Short.MIN_VALUE, 123),
-            WaveformPcmFormat(2, 1000, WaveformPcmEncoding.PCM_16BIT), 0L, 2000L, buckets, { false },
+            PcmFormat(2, 1000, PcmEncoding.PCM_16BIT), 0L, 2000L, buckets, { false },
         )
 
         assertEquals(2L, frames)
@@ -117,7 +117,7 @@ class WaveformPeaksTest {
     @Test
     fun appendFrames_mergesMultipleBuffersWithoutReplacingLargerPeaks() {
         val buckets = intArrayOf(900, 0)
-        val format = WaveformPcmFormat(1, 1000, WaveformPcmEncoding.PCM_16BIT)
+        val format = PcmFormat(1, 1000, PcmEncoding.PCM_16BIT)
 
         assertEquals(2L, WaveformPeaks.appendFrames(pcm16(100, -200), format, 0L, 4000L, buckets, { false }))
         assertEquals(2L, WaveformPeaks.appendFrames(pcm16(-500, 300), format, 2000L, 4000L, buckets, { false }))
@@ -130,7 +130,7 @@ class WaveformPeaksTest {
         val buckets = IntArray(4)
 
         val frames = WaveformPeaks.appendFrames(
-            pcm16(4, 8), WaveformPcmFormat(1, 4, WaveformPcmEncoding.PCM_16BIT),
+            pcm16(4, 8), PcmFormat(1, 4, PcmEncoding.PCM_16BIT),
             500_000L, 1_000_000L, buckets, { false },
         )
 
@@ -145,7 +145,7 @@ class WaveformPeaksTest {
             val buckets = IntArray(2)
 
             val frames = WaveformPeaks.appendFrames(
-                pcm16(4, 8), WaveformPcmFormat(1, 4, WaveformPcmEncoding.PCM_16BIT),
+                pcm16(4, 8), PcmFormat(1, 4, PcmEncoding.PCM_16BIT),
                 timestamp, 1_000_000L, buckets, { false },
             )
 
@@ -162,7 +162,7 @@ class WaveformPeaksTest {
         val buckets = IntArray(1)
 
         val frames = WaveformPeaks.appendFrames(
-            buffer, WaveformPcmFormat(2, 1000, WaveformPcmEncoding.PCM_16BIT),
+            buffer, PcmFormat(2, 1000, PcmEncoding.PCM_16BIT),
             0L, 1000L, buckets, { false },
         )
 
@@ -176,7 +176,7 @@ class WaveformPeaksTest {
         val buckets = intArrayOf(123)
 
         val frames = WaveformPeaks.appendFrames(
-            pcm16(), WaveformPcmFormat(1, 1000, WaveformPcmEncoding.PCM_16BIT),
+            pcm16(), PcmFormat(1, 1000, PcmEncoding.PCM_16BIT),
             0L, 1000L, buckets, { error("Empty input must not enter the frame loop") },
         )
 
@@ -189,7 +189,7 @@ class WaveformPeaksTest {
         val buckets = IntArray(2)
 
         val frames = WaveformPeaks.appendFrames(
-            pcm16(10, 20), WaveformPcmFormat(0, 0, WaveformPcmEncoding.PCM_16BIT),
+            pcm16(10, 20), PcmFormat(0, 0, PcmEncoding.PCM_16BIT),
             0L, 2_000_000L, buckets, { false },
         )
 
@@ -203,7 +203,7 @@ class WaveformPeaksTest {
         val buckets = intArrayOf(456)
 
         val frames = WaveformPeaks.appendFrames(
-            buffer, WaveformPcmFormat(Int.MAX_VALUE, 1000, WaveformPcmEncoding.PCM_16BIT),
+            buffer, PcmFormat(Int.MAX_VALUE, 1000, PcmEncoding.PCM_16BIT),
             0L, 1000L, buckets, { false },
         )
 
@@ -216,7 +216,7 @@ class WaveformPeaksTest {
     fun appendFrames_invalidBucketDimensionsProduceNoPeaks() {
         for ((duration, buckets) in listOf(0L to IntArray(2), 1000L to IntArray(0))) {
             val frames = WaveformPeaks.appendFrames(
-                pcm16(123), WaveformPcmFormat(1, 1000, WaveformPcmEncoding.PCM_16BIT),
+                pcm16(123), PcmFormat(1, 1000, PcmEncoding.PCM_16BIT),
                 0L, duration, buckets, { false },
             )
 
@@ -231,7 +231,7 @@ class WaveformPeaksTest {
 
         assertThrows(CancellationException::class.java) {
             WaveformPeaks.appendFrames(
-                pcm16(123), WaveformPcmFormat(1, 1000, WaveformPcmEncoding.PCM_16BIT),
+                pcm16(123), PcmFormat(1, 1000, PcmEncoding.PCM_16BIT),
                 0L, 1000L, buckets, { true },
             )
         }
@@ -246,7 +246,7 @@ class WaveformPeaksTest {
 
         assertThrows(CancellationException::class.java) {
             WaveformPeaks.appendFrames(
-                buffer, WaveformPcmFormat(1, 1000, WaveformPcmEncoding.PCM_16BIT),
+                buffer, PcmFormat(1, 1000, PcmEncoding.PCM_16BIT),
                 0L, 512_000L, buckets, { buffer.position() >= 512 },
             )
         }
