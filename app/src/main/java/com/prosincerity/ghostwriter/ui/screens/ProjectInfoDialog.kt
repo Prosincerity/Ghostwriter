@@ -24,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.ProjectMetadata
+import com.prosincerity.ghostwriter.logic.ProjectInfoEdit
+import com.prosincerity.ghostwriter.logic.ProjectInfoForm
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 
 @Composable
@@ -32,12 +34,25 @@ fun ProjectInfoDialog(
     onDismiss: () -> Unit,
     onSave: (ProjectMetadata) -> Unit,
 ) {
-    var editBpm by remember(metadata) { mutableStateOf(metadata.bpm?.toString() ?: "") }
-    var editKey by remember(metadata) { mutableStateOf(metadata.key ?: "") }
-    var editTimeSignature by remember(metadata) { mutableStateOf(metadata.timeSignature ?: "") }
-    var editNotes by remember(metadata) { mutableStateOf(metadata.notes ?: "") }
-    val parsedBpm = parsePositiveBpm(editBpm)
-    val invalidBpm = editBpm.isNotBlank() && parsedBpm == null
+    var form by remember(metadata) { mutableStateOf(ProjectInfoForm.fromMetadata(metadata)) }
+    ProjectInfoDialogContent(
+        metadata = metadata,
+        form = form,
+        onEdit = { form = form.edit(it) },
+        onDismiss = onDismiss,
+        onSave = { form.applyTo(metadata)?.let(onSave) },
+    )
+}
+
+@Composable
+private fun ProjectInfoDialogContent(
+    metadata: ProjectMetadata,
+    form: ProjectInfoForm,
+    onEdit: (ProjectInfoEdit) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+) {
+    val invalidBpm = form.isBpmInvalid
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -70,10 +85,8 @@ fun ProjectInfoDialog(
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = editBpm,
-                    onValueChange = { input ->
-                        editBpm = input.filter { it.isDigit() }
-                    },
+                    value = form.bpmInput,
+                    onValueChange = { onEdit(ProjectInfoEdit.BpmChanged(it)) },
                     label = { Text("BPM (optional)") },
                     placeholder = { Text("e.g. 90") },
                     isError = invalidBpm,
@@ -88,8 +101,8 @@ fun ProjectInfoDialog(
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = editKey,
-                    onValueChange = { editKey = it },
+                    value = form.keyInput,
+                    onValueChange = { onEdit(ProjectInfoEdit.KeyChanged(it)) },
                     label = { Text("Musical Key (optional)") },
                     placeholder = { Text("e.g. C Minor, F# Major") },
                     singleLine = true,
@@ -99,8 +112,8 @@ fun ProjectInfoDialog(
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = editTimeSignature,
-                    onValueChange = { editTimeSignature = it },
+                    value = form.timeSignatureInput,
+                    onValueChange = { onEdit(ProjectInfoEdit.TimeSignatureChanged(it)) },
                     label = { Text("Time Signature (optional)") },
                     placeholder = { Text("e.g. 4/4") },
                     singleLine = true,
@@ -110,8 +123,8 @@ fun ProjectInfoDialog(
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = editNotes,
-                    onValueChange = { editNotes = it },
+                    value = form.notesInput,
+                    onValueChange = { onEdit(ProjectInfoEdit.NotesChanged(it)) },
                     label = { Text("Notes (optional)") },
                     placeholder = { Text("Vibe, references, structure notes...") },
                     minLines = 3,
@@ -123,15 +136,7 @@ fun ProjectInfoDialog(
         confirmButton = {
             TextButton(
                 shape = GhostButtonShape,
-                onClick = {
-                    val updated = metadata.copy(
-                        bpm = parsedBpm,
-                        key = editKey.trimmedOrNull(),
-                        timeSignature = editTimeSignature.trimmedOrNull(),
-                        notes = editNotes.trimmedOrNull(),
-                    )
-                    onSave(updated)
-                },
+                onClick = onSave,
                 enabled = !invalidBpm,
             ) {
                 Text("Save")
@@ -144,8 +149,3 @@ fun ProjectInfoDialog(
         }
     )
 }
-
-private fun String.trimmedOrNull(): String? = trim().ifBlank { null }
-
-internal fun parsePositiveBpm(input: String): Int? =
-    input.toIntOrNull()?.takeIf { it > 0 }
