@@ -2,6 +2,7 @@ package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.onNodeWithTag
@@ -140,12 +141,12 @@ class DictionaryScreenTest {
             Espresso.closeSoftKeyboard()
             composeRule.onNodeWithText("Search").performScrollTo().performClick()
 
-            composeRule.runOnIdle { pending.remove("cat")!!.resume(result("stale result")) }
+            composeRule.runOnIdle { checkNotNull(pending.remove("cat")).resume(result("stale result")) }
             composeRule.onNodeWithText("stale result").assertDoesNotExist()
             composeRule.onNodeWithText("Searching…").assertExists()
             composeRule.onNodeWithText("Search").assertIsNotEnabled()
 
-            composeRule.runOnIdle { pending.remove("hat")!!.resume(result("current result")) }
+            composeRule.runOnIdle { checkNotNull(pending.remove("hat")).resume(result("current result")) }
             composeRule.onNodeWithText("current result").assertExists()
             composeRule.onNodeWithText("Searching…").assertDoesNotExist()
             composeRule.onNodeWithText("stale result").assertDoesNotExist()
@@ -161,29 +162,42 @@ class DictionaryScreenTest {
     fun searchesAndReturnsToEditor() {
         var searched: Triple<String, String, DictionarySearchMode>? = null
         var returned = false
+        var originalSearches = 0
+        val search = mutableStateOf<suspend (String, String, DictionarySearchMode, Int) -> DictionarySearchResult>(
+            { _, _, _, _ ->
+                originalSearches++
+                DictionarySearchResult(null, emptyList())
+            },
+        )
         composeRule.setContent {
             GhostwriterTheme {
                 DictionaryScreen(
                     onBack = { returned = true },
                     onOpenDownloads = {},
                     installedLanguages = listOf("en"),
-                    search = { word, language, mode, _ ->
-                        searched = Triple(word, language, mode)
-                        DictionarySearchResult(
-                            PronunciationResult(listOf("/ˈkæt/"), PronunciationSource.WIKTIONARY),
-                            listOf(DictionaryMatch("bat", "/ˈbæt/", PronunciationSource.WIKTIONARY)),
-                        )
-                    },
+                    search = search.value,
                 )
             }
         }
 
-        composeRule.onNodeWithText("Word").performTextInput("cat")
+        composeRule.onNodeWithText("Word").performTextInput("  cat  ")
+        composeRule.runOnIdle {
+            search.value = { word, language, mode, _ ->
+                searched = Triple(word, language, mode)
+                DictionarySearchResult(
+                    PronunciationResult(listOf("/ˈkæt/"), PronunciationSource.WIKTIONARY),
+                    listOf(DictionaryMatch("bat", "/ˈbæt/", PronunciationSource.WIKTIONARY)),
+                )
+            }
+        }
         composeRule.onNodeWithText("Search").performClick()
         composeRule.onNodeWithText("Pronunciation").assertExists()
         composeRule.onNodeWithText("Matches (1)").assertExists()
         composeRule.onNodeWithText("bat").assertExists()
-        composeRule.runOnIdle { assertEquals(Triple("cat", "en", DictionarySearchMode.RHYME), searched) }
+        composeRule.runOnIdle {
+            assertEquals(0, originalSearches)
+            assertEquals(Triple("cat", "en", DictionarySearchMode.RHYME), searched)
+        }
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.runOnIdle { assertTrue(returned) }
     }
