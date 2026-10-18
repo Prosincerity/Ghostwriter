@@ -158,6 +158,25 @@ class HomeScreenTest {
         composeRule.runOnIdle { assertEquals(null, deleted) }
     }
 
+    @Test fun newProjectDialog_rechecksExistingTitlesWithoutLosingDraft() {
+        var projects by mutableStateOf(listOf("Alpha"))
+        var created: String? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(projects, { created = it }, {}, {}, { _, _ -> }, {})
+            }
+        }
+        composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement(" beta ")
+        composeRule.onNodeWithText("Create").assertIsEnabled()
+
+        composeRule.runOnIdle { projects = listOf("Alpha", "Beta") }
+
+        composeRule.onNodeWithText("Track already exists (will open existing)").assertExists()
+        composeRule.onNodeWithText("Open").performClick()
+        composeRule.runOnIdle { assertEquals("Beta", created) }
+    }
+
     @Test fun summaryUpdates_showMusicalDetailsAndResortProjectsByLatestEdit() {
         var summaries by mutableStateOf(emptyMap<String, ProjectSummary>())
         composeRule.setContent {

@@ -61,8 +61,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
-import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.ProjectSummary
+import com.prosincerity.ghostwriter.logic.ProjectTitleRules
+import com.prosincerity.ghostwriter.logic.ProjectTitleState
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import java.text.DateFormat
 import java.util.Date
@@ -344,10 +345,10 @@ private fun RenameProjectDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember(projectTitle) { mutableStateOf(projectTitle) }
-    val candidate = ProjectStorage.normalizeTitle(text)
-    val alreadyExists = existingProjects.any { existingTitle ->
-        existingTitle != projectTitle && existingTitle.equals(candidate, ignoreCase = true)
+    val titleState = remember(text, projectTitle, existingProjects) {
+        ProjectTitleRules.forRename(text, projectTitle, existingProjects)
     }
+    val alreadyExists = titleState is ProjectTitleState.Existing
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -362,12 +363,12 @@ private fun RenameProjectDialog(
                 } else null,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onDone = { if (!alreadyExists) onConfirm(candidate) },
+                    onDone = { if (!alreadyExists) onConfirm(titleState.title) },
                 ),
             )
         },
         confirmButton = {
-            TextButton(shape = GhostButtonShape, onClick = { onConfirm(candidate) }, enabled = !alreadyExists) {
+            TextButton(shape = GhostButtonShape, onClick = { onConfirm(titleState.title) }, enabled = !alreadyExists) {
                 Text("Rename")
             }
         },
@@ -384,8 +385,8 @@ private fun NewProjectDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
-    val candidate = ProjectStorage.resolveProjectTitle(text.trim().ifBlank { "Untitled" }, existingProjects)
-    val isDuplicate = candidate in existingProjects
+    val titleState = remember(text, existingProjects) { ProjectTitleRules.forCreation(text, existingProjects) }
+    val isDuplicate = titleState is ProjectTitleState.Existing
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -401,12 +402,12 @@ private fun NewProjectDialog(
                 } else null,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onDone = { onConfirm(candidate) }
+                    onDone = { onConfirm(titleState.title) }
                 ),
             )
         },
         confirmButton = {
-            TextButton(shape = GhostButtonShape, onClick = { onConfirm(candidate) }) {
+            TextButton(shape = GhostButtonShape, onClick = { onConfirm(titleState.title) }) {
                 Text(if (isDuplicate) "Open" else "Create")
             }
         },

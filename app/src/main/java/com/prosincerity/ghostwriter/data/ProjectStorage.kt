@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.data
 
 import android.content.Context
+import com.prosincerity.ghostwriter.logic.ProjectTitleRules
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import java.io.File
 import java.io.IOException
@@ -59,7 +60,7 @@ object ProjectStorage {
     internal fun isProjectId(value: String): Boolean =
         runCatching { UUID.fromString(value).toString() == value }.getOrDefault(false)
 
-    fun normalizeTitle(title: String): String = title.trim().ifBlank { "Untitled" }
+    fun normalizeTitle(title: String): String = ProjectTitleRules.normalize(title)
 
     /** Convert old title folders once; keep every lyric/beat file and snapshot age. */
     @Synchronized
@@ -168,11 +169,9 @@ object ProjectStorage {
         return substring(0, endIndex)
     }
 
-    /** Match the folder name used on disk, including an existing name's casing. */
-    fun resolveProjectTitle(title: String, existingProjects: List<String>): String {
-        val normalized = normalizeTitle(title)
-        return existingProjects.firstOrNull { it.equals(normalized, ignoreCase = true) } ?: normalized
-    }
+    /** Reuse an existing display title's casing when matching a requested title. */
+    fun resolveProjectTitle(title: String, existingProjects: List<String>): String =
+        ProjectTitleRules.resolve(title, existingProjects)
 
     fun metadataFile(projectDir: File): File =
         File(projectDir, "project.json")
