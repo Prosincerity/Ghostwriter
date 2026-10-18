@@ -36,7 +36,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -58,6 +57,7 @@ import com.prosincerity.ghostwriter.data.DictionarySearch
 import com.prosincerity.ghostwriter.data.DictionarySearchMode
 import com.prosincerity.ghostwriter.data.DictionarySearchResult
 import com.prosincerity.ghostwriter.data.PronunciationSource
+import com.prosincerity.ghostwriter.logic.DictionarySearchState
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -93,21 +93,17 @@ internal fun DictionaryScreen(
     val mode = DictionarySearchMode.valueOf(modeName)
     var languageMenu by remember { mutableStateOf(false) }
     var modeMenu by remember { mutableStateOf(false) }
-    var result by remember { mutableStateOf<DictionarySearchResult?>(null) }
-    var page by remember { mutableIntStateOf(0) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var searchState by remember { mutableStateOf(DictionarySearchState()) }
+    val result = searchState.result
+    val page = searchState.page
+    val loading = searchState.loading
+    val error = searchState.error
     var job by remember { mutableStateOf<Job?>(null) }
-    var revision by remember { mutableIntStateOf(0) }
 
     fun resetSearch() {
-        revision++
+        searchState = searchState.reset()
         job?.cancel()
         job = null
-        loading = false
-        result = null
-        error = null
-        page = 0
     }
 
     fun submit(requestedPage: Int = 0) {
@@ -115,22 +111,19 @@ internal fun DictionaryScreen(
         if (input.isEmpty() || language !in availableLanguages) return
         keyboard?.hide()
         focusManager.clearFocus()
-        resetSearch()
-        val requested = revision
-        loading = true
+        searchState = searchState.start()
+        val requested = searchState.revision
+        job?.cancel()
         job = scope.launch {
             try {
                 val found = searchAction(input, language, mode, requestedPage)
-                if (requested == revision) {
-                    result = found
-                    page = requestedPage
-                }
+                searchState = searchState.complete(requested, found, requestedPage)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                if (requested == revision) error = failure.message ?: "Dictionary search failed"
+                searchState = searchState.fail(requested, failure.message)
             } finally {
-                if (requested == revision) loading = false
+                searchState = searchState.finish(requested)
             }
         }
     }
@@ -200,7 +193,7 @@ internal fun DictionaryScreen(
                                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                                     ),
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                    keyboardActions = KeyboardActions(onSearch = { if (!loading) submit() }),
+                                    keyboardActions = KeyboardActions(onSearch = { if (!searchState.loading) submit() }),
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
@@ -345,9 +338,9 @@ internal fun DictionaryScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            TextButton(shape = GhostButtonShape, onClick = { submit(page - 1) }, enabled = page > 0) { Text("Previous") }
+                            TextButton(shape = GhostButtonShape, onClick = { submit(searchState.page - 1) }, enabled = page > 0) { Text("Previous") }
                             Text("Page ${page + 1}")
-                            TextButton(shape = GhostButtonShape, onClick = { submit(page + 1) }, enabled = found.hasNext) { Text("Next") }
+                            TextButton(shape = GhostButtonShape, onClick = { submit(searchState.page + 1) }, enabled = found.hasNext) { Text("Next") }
                         }
                     }
                 }
