@@ -50,23 +50,29 @@ internal object ProjectLyricsStorage {
         runCatching {
             require(keepCount in Settings.COUNT_OPTIONS)
             val newest = File(projectDir, "autosave1.txt")
-            if (newest.readTextIfFile() != content) {
+            val previousNewest = newest.readTextIfFile()
+            val previousNewestTime = newest.lastModified()
+            if (previousNewest != content) {
+                // A failed current save must not overwrite any existing history.
+                // Retain the previous newest snapshot for slot 2 after committing.
+                StagedFileWriter.writeText(newest, content)
                 for (i in keepCount downTo 2) {
                     val src = File(projectDir, "autosave${i - 1}.txt")
                     val dst = File(projectDir, "autosave$i.txt")
+                    val previousText = if (i == 2) previousNewest else null
+                    val sourceTime = if (i == 2) previousNewestTime else src.lastModified()
                     // An unreadable/blocked older slot must not stop the current
                     // lyrics from reaching disk. Stage copies to preserve the
                     // destination if a backup copy fails partway through.
-                    if (src.isFile) runCatching {
+                    if (previousText != null || (i > 2 && src.isFile)) runCatching {
                         StagedFileWriter.replace(dst, "save-", "Couldn't rotate ${dst.name}") { staged ->
-                            src.copyTo(staged, overwrite = true)
+                            if (previousText != null) staged.writeText(previousText)
+                            else src.copyTo(staged, overwrite = true)
                             // Recovery compares snapshots by age when autosave1 is lost.
-                            staged.setLastModified(src.lastModified())
+                            staged.setLastModified(sourceTime)
                         }
                     }
                 }
-
-                StagedFileWriter.writeText(newest, content)
             }
             // Prune only after the latest snapshot is safe. Settings changes
             // still apply when the lyrics haven't changed.

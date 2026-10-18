@@ -105,6 +105,31 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun failedNewestSave_preservesExistingBackupContentsAndAges() {
+        val project = tempFolder.newFolder("failed_save_history")
+        val blockedNewest = File(project, "autosave1.txt")
+        assertTrue(blockedNewest.mkdir())
+        File(blockedNewest, "keep").writeText("blocked newest slot")
+        for (slot in 2..5) {
+            File(project, "autosave$slot.txt").apply {
+                writeText("draft $slot")
+                assertTrue(setLastModified((6 - slot) * 1_000L))
+            }
+        }
+
+        assertFalse(ProjectStorage.rotateAndSave(project, "unsaved lyrics", 3))
+
+        for (slot in 2..5) {
+            val backup = File(project, "autosave$slot.txt")
+            assertEquals("draft $slot", backup.readText())
+            assertEquals((6 - slot) * 1_000L, backup.lastModified())
+        }
+        assertEquals("draft 2", ProjectStorage.loadLatest(project))
+        assertEquals("blocked newest slot", File(blockedNewest, "keep").readText())
+        assertFalse(project.list()!!.any { it.endsWith(".tmp") })
+    }
+
+    @Test
     fun failedNewestSave_preservesBackupsOutsideTheReducedCount() {
         val project = tempFolder.newFolder("failed_newest")
         File(project, "autosave1.txt").mkdir()
@@ -423,6 +448,21 @@ class ProjectStorageTest {
         assertEquals("Take 3", File(projectDir, "autosave2.txt").readText())
         assertEquals("Take 2", File(projectDir, "autosave3.txt").readText())
         assertFalse("Oldest backup beyond keepCount should not exist", File(projectDir, "autosave4.txt").exists())
+    }
+
+    @Test
+    fun rotateAndSave_retainsEmptySnapshotWithOriginalAge() {
+        val project = tempFolder.newFolder("empty_snapshot")
+        assertTrue(ProjectStorage.rotateAndSave(project, "", 3))
+        assertTrue(File(project, "autosave1.txt").setLastModified(1_000L))
+
+        assertTrue(ProjectStorage.rotateAndSave(project, "new verse 🎵\n字", 3))
+
+        val backup = File(project, "autosave2.txt")
+        assertTrue(backup.isFile)
+        assertEquals("", backup.readText())
+        assertEquals(1_000L, backup.lastModified())
+        assertEquals("new verse 🎵\n字", ProjectStorage.loadLatest(project))
     }
 
     @Test
