@@ -147,6 +147,20 @@ class DictionarySearchSessionTest {
     }
 
     @Test
+    fun cancellingTheOwnerBeforeDispatch_clearsLoadingWithoutRunningTheSearch() {
+        var searched = false
+        session.submit { searched = true; found }
+        assertEquals(DictionarySearchStatus.Loading, session.state.value.status)
+
+        owner.cancel()
+        dispatcher.runPending()
+
+        assertFalse(searched)
+        assertTrue(owner.isCompleted)
+        assertEquals(DictionarySearchStatus.Idle, session.state.value.status)
+    }
+
+    @Test
     fun cancellingTheOwner_releasesPendingSearchWork() {
         var cancelled = false
         session.submit {

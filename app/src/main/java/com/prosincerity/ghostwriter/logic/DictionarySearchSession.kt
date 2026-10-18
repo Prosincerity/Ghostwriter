@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -27,7 +28,7 @@ internal class DictionarySearchSession(private val scope: CoroutineScope) {
         mutableState.value = mutableState.value.start()
         val requestedRevision = mutableState.value.revision
         searchJob?.cancel()
-        searchJob = scope.launch {
+        val job = scope.launch {
             try {
                 val found = search()
                 mutableState.value = mutableState.value.complete(requestedRevision, found, requestedPage)
@@ -35,9 +36,12 @@ internal class DictionarySearchSession(private val scope: CoroutineScope) {
                 throw cancelled
             } catch (failure: Exception) {
                 mutableState.value = mutableState.value.fail(requestedRevision, failure.message)
-            } finally {
-                mutableState.value = mutableState.value.finish(requestedRevision)
             }
+        }
+        searchJob = job
+        // Cancellation can prevent the coroutine body, including finally, from running.
+        job.invokeOnCompletion {
+            mutableState.update { it.finish(requestedRevision) }
         }
     }
 }
