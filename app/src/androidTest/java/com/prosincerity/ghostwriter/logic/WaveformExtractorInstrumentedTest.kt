@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.logic
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
@@ -87,8 +88,7 @@ class WaveformExtractorInstrumentedTest {
         assertTrue("Expected a duration near 500 ms, got $durationMs", durationMs in 450L..550L)
         assertEquals(20, amplitudes.size)
         assertEquals(1_000, WaveformExtractor.extractAmplitudes(wavFile).size)
-        assertTrue("Expected decoded audio to contain a non-zero peak", amplitudes.any { it > 0 })
-        assertTrue(amplitudes.all { it in 0..32_768 })
+        assertArrayEquals(IntArray(20) { 12_000 }, amplitudes)
     }
 
     @Test
