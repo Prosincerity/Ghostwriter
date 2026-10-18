@@ -1,24 +1,34 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.dp
@@ -27,6 +37,9 @@ import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.WaveformViewport
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
+import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
+import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
+import com.prosincerity.ghostwriter.ui.theme.GhostText
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -45,6 +58,65 @@ class WaveformViewTest {
         override fun performHapticFeedback(hapticFeedbackType: HapticFeedbackType) {
             feedback += hapticFeedbackType
         }
+    }
+
+    @Test
+    fun drawing_preservesPeaksLoopShadingMarkersAndMovingPlayhead() {
+        val position = mutableStateOf(6000L)
+        val loopEnabled = mutableStateOf(true)
+        val markers = mutableStateOf(listOf(
+            marker("Start", 2000, MarkerLoopRole.START),
+            marker("End", 8000, MarkerLoopRole.END),
+        ))
+        val viewport = mutableStateOf(WaveformViewport())
+        composeRule.setContent {
+            GhostwriterTheme {
+                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                    WaveformView(
+                        amplitudes = intArrayOf(0, 16384, 32768, 8192, 0),
+                        durationMs = DURATION_MS,
+                        currentPositionMs = position.value,
+                        markers = markers.value,
+                        onSeekFinished = {},
+                        onAddMarker = {},
+                        onMarkerClick = {},
+                        onMarkerMoveFinished = { _, _ -> },
+                        viewport = viewport.value,
+                        onViewportChange = { viewport.value = it },
+                        modifier = Modifier.width(200.dp).height(100.dp).background(Color.Black),
+                        loopEnabled = loopEnabled.value,
+                    )
+                }
+            }
+        }
+
+        fun assertPixel(x: Float, y: Float, expected: Color) {
+            val pixels = composeRule.onNodeWithTag("Waveform").captureToImage().toPixelMap()
+            val actual = pixels[(pixels.width * x).toInt(), (pixels.height * y).toInt()]
+            assertEquals("Red at $x, $y", expected.red, actual.red, 0.025f)
+            assertEquals("Green at $x, $y", expected.green, actual.green, 0.025f)
+            assertEquals("Blue at $x, $y", expected.blue, actual.blue, 0.025f)
+        }
+
+        assertPixel(0.5f, 0.35f, GhostPrimary)
+        assertPixel(0.25f, 0.5f, GhostPrimary)
+        assertPixel(0.25f, 0.35f, GhostSecondary.copy(alpha = 0.16f).compositeOver(Color.Black))
+        assertPixel(0.1f, 0.35f, Color.Black)
+        assertPixel(0.2f, 0.9f, lerp(GhostSecondary, Color.White, 0.55f))
+        assertPixel(0.8f, 0.9f, lerp(GhostSecondary, Color.White, 0.18f))
+        assertPixel(0.6f, 0.35f, GhostText)
+
+        composeRule.runOnIdle {
+            position.value = 9000L
+            loopEnabled.value = false
+            markers.value = markers.value.map {
+                if (it.loopRole == MarkerLoopRole.START) it.atPositionMs(3000, SAMPLE_RATE) else it
+            }
+        }
+        assertPixel(0.9f, 0.35f, GhostText)
+        assertPixel(0.6f, 0.35f, GhostSecondary.copy(alpha = 0.08f).compositeOver(Color.Black))
+        assertPixel(0.2f, 0.9f, Color.Black)
+        assertPixel(0.3f, 0.9f, lerp(GhostSecondary, Color.White, 0.55f))
     }
 
     @Test fun waveformLongPress_ticksOnceAndRequestsMarker() {
@@ -244,6 +316,21 @@ class WaveformViewTest {
             click(Offset(right - 1f, height * 0.05f))
         }
         composeRule.runOnIdle { assertSame(end, clicked) }
+    }
+
+    @Test
+    fun equalMarkerReplacement_reportsTheCurrentMarkerObject() {
+        val original = marker("Marker", 3000, MarkerLoopRole.NONE)
+        val replacement = original.copy()
+        val markers = mutableStateOf(listOf(original), referentialEqualityPolicy())
+        var clicked: WaveformMarker? = null
+        renderWaveform(markers) { clicked = it }
+
+        composeRule.runOnIdle { markers.value = listOf(replacement) }
+        composeRule.onNodeWithTag("Waveform marker Marker")
+            .performSemanticsAction(SemanticsActions.OnClick) { click -> assertTrue(click()) }
+
+        composeRule.runOnIdle { assertSame(replacement, clicked) }
     }
 
     private fun assertMarkerPreviewPosition(expectedPositionMs: Float) {
