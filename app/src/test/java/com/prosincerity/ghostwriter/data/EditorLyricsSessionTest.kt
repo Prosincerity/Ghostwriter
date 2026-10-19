@@ -13,6 +13,57 @@ class EditorLyricsSessionTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun repeatedExitRetainsLocalSaveFailureAndRejectsStaleWrites() {
+        val project = temporaryFolder.newFolder("failed_exit")
+        File(project, "autosave1.txt/keep").apply {
+            assertTrue(parentFile!!.mkdir())
+            writeText("blocked snapshot")
+        }
+        var archived = false
+        val session = EditorLyricsSession(project, "song") { _, _ -> archived = true; true }
+
+        assertFalse(session.finish("final lyrics", 3))
+        assertFalse(session.finish("stale disposal", 3))
+        assertFalse(session.autosave("stale autosave", 3))
+        assertFalse(session.saveManual("stale manual save", 3))
+        assertFalse(archived)
+        assertEquals("blocked snapshot", File(project, "autosave1.txt/keep").readText())
+        assertFalse(File(project, "lyrics.txt").exists())
+    }
+
+    @Test
+    fun repeatedExitRetainsSharedSaveFailureAndTheFinalLocalLyrics() {
+        val project = temporaryFolder.newFolder("failed_shared_exit")
+        val attemptedLyrics = mutableListOf<String>()
+        val session = EditorLyricsSession(project, "song") { directory, _ ->
+            attemptedLyrics += ProjectStorage.loadLatest(directory)
+            false
+        }
+
+        assertFalse(session.finish("final lyrics", 3))
+        assertFalse(session.finish("stale disposal", 3))
+        assertFalse(session.autosave("stale autosave", 3))
+        assertFalse(session.saveManual("stale manual save", 3))
+        assertEquals(listOf("final lyrics"), attemptedLyrics)
+        assertEquals("final lyrics", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun repeatedSuccessfulExitKeepsItsResultAndTheFinalLyrics() {
+        val project = temporaryFolder.newFolder("successful_exit")
+        val archivedLyrics = mutableListOf<String>()
+        val session = EditorLyricsSession(project, "song") { directory, _ ->
+            archivedLyrics += ProjectStorage.loadLatest(directory)
+            true
+        }
+
+        assertTrue(session.finish("final lyrics", 3))
+        assertTrue(session.finish("stale disposal", 3))
+        assertEquals(listOf("final lyrics"), archivedLyrics)
+        assertEquals("final lyrics", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
     fun persistentSaveFailureReportsFailureButKeepsLocalDraftAndAllowsRetry() {
         val project = temporaryFolder.newFolder("song")
         var available = false

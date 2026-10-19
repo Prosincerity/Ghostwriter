@@ -9,6 +9,7 @@ internal class EditorLyricsSession(
     private val persistLyrics: (File, Int) -> Boolean = { _, _ -> true },
 ) {
     private var finished = false
+    private var finishResult = false
 
     @Synchronized
     fun saveManual(lyrics: String, keepCount: Int): Boolean =
@@ -22,11 +23,12 @@ internal class EditorLyricsSession(
 
     @Synchronized
     fun finish(lyrics: String, keepCount: Int): Boolean {
-        if (finished) return true
+        if (finished) return finishResult
         // A coroutine already dispatched to IO may resume after screen disposal.
         // Finish under the same monitor as ongoing writes and reject later ones.
         finished = true
-        return ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount) &&
+        finishResult = ProjectStorage.rotateAndSave(projectDir, lyrics, keepCount) &&
             persistLyrics(projectDir, keepCount)
+        return finishResult
     }
 }
