@@ -14,6 +14,24 @@ import java.io.File
 class ProjectMetadataTest {
 
     @Test
+    fun nonStringTitle_usesFallbackAndRetainsValidMetadata() {
+        for (title in listOf(42, true, JSONObject.NULL, JSONArray().put("Track"), JSONObject().put("name", "Track"))) {
+            val json = JSONObject().put("title", title).put("bpm", 95).put("notes", "Keep this verse")
+
+            val metadata = ProjectMetadata.fromJsonObject(json, "Recovered track")
+
+            assertEquals("Recovered track", metadata.title)
+            assertEquals(95, metadata.bpm)
+            assertEquals("Keep this verse", metadata.notes)
+        }
+    }
+
+    @Test
+    fun numericStringTitle_remainsTheSavedTitle() {
+        assertEquals("42", ProjectMetadata.fromJsonObject(JSONObject().put("title", "42"), "Fallback").title)
+    }
+
+    @Test
     fun frameMarkers_persistExactSamplesWithoutMillisecondRounding() {
         val marker = WaveformMarker("Start", 0, MarkerLoopRole.START, frameIndex = 44144, sampleRate = 44100)
             .withSampleRate(44100)

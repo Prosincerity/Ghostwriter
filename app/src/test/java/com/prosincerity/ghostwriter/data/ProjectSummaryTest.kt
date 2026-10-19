@@ -12,6 +12,30 @@ class ProjectSummaryTest {
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
+    fun nonStringTitle_usesDirectoryFallbackAndRetainsValidSummary() {
+        for (directoryName in listOf("Legacy track", "00000000-0000-4000-8000-000000000001")) {
+            val project = temporaryFolder.newFolder(directoryName)
+            for (title in listOf("42", "true", "null", "[]", "{}")) {
+                File(project, "project.json").writeText("""{"title":$title,"bpm":95,"updatedAt":2000}""")
+
+                val summary = ProjectSummary.fromDirectory(project)
+
+                assertEquals(if (directoryName == "Legacy track") directoryName else "Untitled", summary.title)
+                assertEquals(95, summary.bpm)
+                assertEquals(2000L, summary.lastEditedAt)
+            }
+        }
+    }
+
+    @Test
+    fun numericStringTitle_remainsTheSavedTitle() {
+        val project = temporaryFolder.newFolder()
+        File(project, "project.json").writeText("""{"title":"42"}""")
+
+        assertEquals("42", ProjectSummary.fromDirectory(project).title)
+    }
+
+    @Test
     fun latestLyricSnapshotWinsOverMetadataAndIgnoresBeatAndCacheWrites() {
         val project = temporaryFolder.newFolder("Track")
         File(project, "project.json").writeText("""{"updatedAt":1000,"bpm":92,"key":"C minor"}""")

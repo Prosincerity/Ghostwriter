@@ -98,7 +98,7 @@ data class ProjectMetadata(
             if (isNull(name)) null else optString(name).ifBlank { null }
 
         fun fromJsonObject(json: JSONObject, fallbackTitle: String): ProjectMetadata {
-            val title = json.optString("title", fallbackTitle).ifBlank { fallbackTitle }
+            val title = (json.opt("title") as? String)?.takeIf { it.isNotBlank() } ?: fallbackTitle
             val bpm = json.optInt("bpm", -1).takeIf { it > 0 }
             val key = json.optionalString("key")
             val timeSignature = json.optionalString("timeSignature")
