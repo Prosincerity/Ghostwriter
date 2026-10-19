@@ -1,6 +1,7 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
@@ -171,12 +173,16 @@ class DictionaryScreenTest {
         )
         composeRule.setContent {
             GhostwriterTheme {
-                DictionaryScreen(
-                    onBack = { returned = true },
-                    onOpenDownloads = {},
-                    installedLanguages = listOf("en"),
-                    search = search.value,
-                )
+                // Keep results below the fold so the test cannot rely on lazy
+                // items remaining composed while the keyboard changes size.
+                Box(Modifier.width(320.dp).height(360.dp)) {
+                    DictionaryScreen(
+                        onBack = { returned = true },
+                        onOpenDownloads = {},
+                        installedLanguages = listOf("en"),
+                        search = search.value,
+                    )
+                }
             }
         }
 
@@ -190,10 +196,12 @@ class DictionaryScreenTest {
                 )
             }
         }
-        composeRule.onNodeWithText("Search").performClick()
-        composeRule.onNodeWithText("Pronunciation").assertExists()
-        composeRule.onNodeWithText("Matches (1)").assertExists()
-        composeRule.onNodeWithText("bat").assertExists()
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithText("Search").performScrollTo().performClick()
+        for (text in listOf("Pronunciation", "IPA: /ˈkæt/", "Matches (1)", "bat")) {
+            composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(text))
+            composeRule.onNodeWithText(text).assertIsDisplayed()
+        }
         composeRule.runOnIdle {
             assertEquals(0, originalSearches)
             assertEquals(Triple("cat", "en", DictionarySearchMode.RHYME), searched)
