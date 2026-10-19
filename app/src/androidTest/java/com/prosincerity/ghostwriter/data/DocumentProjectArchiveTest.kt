@@ -149,6 +149,55 @@ class DocumentProjectArchiveTest {
         assertFalse(File(project, ".lyric-restore.json").exists())
     }
 
+    @Test fun metadataEditAfterFailedRestoreStillRecoversMissingLyrics() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "retained verse"); archive.save(project, 3)
+        removeLocalLyrics(project)
+        val blocker = File(project, "autosave1.txt/keep").apply {
+            assertTrue(parentFile!!.mkdir())
+            writeText("unrelated file")
+        }
+        assertThrows(IOException::class.java) { archive.restore(localRoot) }
+        assertTrue(File(project, ".lyric-restore.json").isFile)
+        assertNotNull(ProjectStorage.renameProjectDirectory(project, "edited local title"))
+        assertTrue(blocker.delete())
+        assertTrue(blocker.parentFile!!.delete())
+
+        assertEquals(1, archive.restore(localRoot))
+
+        assertEquals("retained verse", ProjectStorage.loadLatest(project))
+        assertEquals("edited local title", ProjectStorage.loadMetadata(project, "fallback").title)
+        assertFalse(File(project, ".lyric-restore.json").exists())
+        archive.save(project, 3)
+        val reinstall = folder.newFolder("reinstall_after_metadata_edit")
+        assertEquals(1, archive.restore(reinstall))
+        val restored = File(reinstall, project.name)
+        assertEquals("retained verse", ProjectStorage.loadLatest(restored))
+        assertEquals("edited local title", ProjectStorage.loadMetadata(restored, "fallback").title)
+    }
+
+    @Test fun lyricEditAfterFailedRestoreTakesPrecedenceEvenWhenEmpty() {
+        for (lyrics in listOf("new local draft", "")) {
+            val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+            draft(project, "archived verse"); archive.save(project, 3)
+            removeLocalLyrics(project)
+            val blocker = File(project, "autosave1.txt/keep").apply {
+                assertTrue(parentFile!!.mkdir())
+                writeText("unrelated file")
+            }
+            assertThrows(IOException::class.java) { archive.restore(localRoot) }
+            assertTrue(blocker.delete())
+            assertTrue(blocker.parentFile!!.delete())
+            draft(project, lyrics)
+
+            assertEquals(0, archive.restore(localRoot))
+
+            assertEquals(lyrics, ProjectStorage.loadLatest(project))
+            assertFalse(File(project, ".lyric-restore.json").exists())
+            assertEquals(1, savedFiles(project.name).size)
+        }
+    }
+
     @Test fun missingLyricRecoveryUsesSharedMetadataWhenLocalMetadataIsUnreadable() {
         for (corrupt in listOf(false, true)) {
             val project = ProjectStorage.createProjectDirectory(localRoot, "shared title")

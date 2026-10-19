@@ -144,21 +144,22 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
             val latest = saved.firstOrNull()?.snapshot
             val project = File(localRoot, entry.name)
             synchronized(ProjectStorage) {
-                val journal = ProjectRestoreJournal(project, archiveKey)
-                val resuming = journal.exists
-                if (resuming && !journal.matches()) {
-                    // A real edit after a failed restore takes precedence over recovery.
-                    journal.clear()
-                    return@synchronized
-                }
-                // A crash while creating the journal may leave only its staging file.
-                val emptyRestore = project.listFiles()?.all {
-                    it.isFile && it.name.startsWith("save-") && it.extension == "tmp"
-                } == true
                 // An actual empty draft still has a lyric file. Missing files
                 // must recover rather than become a new blank shared save.
                 val missingLyrics = project.isDirectory && project.listFiles()?.none {
                     it.isFile && (it.extension == "txt" || ProjectLyricsStorage.autosaveFileName.matches(it.name))
+                } == true
+                val journal = ProjectRestoreJournal(project, archiveKey)
+                val resuming = journal.exists
+                if (resuming && !journal.matches()) {
+                    // Local lyric edits supersede recovery. Metadata edits alone
+                    // must not leave missing lyrics unrecovered.
+                    journal.clear()
+                    if (!missingLyrics) return@synchronized
+                }
+                // A crash while creating the journal may leave only its staging file.
+                val emptyRestore = project.listFiles()?.all {
+                    it.isFile && it.name.startsWith("save-") && it.extension == "tmp"
                 } == true
                 val checkpoint = checkpoint(project)
                 if (project.isDirectory && !resuming && !emptyRestore && !missingLyrics) {
