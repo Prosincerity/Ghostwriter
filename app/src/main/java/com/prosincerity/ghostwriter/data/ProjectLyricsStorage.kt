@@ -70,27 +70,30 @@ internal object ProjectLyricsStorage {
             require(keepCount in Settings.COUNT_OPTIONS)
             val newest = File(projectDir, "autosave1.txt")
             val previousNewest = newest.readTextIfFile()
-            val previousNewestTime = newest.lastModified()
             if (previousNewest != content) {
+                // Recovery can select any slot. Capture the newest readable
+                // history before writing over files that may contain it.
+                val history = autosaveHistory(projectDir).take(keepCount - 1)
+                val pendingHistory = history.toMutableSet()
                 // A failed current save must not overwrite any existing history.
-                // Retain the previous newest snapshot for slot 2 after committing.
                 writeSnapshot(newest, content, now)
-                for (i in keepCount downTo 2) {
-                    val src = File(projectDir, "autosave${i - 1}.txt")
-                    val dst = File(projectDir, "autosave$i.txt")
-                    val previousText = if (i == 2) previousNewest else null
-                    val sourceTime = if (i == 2) previousNewestTime else src.lastModified()
+                for (index in history.indices) {
+                    val dst = File(projectDir, "autosave${index + 2}.txt")
+                    val (previousText, sourceTime) = history[index]
+                    val displaced = dst.readTextIfFile()?.let { it to dst.lastModified() }
+                    // Do not overwrite a newer draft whose earlier copy failed.
+                    if (displaced != null && history.indexOf(displaced) in 0 until index &&
+                        displaced in pendingHistory) continue
                     // An unreadable/blocked older slot must not stop the current
                     // lyrics from reaching disk. Stage copies to preserve the
                     // destination if a backup copy fails partway through.
-                    if (previousText != null || (i > 2 && src.isFile)) runCatching {
+                    runCatching {
                         StagedFileWriter.replace(dst, "save-", "Couldn't rotate ${dst.name}") { staged ->
-                            if (previousText != null) staged.writeText(previousText)
-                            else src.copyTo(staged, overwrite = true)
+                            staged.writeText(previousText)
                             // Recovery compares snapshots by age when autosave1 is lost.
                             staged.setLastModified(sourceTime)
                         }
-                    }
+                    }.onSuccess { pendingHistory.remove(history[index]) }
                 }
             } else if (loadLatest(projectDir) != content) {
                 // Recovery may prefer a newer manual save or out-of-order backup.
@@ -99,11 +102,30 @@ internal object ProjectLyricsStorage {
             }
             // Prune only after the latest snapshot is safe. Settings changes
             // still apply when the lyrics haven't changed.
+            val retainedHistory = autosaveHistory(projectDir).distinct().take(keepCount).toSet()
+            val retainedSlots = (1..keepCount).mapNotNull { slot ->
+                val file = File(projectDir, "autosave$slot.txt")
+                file.readTextIfFile()?.let { it to file.lastModified() }
+            }.toSet()
             for (i in (keepCount + 1)..10) {
                 val oldBackup = File(projectDir, "autosave$i.txt")
-                if (oldBackup.isFile) oldBackup.delete()
+                if (oldBackup.isFile) {
+                    // A failed rotation must not prune the only surviving copy.
+                    val needed = oldBackup.readTextIfFile()?.let {
+                        val snapshot = it to oldBackup.lastModified()
+                        snapshot in retainedHistory && snapshot !in retainedSlots
+                    } == true
+                    if (!needed) oldBackup.delete()
+                }
             }
         }.isSuccess
+
+    private fun autosaveHistory(projectDir: File): List<Pair<String, Long>> =
+        (1..10).asSequence()
+            .map { File(projectDir, "autosave$it.txt") }
+            .sortedByDescending { it.lastModified() }
+            .mapNotNull { file -> file.readTextIfFile()?.let { it to file.lastModified() } }
+            .toList()
 
     private fun writeSnapshot(target: File, content: String, now: () -> Long) {
         // Recovery ranks snapshots by age. Keep new edits ahead of every

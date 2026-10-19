@@ -570,6 +570,119 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun autosave_rotatingOutOfOrderBackupsRetainsTheNewestPriorDrafts() {
+        val project = tempFolder.newFolder()
+        for (slot in 1..3) {
+            File(project, "autosave$slot.txt").apply {
+                writeText("draft $slot")
+                assertTrue(setLastModified(slot * 1_000L))
+            }
+        }
+        assertEquals("draft 3", ProjectStorage.loadLatest(project))
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 4_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        assertEquals("draft 3", File(project, "autosave2.txt").readText())
+        assertEquals(3_000L, File(project, "autosave2.txt").lastModified())
+        assertEquals("draft 2", File(project, "autosave3.txt").readText())
+        assertEquals(2_000L, File(project, "autosave3.txt").lastModified())
+    }
+
+    @Test
+    fun autosave_missingFirstSlotPreservesNewerLegacyBackupsBeforePruning() {
+        val project = tempFolder.newFolder()
+        File(project, "autosave2.txt").apply {
+            writeText("")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "autosave10.txt").apply {
+            writeText("recoverable lyrics 🎵")
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 4_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        assertEquals("recoverable lyrics 🎵", File(project, "autosave2.txt").readText())
+        assertEquals(3_000L, File(project, "autosave2.txt").lastModified())
+        assertEquals("", File(project, "autosave3.txt").readText())
+        assertEquals(1_000L, File(project, "autosave3.txt").lastModified())
+        assertFalse(File(project, "autosave10.txt").exists())
+    }
+
+    @Test
+    fun autosave_equalBackupAgesRetainEarlierSlotsFirst() {
+        val project = tempFolder.newFolder()
+        for (slot in 1..3) {
+            File(project, "autosave$slot.txt").apply {
+                writeText("draft $slot")
+                assertTrue(setLastModified(2_000L))
+            }
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 3_000L }))
+
+        assertEquals("draft 1", File(project, "autosave2.txt").readText())
+        assertEquals("draft 2", File(project, "autosave3.txt").readText())
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun autosave_blockedSecondSlotPreservesTheNewestHistoryInTheThirdSlot() {
+        val project = tempFolder.newFolder()
+        File(project, "autosave1.txt").apply {
+            writeText("oldest draft")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "autosave2.txt/keep").apply { parentFile!!.mkdir(); writeText("blocked slot") }
+        val recovered = File(project, "autosave3.txt").apply {
+            writeText("recovered draft")
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 4_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        assertEquals("recovered draft", recovered.readText())
+        assertEquals(3_000L, recovered.lastModified())
+        assertEquals("blocked slot", File(project, "autosave2.txt/keep").readText())
+    }
+
+    @Test
+    fun autosave_blockedRotationKeepsLegacyHistoryAcrossUnchangedSaveTicks() {
+        val project = tempFolder.newFolder()
+        File(project, "autosave1.txt").apply {
+            writeText("oldest draft")
+            assertTrue(setLastModified(1_000L))
+        }
+        val blocked = File(project, "autosave2.txt/keep").apply {
+            parentFile!!.mkdir()
+            writeText("blocked slot")
+        }
+        val recovered = File(project, "autosave10.txt").apply {
+            writeText("recovered draft")
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 4_000L }))
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 5_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        assertEquals("recovered draft", recovered.readText())
+        assertEquals(3_000L, recovered.lastModified())
+        assertEquals("blocked slot", blocked.readText())
+
+        assertTrue(blocked.delete())
+        assertTrue(blocked.parentFile!!.delete())
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "next draft", 3, now = { 6_000L }))
+        assertEquals("next draft", ProjectStorage.loadLatest(project))
+        assertEquals("new draft", File(project, "autosave2.txt").readText())
+        assertEquals("recovered draft", File(project, "autosave3.txt").readText())
+        assertFalse(recovered.exists())
+    }
+
+    @Test
     fun rotateAndSave_retainsNewestSnapshotsWithinBackupLimit() {
         val projectDir = tempFolder.newFolder("test_track")
         ProjectStorage.rotateAndSave(projectDir, "Take 1", keepCount = 3)
