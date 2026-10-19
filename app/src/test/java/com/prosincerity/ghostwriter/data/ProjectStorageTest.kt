@@ -445,6 +445,30 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun autosave_matchingAnOlderFirstSlotPersistsTheEditOverNewerSnapshots() {
+        for (newerSnapshot in listOf("autosave2.txt", "lyrics.txt")) {
+            val project = tempFolder.newFolder()
+            val firstSlot = File(project, "autosave1.txt").apply {
+                writeText("earlier verse")
+                assertTrue(setLastModified(1_000L))
+            }
+            val recovered = File(project, newerSnapshot).apply {
+                writeText("recovered verse")
+                assertTrue(setLastModified(2_000L))
+            }
+            assertEquals("recovered verse", ProjectStorage.loadLatest(project))
+
+            assertTrue(ProjectStorage.rotateAndSave(project, "earlier verse", 3))
+
+            assertEquals("earlier verse", ProjectStorage.loadLatest(project))
+            assertEquals("earlier verse", firstSlot.readText())
+            assertEquals("recovered verse", recovered.readText())
+            assertEquals(2_000L, recovered.lastModified())
+            assertFalse(File(project, "autosave3.txt").exists())
+        }
+    }
+
+    @Test
     fun rotateAndSave_identicalContent_noOpsWithoutRotating() {
         val projectDir = tempFolder.newFolder("test_track")
         ProjectStorage.rotateAndSave(projectDir, "Verse 1", keepCount = 3)

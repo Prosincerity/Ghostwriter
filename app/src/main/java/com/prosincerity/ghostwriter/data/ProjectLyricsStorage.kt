@@ -79,6 +79,10 @@ internal object ProjectLyricsStorage {
                         }
                     }
                 }
+            } else if (loadLatest(projectDir) != content) {
+                // Recovery may prefer a newer manual save or out-of-order backup.
+                // Reassert this edit without rotating away that recovery history.
+                StagedFileWriter.writeText(newest, content)
             }
             // Prune only after the latest snapshot is safe. Settings changes
             // still apply when the lyrics haven't changed.
