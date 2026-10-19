@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.data
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -865,6 +866,32 @@ class ProjectStorageTest {
     }
 
     // --- loadLatest tests ---
+
+    @Test
+    fun loadLatest_failedDirectoryListingDoesNotBecomeABlankDraft() {
+        val directory = tempFolder.newFolder()
+        val snapshot = File(directory, "autosave1.txt").apply { writeText("retained verse") }
+        val unavailable = object : File(directory.path) {
+            override fun listFiles(): Array<File>? = null
+        }
+
+        assertThrows(java.io.IOException::class.java) { ProjectStorage.loadLatest(unavailable) }
+
+        assertEquals("retained verse", snapshot.readText())
+    }
+
+    @Test
+    fun loadLatest_unreadableSnapshotsDoNotBecomeABlankDraft() {
+        for (name in listOf("lyrics.txt", "autosave1.txt", "AUTOSAVE10.TXT", "old-title.txt")) {
+            val project = tempFolder.newFolder()
+            val blocked = File(project, name).apply { assertTrue(mkdir()) }
+            val retained = File(blocked, "keep").apply { writeText("retained bytes") }
+
+            assertThrows(java.io.IOException::class.java) { ProjectStorage.loadLatest(project) }
+
+            assertEquals("retained bytes", retained.readText())
+        }
+    }
 
     @Test
     fun loadLatest_emptyDirectory_returnsEmptyString() {

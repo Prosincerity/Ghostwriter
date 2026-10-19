@@ -69,6 +69,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -92,19 +93,31 @@ fun EditorScreen(
     onStorageFailure: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
-    val playback = rememberBeatPlayback(projectId, projectTitle)
-
     val context = LocalContext.current
+    val projectDir = remember(projectId) { ProjectStorage.projectDir(context, projectId) }
+    var loadedLyrics by rememberSaveable(projectId) {
+        mutableStateOf(try {
+            ProjectStorage.loadLatest(projectDir)
+        } catch (_: IOException) {
+            null
+        })
+    }
+    val lyrics = loadedLyrics
+    if (lyrics == null) {
+        LaunchedEffect(projectDir) {
+            onStorageFailure()
+            Toast.makeText(context, "Couldn't read this project's lyrics. Existing files have been kept.", Toast.LENGTH_LONG).show()
+            onBack()
+        }
+        return
+    }
+
+    val playback = rememberBeatPlayback(projectId, projectTitle)
     val haptics = LocalHapticFeedback.current
     val lyricTextSettings = remember(context) { AppSettings.getLyricTextSettings(context) }
     val coroutineScope = rememberCoroutineScope()
-    val projectDir = remember(projectId) { ProjectStorage.projectDir(context, projectId) }
     val waveformDirectory = remember(projectDir) { ProjectStorage.waveformCacheDirectory(context, projectDir) }
     val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle, persistLyrics) }
-
-    var lyrics by rememberSaveable(projectId) {
-        mutableStateOf(ProjectStorage.loadLatest(projectDir))
-    }
 
     var intervalSeconds by remember { mutableIntStateOf(AppSettings.getAutosaveIntervalSeconds(context)) }
     var keepCount by remember { mutableIntStateOf(AppSettings.getAutosaveCount(context)) }
@@ -415,7 +428,7 @@ fun EditorScreen(
             delay(intervalSeconds.seconds)
             intervalSeconds = AppSettings.getAutosaveIntervalSeconds(context)
             keepCount = AppSettings.getAutosaveCount(context)
-            val contentToSave = lyrics
+            val contentToSave = latestLyrics.value
             val backupsToKeep = keepCount
             val saved = withContext(Dispatchers.IO) {
                 lyricsSession.autosave(contentToSave, backupsToKeep)
@@ -572,7 +585,7 @@ fun EditorScreen(
 
             LyricsNotepad(
                 lyrics = lyrics,
-                onLyricsChange = { lyrics = it },
+                onLyricsChange = { loadedLyrics = it },
                 textSettings = lyricTextSettings,
                 modifier = Modifier
                     .fillMaxWidth()

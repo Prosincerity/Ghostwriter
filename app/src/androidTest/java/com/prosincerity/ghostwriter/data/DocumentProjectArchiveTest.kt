@@ -213,6 +213,26 @@ class DocumentProjectArchiveTest {
         assertEquals("previous", ProjectStorage.loadLatest(File(localRoot, project.name)))
     }
 
+    @Test fun failedLocalListingCannotPublishBlankLyricsOrPruneSharedHistory() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        for (index in 1..3) {
+            assertTrue(ProjectStorage.rotateAndSave(project, "verse $index", 3))
+            archive.save(project, 3)
+        }
+        val before = savedFiles(project.name).toSet()
+        val unavailable = object : File(project.path) {
+            override fun listFiles(): Array<File>? = null
+        }
+
+        assertThrows(IOException::class.java) { archive.save(unavailable, 3) }
+
+        assertEquals(before, savedFiles(project.name).toSet())
+        assertEquals("verse 3", ProjectStorage.loadLatest(project))
+        assertTrue(project.deleteRecursively())
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("verse 3", ProjectStorage.loadLatest(File(localRoot, project.name)))
+    }
+
     @Test fun corruptedNewestSaveFallsBackToOlderVerifiedLyrics() {
         val project = ProjectStorage.createProjectDirectory(localRoot, "song")
         draft(project, "previous"); archive.save(project, 3)

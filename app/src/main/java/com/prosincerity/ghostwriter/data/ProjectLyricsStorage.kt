@@ -10,14 +10,22 @@ internal object ProjectLyricsStorage {
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         // Legacy title snapshots remain readable after UUID migration and rename.
-        val projectFiles = projectDir.listFiles().orEmpty()
+        val projectFiles = projectDir.listFiles()
+            ?: throw IOException("Couldn't read the project's lyric files")
+        var readFailure: IOException? = null
+        fun File.readSnapshot(): String? = try {
+            readText()
+        } catch (failure: IOException) {
+            readFailure = failure
+            null // Keep looking for a readable older snapshot.
+        }
         val manualFiles = projectFiles.filter { file ->
-            file.isFile && file.extension == "txt" &&
+            file.extension == "txt" &&
                 !autosaveFileName.matches(file.name)
         }
-        val manualFile = manualFiles.filter { it.readTextIfFile() != null }
-            .maxWithOrNull(compareBy<File> { it.lastModified() }.thenBy { it.name == MANUAL_FILE_NAME })
-            ?: File(projectDir, MANUAL_FILE_NAME)
+        val manual = manualFiles.mapNotNull { file -> file.readSnapshot()?.let { file to it } }
+            .maxWithOrNull(compareBy<Pair<File, String>> { it.first.lastModified() }
+                .thenBy { it.first.name == MANUAL_FILE_NAME })
         // Older versions could keep ten slots. Best-effort rotations can also
         // leave slot ages out of order, so compare every readable snapshot.
         // Scanning in slot order keeps the earlier slot when timestamps tie.
@@ -29,18 +37,15 @@ internal object ProjectLyricsStorage {
                     .sortedBy { it.name != "autosave$i.txt" }
             }
             .mapNotNull { file ->
-                file.readTextIfFile()?.let { file to it }
+                file.readSnapshot()?.let { file to it }
             }
             .maxByOrNull { it.first.lastModified() }
-        val manualText = manualFile.readTextIfFile()
         return when {
-            manualText != null &&
+            manual != null &&
                 (newestReadableAutosave == null ||
-                    manualFile.lastModified() >= newestReadableAutosave.first.lastModified()) -> manualText
+                    manual.first.lastModified() >= newestReadableAutosave.first.lastModified()) -> manual.second
             newestReadableAutosave != null -> newestReadableAutosave.second
-            // Older versions used a backup filename for these titles. Do not
-            // rank that alias as a manual save ahead of the newest ring entry.
-            else -> manualText ?: File(projectDir, "${projectDir.name}.txt").readTextIfFile() ?: ""
+            else -> readFailure?.let { throw it } ?: ""
         }
     }
 

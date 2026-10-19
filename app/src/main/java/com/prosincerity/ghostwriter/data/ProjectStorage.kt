@@ -121,7 +121,10 @@ object ProjectStorage {
         return projectDir.takeIf { saveMetadata(it, metadata.copy(title = title)) }
     }
 
-    /** Most recent readable manual save or autosave, falling back through the backup ring. */
+    /**
+     * Most recent readable manual save or autosave, falling back through the backup ring.
+     * @throws IOException if listing fails or no existing snapshot is readable.
+     */
     fun loadLatest(projectDir: File): String = ProjectLyricsStorage.loadLatest(projectDir)
 
     /** Saves a fixed-name manual snapshot and updates the autosave ring. */

@@ -136,6 +136,42 @@ class EditorScreenTest {
     }
 
     @Test
+    fun unreadableLyrics_reportsFailureWithoutOpeningOrSavingAnEmptyDraft() {
+        val title = uniqueProjectTitle("Unreadable lyrics")
+        val visible = mutableStateOf(true)
+        val project = ProjectStorage.projectDir(context, title)
+        val blocked = File(project, "autosave1.txt").apply { assertTrue(mkdir()) }
+        val retained = File(blocked, "keep").apply { writeText("retained bytes") }
+        var failures = 0
+        var exits = 0
+        var sharedSaves = 0
+        composeRule.setContent {
+            if (visible.value) GhostwriterTheme {
+                EditorScreen(title,
+                    onBack = { exits++; visible.value = false },
+                    onOpenSettings = {},
+                    persistLyrics = { _, _ -> sharedSaves++; true },
+                    onStorageFailure = { failures++ })
+            }
+        }
+        try {
+            composeRule.waitForIdle()
+
+            composeRule.runOnIdle {
+                assertEquals(1, failures)
+                assertEquals(1, exits)
+                assertEquals(0, sharedSaves)
+            }
+            composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
+            assertEquals("retained bytes", retained.readText())
+            assertFalse(File(project, "lyrics.txt").exists())
+            assertFalse(File(project, "autosave2.txt").exists())
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
     fun failedSharedBeatImport_reportsTheReconnectRequirement() {
         val title = uniqueProjectTitle("Failed shared import")
         val visible = mutableStateOf(true)
