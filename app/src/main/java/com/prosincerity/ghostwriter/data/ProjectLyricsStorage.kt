@@ -75,21 +75,25 @@ internal object ProjectLyricsStorage {
                 // history before writing over files that may contain it. Duplicate
                 // copies of one snapshot must not displace another prior draft.
                 val history = autosaveHistory(projectDir).distinct().take(keepCount - 1)
-                val pendingHistory = history.toMutableSet()
+                val pendingHistory = history.toMutableList()
                 // A failed current save must not overwrite any existing history.
                 writeSnapshot(newest, content, now)
                 for (index in 0 until keepCount - 1) {
                     val dst = File(projectDir, "autosave${index + 2}.txt")
                     // A failed copy may leave a draft only in memory after its
                     // source was replaced. Retry it before copying older history.
-                    val savedHistory = autosaveHistory(projectDir).toSet()
+                    val savedHistory = autosaveHistory(projectDir)
                     val snapshot = pendingHistory.firstOrNull { it !in savedHistory }
-                        ?: history.getOrNull(index) ?: break
+                        ?: pendingHistory.firstOrNull() ?: break
                     val (previousText, sourceTime) = snapshot
                     val displaced = dst.readTextIfFile()?.let { it to dst.lastModified() }
-                    // Do not overwrite a newer draft whose earlier copy failed.
+                    // Keep the only copy of a newer pending draft. This slot is
+                    // now safe from later writes, so that draft is no longer pending.
                     if (displaced != null && history.indexOf(displaced) in 0 until history.indexOf(snapshot) &&
-                        displaced in pendingHistory) continue
+                        displaced in pendingHistory && savedHistory.count { it == displaced } == 1) {
+                        pendingHistory.remove(displaced)
+                        continue
+                    }
                     // An unreadable/blocked older slot must not stop the current
                     // lyrics from reaching disk. Stage copies to preserve the
                     // destination if a backup copy fails partway through.

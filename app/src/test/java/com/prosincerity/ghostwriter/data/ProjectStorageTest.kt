@@ -636,6 +636,50 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun autosave_duplicateNewerBackupsDoNotDiscardTheOverwrittenFirstSlot() {
+        val project = tempFolder.newFolder()
+        for ((slot, text, time) in listOf(
+            Triple(1, "earlier draft", 1_000L),
+            Triple(2, "recent draft", 2_000L),
+            Triple(3, "recent draft", 2_000L),
+        )) {
+            File(project, "autosave$slot.txt").apply {
+                writeText(text)
+                assertTrue(setLastModified(time))
+            }
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 3_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        val history = (2..3).map { slot ->
+            val backup = File(project, "autosave$slot.txt")
+            backup.readText() to backup.lastModified()
+        }
+        assertEquals(setOf("recent draft" to 2_000L, "earlier draft" to 1_000L), history.toSet())
+    }
+
+    @Test
+    fun autosave_outOfOrderHistoryDoesNotCopyADraftTwice() {
+        val project = tempFolder.newFolder()
+        for ((slot, time) in listOf(2 to 2_000L, 3 to 4_000L, 4 to 1_000L, 5 to 3_000L)) {
+            File(project, "autosave$slot.txt").apply {
+                writeText("draft $time")
+                assertTrue(setLastModified(time))
+            }
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 5, now = { 5_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        val history = (2..5).map { slot ->
+            val backup = File(project, "autosave$slot.txt")
+            backup.readText() to backup.lastModified()
+        }
+        assertEquals((1..4).map { "draft ${it * 1_000L}" to it * 1_000L }.toSet(), history.toSet())
+    }
+
+    @Test
     fun autosave_equalBackupAgesRetainEarlierSlotsFirst() {
         val project = tempFolder.newFolder()
         for (slot in 1..3) {
