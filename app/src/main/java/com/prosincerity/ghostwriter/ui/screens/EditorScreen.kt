@@ -371,7 +371,11 @@ fun EditorScreen(
                                 projectTitle = projectTitle,
                                 originalName = displayNameFor(context, uri),
                                 waveformDirectory = waveformDirectory,
-                                persistLyrics = { directory -> persistLyrics(directory, keepCount) },
+                                persistLyrics = { directory ->
+                                    persistLyrics(directory, keepCount).also { saved ->
+                                        if (!saved) reportStorageFailure()
+                                    }
+                                },
                             ) { destination ->
                                 context.contentResolver.openInputStream(uri)?.use { input ->
                                     destination.outputStream().use { output -> input.copyTo(output) }

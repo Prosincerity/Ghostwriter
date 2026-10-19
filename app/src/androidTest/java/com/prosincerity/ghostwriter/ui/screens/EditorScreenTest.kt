@@ -73,6 +73,7 @@ class EditorScreenTest {
         val visible = mutableStateOf(true)
         val project = ProjectStorage.projectDir(context, title)
         var result: android.net.Uri? = null
+        var storageFailures = 0
         val registry = object : androidx.activity.result.ActivityResultRegistry() {
             override fun <I, O> onLaunch(requestCode: Int,
                 contract: androidx.activity.result.contract.ActivityResultContract<I, O>, input: I,
@@ -86,7 +87,9 @@ class EditorScreenTest {
         }
         composeRule.setContent {
             CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
-                if (visible.value) GhostwriterTheme { EditorScreen(title, {}, {}) }
+                if (visible.value) GhostwriterTheme {
+                    EditorScreen(title, {}, {}, onStorageFailure = { storageFailures++ })
+                }
             }
         }
         fun choose(name: String?, query: String = "") {
@@ -126,7 +129,66 @@ class EditorScreenTest {
             waitUntilTextExists("beat")
             composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(ProjectStorage.waveformCacheDirectory(context, project), 1000) != null }
             assertEquals("beat.mp3", ProjectStorage.loadMetadata(project, title).beatOriginalName)
+            composeRule.runOnIdle { assertEquals(0, storageFailures) }
         } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
+    fun failedSharedBeatImport_reportsTheReconnectRequirement() {
+        val title = uniqueProjectTitle("Failed shared import")
+        val visible = mutableStateOf(true)
+        val project = ProjectStorage.projectDir(context, title)
+        val saveStarted = CountDownLatch(1)
+        val releaseSave = CountDownLatch(1)
+        val failSave = java.util.concurrent.atomic.AtomicBoolean(false)
+        var failures = 0
+        val registry = object : androidx.activity.result.ActivityResultRegistry() {
+            override fun <I, O> onLaunch(requestCode: Int,
+                contract: androidx.activity.result.contract.ActivityResultContract<I, O>, input: I,
+                options: androidx.core.app.ActivityOptionsCompat?) {
+                dispatchResult(requestCode, android.app.Activity.RESULT_OK,
+                    Intent().setData(android.net.Uri.parse(
+                        "content://com.prosincerity.ghostwriter.test.beat-import/short.wav")))
+            }
+        }
+        val owner = object : androidx.activity.result.ActivityResultRegistryOwner {
+            override val activityResultRegistry = registry
+        }
+        composeRule.setContent {
+            CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                if (visible.value) GhostwriterTheme {
+                    EditorScreen(title, {}, {}, persistLyrics = { _, _ ->
+                        if (failSave.get()) {
+                            saveStarted.countDown()
+                            releaseSave.await()
+                            false
+                        } else true
+                    }, onStorageFailure = { failures++ })
+                }
+            }
+        }
+        try {
+            waitUntilTextExists("Import beat")
+            failSave.set(true)
+            composeRule.onNodeWithText("Import beat").performClick()
+            assertTrue(saveStarted.await(5, TimeUnit.SECONDS))
+            composeRule.onNodeWithText("Importing…").assertExists()
+
+            releaseSave.countDown()
+            composeRule.waitUntil(5_000) {
+                composeRule.onAllNodesWithText("Importing…").fetchSemanticsNodes().isEmpty()
+            }
+
+            assertEquals("short.wav", ProjectStorage.loadMetadata(project, title).beatOriginalName)
+            assertTrue(ProjectStorage.getProjectBeatFile(project)!!.isFile)
+            composeRule.runOnIdle { assertEquals(1, failures) }
+            composeRule.onNodeWithText("No beat selected").assertExists()
+            composeRule.onNodeWithText("Import beat").assertIsEnabled()
+        } finally {
+            failSave.set(false)
+            releaseSave.countDown()
             disposeEditorAndDeleteProject(visible, title)
         }
     }
