@@ -6,6 +6,29 @@ import org.junit.Test
 class WaveformViewportTest {
 
     @Test
+    fun xToPositionMs_longAudioRightEdgeReachesTheExactEnd() {
+        for (viewport in listOf(WaveformViewport(), WaveformViewport(zoom = 4f, scrollOffsetPx = 300f))) {
+            for (duration in listOf(16_777_217L, 86_400_003L)) {
+                assertEquals(duration, viewport.xToPositionMs(100f, duration, 100f))
+            }
+        }
+    }
+
+    @Test
+    fun xToPositionMs_longAudioMidpointUsesTheUnroundedDuration() {
+        val duration = 16_777_219L
+
+        assertEquals(duration / 2, WaveformViewport().xToPositionMs(50f, duration, 100f))
+    }
+
+    @Test
+    fun xToPositionMs_preservesExactMillisecondBoundaries() {
+        for (position in 0L..100L) {
+            assertEquals(position, WaveformViewport().xToPositionMs(position.toFloat(), 100L, 100f))
+        }
+    }
+
+    @Test
     fun positionToX_atOneXMapsTheWholeBeatAcrossTheViewport() {
         val viewport = WaveformViewport()
 
