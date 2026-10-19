@@ -56,16 +56,33 @@ def read_report(path):
         raise ValueError(f"Invalid coverage report {path}: {error}") from error
 
 
+def module_minimums(module, logic_heavy=False):
+    strict = logic_heavy or module.split(":")[-1] in {"domain", "data", "parsing", "logic"}
+    return (90, 85) if strict else (80, 70)
+
+
 def check_module(module, coverage, logic_heavy=False):
     if coverage.instruction[1] == 0:
         raise ValueError(f"{module}: report has no executable instructions")
-    strict = logic_heavy or module.split(":")[-1] in {"domain", "data", "parsing", "logic"}
     failures = []
-    for metric, minimum in zip(("instruction", "branch"), (90, 85) if strict else (80, 70)):
+    for metric, minimum in zip(("instruction", "branch"), module_minimums(module, logic_heavy)):
         covered, total = getattr(coverage, metric)
         if total and covered * 100 < total * minimum:
             failures.append(f"{module}: {metric} coverage {covered}/{total} is below {minimum}%")
     return failures
+
+
+def print_aggregated_summary(module, variant, coverage, logic_heavy=False):
+    print(f"\n{module} [{variant}, aggregated]")
+    for metric, minimum in zip(("instruction", "branch"), module_minimums(module, logic_heavy)):
+        covered, total = getattr(coverage, metric)
+        if not total:
+            plural = "instructions" if metric == "instruction" else "branches"
+            print(f"  {metric.capitalize()}: N/A (no executable {plural})")
+            continue
+        status = "PASS" if covered * 100 >= total * minimum else "FAIL"
+        print(f"  {metric.capitalize()}: {covered * 100 / total:.2f}% "
+              f"({covered}/{total}; minimum {minimum}%) [{status}]")
 
 
 def changed_lines(diff, module):
@@ -163,15 +180,23 @@ def main():
                 failures += check_diff(current.lines, changed_lines(diff, module))
         if args.aggregated_report:
             current = read_aggregated(args.aggregated_report)
+            print("\nAggregated coverage (unit + Android, policy exclusions applied)")
             for (module, variant), coverage in current.items():
-                label = f"{module} [{variant}, aggregated]"
                 failures += check_module(module, coverage, module in args.logic_module)
-                print(f"{label}: instruction {coverage.instruction}, branch {coverage.branch}")
+                print_aggregated_summary(module, variant, coverage, module in args.logic_module)
+            dashboard = Path(args.aggregated_report).resolve().parent.parent / "index.html"
+            if dashboard.is_file():
+                print(f"\nAggregated dashboard (unfiltered): {dashboard.as_uri()}")
         if failures:
+            sys.stdout.flush()
+            print("\nCoverage checks: FAILED", file=sys.stderr)
             print("\n".join(failures), file=sys.stderr)
             return 1
+        print("\nCoverage checks: PASSED")
         return 0
     except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:
+        sys.stdout.flush()
+        print("\nCoverage checks: FAILED", file=sys.stderr)
         print(str(error), file=sys.stderr)
         return 1
 

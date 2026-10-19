@@ -238,6 +238,22 @@ branch totals per module and variant with the policy exclusions. A failing file
 does not independently fail the gate. Dashboard percentages are rounded, so
 verification uses the exact covered/total counters.
 
+The verifier prints instruction and branch percentages, covered/total counts,
+required minimums, and PASS/FAIL for each module and variant, followed by
+`Coverage checks: PASSED` or `FAILED`. Branchless modules show `N/A` for branches.
+The summary links to the aggregated HTML dashboard when it exists. That dashboard
+shows unfiltered data, so its percentages can differ from the policy summary.
+Use lifecycle logging for the coverage run so Gradle's final `BUILD SUCCESSFUL`
+or `BUILD FAILED` banner remains visible; coverage passing alone does not mean
+the whole build succeeded.
+
+For the end-of-day Android Studio **Aggregated coverage** run configuration,
+use task `:app:createAggregatedCoverageReport` with arguments
+`--stacktrace --warning-mode all --console=plain --rerun-tasks -Dorg.gradle.logging.level=lifecycle`.
+This runs both suites and checks aggregated coverage. Plain console output keeps
+the final summary readable; stack traces and all warnings remain available.
+The logging override applies only to this run; leave `gradle.properties` unchanged.
+
 Before merging, run `./gradlew --offline :app:verifyDebugCoverage` on a selected
 connected target to run both suites, generate separate, combined, and aggregated
 reports, and check module minimums. Run `./gradlew :app:verifyAggregatedCoverage`

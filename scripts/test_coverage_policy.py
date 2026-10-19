@@ -178,7 +178,65 @@ class CoveragePolicyTest(unittest.TestCase):
         current = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 90, 100)]))
         status, output = self.invoke("--aggregated-report", str(current))
         self.assertEqual(0, status, output)
-        self.assertIn("instruction (90, 100)", output)
+        self.assertIn("Instruction: 90.00% (90/100; minimum 80%) [PASS]", output)
+
+    def test_cli_summarizes_aggregated_coverage_at_minimums(self):
+        status, output = self.invoke("--aggregated-report", str(FIXTURES / "aggregated.js"))
+        self.assertEqual(0, status, output)
+        self.assertIn("Aggregated coverage (unit + Android, policy exclusions applied)", output)
+        self.assertIn("app [debug, aggregated]", output)
+        self.assertIn("Instruction: 80.00% (80/100; minimum 80%) [PASS]", output)
+        self.assertIn("Branch: 70.00% (70/100; minimum 70%) [PASS]", output)
+        self.assertIn("Coverage checks: PASSED", output)
+
+    def test_cli_marks_failure_even_when_percentage_rounds_to_minimum(self):
+        path = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 799999, 1000000)]))
+        status, output = self.invoke("--aggregated-report", str(path))
+        self.assertEqual(1, status)
+        self.assertIn("Instruction: 80.00% (799999/1000000; minimum 80%) [FAIL]", output)
+        self.assertIn("Coverage checks: FAILED", output)
+        self.assertNotIn("Coverage checks: PASSED", output)
+
+    def test_cli_labels_branchless_coverage_as_not_applicable(self):
+        variants = [{"name": "debug", "instruction": {"covered": 1, "total": 1},
+                     "branch": {"covered": 0, "total": 0}}]
+        path = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 0, 0, variants)]))
+        status, output = self.invoke("--aggregated-report", str(path))
+        self.assertEqual(0, status, output)
+        self.assertIn("Branch: N/A (no executable branches)", output)
+
+    def test_cli_shows_logic_module_minimums(self):
+        path = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 90, 100)], ":data"))
+        status, output = self.invoke("--aggregated-report", str(path))
+        self.assertEqual(1, status)
+        self.assertIn("Instruction: 90.00% (90/100; minimum 90%) [PASS]", output)
+        self.assertIn("Branch: 80.00% (8/10; minimum 85%) [FAIL]", output)
+
+    def test_cli_shows_explicit_logic_module_minimums(self):
+        status, output = self.invoke("--aggregated-report", str(FIXTURES / "aggregated.js"), "--logic-module", "app")
+        self.assertEqual(1, status)
+        self.assertIn("minimum 90%) [FAIL]", output)
+        self.assertIn("minimum 85%) [FAIL]", output)
+
+    def test_cli_links_to_existing_dashboard(self):
+        path = self.write_aggregated(self.aggregated_report([self.aggregated_class("Logic", 90, 100)]))
+        data = path.parent / "global/data"
+        data.mkdir(parents=True)
+        report = data / "report-data.js"
+        path.rename(report)
+        dashboard = data.parent / "index.html"
+        dashboard.write_text("<html></html>")
+        status, output = self.invoke("--aggregated-report", str(report))
+        self.assertEqual(0, status, output)
+        self.assertIn(f"Aggregated dashboard (unfiltered): {dashboard.as_uri()}", output)
+
+    def test_cli_missing_aggregated_report_marks_checks_failed(self):
+        directory = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        status, output = self.invoke("--aggregated-report", str(Path(directory.name) / "missing.js"))
+        self.assertEqual(1, status)
+        self.assertIn("Coverage checks: FAILED", output)
+        self.assertNotIn("Coverage checks: PASSED", output)
 
     def test_cli_checks_xml_module_minimums(self):
         path = self.write_report('<report><counter type="INSTRUCTION" covered="79" missed="21"/></report>')
