@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
@@ -88,7 +89,15 @@ public class LyricArchiveTestProvider extends ContentProvider {
         if ("clear".equals(method)) {
             deleteRecursively(file(arg)); failedScopes.remove(arg); faults.remove(arg); return new Bundle();
         }
-        Uri documentUri = extras.getParcelable("uri");
+        Uri documentUri;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            documentUri = extras.getParcelable("uri", Uri.class);
+        } else {
+            // The typed overload is unavailable on supported API 24-32 devices.
+            @SuppressWarnings("deprecation")
+            Uri legacyUri = extras.getParcelable("uri");
+            documentUri = legacyUri;
+        }
         File parent = file(DocumentsContract.getDocumentId(documentUri));
         Bundle result = new Bundle();
         if ("android:createDocument".equals(method)) {
