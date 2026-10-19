@@ -78,12 +78,17 @@ internal object ProjectLyricsStorage {
                 val pendingHistory = history.toMutableSet()
                 // A failed current save must not overwrite any existing history.
                 writeSnapshot(newest, content, now)
-                for (index in history.indices) {
+                for (index in 0 until keepCount - 1) {
                     val dst = File(projectDir, "autosave${index + 2}.txt")
-                    val (previousText, sourceTime) = history[index]
+                    // A failed copy may leave a draft only in memory after its
+                    // source was replaced. Retry it before copying older history.
+                    val savedHistory = autosaveHistory(projectDir).toSet()
+                    val snapshot = pendingHistory.firstOrNull { it !in savedHistory }
+                        ?: history.getOrNull(index) ?: break
+                    val (previousText, sourceTime) = snapshot
                     val displaced = dst.readTextIfFile()?.let { it to dst.lastModified() }
                     // Do not overwrite a newer draft whose earlier copy failed.
-                    if (displaced != null && history.indexOf(displaced) in 0 until index &&
+                    if (displaced != null && history.indexOf(displaced) in 0 until history.indexOf(snapshot) &&
                         displaced in pendingHistory) continue
                     // An unreadable/blocked older slot must not stop the current
                     // lyrics from reaching disk. Stage copies to preserve the
@@ -94,7 +99,7 @@ internal object ProjectLyricsStorage {
                             // Recovery compares snapshots by age when autosave1 is lost.
                             staged.setLastModified(sourceTime)
                         }
-                    }.onSuccess { pendingHistory.remove(history[index]) }
+                    }.onSuccess { pendingHistory.remove(snapshot) }
                 }
             } else if (loadLatest(projectDir) != content) {
                 // Recovery may prefer a newer manual save or out-of-order backup.

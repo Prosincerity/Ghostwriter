@@ -653,6 +653,59 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun autosave_blockedSecondSlotRetriesLostNewestHistoryInAnAvailableSlot() {
+        for (hasOlderDraft in listOf(false, true)) {
+            val project = tempFolder.newFolder()
+            File(project, "autosave1.txt").apply {
+                writeText("previous draft")
+                assertTrue(setLastModified(3_000L))
+            }
+            File(project, "autosave2.txt/keep").apply {
+                assertTrue(parentFile!!.mkdir())
+                writeText("blocked slot")
+            }
+            if (hasOlderDraft) File(project, "autosave3.txt").apply {
+                writeText("older draft")
+                assertTrue(setLastModified(1_000L))
+            }
+
+            assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 4_000L }))
+
+            assertEquals("new draft", ProjectStorage.loadLatest(project))
+            val backup = File(project, "autosave3.txt")
+            assertTrue("The previous draft must survive when a backup slot is writable", backup.isFile)
+            assertEquals("previous draft", backup.readText())
+            assertEquals(3_000L, backup.lastModified())
+            assertEquals("blocked slot", File(project, "autosave2.txt/keep").readText())
+            assertFalse(project.list()!!.any { it.endsWith(".tmp") })
+        }
+    }
+
+    @Test
+    fun autosave_multipleBlockedSlotsPrioritizeTheLostNewestDraftOverOlderBackups() {
+        val project = tempFolder.newFolder()
+        for ((slot, time) in listOf(1 to 3_000L, 4 to 2_000L, 5 to 1_000L)) {
+            File(project, "autosave$slot.txt").apply {
+                writeText("draft $slot")
+                assertTrue(setLastModified(time))
+            }
+        }
+        for (slot in 2..3) File(project, "autosave$slot.txt/keep").apply {
+            assertTrue(parentFile!!.mkdir())
+            writeText("blocked slot $slot")
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 5, now = { 4_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        assertEquals("draft 1", File(project, "autosave4.txt").readText())
+        assertEquals(3_000L, File(project, "autosave4.txt").lastModified())
+        assertEquals("draft 4", File(project, "autosave5.txt").readText())
+        assertEquals(2_000L, File(project, "autosave5.txt").lastModified())
+        for (slot in 2..3) assertEquals("blocked slot $slot", File(project, "autosave$slot.txt/keep").readText())
+    }
+
+    @Test
     fun autosave_blockedSecondSlotPreservesTheNewestHistoryInTheThirdSlot() {
         val project = tempFolder.newFolder()
         File(project, "autosave1.txt").apply {
