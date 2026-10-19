@@ -25,6 +25,53 @@ class DictionaryDownloadSessionTest {
     private val progress = DictionaryDownloadProgress(25, 100)
 
     @Test
+    fun repeatedStartBeforeDispatchInstallsOnlyOnce() = withSession { session, owner ->
+        var installations = 0
+        var completions = 0
+        repeat(2) {
+            session.start(key, onInstalled = { completions++ }) { installations++ }
+        }
+
+        owner.children.toList().joinAll()
+
+        assertEquals(1, installations)
+        assertEquals(1, completions)
+        assertEquals(DictionaryDownloadState.Idle, session.state.value)
+    }
+
+    @Test
+    fun secondStartWhileDownloadingKeepsOriginalProgressAndCancellation() = withSession { session, owner ->
+        val started = CompletableDeferred<Unit>()
+        var originalCancelled = false
+        var secondStarted = false
+        var installed = false
+        session.start(key, onInstalled = { installed = true }) { report ->
+            report(progress)
+            started.complete(Unit)
+            try {
+                awaitCancellation()
+            } finally {
+                originalCancelled = true
+            }
+        }
+        started.await()
+
+        // A second click can arrive before Compose disables the download buttons.
+        session.start("de" to DictionarySource.ESPEAK, onInstalled = { installed = true }) {
+            secondStarted = true
+        }
+
+        assertEquals(DictionaryDownloadState.Downloading(key, progress), session.state.value)
+        session.cancel()
+        owner.children.toList().joinAll()
+
+        assertTrue(originalCancelled)
+        assertFalse(secondStarted)
+        assertFalse(installed)
+        assertEquals(DictionaryDownloadState.Idle, session.state.value)
+    }
+
+    @Test
     fun workerProgressIsPublishedAndSuccessfulInstallationReturnsToTheOwner() = withSession { session, owner ->
         val reportedProgress = CompletableDeferred<Unit>()
         val finishInstallation = CompletableDeferred<Unit>()

@@ -26,6 +26,8 @@ internal class DictionaryDownloadSession(private val scope: CoroutineScope) {
         onInstalled: () -> Unit,
         install: suspend (suspend (DictionaryDownloadProgress) -> Unit) -> Unit,
     ) {
+        // Clicks may arrive before the UI reflects the active download.
+        if (mutableState.value is DictionaryDownloadState.Downloading) return
         mutableState.value = DictionaryDownloadState.Downloading(key)
         val job = scope.launch {
             try {
