@@ -188,7 +188,7 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                 // Only change their ages after the restored lyrics are safely written.
                 val restoredNames = restoredSnapshots.indices.map { "autosave${it + 1}.txt" }.toSet() + manual.name
                 project.listFiles { file ->
-                    file.isFile && file.extension == "txt" && file.name !in restoredNames
+                    file.isFile && file.extension.equals("txt", ignoreCase = true) && file.name !in restoredNames
                 }?.forEach { file ->
                     if (file.lastModified() > olderThanRestored && !file.setLastModified(olderThanRestored)) {
                         throw IOException("Couldn't restore the age of ${file.name}")

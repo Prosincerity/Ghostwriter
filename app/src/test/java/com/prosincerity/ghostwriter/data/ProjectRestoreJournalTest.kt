@@ -40,6 +40,19 @@ class ProjectRestoreJournalTest {
         assertEquals("", File(project, "lyrics.txt").readText())
     }
 
+    @Test fun agingAMixedCaseBackupIsARecognizedRestoreState() {
+        val project = folder.newFolder()
+        val backup = write(project, "AUTOSAVE10.TXT", "older lyrics", 9_000L)
+        val journal = ProjectRestoreJournal(project, "folder")
+        journal.prepare(mapOf("lyrics.txt" to ("shared lyrics" to 3_000L)), 2_999L)
+        assertTrue(journal.matches())
+
+        assertTrue(backup.setLastModified(2_999L))
+
+        assertTrue(journal.matches())
+        assertEquals("older lyrics", backup.readText())
+    }
+
     @Test fun subsequentLyricEditsIncludingRevertsInvalidateRecovery() {
         for ((text, time) in listOf("new local draft" to 4_000L, "old lyrics" to 4_000L)) {
             val project = folder.newFolder()

@@ -52,7 +52,7 @@ internal class ProjectRestoreJournal(private val project: File, private val arch
                 signature(replacement.first.toByteArray(Charsets.UTF_8), replacement.second)
             } else {
                 signature(original!!.readBytes(), original.lastModified().let {
-                    if (original.extension == "txt") minOf(it, olderThanRestored) else it
+                    if (original.extension.equals("txt", ignoreCase = true)) minOf(it, olderThanRestored) else it
                 })
             }
             states.put(name, JSONArray().put(before ?: JSONObject.NULL).put(after))
