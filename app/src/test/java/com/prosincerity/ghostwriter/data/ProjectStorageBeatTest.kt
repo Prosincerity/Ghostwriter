@@ -430,7 +430,7 @@ class ProjectStorageBeatTest {
 
         val metadata = ProjectStorage.removeBeatAndPersist(project, waveform) {
             sharedMetadata = ProjectStorage.loadMetadata(it, "song")
-            assertNull(sharedMetadata!!.beatFile)
+            assertNull(sharedMetadata.beatFile)
             assertTrue(beat.isFile)
             true
         }

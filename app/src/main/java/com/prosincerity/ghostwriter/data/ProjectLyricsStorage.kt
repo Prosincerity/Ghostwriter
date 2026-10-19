@@ -145,7 +145,8 @@ internal object ProjectLyricsStorage {
     private fun writeSnapshot(target: File, content: String, now: () -> Long) {
         // Recovery ranks snapshots by age. Keep new edits ahead of every
         // existing snapshot even after a clock rollback or a same-tick save.
-        val previousTime = target.parentFile.listFiles().orEmpty().asSequence()
+        val projectDir = requireNotNull(target.parentFile) { "Lyric snapshots must have a project directory" }
+        val previousTime = projectDir.listFiles().orEmpty().asSequence()
             .filter { it.isFile && (it.extension == "txt" || autosaveFileName.matches(it.name)) }
             .maxOfOrNull { it.lastModified() } ?: 0L
         val savedAt = maxOf(now(), Math.addExact(previousTime, 1L))
