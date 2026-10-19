@@ -30,6 +30,21 @@ class ProjectSummaryTest {
     }
 
     @Test
+    fun mixedCaseAutosaveNamesContributeToTheEditTime() {
+        for (name in listOf("AUTOSAVE1.TXT", "autosave10.TxT")) {
+            val project = temporaryFolder.newFolder()
+            File(project, "project.json").writeText("""{"updatedAt":1000}""")
+            timedFile(project, "lyrics.txt", 2_000L)
+            timedFile(project, name, 4_000L)
+            timedFile(project, "notes.TXT", 9_000L)
+            timedFile(project, "AUTOSAVE11.TXT", 10_000L)
+            timedFile(project, ".AUTOSAVE1.TXT", 11_000L)
+
+            assertEquals(4_000L, ProjectSummary.fromDirectory(project).lastEditedAt)
+        }
+    }
+
+    @Test
     fun newerProjectInformationIsAlsoAnEdit() {
         val project = temporaryFolder.newFolder("Info")
         File(project, "project.json").writeText("""{"updatedAt":5000,"bpm":120,"key":" A minor "}""")

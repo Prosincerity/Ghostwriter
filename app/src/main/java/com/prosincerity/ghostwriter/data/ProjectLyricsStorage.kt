@@ -6,7 +6,7 @@ import java.io.IOException
 /** Manual lyric snapshots and the rolling autosave backup ring. */
 internal object ProjectLyricsStorage {
     const val MANUAL_FILE_NAME = "lyrics.txt"
-    private val autosaveFileName = Regex("autosave(?:[1-9]|10)\\.txt", RegexOption.IGNORE_CASE)
+    internal val autosaveFileName = Regex("autosave(?:[1-9]|10)\\.txt", RegexOption.IGNORE_CASE)
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         // Legacy title snapshots remain readable after UUID migration and rename.

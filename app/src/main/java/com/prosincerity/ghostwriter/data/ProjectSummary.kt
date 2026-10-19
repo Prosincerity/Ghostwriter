@@ -16,7 +16,8 @@ internal data class ProjectSummary(
                 JSONObject(File(directory, "project.json").readText())
             }.getOrNull()
             val snapshotTime = directory.listFiles { file ->
-                file.isFile && file.extension == "txt" && !file.name.startsWith(".")
+                file.isFile && !file.name.startsWith(".") &&
+                    (file.extension == "txt" || ProjectLyricsStorage.autosaveFileName.matches(file.name))
             }?.maxOfOrNull { it.lastModified() } ?: 0L
             val editTime = maxOf(snapshotTime, metadata?.optLong("updatedAt", 0L) ?: 0L)
             return ProjectSummary(
