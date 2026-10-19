@@ -3,6 +3,7 @@ package com.prosincerity.ghostwriter.data
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -348,6 +349,118 @@ class ProjectStorageBeatTest {
             "Midnight Loop.FLAC",
             ProjectStorage.loadMetadata(projectDir, "SelectedBeatSong").beatOriginalName,
         )
+    }
+
+    @Test
+    fun removeBeatFromProject_metadataFailureRetainsBeatAndWaveform() {
+        val project = tempFolder.newFolder("failed_removal")
+        val beat = ProjectStorage.assignBeatToProject(project, "original.wav") { it.writeText("audio") }
+        assertTrue(ProjectStorage.saveCachedWaveform(project, 2, intArrayOf(7, 8)))
+        assertTrue(File(project, "project.json").delete())
+        File(project, "project.json/keep").apply { parentFile!!.mkdir(); writeText("blocked metadata") }
+
+        assertThrows(java.io.IOException::class.java) {
+            ProjectStorage.removeBeatFromProject(project)
+        }
+
+        assertEquals("audio", beat.readText())
+        assertEquals(listOf(7, 8), ProjectStorage.loadCachedWaveform(project, 2)?.toList())
+        assertEquals("blocked metadata", File(project, "project.json/keep").readText())
+    }
+
+    @Test
+    fun removeBeatAndPersist_failedSharedSaveRestoresMetadataAndKeepsTimeline() {
+        val project = tempFolder.newFolder()
+        val beat = ProjectStorage.assignBeatToProject(project, "original.wav") { it.writeText("audio") }
+        assertTrue(ProjectStorage.saveMetadata(project, ProjectStorage.loadMetadata(project, "song").copy(
+            markers = listOf(WaveformMarker("Hook", 12_000L)),
+        ), now = { 1_000L }))
+        val previous = ProjectStorage.metadataFile(project).readText()
+        val waveform = tempFolder.newFolder()
+        assertTrue(ProjectStorage.saveCachedWaveform(waveform, 2, intArrayOf(7, 8)))
+
+        assertThrows(java.io.IOException::class.java) {
+            ProjectStorage.removeBeatAndPersist(project, waveform) { false }
+        }
+
+        assertEquals(previous, ProjectStorage.metadataFile(project).readText())
+        assertEquals("audio", beat.readText())
+        assertEquals(listOf(7, 8), ProjectStorage.loadCachedWaveform(waveform, 2)?.toList())
+        assertFalse(project.list()!!.any { it.endsWith(".tmp") })
+    }
+
+    @Test
+    fun removeBeatAndPersist_exceptionsAndCancellationRestoreTheAssignment() {
+        for (failure in listOf(java.io.IOException("Folder unavailable"), CancellationException("Cancelled"))) {
+            val project = tempFolder.newFolder()
+            val beat = ProjectStorage.assignBeatToProject(project, "original.wav") { it.writeText("audio") }
+            val previous = ProjectStorage.metadataFile(project).readText()
+
+            val thrown = assertThrows(failure.javaClass) {
+                ProjectStorage.removeBeatAndPersist(project, project) { throw failure }
+            }
+
+            assertEquals(failure, thrown)
+            assertEquals(previous, ProjectStorage.metadataFile(project).readText())
+            assertEquals("audio", beat.readText())
+        }
+    }
+
+    @Test
+    fun removeBeatAndPersist_failedSaveRestoresMissingMetadata() {
+        val project = tempFolder.newFolder()
+        val beat = File(project, "beat.wav").apply { writeText("audio") }
+
+        assertThrows(java.io.IOException::class.java) {
+            ProjectStorage.removeBeatAndPersist(project, project) { false }
+        }
+
+        assertFalse(ProjectStorage.metadataFile(project).exists())
+        assertEquals(beat, ProjectStorage.getProjectBeatFile(project))
+        assertEquals("audio", beat.readText())
+    }
+
+    @Test
+    fun removeBeatAndPersist_successSavesUnassignedMetadataBeforeDeletingAudio() {
+        val project = tempFolder.newFolder()
+        val beat = ProjectStorage.assignBeatToProject(project, "original.wav") { it.writeText("audio") }
+        val waveform = tempFolder.newFolder()
+        assertTrue(ProjectStorage.saveCachedWaveform(waveform, 2, intArrayOf(7, 8)))
+        var sharedMetadata: ProjectMetadata? = null
+
+        val metadata = ProjectStorage.removeBeatAndPersist(project, waveform) {
+            sharedMetadata = ProjectStorage.loadMetadata(it, "song")
+            assertNull(sharedMetadata!!.beatFile)
+            assertTrue(beat.isFile)
+            true
+        }
+
+        assertEquals(sharedMetadata, metadata)
+        assertFalse(beat.exists())
+        assertNull(ProjectStorage.loadCachedWaveform(waveform, 2))
+        assertNull(metadata.beatFile)
+        assertNull(metadata.beatOriginalName)
+    }
+
+    @Test
+    fun removeBeatAndPersist_rollbackFailureReportsBothFailuresAndKeepsAudio() {
+        val project = tempFolder.newFolder()
+        val beat = ProjectStorage.assignBeatToProject(project, "original.wav") { it.writeText("audio") }
+        val failure = java.io.IOException("Shared folder unavailable")
+
+        val thrown = assertThrows(java.io.IOException::class.java) {
+            ProjectStorage.removeBeatAndPersist(project, project) {
+                val file = ProjectStorage.metadataFile(project)
+                assertTrue(file.delete())
+                assertTrue(file.mkdir())
+                File(file, "keep").writeText("blocked metadata")
+                throw failure
+            }
+        }
+
+        assertEquals(listOf(failure), thrown.suppressed.toList())
+        assertEquals("audio", beat.readText())
+        assertEquals("blocked metadata", File(project, "project.json/keep").readText())
     }
 
     @Test

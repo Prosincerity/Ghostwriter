@@ -76,6 +76,27 @@ class DocumentProjectArchiveTest {
         assertThrows(IOException::class.java) { archive.save(project, 3) }
     }
 
+    @Test fun failedBeatRemovalKeepsTheLocalAssignmentWhenReconnectingAfterAPublishedSave() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        val beat = ProjectStorage.assignBeatToProject(project, "original.wav") { it.writeText("audio") }
+        draft(project, "lyrics")
+        archive.save(project, 3)
+        val previousMetadata = ProjectStorage.metadataFile(project).readText()
+
+        assertThrows(IOException::class.java) {
+            ProjectStorage.removeBeatAndPersist(project, project) {
+                archive.save(it, 3)
+                throw IOException("Folder failed after publishing the save")
+            }
+        }
+
+        assertEquals(0, archive.restore(localRoot))
+        assertEquals(previousMetadata, ProjectStorage.metadataFile(project).readText())
+        assertEquals(beat, ProjectStorage.getProjectBeatFile(project))
+        assertEquals("audio", beat.readText())
+        assertEquals("lyrics", ProjectStorage.loadLatest(project))
+    }
+
     @Test fun failedCreationOpeningAndReadBackLeaveEarlierVerifiedSaveIntact() {
         val project = ProjectStorage.createProjectDirectory(localRoot, "song")
         draft(project, "previous"); archive.save(project, 3)

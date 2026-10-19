@@ -153,9 +153,9 @@ fun EditorScreen(
     suspend fun removeBeatAndLoadMetadata(): ProjectMetadata =
         projectMutationMutex.withLock {
             withContext(Dispatchers.IO) {
-                ProjectStorage.removeBeatFromProject(projectDir, waveformDirectory)
-                if (!persistLyrics(projectDir, keepCount)) throw java.io.IOException("Couldn't update the lyric folder; local draft kept")
-                ProjectStorage.loadMetadata(projectDir, projectTitle)
+                ProjectStorage.removeBeatAndPersist(projectDir, waveformDirectory) {
+                    persistLyrics(it, keepCount)
+                }
             }
         }
 
@@ -237,6 +237,17 @@ fun EditorScreen(
                         onRemoved()
                     }
                 }
+            } catch (failure: Exception) {
+                if (failure is CancellationException) throw failure
+                withContext(Dispatchers.Main.immediate) {
+                    reportStorageFailure()
+                    if (removalRevision == projectMutationRevision.get()) {
+                        // The retained beat was released before removal. Reload
+                        // it so transport controls remain usable after a failure.
+                        isImportedBeatPreparation = false
+                        waveformRevision++
+                    }
+                }
             } finally {
                 isReassigningBeat = false
             }
@@ -316,11 +327,7 @@ fun EditorScreen(
                 if (removeBeatOnCancellation) {
                     beatPlayer.release()
                     isBeatReady = false
-                    val removalRevision = projectMutationRevision.incrementAndGet()
-                    val updatedMetadata = removeBeatAndLoadMetadata()
-                    if (removalRevision == projectMutationRevision.get()) {
-                        metadata = updatedMetadata
-                        beatFile = null
+                    removeBeatFromEditor {
                         waveformRevision++
                         isImportedBeatPreparation = false
                     }

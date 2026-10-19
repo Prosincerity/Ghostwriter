@@ -593,6 +593,52 @@ class EditorScreenTest {
     }
 
     @Test
+    fun failedBeatRemoval_reportsFailureRetainsAssignmentAndAllowsRetry() {
+        val title = uniqueProjectTitle("Failed beat removal")
+        val visible = mutableStateOf(true)
+        val project = createAssignedBeat(title, durationMs = 1_000, cacheWaveform = true)
+        val beat = ProjectStorage.getProjectBeatFile(project)!!
+        val previousMetadata = ProjectStorage.metadataFile(project).readText()
+        var failSave = true
+        var failures = 0
+        composeRule.setContent {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                if (visible.value) GhostwriterTheme {
+                    EditorScreen(title, { visible.value = false }, {},
+                        persistLyrics = { _, _ -> !failSave },
+                        onStorageFailure = { failures++ })
+                }
+            }
+        }
+        fun removeBeat() {
+            composeRule.onNodeWithText("Reassign").performClick()
+            val buttons = composeRule.onAllNodesWithText("Reassign")
+            buttons[buttons.fetchSemanticsNodes().lastIndex].performClick()
+        }
+        try {
+            waitUntilTextExists("editor-fixture")
+            removeBeat()
+            composeRule.waitUntil(5_000) { failures == 1 }
+            composeRule.onNodeWithText("editor-fixture").assertExists()
+            assertTrue(beat.isFile)
+            assertEquals(previousMetadata, ProjectStorage.metadataFile(project).readText())
+            assertTrue(ProjectStorage.loadCachedWaveform(
+                ProjectStorage.waveformCacheDirectory(context, project),
+                WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+            ) != null)
+            composeRule.runOnIdle { assertTrue(feedback.isEmpty()); failSave = false }
+            removeBeat()
+            waitUntilTextExists("No beat selected")
+            assertFalse(beat.exists())
+            assertEquals(null, ProjectStorage.loadMetadata(project, title).beatFile)
+            composeRule.runOnIdle { assertEquals(listOf(HapticFeedbackType.LongPress), feedback) }
+        } finally {
+            composeRule.runOnIdle { failSave = false }
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
     fun corruptBeat_retryThenRemove_clearsBeatAndMetadata() {
         val projectTitle = uniqueProjectTitle("Editor corrupt beat")
         val showEditor = mutableStateOf(true)

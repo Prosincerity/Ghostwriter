@@ -376,18 +376,58 @@ object ProjectStorage {
      */
     @Synchronized
     fun removeBeatFromProject(projectDir: File, waveformDirectory: File = projectDir) {
-        projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
-        beatMutationRevision++
-        invalidateWaveformCache(projectDir)
-        if (waveformDirectory != projectDir) invalidateWaveformCache(waveformDirectory)
+        removeBeatAndPersist(projectDir, waveformDirectory) { true }
+    }
 
-        val currentMeta = loadMetadata(projectDir, projectDir.name)
-        val updatedMeta = currentMeta.copy(
-            beatFile = null,
-            beatOriginalName = null,
-            markers = emptyList(),
-        )
-        saveMetadata(projectDir, updatedMeta)
+    /** Keep audio and its timeline until both local metadata and the shared save succeed. */
+    internal fun removeBeatAndPersist(
+        projectDir: File,
+        waveformDirectory: File,
+        persistLyrics: (File) -> Boolean,
+    ): ProjectMetadata {
+        val metadataFile = metadataFile(projectDir)
+        val previousMetadata = synchronized(this) {
+            val previous = if (metadataFile.exists()) metadataFile.readBytes() else null
+            val updated = loadMetadata(projectDir, projectDir.name).copy(
+                beatFile = null,
+                beatOriginalName = null,
+                markers = emptyList(),
+            )
+            if (!saveMetadata(projectDir, updated)) throw IOException("Couldn't save the beat's project information")
+            previous
+        }
+        try {
+            // Provider I/O must not hold the storage monitor: autosave acquires
+            // the persistent-storage monitor before reading project files.
+            if (!persistLyrics(projectDir)) throw IOException("Couldn't update the lyric folder; beat kept")
+        } catch (failure: Exception) {
+            try {
+                synchronized(this) {
+                    if (previousMetadata == null) {
+                        if (!metadataFile.delete()) throw IOException("Couldn't restore the beat's project information")
+                    } else {
+                        StagedFileWriter.replace(metadataFile, "beat-removal-", "Couldn't restore the beat's project information") {
+                            it.writeBytes(previousMetadata)
+                        }
+                    }
+                    // A provider can fail after publishing the tentative metadata.
+                    // Keep the restored assignment as a local draft on reconnect.
+                    val checkpoint = File(projectDir, ".lyric-archive.json")
+                    if (checkpoint.isFile && !checkpoint.delete()) throw IOException("Couldn't retain the beat's local assignment")
+                }
+            } catch (rollbackFailure: Exception) {
+                rollbackFailure.addSuppressed(failure)
+                throw rollbackFailure
+            }
+            throw failure
+        }
+        return synchronized(this) {
+            projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
+            beatMutationRevision++
+            invalidateWaveformCache(projectDir)
+            if (waveformDirectory != projectDir) invalidateWaveformCache(waveformDirectory)
+            loadMetadata(projectDir, projectDir.name)
+        }
     }
 
     private fun File.isSupportedAudioFile(): Boolean =
