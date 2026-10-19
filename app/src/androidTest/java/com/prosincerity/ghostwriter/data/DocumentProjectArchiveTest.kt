@@ -256,6 +256,51 @@ class DocumentProjectArchiveTest {
         assertEquals("latest shared lyrics", ProjectStorage.loadLatest(project))
     }
 
+    @Test fun failedRestoreCanBeRetriedWithoutPublishingPartialMetadata() {
+        val project = interruptedRestore()
+
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("latest lyrics", ProjectStorage.loadLatest(project))
+        assertEquals("latest title", ProjectStorage.loadMetadata(project, "fallback").title)
+        assertEquals("old lyrics", File(project, "autosave2.txt").readText())
+        assertFalse(File(project, ".lyric-restore.json").exists())
+    }
+
+    @Test fun editsAfterFailedRestoreArePreservedOnRetry() {
+        val project = interruptedRestore()
+        draft(project, "new local draft")
+        assertNotNull(ProjectStorage.renameProjectDirectory(project, "local title"))
+
+        assertEquals(0, archive.restore(localRoot))
+
+        assertEquals("new local draft", ProjectStorage.loadLatest(project))
+        assertEquals("local title", ProjectStorage.loadMetadata(project, "fallback").title)
+        assertFalse(File(project, ".lyric-restore.json").exists())
+    }
+
+    private fun interruptedRestore(): File {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "old title")
+        draft(project, "old lyrics")
+        archive.save(project, 3)
+        val oldWorkingCopy = File(localRoot, ".app-backup")
+        assertTrue(project.copyRecursively(oldWorkingCopy))
+        assertNotNull(ProjectStorage.renameProjectDirectory(project, "latest title"))
+        draft(project, "latest lyrics")
+        archive.save(project, 3)
+        assertTrue(project.deleteRecursively())
+        assertTrue(oldWorkingCopy.renameTo(project))
+        val blocked = File(project, "autosave2.txt/keep").apply {
+            assertTrue(parentFile!!.mkdir())
+            writeText("blocked backup")
+        }
+
+        assertThrows(IOException::class.java) { archive.restore(localRoot) }
+        assertTrue(blocked.delete())
+        assertTrue(blocked.parentFile!!.delete())
+
+        return project
+    }
+
     @Test fun restoringOldAppDataWithExtraBackupsLoadsTheLatestSharedLyrics() {
         val project = ProjectStorage.createProjectDirectory(localRoot, "song")
         for (index in 1..5) {

@@ -140,7 +140,18 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
             val latest = saved.firstOrNull()?.snapshot
             val project = File(localRoot, entry.name)
             synchronized(ProjectStorage) {
-                if (project.isDirectory) {
+                val journal = ProjectRestoreJournal(project, archiveKey)
+                val resuming = journal.exists
+                if (resuming && !journal.matches()) {
+                    // A real edit after a failed restore takes precedence over recovery.
+                    journal.clear()
+                    return@synchronized
+                }
+                // A crash while creating the journal may leave only its staging file.
+                val emptyRestore = project.listFiles()?.all {
+                    it.isFile && it.name.startsWith("save-") && it.extension == "tmp"
+                } == true
+                if (project.isDirectory && !resuming && !emptyRestore) {
                     val checkpoint = checkpoint(project)
                     // Timestamps alone cannot distinguish restored app data from
                     // a new edit. Only overwrite a working copy that still matches
@@ -149,27 +160,33 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                         checkpoint.savedAt >= (latest?.savedAt ?: 0L)) return@synchronized
                 }
                 if (latest == null) {
-                    if (children(entry.uri).any { it.name.startsWith("snapshot-") && it.name.endsWith(".json") }) {
+                    if (resuming || children(entry.uri).any { it.name.startsWith("snapshot-") && it.name.endsWith(".json") }) {
                         throw IOException("This folder contains a project with no readable lyric saves")
                     }
                     return@synchronized
                 }
                 check(project.isDirectory || project.mkdirs()) { "Couldn't restore project" }
                 val restoredSnapshots = saved.take(10)
+                val olderThanRestored = restoredSnapshots.last().snapshot.savedAt - 1L
+                val replacements = restoredSnapshots.mapIndexed { index, record ->
+                    "autosave${index + 1}.txt" to (record.snapshot.lyrics to record.snapshot.savedAt)
+                }.toMap() + mapOf(
+                    ProjectLyricsStorage.MANUAL_FILE_NAME to (latest.lyrics to latest.savedAt),
+                    "project.json" to (latest.metadata to null),
+                )
+                // Persist both sides of every file replacement before changing any lyrics.
+                journal.prepare(replacements, olderThanRestored)
                 for ((index, record) in restoredSnapshots.withIndex()) {
                     val file = File(project, "autosave${index + 1}.txt")
-                    StagedFileWriter.writeText(file, record.snapshot.lyrics)
-                    file.setLastModified(record.snapshot.savedAt)
+                    restoreLyrics(file, record.snapshot.lyrics, record.snapshot.savedAt)
                 }
                 val manual = File(project, ProjectLyricsStorage.MANUAL_FILE_NAME)
-                StagedFileWriter.writeText(manual, latest.lyrics)
-                manual.setLastModified(latest.savedAt)
+                restoreLyrics(manual, latest.lyrics, latest.savedAt)
                 StagedFileWriter.writeText(ProjectStorage.metadataFile(project), latest.metadata)
                 // App-backup restores can reset local file ages. Keep extra backups
                 // and legacy title snapshots, but rank them behind the verified set.
                 // Only change their ages after the restored lyrics are safely written.
                 val restoredNames = restoredSnapshots.indices.map { "autosave${it + 1}.txt" }.toSet() + manual.name
-                val olderThanRestored = restoredSnapshots.last().snapshot.savedAt - 1L
                 project.listFiles { file ->
                     file.isFile && file.extension == "txt" && file.name !in restoredNames
                 }?.forEach { file ->
@@ -178,10 +195,20 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                     }
                 }
                 rememberSave(project, latest)
+                journal.clear()
                 restored++
             }
         }
         return restored
+    }
+
+    private fun restoreLyrics(file: File, lyrics: String, savedAt: Long) {
+        StagedFileWriter.replace(file, "save-", "Couldn't restore ${file.name}") { staged ->
+            staged.writeText(lyrics)
+            if (!staged.setLastModified(savedAt) || staged.lastModified() != savedAt) {
+                throw IOException("Couldn't restore the age of ${file.name}")
+            }
+        }
     }
 
     fun delete(projectId: String) {

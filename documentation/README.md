@@ -102,7 +102,10 @@ Shared saves are immutable, checksummed JSON snapshots containing lyrics and
 project metadata. A new save is synced and read back before older verified saves
 are pruned to the configured backup count. Corrupt or incomplete saves fall back
 to earlier verified snapshots. Reconnecting preserves newer local drafts. A
-failed shared save keeps the local working copy and reports the failure; users
+private local restore journal records the original and intended file states
+before recovery writes begin. Failed restores can resume on reconnect;
+subsequent local edits take precedence. The journal is removed after recovery.
+A failed shared save keeps the local working copy and reports the failure; users
 must reconnect the folder before uninstalling to preserve those drafts. Folder
 access is remembered in SharedPreferences and must be granted again after
 reinstall. Arbitrary plain-text import/export remains planned.
