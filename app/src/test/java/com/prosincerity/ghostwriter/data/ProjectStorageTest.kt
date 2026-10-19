@@ -445,6 +445,90 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun autosave_afterClockRollbackLoadsTheNewEditInsteadOfTheOlderManualSave() {
+        val project = tempFolder.newFolder()
+        File(project, "lyrics.txt").apply {
+            writeText("old manual lyrics")
+            assertTrue(setLastModified(2_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new lyrics", 3, now = { 1_000L }))
+
+        assertEquals("new lyrics", ProjectStorage.loadLatest(project))
+        assertEquals("old manual lyrics", File(project, "lyrics.txt").readText())
+    }
+
+    @Test
+    fun autosave_atTheSameClockTimeLoadsTheNewEditInsteadOfTheOlderManualSave() {
+        val project = tempFolder.newFolder()
+        File(project, "lyrics.txt").apply {
+            writeText("old manual lyrics")
+            assertTrue(setLastModified(2_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new lyrics", 3, now = { 2_000L }))
+
+        assertEquals("new lyrics", ProjectStorage.loadLatest(project))
+    }
+
+    @Test
+    fun manualSave_afterClockRollbackOutranksLegacyLyricsAndPreservesHistory() {
+        val project = tempFolder.newFolder()
+        val legacy = File(project, "old-title.txt").apply {
+            writeText("legacy lyrics")
+            assertTrue(setLastModified(3_000L))
+        }
+        File(project, "autosave1.txt").apply {
+            writeText("previous autosave")
+            assertTrue(setLastModified(2_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.saveManual(project, "lyrics.txt", "new lyrics", 3, now = { 1_000L }))
+
+        assertEquals("new lyrics", ProjectStorage.loadLatest(project))
+        assertEquals("new lyrics", File(project, "lyrics.txt").readText())
+        assertEquals("previous autosave", File(project, "autosave2.txt").readText())
+        assertEquals(2_000L, File(project, "autosave2.txt").lastModified())
+        assertEquals("legacy lyrics", legacy.readText())
+        assertEquals(3_000L, legacy.lastModified())
+    }
+
+    @Test
+    fun autosave_afterClockRollbackOutranksMixedCaseBackupsWithEmptyLyrics() {
+        val project = tempFolder.newFolder()
+        val legacy = File(project, "AUTOSAVE2.TXT").apply {
+            writeText("legacy lyrics")
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "", 3, now = { 1_000L }))
+
+        assertEquals("", ProjectStorage.loadLatest(project))
+        assertEquals("", File(project, "autosave1.txt").readText())
+        assertEquals("legacy lyrics", legacy.readText())
+        assertEquals(3_000L, legacy.lastModified())
+    }
+
+    @Test
+    fun autosave_afterClockRollbackRefreshesAStaleMatchingFirstSlot() {
+        val project = tempFolder.newFolder()
+        File(project, "autosave1.txt").apply {
+            writeText("earlier verse")
+            assertTrue(setLastModified(1_000L))
+        }
+        File(project, "lyrics.txt").apply {
+            writeText("recovered verse")
+            assertTrue(setLastModified(3_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "earlier verse", 3, now = { 2_000L }))
+
+        assertEquals("earlier verse", ProjectStorage.loadLatest(project))
+        assertEquals("recovered verse", File(project, "lyrics.txt").readText())
+        assertFalse(File(project, "autosave2.txt").exists())
+    }
+
+    @Test
     fun autosave_matchingAnOlderFirstSlotPersistsTheEditOverNewerSnapshots() {
         for (newerSnapshot in listOf("autosave2.txt", "lyrics.txt")) {
             val project = tempFolder.newFolder()
@@ -474,12 +558,14 @@ class ProjectStorageTest {
         ProjectStorage.rotateAndSave(projectDir, "Verse 1", keepCount = 3)
         assertEquals("Verse 1", File(projectDir, "autosave1.txt").readText())
         assertFalse(File(projectDir, "autosave2.txt").exists())
+        val previousTime = File(projectDir, "autosave1.txt").lastModified()
 
         ProjectStorage.rotateAndSave(projectDir, "Verse 1", keepCount = 3)
 
         val autosave1 = File(projectDir, "autosave1.txt")
         assertTrue(autosave1.exists())
         assertEquals("Verse 1", autosave1.readText())
+        assertEquals(previousTime, autosave1.lastModified())
         assertFalse(File(projectDir, "autosave2.txt").exists())
     }
 

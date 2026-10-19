@@ -1,17 +1,19 @@
 package com.prosincerity.ghostwriter.data
 
 import java.io.File
+import java.io.IOException
 
 /** Manual lyric snapshots and the rolling autosave backup ring. */
 internal object ProjectLyricsStorage {
     const val MANUAL_FILE_NAME = "lyrics.txt"
+    private val autosaveFileName = Regex("autosave(?:[1-9]|10)\\.txt", RegexOption.IGNORE_CASE)
     /** Most recent readable manual save or autosave, falling back through the backup ring. */
     fun loadLatest(projectDir: File): String {
         // Legacy title snapshots remain readable after UUID migration and rename.
         val projectFiles = projectDir.listFiles().orEmpty()
         val manualFiles = projectFiles.filter { file ->
             file.isFile && file.extension == "txt" &&
-                !Regex("autosave(?:[1-9]|10)\\.txt", RegexOption.IGNORE_CASE).matches(file.name)
+                !autosaveFileName.matches(file.name)
         }
         val manualFile = manualFiles.filter { it.readTextIfFile() != null }
             .maxWithOrNull(compareBy<File> { it.lastModified() }.thenBy { it.name == MANUAL_FILE_NAME })
@@ -45,14 +47,25 @@ internal object ProjectLyricsStorage {
     private fun File.readTextIfFile(): String? =
         if (isFile) runCatching { readText() }.getOrNull() else null
 
-    fun saveManual(projectDir: File, fileName: String, content: String, keepCount: Int): Boolean =
+    fun saveManual(
+        projectDir: File,
+        fileName: String,
+        content: String,
+        keepCount: Int,
+        now: () -> Long = System::currentTimeMillis,
+    ): Boolean =
         runCatching {
-            StagedFileWriter.writeText(File(projectDir, fileName), content)
-            rotateAndSave(projectDir, content, keepCount)
+            writeSnapshot(File(projectDir, fileName), content, now)
+            rotateAndSave(projectDir, content, keepCount, now)
         }.getOrDefault(false)
 
     /** An unchanged autosave does not consume another backup slot. */
-    fun rotateAndSave(projectDir: File, content: String, keepCount: Int): Boolean =
+    fun rotateAndSave(
+        projectDir: File,
+        content: String,
+        keepCount: Int,
+        now: () -> Long = System::currentTimeMillis,
+    ): Boolean =
         runCatching {
             require(keepCount in Settings.COUNT_OPTIONS)
             val newest = File(projectDir, "autosave1.txt")
@@ -61,7 +74,7 @@ internal object ProjectLyricsStorage {
             if (previousNewest != content) {
                 // A failed current save must not overwrite any existing history.
                 // Retain the previous newest snapshot for slot 2 after committing.
-                StagedFileWriter.writeText(newest, content)
+                writeSnapshot(newest, content, now)
                 for (i in keepCount downTo 2) {
                     val src = File(projectDir, "autosave${i - 1}.txt")
                     val dst = File(projectDir, "autosave$i.txt")
@@ -82,7 +95,7 @@ internal object ProjectLyricsStorage {
             } else if (loadLatest(projectDir) != content) {
                 // Recovery may prefer a newer manual save or out-of-order backup.
                 // Reassert this edit without rotating away that recovery history.
-                StagedFileWriter.writeText(newest, content)
+                writeSnapshot(newest, content, now)
             }
             // Prune only after the latest snapshot is safe. Settings changes
             // still apply when the lyrics haven't changed.
@@ -91,4 +104,19 @@ internal object ProjectLyricsStorage {
                 if (oldBackup.isFile) oldBackup.delete()
             }
         }.isSuccess
+
+    private fun writeSnapshot(target: File, content: String, now: () -> Long) {
+        // Recovery ranks snapshots by age. Keep new edits ahead of every
+        // existing snapshot even after a clock rollback or a same-tick save.
+        val previousTime = target.parentFile.listFiles().orEmpty().asSequence()
+            .filter { it.isFile && (it.extension == "txt" || autosaveFileName.matches(it.name)) }
+            .maxOfOrNull { it.lastModified() } ?: 0L
+        val savedAt = maxOf(now(), Math.addExact(previousTime, 1L))
+        StagedFileWriter.replace(target, "save-", "Couldn't replace ${target.name}") { staged ->
+            staged.writeText(content)
+            if (!staged.setLastModified(savedAt) || staged.lastModified() <= previousTime) {
+                throw IOException("Couldn't preserve the lyric save's order")
+            }
+        }
+    }
 }
