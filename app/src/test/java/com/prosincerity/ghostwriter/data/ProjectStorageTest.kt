@@ -612,6 +612,30 @@ class ProjectStorageTest {
     }
 
     @Test
+    fun autosave_duplicateCopiesDoNotDisplaceDistinctHistory() {
+        val project = tempFolder.newFolder()
+        // Interrupted rotations can leave two copies of the same snapshot.
+        for (slot in 1..2) {
+            File(project, "autosave$slot.txt").apply {
+                writeText("recent draft")
+                assertTrue(setLastModified(3_000L))
+            }
+        }
+        File(project, "autosave3.txt").apply {
+            writeText("earlier draft")
+            assertTrue(setLastModified(2_000L))
+        }
+
+        assertTrue(ProjectLyricsStorage.rotateAndSave(project, "new draft", 3, now = { 4_000L }))
+
+        assertEquals("new draft", ProjectStorage.loadLatest(project))
+        assertEquals("recent draft", File(project, "autosave2.txt").readText())
+        assertEquals(3_000L, File(project, "autosave2.txt").lastModified())
+        assertEquals("earlier draft", File(project, "autosave3.txt").readText())
+        assertEquals(2_000L, File(project, "autosave3.txt").lastModified())
+    }
+
+    @Test
     fun autosave_equalBackupAgesRetainEarlierSlotsFirst() {
         val project = tempFolder.newFolder()
         for (slot in 1..3) {

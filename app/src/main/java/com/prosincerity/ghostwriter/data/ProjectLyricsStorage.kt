@@ -72,8 +72,9 @@ internal object ProjectLyricsStorage {
             val previousNewest = newest.readTextIfFile()
             if (previousNewest != content) {
                 // Recovery can select any slot. Capture the newest readable
-                // history before writing over files that may contain it.
-                val history = autosaveHistory(projectDir).take(keepCount - 1)
+                // history before writing over files that may contain it. Duplicate
+                // copies of one snapshot must not displace another prior draft.
+                val history = autosaveHistory(projectDir).distinct().take(keepCount - 1)
                 val pendingHistory = history.toMutableSet()
                 // A failed current save must not overwrite any existing history.
                 writeSnapshot(newest, content, now)
