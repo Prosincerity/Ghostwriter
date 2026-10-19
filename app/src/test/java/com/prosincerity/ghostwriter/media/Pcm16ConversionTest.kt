@@ -113,7 +113,7 @@ class Pcm16ConversionTest {
     @Test
     fun invalidBufferRangesDoNotChangeTheSourceBuffer() {
         val buffer = ByteBuffer.allocate(8).apply { position(1) }
-        for ((offset, size) in listOf(-1 to 2, 9 to 0, 0 to 9, 2 to -3)) {
+        for ((offset, size) in listOf(-1 to 2, 9 to 0, 0 to 9, 2 to -3, 4 to -2)) {
             assertThrows(IllegalArgumentException::class.java) {
                 Pcm16Conversion.convertBuffer(buffer, offset, size, 0,
                     PcmFormat(1, 44100, PcmEncoding.PCM_16BIT))

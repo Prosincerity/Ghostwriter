@@ -14,6 +14,7 @@ internal object Pcm16Conversion {
         presentationTimeUs: Long,
         format: PcmFormat,
     ): ByteArray {
+        require(size >= 0) { "PCM buffer size must not be negative" }
         val bytesPerSample = format.encoding.bytesPerSample
         val channels = format.channelCount
         val rate = format.sampleRate
