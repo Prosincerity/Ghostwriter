@@ -101,7 +101,9 @@ app-specific and must be reassigned after reinstall.
 Shared saves are immutable, checksummed JSON snapshots containing lyrics and
 project metadata. A new save is synced and read back before older verified saves
 are pruned to the configured backup count. Corrupt or incomplete saves fall back
-to earlier verified snapshots. Reconnecting preserves newer local drafts. A
+to earlier verified snapshots. Reconnecting preserves newer local drafts. If
+local lyric files are missing, it restores shared lyrics while preserving local
+metadata edits; a saved empty lyric file still counts as an intentional draft. A
 private local restore journal records the original and intended file states
 before recovery writes begin. Failed restores can resume on reconnect;
 subsequent local edits take precedence. The journal is removed after recovery.

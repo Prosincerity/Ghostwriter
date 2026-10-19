@@ -64,7 +64,7 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
     private val archiveKey: String get() = "${root.authority}/${DocumentsContract.getDocumentId(root)}"
     private data class Checkpoint(val fingerprint: String, val savedAt: Long)
 
-    private fun workingCopy(project: File): PersistentProjectSnapshot {
+    private fun workingMetadata(project: File): String {
         val file = ProjectStorage.metadataFile(project)
         val json = runCatching { JSONObject(file.readText()) }.getOrNull()
         val metadata = ProjectStorage.loadMetadata(project, project.name)
@@ -73,8 +73,12 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
             createdAt = if (json?.has("createdAt") == true) metadata.createdAt else fileTime,
             updatedAt = if (json?.has("updatedAt") == true) metadata.updatedAt else fileTime,
         )
-        return PersistentProjectSnapshot(project.name, 1L, stable.toJsonObject().toString(), ProjectStorage.loadLatest(project))
+        return stable.toJsonObject().toString()
     }
+
+    private fun workingCopy(project: File): PersistentProjectSnapshot = PersistentProjectSnapshot(
+        project.name, 1L, workingMetadata(project), ProjectStorage.loadLatest(project),
+    )
 
     private fun checkpoint(project: File): Checkpoint? = runCatching {
         val json = JSONObject(File(project, ".lyric-archive.json").readText())
@@ -151,8 +155,13 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                 val emptyRestore = project.listFiles()?.all {
                     it.isFile && it.name.startsWith("save-") && it.extension == "tmp"
                 } == true
-                if (project.isDirectory && !resuming && !emptyRestore) {
-                    val checkpoint = checkpoint(project)
+                // An actual empty draft still has a lyric file. Missing files
+                // must recover rather than become a new blank shared save.
+                val missingLyrics = project.isDirectory && project.listFiles()?.none {
+                    it.isFile && (it.extension == "txt" || ProjectLyricsStorage.autosaveFileName.matches(it.name))
+                } == true
+                val checkpoint = checkpoint(project)
+                if (project.isDirectory && !resuming && !emptyRestore && !missingLyrics) {
                     // Timestamps alone cannot distinguish restored app data from
                     // a new edit. Only overwrite a working copy that still matches
                     // its last verified shared save and is behind the archive.
@@ -166,13 +175,25 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                     return@synchronized
                 }
                 check(project.isDirectory || project.mkdirs()) { "Couldn't restore project" }
+                val localMetadata = if (missingLyrics || resuming) {
+                    // A retained checkpoint identifies the pre-edit metadata
+                    // without trusting wall-clock times. If its save has already
+                    // been pruned, conservatively retain readable local metadata.
+                    val validMetadata = runCatching { JSONObject(ProjectStorage.metadataFile(project).readText()) }
+                        .getOrNull()
+                    validMetadata?.let { workingMetadata(project) }
+                } else null
+                val baseline = saved.firstOrNull {
+                    it.snapshot.savedAt == checkpoint?.savedAt && it.snapshot.contentFingerprint == checkpoint.fingerprint
+                }?.snapshot
+                val restoredMetadata = localMetadata?.takeIf { it != baseline?.metadata } ?: latest.metadata
                 val restoredSnapshots = saved.take(10)
                 val olderThanRestored = restoredSnapshots.last().snapshot.savedAt - 1L
                 val replacements = restoredSnapshots.mapIndexed { index, record ->
                     "autosave${index + 1}.txt" to (record.snapshot.lyrics to record.snapshot.savedAt)
                 }.toMap() + mapOf(
                     ProjectLyricsStorage.MANUAL_FILE_NAME to (latest.lyrics to latest.savedAt),
-                    "project.json" to (latest.metadata to null),
+                    "project.json" to (restoredMetadata to null),
                 )
                 // Persist both sides of every file replacement before changing any lyrics.
                 journal.prepare(replacements, olderThanRestored)
@@ -182,7 +203,7 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
                 }
                 val manual = File(project, ProjectLyricsStorage.MANUAL_FILE_NAME)
                 restoreLyrics(manual, latest.lyrics, latest.savedAt)
-                StagedFileWriter.writeText(ProjectStorage.metadataFile(project), latest.metadata)
+                StagedFileWriter.writeText(ProjectStorage.metadataFile(project), restoredMetadata)
                 // App-backup restores can reset local file ages. Keep extra backups
                 // and legacy title snapshots, but rank them behind the verified set.
                 // Only change their ages after the restored lyrics are safely written.

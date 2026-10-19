@@ -64,6 +64,153 @@ class DocumentProjectArchiveTest {
         assertTrue(ProjectStorage.saveManual(project, "unused title", text, 3))
     }
 
+    private fun removeLocalLyrics(project: File) {
+        val lyrics = project.listFiles()!!.filter { it.extension == "txt" }
+        assertTrue(lyrics.isNotEmpty())
+        lyrics.forEach { assertTrue(it.delete()) }
+    }
+
+    @Test fun missingLyricFilesRecoverFromTheSharedSaveWithoutPublishingBlankLyrics() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "retained verse 字"); archive.save(project, 3)
+        removeLocalLyrics(project)
+
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("retained verse 字", ProjectStorage.loadLatest(project))
+        archive.save(project, 3)
+        assertEquals(1, savedFiles(project.name).size)
+    }
+
+    @Test fun missingLyricRecoveryPreservesLocalMetadataEditsDespiteClockRollback() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "retained verse"); archive.save(project, 3)
+        val edited = ProjectStorage.loadMetadata(project, "song").copy(title = "local title", notes = "new notes")
+        assertTrue(ProjectStorage.saveMetadata(project, edited, now = { 1_000L }))
+        removeLocalLyrics(project)
+
+        assertEquals(1, archive.restore(localRoot))
+        val metadata = ProjectStorage.loadMetadata(project, "fallback")
+        assertEquals("local title", metadata.title)
+        assertEquals("new notes", metadata.notes)
+        assertEquals("retained verse", ProjectStorage.loadLatest(project))
+        archive.save(project, 3)
+        assertTrue(project.deleteRecursively())
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("local title", ProjectStorage.loadMetadata(project, "fallback").title)
+        assertEquals("retained verse", ProjectStorage.loadLatest(project))
+    }
+
+    @Test fun missingLyricRecoveryUsesSharedMetadataWhenLocalMetadataWasUnchanged() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "old title")
+        draft(project, "old verse"); archive.save(project, 3)
+        val oldMetadata = ProjectStorage.metadataFile(project).readText()
+        val oldCheckpoint = File(project, ".lyric-archive.json").readText()
+        assertNotNull(ProjectStorage.renameProjectDirectory(project, "shared title"))
+        draft(project, "latest shared verse"); archive.save(project, 3)
+        ProjectStorage.metadataFile(project).writeText(oldMetadata)
+        File(project, ".lyric-archive.json").writeText(oldCheckpoint)
+        removeLocalLyrics(project)
+
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("latest shared verse", ProjectStorage.loadLatest(project))
+        assertEquals("shared title", ProjectStorage.loadMetadata(project, "fallback").title)
+    }
+
+    @Test fun intentionallyEmptyLocalLyricsRemainANewerDraft() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "archived verse"); archive.save(project, 3)
+        draft(project, "")
+
+        assertEquals(0, archive.restore(localRoot))
+        assertEquals("", ProjectStorage.loadLatest(project))
+    }
+
+    @Test fun missingLyricRecoveryKeepsLocalMetadataWhenResumingAFailedRestore() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "previous verse"); archive.save(project, 3)
+        draft(project, "latest verse"); archive.save(project, 3)
+        assertNotNull(ProjectStorage.renameProjectDirectory(project, "local title"))
+        removeLocalLyrics(project)
+        val blocker = File(project, "autosave2.txt/keep").apply {
+            assertTrue(parentFile!!.mkdir())
+            writeText("unrelated file")
+        }
+
+        assertThrows(IOException::class.java) { archive.restore(localRoot) }
+        assertEquals("local title", ProjectStorage.loadMetadata(project, "fallback").title)
+        assertEquals("unrelated file", blocker.readText())
+        assertTrue(blocker.delete())
+        assertTrue(blocker.parentFile!!.delete())
+
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("latest verse", ProjectStorage.loadLatest(project))
+        assertEquals("previous verse", File(project, "autosave2.txt").readText())
+        assertEquals("local title", ProjectStorage.loadMetadata(project, "fallback").title)
+        assertFalse(File(project, ".lyric-restore.json").exists())
+    }
+
+    @Test fun missingLyricRecoveryUsesSharedMetadataWhenLocalMetadataIsUnreadable() {
+        for (corrupt in listOf(false, true)) {
+            val project = ProjectStorage.createProjectDirectory(localRoot, "shared title")
+            draft(project, "archived verse"); archive.save(project, 3)
+            removeLocalLyrics(project)
+            val metadata = ProjectStorage.metadataFile(project)
+            if (corrupt) metadata.writeText("incomplete") else assertTrue(metadata.delete())
+
+            assertEquals(1, archive.restore(localRoot))
+            assertEquals("shared title", ProjectStorage.loadMetadata(project, "fallback").title)
+            assertEquals("archived verse", ProjectStorage.loadLatest(project))
+        }
+    }
+
+    @Test fun missingLyricsCannotRepairCorruptSharedSavesWithABlankDraft() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "archived verse"); archive.save(project, 3)
+        removeLocalLyrics(project)
+        val saved = savedFiles(project.name).single()
+        resolver.openOutputStream(saved, "wt")!!.use { it.write("incomplete".toByteArray()) }
+
+        assertThrows(IOException::class.java) { archive.restore(localRoot) }
+        assertEquals(listOf(saved), savedFiles(project.name))
+        assertFalse(File(project, "lyrics.txt").exists())
+    }
+
+    @Test fun missingLyricRecoveryPreservesMetadataWhenItsCheckpointSaveWasPruned() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "first verse"); archive.save(project, 3)
+        val checkpoint = File(project, ".lyric-archive.json").readText()
+        for (index in 2..4) {
+            draft(project, "verse $index"); archive.save(project, 3)
+        }
+        File(project, ".lyric-archive.json").writeText(checkpoint)
+        assertNotNull(ProjectStorage.renameProjectDirectory(project, "local title"))
+        removeLocalLyrics(project)
+
+        assertEquals(1, archive.restore(localRoot))
+        assertEquals("verse 4", ProjectStorage.loadLatest(project))
+        assertEquals("local title", ProjectStorage.loadMetadata(project, "fallback").title)
+    }
+
+    @Test fun missingLyricRecoveryCannotOverwriteLocalMetadataThatCannotBeRead() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "song")
+        draft(project, "archived verse"); archive.save(project, 3)
+        assertNotNull(ProjectStorage.renameProjectDirectory(project, "local title"))
+        removeLocalLyrics(project)
+        val metadata = ProjectStorage.metadataFile(project)
+        val original = metadata.readText()
+        assertTrue(metadata.setReadable(false, false))
+        try {
+            assertFalse(metadata.canRead())
+            assertThrows(IOException::class.java) { archive.restore(localRoot) }
+        } finally {
+            assertTrue(metadata.setReadable(true, true))
+        }
+
+        assertEquals(original, metadata.readText())
+        assertFalse(File(project, "lyrics.txt").exists())
+        assertEquals(1, savedFiles(project.name).size)
+    }
+
     @Test fun unavailableFolderQueriesAndCreationReportUsefulFailures() {
         val project = ProjectStorage.createProjectDirectory(localRoot, "song")
         for (kind in listOf("nullRoot", "emptyRoot", "nullChildren", "createFolder")) {
