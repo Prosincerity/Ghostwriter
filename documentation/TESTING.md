@@ -1,424 +1,149 @@
 # Testing
 
-## Testing policy
+This guide defines verification scope, test design, device access, and coverage gates.
 
-Coverage is a safety net, not the goal. Write tests that protect behavior and
-observable outcomes; never add tests solely to reach a coverage number.
+## Verification scope
 
-### Verification scope
+Run checks locally, headless, and offline after caching dependencies and SDK components.
+The repository has no GitHub Actions test workflow.
 
-Run the smallest check that can catch the change. Never run the full suite
-per step.
+| Change stage | Required checks |
+| --- | --- |
+| Documentation only | Review the diff, commands, identifiers, and links; do not run Gradle or device tests |
+| Code step | Compile and run JVM tests for the touched class; use Android compilation for Android-only code |
+| Logical code batch | Run the full JVM suite once |
+| Android-bound change | Run one relevant device class or method for media, SAF, Compose UI, or permissions |
+| Merge gate | Pass both full suites, combined and aggregated module gates, and changed-line coverage |
 
-- **Per code step:** compile and run unit tests for the touched class only:
-  `./gradlew --offline testDebugUnitTest --tests "*ClassName*"`. Gradle compiles
-  the code and tests as part of this task. For Android-only code, use the
-  relevant compile task and the focused device check below.
-- **Per logical batch of code changes:** run the full JVM unit suite once with
-  `./gradlew --offline testDebugUnitTest`.
-- **Instrumented/device tests during development:** run only for changes to
-  Android-bound code, such as MediaPlayer/MediaCodec lifecycle, SAF, Compose UI,
-  or permissions. Select one class or method with
-  `-Pandroid.testInstrumentationRunnerArguments.class=package.ClassName[#method]`.
-  Never run the whole Android suite per step or commit.
-- **Documentation-only changes:** review the diff and referenced commands;
-  Gradle and device tests are unnecessary.
-- Do not rerun a passing check unless the code it covers changed.
-- If a test fails, fix the cause or report it. Never skip, delete, or weaken a
-  failing test to get green.
+Do not rerun passing checks unless covered code changes. Reserve full Android
+and coverage runs for the merge gate. Fix or report failures; never skip,
+delete, or weaken a failing test to obtain a pass.
 
-Prefer JVM tests by keeping logic UI-free. Each code commit must compile and
-pass its focused checks. Before merging, the full JVM and Android suites and
-combined/aggregated coverage gates must pass for the final code.
-Full Android runs take more than five minutes, so reserve them and full
-coverage verification for the merge gate.
+## Test design
 
-### Workflow and assertions
-
-- **Bug fixes:** write a failing regression test first, run it, and confirm
-  that it fails for the intended bug rather than a setup or compilation error.
-  Then fix the production code and confirm the test passes. Keep regression
-  checks within the verification scope above.
-- **New logic:** write tests alongside the code, using test-first development
-  where the design is clear. Keep one behavior per test; multiple assertions
-  are appropriate when they describe the same outcome.
-- Assert public behavior and results. Do not assert on private methods or
-  internal call order unless the order itself is the contract.
-- Every test must contain meaningful assertions. Tests that only execute code
-  to increase coverage are forbidden. Merely checking that code does not throw
-  is insufficient unless not throwing is the specified behavior.
-- Cover happy paths, applicable boundaries (empty, null, maximum values,
-  off-by-one), errors, and invalid input. Branch coverage concerns decisions:
-  exercise both outcomes of each decision.
-- No `@Ignore` or disabled tests without a written reason and a linked tracked
-  issue describing the work required to restore them.
-
-### Test layers and isolation
-
-Follow the test pyramid: many fast JVM unit tests, fewer integration tests,
-and very few end-to-end tests. Keep Activities, Fragments, Composables, and DI
-glue thin. Move logic into ViewModels or use cases so it can be unit-tested,
-following the repository's existing architecture and dependency constraints.
-Do not force UI or wiring into unit-test coverage; test UI behavior through
-UI tests or leave those layers thin.
-
-Tests must be deterministic and independent. Do not share mutable state,
-rely on test order, or depend on real time, network access, randomness, or
-existing filesystem state. Use controlled clocks and coroutine dispatchers,
-fixed inputs, and fakes. Tests of storage behavior may use isolated temporary
-files initialized and cleaned up by the test. Use tiny fixtures and no real
-network. Do not use sleeps; use waitUntil, idling, controlled dispatchers, or
-explicit synchronization. Never fix a flaky test by adding retries.
-Report flaky tests and find and remove the nondeterminism.
-
-Keep the unit suite fast. Report any test taking more than a few seconds with
-its name and measured duration. Keep fixtures next to the tests that use them;
-parser tests should use minimal committed sample files. Do not put secrets,
-real user data, or production endpoints in tests.
-
-### Coverage requirements
-
-Use JaCoCo to report **instruction and branch coverage**. Gate at module level,
-not per file, using weighted covered/total counters rather than averaging
-file percentages. The default baseline is approximately **80% instruction /
-70% branch**, enforced as those minimums. Logic-heavy modules (domain, data,
-parsing) use **90% instruction / 85% branch**. Apply stricter gates to actual
-modules; this does not require splitting the current app into new modules.
-Metrics with no executable instructions or branches are not applicable.
-
-New or changed executable lines must have at least **80% diff coverage**.
-Report unit and instrumented coverage separately and retain the
-aggregated coverage dashboard. Enforce fixed module minimums on
-combined coverage from both suites before merging, keeping each module and
-variant separate. Focused development runs need not satisfy module-wide gates.
-Use the separate reports to assess each suite's responsibilities; Android UI
-does not have to meet the unit-test threshold. Changed-line coverage uses the
-combined JaCoCo XML report.
-
-Exclude non-logic code from policy reports: generated Hilt/Dagger, Room, Data Binding,
-`BuildConfig`, and `R` code; Compose previews; plain data classes; and trivial
-DI modules. Exclusions must be narrow and must not hide handwritten logic,
-custom data-class behavior, or logic embedded in UI layers.
-
-The shared exclusion list is in `gradle/coverage-policy.json`. Current exclusions
-cover Android resource/build classes, the dedicated Home previews, and reviewed
-plain data-holder classes. Data classes with custom behavior, such as
-`ProjectSummary`, `SystemFontFile`, and `ProjectMetadata`, remain included.
-There are currently no Hilt/Dagger, Room, Data Binding, or DI modules; add narrow
-generated-code exclusions if those tools are introduced with approval, rather
-than blanket patterns that could hide handwritten implementations. The AGP
-dashboard shows its raw data; the verifier applies the same exclusions before
-summing its module counters, and the filtered JaCoCo HTML/XML reports omit them.
-
-If a coverage gate fails, add meaningful tests. Do not lower
-thresholds or add exclusions without explicitly documenting the justification
-in the change. This policy replaces the former blanket per-file requirement:
-module gates and focused tests protect logic without demanding artificial
-unit coverage of Android UI and generated wiring.
-
-### Local execution
-
-Tests must run headless and offline. Verification runs locally; there are no
-GitHub Actions workflows. Install SDK components, dependencies, and any
-emulator images before offline verification, then pass `--offline` to Gradle
-once dependencies are cached. Test execution must not require downloads or
-production services. Retain test and coverage reports for review, including
-any flakiness or slow tests. See the commands below for local verification.
+- For bug fixes, write and run a regression test first. Confirm failure comes
+  from the intended bug, then fix it and confirm the test passes.
+- Write tests alongside new logic; use test-first development when the design
+  is clear. Keep one behavior per test and assert observable outcomes.
+- Test private details or call order only when they form part of the contract.
+  A no-throw assertion is valid only when not throwing is the specified behavior.
+- Cover happy paths, empty/null/maximum/off-by-one boundaries, errors, invalid
+  input, and both outcomes of applicable decisions.
+- Keep UI and wiring thin. Put logic in UI-free classes; use many JVM tests,
+  fewer integration tests, and very few end-to-end tests.
+- Use controlled clocks, dispatchers, fakes, and isolated temporary storage.
+  Avoid shared mutable state, test-order dependencies, real time, network,
+  randomness, and pre-existing filesystem state.
+- Use idling, `waitUntil`, or explicit synchronization instead of sleeps.
+  Remove the cause of flakiness; do not add retries. Report flaky tests.
+- Require a written reason and linked issue for `@Ignore` or disabled tests.
+- Keep minimal fixtures beside tests. Use committed samples for parsers;
+  exclude secrets, real user data, and production endpoints.
+- Report tests taking more than a few seconds, with names and measured durations.
+  Retain test and coverage reports for review.
 
 ## Checks without a device
 
-Run a focused step check from the repository root:
+Run from the repository root. Focused example:
 
 ```sh
-./gradlew --offline testDebugUnitTest --tests "*ClassName*"
+./gradlew --offline :app:testDebugUnitTest --tests '*ProjectStorageTest*'
 ```
 
-Run `./gradlew --offline testDebugUnitTest` once per logical batch of code changes.
-Use `./gradlew --offline assembleDebugAndroidTest` when affected instrumented
-tests need compiling without a device. Run lint when relevant to the change.
-JVM reports are under `app/build/reports/tests/`;
-lint reports are under `app/build/reports/`. Use generated reports for current
-results rather than maintaining test or warning totals in documentation.
-
-## Android tests
-
-Instrumented tests can run from Android Studio or the terminal on a connected
-emulator or device. Agents may run relevant tests on an already connected target,
-including devices connected over wireless debugging, as allowed by
-[AGENTS.md](../AGENTS.md). If no device is available, compile the tests and leave
-execution to the maintainer.
-
-For the merge gate only, run the full Android suite:
+Full JVM batch check and Android test compilation:
 
 ```sh
-./gradlew --offline connectedDebugAndroidTest
+./gradlew --offline :app:testDebugUnitTest
+./gradlew --offline :app:assembleDebugAndroidTest
 ```
 
-In this Distrobox environment, agents must confirm the target with
-`~/Android/Sdk/platform-tools/adb devices -l` using elevated execution
-permission and select it with `ANDROID_SERIAL`. Every ADB command and any
-tool invoking ADB, including connected Gradle tasks, must use that SDK path
-and elevated execution permission as required by [AGENTS.md](../AGENTS.md).
-
-For development, select a single class on the confirmed device:
+Run static analysis when relevant:
 
 ```sh
-ANDROID_SERIAL='<device serial>' ./gradlew --offline :app:connectedDebugAndroidTest \
+./gradlew --offline :app:lintDebug
+```
+
+Tooling checks and slow-test reporting:
+
+```sh
+python3 -m unittest discover -s scripts -p 'test_*.py'
+python3 scripts/report_slow_tests.py app/build/test-results
+```
+
+JVM results are in `app/build/test-results/` and `app/build/reports/tests/`.
+Lint reports are in `app/build/reports/`.
+
+## Device access
+
+In Distrobox, invoke ADB only through the SDK path below. Every ADB command and
+every tool invoking ADB, including connected Gradle tasks, requires elevated
+execution permission (`sandbox_permissions="require_escalated"`). Sandboxed
+ADB can crash in this environment.
+
+Confirm an already connected emulator or physical device, then select its serial:
+
+```sh
+~/Android/Sdk/platform-tools/adb devices -l
+read -r -p 'Device serial: ' ANDROID_SERIAL
+export ANDROID_SERIAL
+```
+
+Wireless debugging must already be paired and connected. Outside Distrobox,
+use ADB from the SDK configured in `local.properties`. If no device is available,
+compile Android tests and leave execution to the maintainer.
+
+Focused example; append `#methodName` to the class value to select a method:
+
+```sh
+./gradlew --offline :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.ui.screens.HomeScreenTest
 ```
 
-To select one method, append `#methodName` to the fully qualified class name.
-Do not run an unfiltered device task during development.
+Confirm the selected classes in `app/build/outputs/androidTest-results/connected/`.
+Android HTML reports are in `app/build/reports/androidTests/connected/`.
+The suite uses `AndroidJUnitRunner`, Espresso, and Compose UI testing.
 
-Wireless debugging must already be paired and connected. Outside this
-Distrobox agent environment, use the ADB binary from the SDK configured in
-`local.properties`. Access to the host ADB server and Gradle caches may require
-running the command outside the sandbox.
+## Coverage and merge gate
 
-Tests use AndroidJUnitRunner, Espresso, and Compose UI testing and can run
-without Google Play Services. Reports appear under
-`app/build/reports/androidTests/connected/`. For a filtered run, confirm the
-expected classes appear in the generated XML before accepting the result.
+Debug builds enable JaCoCo for both suites. Module gates use weighted counters,
+not averages of file percentages. Branchless modules have no branch gate.
 
-## Existing test responsibilities
-
-- **JVM tests** (`app/src/test/`) cover project storage, UUID migration, binary
-  waveform caches, checksummed persistent snapshots, save failures, metadata, playback
-  state, waveform calculations, input normalization, IPA keys, search-stage
-  ordering, filtering, and pagination. Dictionary search tests exercise the
-  production loop through an offline row adapter. Archive tests cover gzip
-  output, progress, failures, and cancellation.
-- **Android tests** (`app/src/androidTest/`) cover shared-folder lyric recovery
-  through an isolated document provider, including simulated removal of local
-  working copies, failed writes, corrupted saves, and newer local drafts. They
-  also cover SQLite installation and
-  lookup, staging cleanup, real native IPA, playback, and Compose screens.
-  Dictionary UI tests cover input changes, stale errors, and superseded
-  searches. An integration test exercises real JNI after a database miss.
-
-Use small, deterministic fixtures for matching and ordering regressions.
-Keep pure logic testable on the JVM, and reserve Android tests for framework,
-native, and UI behavior. Test coroutine ordering with controlled dispatchers
-and explicit synchronization rather than timing sleeps. Compose test
-resumptions must respect the UI thread.
-
-The maintainer has confirmed the Android suite passes with airplane mode
-enabled. This includes SQLite fixtures, native IPA checks for supported
-languages, the fallback integration, and About notices. It does not replace
-full release-dictionary smoke tests, a timed search benchmark, or native
-page-size compatibility checks. Repeat the [release checks](RELEASING.md)
-for each distributed build.
-
-## Coverage reports
-
-Debug builds enable JaCoCo for JVM and instrumented tests.
-
-| Report | Command | HTML output |
+| Scope | Instruction minimum | Branch minimum |
 | --- | --- | --- |
-| JVM | `./gradlew :app:createDebugUnitTestCoverageReport` | `app/build/reports/coverage/test/debug/index.html` |
-| Android | `./gradlew :app:createDebugAndroidTestCoverageReport` | `app/build/reports/coverage/androidTest/debug/connected/index.html` |
-| Combined | `./gradlew :app:createCoverageReport` | `app/build/reports/code_coverage_html_report/global/index.html` |
-| Aggregated | `./gradlew :app:createAggregatedCoverageReport` | `app/build/reports/aggregated_code_coverage_html_report/global/index.html` |
-| Filtered JVM | `./gradlew :app:jacocoDebugUnitReport` | `app/build/reports/jacoco/unit/html/index.html` |
-| Filtered Android | `./gradlew :app:jacocoDebugAndroidReport` | `app/build/reports/jacoco/android/html/index.html` |
-| Filtered combined | `./gradlew :app:jacocoDebugCombinedReport` | `app/build/reports/jacoco/combined/html/index.html` |
+| Default, including `app` | 80% | 70% |
+| Logic-heavy modules | 90% | 85% |
 
-Android, combined, and aggregated coverage require a running emulator or connected device
-and follow the same device-testing rules. The combined and aggregated tasks
-run both suites. Reserve these full-suite report tasks for the merge gate;
-they are not required per step or commit.
+Modules named `domain`, `data`, `parsing`, or `logic` use the stricter gates.
+Pass other logic-heavy module names with `--logic-module` to the checker.
+New or changed executable production Kotlin/Java lines require 80% diff coverage.
 
-### Gates and changed-line coverage
+[Coverage configuration](../gradle/coverage.gradle.kts) defines the tasks below.
+[Policy exclusions](../gradle/coverage-policy.json) cover plain data holders,
+generated resource/build classes, and previews. Keep exclusions narrow; never
+exclude handwritten logic. Justify threshold changes and new exclusions explicitly.
 
-The filtered reports also produce `coverage.xml` next to their `html/` directory.
-`gradle/coverage.gradle.kts` configures these reports and the verification tasks.
-`:app:createAggregatedCoverageReport` automatically runs
-`:app:verifyAggregatedCoverage` afterward, checking weighted instruction and
-branch totals per module and variant with the policy exclusions. A failing file
-does not independently fail the gate. Dashboard percentages are rounded, so
-verification uses the exact covered/total counters.
+| Task | Report under `app/build/reports/` |
+| --- | --- |
+| `jacocoDebugUnitReport` | `jacoco/unit/html/index.html` |
+| `jacocoDebugAndroidReport` | `jacoco/android/html/index.html` |
+| `jacocoDebugCombinedReport` | `jacoco/combined/html/index.html` |
+| `createAggregatedCoverageReport` | `aggregated_code_coverage_html_report/global/index.html` |
 
-The verifier prints instruction and branch percentages, covered/total counts,
-required minimums, and PASS/FAIL for each module and variant, followed by
-`Coverage checks: PASSED` or `FAILED`. Branchless modules show `N/A` for branches.
-The summary links to the aggregated HTML dashboard when it exists. That dashboard
-shows unfiltered data, so its percentages can differ from the policy summary.
-Use lifecycle logging for the coverage run so Gradle's final `BUILD SUCCESSFUL`
-or `BUILD FAILED` banner remains visible; coverage passing alone does not mean
-the whole build succeeded.
+Each filtered report writes `coverage.xml` beside `html/`. The dashboard shows
+unfiltered data; policy verification applies exclusions. Device-dependent report
+tasks follow the device rules above and can run full suites. Do not use them per step.
 
-For the end-of-day Android Studio **Aggregated coverage** run configuration,
-use task `:app:createAggregatedCoverageReport` with arguments
-`--stacktrace --warning-mode all --console=plain --rerun-tasks -Dorg.gradle.logging.level=lifecycle`.
-This runs both suites and checks aggregated coverage. Plain console output keeps
-the final summary readable; stack traces and all warnings remain available.
-The logging override applies only to this run; leave `gradle.properties` unchanged.
-
-Before merging, run `./gradlew --offline :app:verifyDebugCoverage` on a selected
-connected target to run both suites, generate separate, combined, and aggregated
-reports, and check module minimums. Run `./gradlew :app:verifyAggregatedCoverage`
-to check an existing dashboard without rerunning tests; saved results are not
-fresh coverage.
-The app uses 80% instruction / 70% branch. Modules named `domain`, `data`,
-`parsing`, or `logic` automatically use 90% / 85%; other logic-heavy modules
-must be passed to the verifier with `--logic-module MODULE`.
-
-The coverage checker verifies fixed module minimums in both combined XML and
-the aggregated dashboard. With `--base-ref`, it also checks at least 80%
-coverage of changed executable production Kotlin/Java lines in the combined
-XML. This JVM line metric does not apply to documentation, Gradle scripts, or
-Python tooling; the tooling has its own behavior tests.
-
-To check fresh local reports and changed lines against a chosen revision:
+On the selected device, run both suites and generate all gate reports:
 
 ```sh
+./gradlew --offline :app:verifyDebugCoverage --console=plain -Dorg.gradle.logging.level=lifecycle
 python3 scripts/coverage_policy.py \
   --report app=app/build/reports/jacoco/combined/coverage.xml \
   --aggregated-report app/build/reports/aggregated_code_coverage_html_report/global/data/report-data.js \
-  --base-ref '<base commit>'
+  --base-ref origin/main
 ```
 
-The verifier fails on missing or malformed reports. Omit `--base-ref` to check
-only fixed module minimums. Changed-line checks use the Git diff and current
-combined XML report; previous coverage reports are not required.
-The checker tests run headless and offline
-with `python3 -m unittest discover -s scripts -p 'test_*.py'`.
-`python3 scripts/report_slow_tests.py app/build/test-results` reports individual
-unit tests taking more than three seconds.
-
-When removing redundant UI tests, keep a surviving test that checks the same
-behavior and retain unique assertions. `MainActivityTest` covers About navigation
-and the open/rename/delete project workflow; screen tests retain attribution,
-empty-home behavior, and project ordering. The notepad placeholder, default
-arguments, and hoisted editing assertions share the notepad typography test.
-Manual-save persistence and silent haptics share the editor metadata/exit-save
-test, which also checks that edits made after a manual save survive exit.
-External loop-mode updates are
-checked across every mode by the playback layout test, and the haptic test checks
-the complete button-driven cycle.
-
-The behavior-focused review also consolidates player defaults, unprepared
-transport actions, and loop-state callbacks. Each unprepared action gets a
-fresh player. PCM preparation cancellation is checked before and during
-memory loading in `PcmSourceTest`; disk cancellation remains a separate case.
-`WaveformCacheTest` owns malformed-cache and invalid-write checks, including
-preserving the last good waveform after each rejected replacement. Storage
-tests retain cache reuse, resolution, and invalidation integration checks.
-PCM amplitude boundaries go through the format-dispatching decoder, and the
-stall-guard test checks both reset and rejection. Real corrupt-audio decoding
-is checked on Android rather than against JVM framework stubs.
-
-Marker normalization and unchanged-marker checks assert preserved values
-rather than reference reuse; dragging and editing regressions remain covered
-by UI tests. Selection callbacks still identify the original marker so equal
-copies cannot edit the wrong marker. Notification tests assert
-published updates and cancellation rather than the fake scheduler's queue.
-Exact typography-size snapshots and constant-only settings assertions are
-removed; bundled fonts, rendered typography, and selectable autosave defaults
-remain checked. Home folder-selection and slider-reconfiguration scenarios
-retain their unique callbacks and state assertions in consolidated tests.
-Notepad callback replacement shares the typography/editing scenario; slider
-callback replacement and waveform zoom-limit regressions remain independent.
-Theme-only recompositions without visual assertions and playback clicks
-without outcome assertions are removed. Explicit contracts such as deferred
-playback binding and allocation-free audio rendering still have dedicated tests.
-
-Further storage consolidation keeps beat cache/marker invalidation with the
-replacement and removal scenarios, manual-save replacement with autosave
-synchronization, and backup overflow with rotation. Missing-newest recovery
-checks both an absent manual save and an older manual save. Marker parsing
-retains every malformed-entry case in one ordered-result test; optional JSON
-null fields are checked in the saved file alongside their loaded values.
-Notepad defaults are checked through the rendered text style instead of a
-data-class constructor snapshot. Saved font-style checks inspect the loaded
-Android typeface rather than unchanged fixture properties. Player input
-validation retains missing-file, directory, valid-volume, and NaN cases with
-fresh players for each invalid load. No UI code is added to the JVM suite.
-
-PCM buffer tests control the worker's prefetch passes with semaphores and join
-the worker before checking cleanup, avoiding wall-clock polling and repeated
-copy attempts. They assert the returned samples, nonblocking page misses,
-live edits, and failed-file cleanup. Large-source selection checks retained
-backing files; sample correctness belongs to the buffer tests. Metadata saves
-use an injected clock for exact edit-time assertions. Download and editor
-fixtures remain blocked until the test releases them in `finally`; elapsed
-time cannot accidentally advance those scenarios. Synchronization timeouts
-are failure guards, not inputs to the expected result.
-HTTP tests require finite timeouts without pinning tuning constants. Ledger
-overflow and decoder-stall tests assert rejection and preserved behavior
-rather than internal diagnostic wording. Cancellation assertions surround
-the operation itself so fixture failures cannot satisfy the expected error.
-
-After removing redundant tests, run focused checks for the affected classes
-and the full JVM suite once for the logical batch. Before merging, review fresh
-combined reports to confirm the surviving tests protect the intended behavior
-and satisfy the module minimums and changed-line coverage requirement.
-
-The remaining cleanup folds repeated unprepared-player release into the transport
-cases and keeps disabled-loop end-of-beat checks in the intro/disable scenario;
-the one-frame-loop test checks only its distinct progress behavior. The focus
-state suite checks pause/abandon behavior once; permanent Android focus loss
-remains covered through the service. Home summary updates also check musical
-details and ordering when both projects have summaries. The waveform cancellation
-scenario retains retry-content alignment, and font scaling checks rendered height
-and baseline spacing rather than echoing the injected density. Font preference
-labels are checked on the restored value. Beat-player Android fixtures and decoded
-PCM use a temporary directory per test, with cleanup assertions restricted to that
-directory and a controlled unrelated file that must survive a failed preparation.
-
-If Gradle cannot see the emulator, check `adb devices` or launch the task from
-Android Studio's Gradle tool window. Failed runs do not produce complete
-combined reports. Generated reports stay in `app/build/` and can be recreated.
-
-Installation fault fixtures use filesystem conditions rather than asset-access
-counts, so changing copy order cannot choose a different failure. They retain
-blocked-directory, corrupt-staging, activation, preservation, and retry checks;
-fixture setup failures cannot satisfy an expected installation error. Download
-cancellation shares setup and outcome assertions while keeping independent
-cases before reading and after progress. Dictionary fallback covers both absent
-databases and installed-database misses in the source-precedence scenario.
-Invalid release tags share one input table. Browser-launch failure runs without
-an Activity; successful link navigation remains in the Activity workflow.
-Unobserved audio-volume changes and repeated invalid-font lookups are removed.
-Pure formatting, typography mapping, and contrast checks remain JVM tests; no
-Activities or Composables are invoked there, and coverage thresholds are unchanged.
-Waveform decoding failure and cancellation assert decoded results and recovery
-rather than cancellation-check counts. Waveform and service audio fixtures use
-isolated temporary directories instead of fixed names in the shared app cache.
-
-Loaded-player setup and idempotent release share the Android transport scenario.
-Mute restoration after UI recreation shares the ready-player volume scenario.
-Focus cancellation also checks that a later playback request must reacquire
-focus. Search-plan tests retain ordered search stages and matching tokens,
-without asserting redundant counts or nullable storage choices. Slider tests
-exercise changing input ranges and owners without repeating equivalent default
-and explicit argument calls; the Activity background test checks its visible
-window color without pinning the theme's implementation flags.
-
-`SmoothLoopPlaybackTest` synchronizes with output-start, completion, and worker
-termination callbacks instead of sleep-based polling. AudioTrack/MediaPlayer
-integration still requires real Android audio output; `BeatPlayerInstrumentedTest`
-also retains position polling and a delayed-start cancellation barrier. These
-are hardware timing risks, not deterministic unit checks. Keep frame arithmetic,
-loop rendering, and handoff timing on the JVM with controlled inputs; do not add
-retries or longer sleeps to compensate for device failures.
-
-About attribution and link-handler replacement share one UI scenario. Beat
-replacement checks both matching and different file extensions, including stale
-waveform/marker removal and staging cleanup. Backup rotation also checks preserved
-snapshot ages. Dictionary retry fixtures switch explicitly from invalid to valid
-archives; they assert installation and lookup results rather than download counts.
-Reinstalling an already installed source must still work when downloads are
-unavailable. Service focus-loss checks omit unobserved play/stop calls; notification
-and media-session scenarios retain their transport outcome checks.
-
-The latest review replaces redundant waveform decoder counts with returned
-peaks, cache contents, and successful recovery after an empty extraction.
-File-import name cases share their success assertions, while metadata-write
-failure checks the error, retained copied audio, and untouched blocked metadata.
-The unready player panel checks loading
-and failure actions in one UI scenario. Settings destination navigation shares
-one Activity journey; project lifecycle retains reopening, renaming, and
-deletion, and repeated editor visits use distinct lyrics to catch stale drafts.
-Unknown-script rejection belongs with language matching rather than font labels.
-No production UI logic, coverage exclusions, or thresholds change in this review.
+The Gradle gate checks module minimums; the Python invocation also checks the
+merge diff. Require both coverage success and Gradle's `BUILD SUCCESSFUL`.
+Saved reports are evidence only for the code and execution data that produced them.
+Fixture suites do not replace the [release runtime checks](RELEASING.md#runtime-checks).
