@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
@@ -439,6 +440,44 @@ class EditorScreenTest {
             composeRule.waitForIdle()
             composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
             assertEquals("Written before playback connected", ProjectStorage.loadLatest(projectDir))
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
+    fun minimizingBeatPlayer_freesEditorSpaceAndKeepsPlaybackRunning() {
+        val title = uniqueProjectTitle("Minimized beat")
+        val visible = mutableStateOf(true)
+        createAssignedBeat(title, durationMs = 30_000, cacheWaveform = true)
+        try {
+            setEditorContent(title, visible)
+            waitUntilTextExists("editor-fixture")
+            val expandedEditor = composeRule.onNode(hasSetTextAction())
+                .fetchSemanticsNode().boundsInRoot
+            composeRule.onNodeWithContentDescription("Play").performClick()
+            composeRule.waitUntil(5_000) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications.isNotEmpty()
+            }
+            val notification = context.getSystemService(NotificationManager::class.java)
+                .activeNotifications.single().notification
+            @Suppress("DEPRECATION")
+            val token = notification.extras.getParcelable<MediaSession.Token>(Notification.EXTRA_MEDIA_SESSION)!!
+            val controller = MediaController(context, token)
+
+            composeRule.onNodeWithContentDescription("Minimize beat player").performClick()
+            val tab = composeRule.onNodeWithText("Beat Player").assertIsDisplayed()
+                .fetchSemanticsNode().boundsInRoot
+            val minimizedEditor = composeRule.onNode(hasSetTextAction())
+                .fetchSemanticsNode().boundsInRoot
+            assertTrue("The tab belongs above the lyrics", tab.bottom <= minimizedEditor.top)
+            assertTrue("Minimizing should free space for lyrics", minimizedEditor.height > expandedEditor.height)
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
+
+            composeRule.onNodeWithContentDescription("Open beat player").performClick()
+            composeRule.onNodeWithText("editor-fixture").assertIsDisplayed()
+            composeRule.onNodeWithContentDescription("Pause").assertIsDisplayed()
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
         } finally {
             disposeEditorAndDeleteProject(visible, title)
         }

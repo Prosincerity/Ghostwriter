@@ -56,7 +56,9 @@ release schedule.
 ### Beats and playback
 
 - [x] **Offline beat playback** — import a beat into a project; play, pause,
-  restart, loop, and adjust volume from the editor.
+  restart, loop, and adjust volume from the editor. Minimize the compact player
+  with its upper-left button and reopen it from the accent-colored, slanted
+  **Beat Player** tab above the lyrics; playback continues while minimized.
 - [x] **Background playback** — continue across screens and other apps, with
   Android notification and lock-screen controls. Loop state stays in sync
   with the editor, and audio interruptions pause playback. Dismissing the app

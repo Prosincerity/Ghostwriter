@@ -580,7 +580,7 @@ fun EditorScreen(
                 onRetryWaveformPreparation = { waveformRevision++ },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = 6.dp),
             )
 
             LyricsNotepad(
@@ -590,7 +590,7 @@ fun EditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(top = 8.dp),
+                    .padding(top = 4.dp),
             )
         }
     }

@@ -1,15 +1,19 @@
 package com.prosincerity.ghostwriter.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Button
@@ -18,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,11 +32,14 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.data.WaveformMarker
@@ -66,6 +74,7 @@ internal fun BeatPlayerPanel(
     onRetryWaveformPreparation: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var isMinimized by rememberSaveable { mutableStateOf(false) }
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }
     var currentPositionMs by remember(beatPlayer) { mutableIntStateOf(0) }
     var durationMs by remember(beatPlayer) { mutableIntStateOf(0) }
@@ -85,8 +94,8 @@ internal fun BeatPlayerPanel(
     // MediaPlayer has no Compose-observable position state. Poll only while
     // this screen owns a successfully loaded player so the waveform and clock
     // stay in sync with playback.
-    LaunchedEffect(beatPlayer, isBeatReady) {
-        if (!isBeatReady || beatPlayer == null) return@LaunchedEffect
+    LaunchedEffect(beatPlayer, isBeatReady, isMinimized) {
+        if (!isBeatReady || beatPlayer == null || isMinimized) return@LaunchedEffect
 
         while (true) {
             currentPositionMs = beatPlayer.currentPositionMs
@@ -96,12 +105,76 @@ internal fun BeatPlayerPanel(
         }
     }
 
+    if (isMinimized) {
+        Box(modifier = modifier, contentAlignment = Alignment.TopCenter) {
+            Surface(
+                onClick = { isMinimized = false },
+                shape = BeatPlayerTabShape,
+                color = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.semantics { contentDescription = "Open beat player" },
+            ) {
+                Text(
+                    text = "Beat Player",
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
+                )
+            }
+        }
+        return
+    }
+
     Card(
-        modifier = modifier.height(176.dp),
+        modifier = modifier.height(164.dp),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 4.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 2.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    shape = GhostButtonShape,
+                    onClick = { isMinimized = true },
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ExpandLess,
+                        contentDescription = "Minimize beat player",
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                if (panelState == BeatPanelState.Waveform) {
+                    WaveformZoomButton(
+                        imageVector = Icons.Filled.ZoomOut,
+                        contentDescription = "Zoom out waveform",
+                        onClick = {
+                            waveformViewport = waveformViewport.zoomBy(
+                                scaleFactor = 0.5f,
+                                focalXpx = waveformWidthPx / 2f,
+                                viewportWidthPx = waveformWidthPx,
+                            )
+                        },
+                        enabled = waveformWidthPx > 0f &&
+                            waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
+                    )
+                    WaveformZoomButton(
+                        imageVector = Icons.Filled.ZoomIn,
+                        contentDescription = "Zoom in waveform",
+                        onClick = {
+                            waveformViewport = waveformViewport.zoomBy(
+                                scaleFactor = 2f,
+                                focalXpx = waveformWidthPx / 2f,
+                                viewportWidthPx = waveformWidthPx,
+                            )
+                        },
+                        enabled = waveformWidthPx > 0f &&
+                            waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
+                    )
+                }
+            }
             when (panelState) {
                 BeatPanelState.Connecting -> PlayerStatusMessage(
                     message = "Connecting beat player…",
@@ -170,45 +243,14 @@ internal fun BeatPlayerPanel(
                     Column(
                         modifier = Modifier.weight(1f),
                     ) {
-                        Row(
+                        Text(
+                            text = beatDisplayName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = beatDisplayName,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f),
-                            )
-                            WaveformZoomButton(
-                                imageVector = Icons.Filled.ZoomOut,
-                                contentDescription = "Zoom out waveform",
-                                onClick = {
-                                    waveformViewport = waveformViewport.zoomBy(
-                                        scaleFactor = 0.5f,
-                                        focalXpx = waveformWidthPx / 2f,
-                                        viewportWidthPx = waveformWidthPx,
-                                    )
-                                },
-                                enabled = waveformWidthPx > 0f &&
-                                    waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
-                            )
-                            WaveformZoomButton(
-                                imageVector = Icons.Filled.ZoomIn,
-                                contentDescription = "Zoom in waveform",
-                                onClick = {
-                                    waveformViewport = waveformViewport.zoomBy(
-                                        scaleFactor = 2f,
-                                        focalXpx = waveformWidthPx / 2f,
-                                        viewportWidthPx = waveformWidthPx,
-                                    )
-                                },
-                                enabled = waveformWidthPx > 0f &&
-                                    waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
-                            )
-                        }
+                        )
                         WaveformView(
                             amplitudes = waveformAmplitudes,
                             durationMs = durationMs.toLong(),
@@ -266,6 +308,15 @@ internal fun BeatPlayerPanel(
             }
         }
     }
+}
+
+private val BeatPlayerTabShape = GenericShape { size, _ ->
+    val slant = size.height * 0.35f
+    moveTo(0f, 0f)
+    lineTo(size.width, 0f)
+    lineTo(size.width - slant, size.height)
+    lineTo(slant, size.height)
+    close()
 }
 
 @Composable

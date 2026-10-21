@@ -280,6 +280,70 @@ class BeatComponentsTest {
     }
 
     @Test
+    fun playerPanel_minimizesToTabAndRestoresZoomAndControls() {
+        val player = BeatPlayer()
+        composeRule.setContent {
+            GhostwriterTheme {
+                Box(Modifier.width(320.dp)) {
+                    BeatPlayerPanel(
+                        beatPlayer = player,
+                        isBeatReady = true,
+                        isImporting = false,
+                        beatDisplayName = "Midnight instrumental",
+                        onImportBeat = {},
+                        onReassignBeat = {},
+                        isReassigningBeat = false,
+                        waveformAmplitudes = intArrayOf(0, 8_000, 16_000),
+                        isWaveformLoading = false,
+                        markers = emptyList(),
+                        onAddMarker = {},
+                        onMarkerClick = {},
+                        onMarkerMove = { _, _ -> },
+                        onCancelWaveformPreparation = {},
+                        cancelRemovesImportedBeat = false,
+                        waveformPreparationCancelled = false,
+                        waveformPreparationFailed = false,
+                        onRetryWaveformPreparation = {},
+                    )
+                }
+            }
+        }
+
+        val minimize = composeRule.onNodeWithContentDescription("Minimize beat player")
+            .fetchSemanticsNode().boundsInRoot
+        val zoom = composeRule.onNodeWithContentDescription("Zoom in waveform")
+            .fetchSemanticsNode().boundsInRoot
+        val title = composeRule.onNodeWithText("Midnight instrumental")
+            .fetchSemanticsNode().boundsInRoot
+        assertTrue("Minimize belongs opposite zoom", minimize.right < zoom.left)
+        assertEquals(minimize.center.y, zoom.center.y, 1f)
+        assertTrue("Beat title belongs below the buttons", title.top >= zoom.bottom)
+        composeRule.onNodeWithTag("Waveform").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Zoom out waveform").assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Zoom in waveform").performClick()
+        composeRule.onNodeWithContentDescription("Zoom out waveform").assertIsEnabled()
+        composeRule.onNodeWithContentDescription("Mute").performClick()
+        composeRule.onNodeWithContentDescription("Minimize beat player").performClick()
+
+        composeRule.onNodeWithText("Beat Player").assertIsDisplayed()
+        composeRule.onNodeWithText("Midnight instrumental").assertDoesNotExist()
+        composeRule.onNodeWithTag("Waveform").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Play").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Open beat player").performClick()
+
+        composeRule.onNodeWithText("Beat Player").assertDoesNotExist()
+        composeRule.onNodeWithText("Midnight instrumental").assertIsDisplayed()
+        composeRule.onNodeWithTag("Waveform").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Zoom out waveform").assertIsEnabled()
+        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.onNodeWithContentDescription("Play from start").assertIsEnabled()
+        composeRule.onNodeWithContentDescription("Loop: Whole beat").assertIsEnabled()
+        composeRule.onNodeWithText("Reassign").assertIsEnabled()
+        composeRule.onNodeWithContentDescription("Unmute").performClick()
+        composeRule.runOnIdle { assertEquals(1f, player.volume) }
+    }
+
+    @Test
     fun playerPanel_prioritizesConnectionThenLoadingCancellationAndFailure() {
         val connected = mutableStateOf(false)
         val loading = mutableStateOf(true)
@@ -475,6 +539,9 @@ class BeatComponentsTest {
         }
 
         composeRule.onNodeWithText("No beat selected").assertExists()
+        composeRule.onNodeWithContentDescription("Minimize beat player").performClick()
+        composeRule.onNodeWithText("Import beat").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Open beat player").performClick()
         composeRule.onNodeWithText("Import beat").assertIsEnabled().performClick()
         composeRule.runOnIdle {
             assertEquals(1, imports)

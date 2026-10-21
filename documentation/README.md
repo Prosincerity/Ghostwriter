@@ -125,8 +125,11 @@ continues playback.
 
 Opening another project, changing its beat, or deleting or renaming the
 playing project releases playback. Process death does not restart audio.
-Volume, loop mode, and playback position are session state. The loop button
-cycles Off, Whole beat, and Markers, using distinct icons and three position
+Volume, loop mode, and playback position are session state. The compact beat
+panel places its minimize button opposite the zoom controls, with the beat title
+underneath. Minimizing replaces the panel with an accent-colored, slanted
+"Beat Player" tab above the lyrics, preserving playback and waveform zoom.
+The loop button cycles Off, Whole beat, and Markers, using distinct icons and three position
 dots, a visible Off / Beat / Marker label, and an accessibility label in all
 layouts. The compact Reassign button scales to the available width. Playback
 receives the space between compact, balanced side areas, keeping Play centered
