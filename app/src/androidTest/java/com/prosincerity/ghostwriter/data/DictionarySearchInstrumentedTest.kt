@@ -18,6 +18,34 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class DictionarySearchInstrumentedTest {
     @Test
+    fun germanDoubleRhymesUseRealIndexesAndGenerateBoundHeadIpa() = withDictionaryTestContext { context ->
+        val installer = DictionaryInstaller(context)
+        val version = File(context.filesDir, "dictionaries/de/${installer.release.tag}").apply { mkdirs() }
+        database(File(version, "wiktionary.db"), listOf(
+            germanRow("bleibe", "/ˈblaɪ̯bə/"), germanRow("Straße", "/ˈʃtʁaːsə/"),
+            germanRow("Keine", "/ˈkaɪ̯nə/"), germanRow("Frage", "/ˈfʁaːɡə/"),
+            germanRow("Geisel", "/ˈɡaɪ̯zl̩/"), germanRow("nehmen", "/ˈneːmən/"),
+            germanRow("Geiselnahme", "/ˈɡaɪ̯zl̩ˌnaːmə/"), germanRow("Seife", "/ˈzaɪ̯fə/"),
+            germanRow("Seifen", "/ˈzaɪ̯fn̩/"), germanRow("Blase", "/ˈblaːzə/"),
+            germanRow("Seifenblase", "/ˈzaɪ̯fn̩ˌblaːzə/"), germanRow("Seite", "/ˈzaɪ̯tə/"),
+            germanRow("Seiten", "/ˈzaɪ̯tn̩/"), germanRow("Seitenstraße", "/ˈzaɪ̯tn̩ˌʃtʁaːsə/"),
+        ))
+        val boundHead = runBlocking { DictionaryPronunciations(installer).lookup("nahme", "de") }
+        assertTrue("Bound head pronunciation: $boundHead", boundHead?.ipa.orEmpty().any {
+            com.prosincerity.ghostwriter.logic.DoubleRhymePhonetics.distance(listOf("/ˈʃtʁaːsə/"), it) != null
+        })
+        val result = runBlocking {
+            DictionarySearch(installer).search("bleibe Straße", "de", DictionarySearchMode.DOUBLE_RHYME)
+        }
+        assertEquals(setOf("Geiselnahme", "Seifenblase", "Seitenstraße", "Keine + Frage"),
+            result.matches.map { it.word }.toSet())
+        assertTrue(result.matches.take(3).all { it.source == PronunciationSource.WIKTIONARY })
+        val components = result.matches.flatMap { it.components }.map { it.lowercase() }
+        assertEquals(components.size, components.toSet().size)
+        assertFalse(result.hasNext)
+    }
+
+    @Test
     fun cancellationStopsReadingRowsAndClosesCursor() = withDictionaryFixture { installer ->
         installer.openReadOnly("en", DictionarySource.WIKTIONARY)!!.use { database ->
             var visited = 0

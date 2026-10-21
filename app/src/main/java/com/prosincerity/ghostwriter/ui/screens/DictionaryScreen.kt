@@ -88,7 +88,9 @@ internal fun DictionaryScreen(
     var selectedLanguage by rememberSaveable { mutableStateOf("en") }
     val language = selectedLanguage.takeIf { it in availableLanguages } ?: availableLanguages.firstOrNull().orEmpty()
     var modeName by rememberSaveable { mutableStateOf(DictionarySearchMode.RHYME.name) }
-    val mode = DictionarySearchMode.valueOf(modeName)
+    val mode = DictionarySearchMode.valueOf(modeName).takeUnless {
+        it == DictionarySearchMode.DOUBLE_RHYME && language != "de"
+    } ?: DictionarySearchMode.RHYME
     var languageMenu by remember { mutableStateOf(false) }
     var modeMenu by remember { mutableStateOf(false) }
     val searchSession = remember(scope) { DictionarySearchSession(scope) }
@@ -163,7 +165,7 @@ internal fun DictionaryScreen(
                                         word = it
                                         searchSession.reset()
                                     },
-                                    label = { Text("Word") },
+                                    label = { Text(if (mode == DictionarySearchMode.DOUBLE_RHYME) "Compound or two words" else "Word") },
                                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                                     shape = MaterialTheme.shapes.medium,
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -224,7 +226,9 @@ internal fun DictionaryScreen(
                                             )
                                         }
                                         DropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
-                                            DictionarySearchMode.entries.forEach { option ->
+                                            DictionarySearchMode.entries.filter {
+                                                it != DictionarySearchMode.DOUBLE_RHYME || language == "de"
+                                            }.forEach { option ->
                                                 DropdownMenuItem(
                                                     text = { Text(modeLabel(option)) },
                                                     onClick = {
@@ -238,6 +242,10 @@ internal fun DictionaryScreen(
                                     }
                                 }
                                 Button(shape = GhostButtonShape, onClick = { submit() }, enabled = word.isNotBlank() && !loading) { Text("Search") }
+                                if (mode == DictionarySearchMode.DOUBLE_RHYME) {
+                                    Text("Enter a compound or two words. Includes loose rhymes; dictionary compounds appear first. Each component appears once.",
+                                        style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                         }
                     }
@@ -298,6 +306,9 @@ internal fun DictionaryScreen(
                         ) {
                             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                                 Text(match.word, style = MaterialTheme.typography.titleMedium)
+                                if (match.components.isNotEmpty() && !match.word.contains(" + ")) {
+                                    Text(match.components.joinToString(" + "), style = MaterialTheme.typography.bodyMedium)
+                                }
                                 Text(
                                     match.ipa, style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -334,6 +345,7 @@ private fun modeLabel(mode: DictionarySearchMode): String = when (mode) {
     DictionarySearchMode.WORD_PREFIX -> "Word prefix"
     DictionarySearchMode.WORD_SUFFIX -> "Word suffix"
     DictionarySearchMode.ASSONANCE -> "Assonance"
+    DictionarySearchMode.DOUBLE_RHYME -> "Double rhyme"
 }
 
 private fun sourceLabel(source: PronunciationSource): String = when (source) {

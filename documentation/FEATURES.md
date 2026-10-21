@@ -104,6 +104,8 @@ release schedule.
 
 - [x] **Rhyme dictionary** — download pronunciation sources independently and
   search for rhymes, assonance, written prefixes, and phonetic suffixes.
+  German also supports double rhymes from compounds or two words, with
+  dictionary compounds preferred and no repeated component spellings.
   English, German, and Turkish are supported. Installed searches work offline,
   and missing-word pronunciations can be generated locally. See
   [Dictionaries](DICTIONARIES.md) for supported languages and search behavior.

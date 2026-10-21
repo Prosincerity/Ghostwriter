@@ -43,6 +43,37 @@ class DictionaryScreenTest {
     @get:Rule val composeRule = createComposeRule()
 
     @Test
+    fun germanDoubleRhymeAcceptsAPhraseAndDisplaysCompoundParts() {
+        composeRule.setContent {
+            GhostwriterTheme {
+                DictionaryScreen(onBack = {}, onOpenDownloads = {}, installedLanguages = listOf("en", "de"),
+                    search = { word, language, mode, _ ->
+                        assertEquals("bleibe Straße", word)
+                        assertEquals("de", language)
+                        assertEquals(DictionarySearchMode.DOUBLE_RHYME, mode)
+                        DictionarySearchResult(null, listOf(DictionaryMatch("Seitenstraße", "/ˈzaɪtn̩ˌʃtʁaːsə/",
+                            PronunciationSource.WIKTIONARY, listOf("Seiten", "straße"))))
+                    })
+            }
+        }
+        composeRule.onNodeWithText("Mode: Rhyme").performClick()
+        composeRule.onNodeWithText("Double rhyme").assertDoesNotExist()
+        composeRule.onNodeWithText("Rhyme").performClick()
+        composeRule.onNodeWithText("Language: English").performClick()
+        composeRule.onNodeWithText("German").performClick()
+        composeRule.onNodeWithText("Mode: Rhyme").performClick()
+        composeRule.onNodeWithText("Double rhyme").performClick()
+        composeRule.onNodeWithText("Compound or two words").performTextInput("bleibe Straße")
+        composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNodeWithText("Seitenstraße").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Seiten + straße").assertExists()
+        composeRule.onNodeWithText("Language: German").performScrollTo().performClick()
+        composeRule.onNodeWithText("English").performClick()
+        composeRule.onNodeWithText("Mode: Rhyme").assertExists()
+        composeRule.onNodeWithText("Seitenstraße").assertDoesNotExist()
+    }
+
+    @Test
     fun selectorsShareOneRowAndSearchButtonStaysCompact() {
         composeRule.setContent {
             GhostwriterTheme {

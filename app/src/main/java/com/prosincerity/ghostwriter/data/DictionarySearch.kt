@@ -9,12 +9,13 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
 
-internal enum class DictionarySearchMode { RHYME, WORD_PREFIX, WORD_SUFFIX, ASSONANCE }
+internal enum class DictionarySearchMode { RHYME, WORD_PREFIX, WORD_SUFFIX, ASSONANCE, DOUBLE_RHYME }
 
 internal data class DictionaryMatch(
     val word: String,
     val ipa: String,
     val source: PronunciationSource,
+    val components: List<String> = emptyList(),
 )
 
 internal data class DictionarySearchResult(
@@ -44,6 +45,10 @@ internal class DictionarySearch(
         if (normalized.isEmpty()) return@withContext DictionarySearchResult(null, emptyList())
         val firstIndex = page.toLong() * PAGE_SIZE
         require(firstIndex < Int.MAX_VALUE - PAGE_SIZE)
+        if (mode == DictionarySearchMode.DOUBLE_RHYME) {
+            require(language == "de") { "Double rhyme currently supports German" }
+            return@withContext DoubleRhymeSearch(data).search(normalized, page)
+        }
         val nextPageIndex = (firstIndex + PAGE_SIZE).toInt()
         val pronunciation = data.lookup(normalized, language)
         val lexicon = if (mode == DictionarySearchMode.RHYME && language == "de") {
