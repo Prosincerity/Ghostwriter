@@ -30,12 +30,16 @@ class DictionarySearchInstrumentedTest {
             germanRow("Seifenblase", "/ˈzaɪ̯fn̩ˌblaːzə/"), germanRow("Seite", "/ˈzaɪ̯tə/"),
             germanRow("Seiten", "/ˈzaɪ̯tn̩/"), germanRow("Seitenstraße", "/ˈzaɪ̯tn̩ˌʃtʁaːsə/"),
         ))
-        val boundHead = runBlocking { DictionaryPronunciations(installer).lookup("nahme", "de") }
+        // Native eSpeak keeps its data path for the process lifetime. The dictionary
+        // fixture is temporary, so use the stable app context for bundled engine data.
+        val pronunciations = DictionaryPronunciations(installer,
+            EspeakIpa(InstrumentationRegistry.getInstrumentation().targetContext))
+        val boundHead = runBlocking { pronunciations.lookup("nahme", "de") }
         assertTrue("Bound head pronunciation: $boundHead", boundHead?.ipa.orEmpty().any {
             com.prosincerity.ghostwriter.logic.DoubleRhymePhonetics.distance(listOf("/ˈʃtʁaːsə/"), it) != null
         })
         val result = runBlocking {
-            DictionarySearch(installer).search("bleibe Straße", "de", DictionarySearchMode.DOUBLE_RHYME)
+            DictionarySearch(installer, pronunciations).search("bleibe Straße", "de", DictionarySearchMode.DOUBLE_RHYME)
         }
         assertEquals(setOf("Geiselnahme", "Seifenblase", "Seitenstraße", "Keine + Frage"),
             result.matches.map { it.word }.toSet())
