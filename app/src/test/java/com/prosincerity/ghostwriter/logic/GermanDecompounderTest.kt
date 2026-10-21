@@ -81,6 +81,5 @@ class GermanDecompounderTest {
         for (word in listOf("", "Unbekanntschuh", "xxschuh", "Hund Hütte", "a".repeat(97))) {
             assertEquals(listOf(word), splitter.decompound(word).map { it.surface })
         }
-        assertEquals(emptySet<String>(), GermanDecompounder.vocabulary("a".repeat(97)))
     }
 }

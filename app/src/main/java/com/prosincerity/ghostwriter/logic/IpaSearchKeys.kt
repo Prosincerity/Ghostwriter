@@ -18,6 +18,10 @@ internal object IpaSearchKeys {
         "de" to words("b c d f g h j k l m n p q r s t v w x z ç ð β ɓ ɕ ɟ ɡ ɣ ɥ ɦ ɫ ɬ ɮ ɱ ɲ ɴ ɸ ɹ ɺ ɽ ɾ ʀ ʁ ʂ ʃ ʈ ʋ ʎ ʑ ʒ ʔ ʕ ʝ ʟ ʙ θ χ ŋ pf ts ħ ɰ tʃ dʒ p͡f t͡s t͡ʃ d͡ʒ p͜f t͜s t͜ʃ d͜ʒ ʦ ʧ ǀ ǁ ǃ"),
         "tr" to words("b c d f g h j k l m n p q r s t v w x z ç β ɕ ɟ ɡ ɣ ɥ ɦ ɫ ɰ ɱ ɲ ɳ ɸ ɹ ɾ ł ʀ ʁ ʃ ʈ ʋ ʎ ʑ ʐ ʒ ʔ ʕ ʝ θ χ ŋ tʃ dʒ t͡ʃ d͡ʒ t͜ʃ d͜ʒ ʧ ʤ ǀ ǁ ǃ"),
     )
+    private val vowelInitials = vowels.mapValues { (_, inventory) -> inventory.mapTo(mutableSetOf()) { it.first() } }
+    private val decomposedVowelInitials = vowels.mapValues { (_, inventory) ->
+        inventory.mapTo(mutableSetOf()) { Normalizer.normalize(it, Normalizer.Form.NFD).first() }
+    }
     private val candidates = vowels.keys.associateWith { language ->
         (vowels.getValue(language) + consonants.getValue(language))
             .sortedWith(compareByDescending<String> { it.length }.thenBy { it })
@@ -25,16 +29,22 @@ internal object IpaSearchKeys {
     private val singleBases = candidates.mapValues { (_, inventory) ->
         inventory.filter { it.length == 1 }.toSet()
     }
+    // Restrict longest-match trials to phonemes sharing the current first character.
+    private val candidatesByInitial = candidates.mapValues { (_, inventory) -> inventory.groupBy { it.first() } }
+    private val baseInitials = candidatesByInitial.mapValues { (_, inventory) -> inventory.keys }
+    private val allBaseInitials = baseInitials.values.flatten().toSet()
     private val postfix = words(": ː ˑ ̆ ̯ ̃ ̥ ̬ ̩ ̪ ̺ ̻ ̝ ̞ ̘ ̙ ̚ ̰ ̤ ̹ ̜ ̟ ̠ ̼ ̽ ˀ ˔ ˭ ʰ ʱ ʲ ˠ ˤ ʴ ʷ ⁿ ˡ ˞ ʳ ʵ ʶ ˣ ˕ ˖ ᵈ ᵏ ᵐ ᵝ ᶦ ᶴ")
     private val prefix = words("ˀ ʰ ʱ ʲ ˠ ˤ ʷ ⁿ ˡ ᵈ ᵏ ᵐ")
     private val prosody = words("˥ ˦ ˧ ˨ ˩ ¹ ² ³ ⁴ ⁵ ⁻ ↗ ↘ ↑ ↓ ꜛ ꜜ")
     private val stress = setOf("ˈ", "ˌ")
+    private val postfixCharacters = postfix.mapTo(mutableSetOf()) { it.single() }
+    private val prefixCharacters = prefix.mapTo(mutableSetOf()) { it.single() }
     private val ignored = " ./[]()⟨⟩⁽⁾|-‿_⁀‖⫽︎"
 
     data class Keys(val tokens: List<String>, val reversed: String, val assonance: String)
 
     fun fromIpa(ipa: String, language: String): Keys? {
-        val inventory = candidates[language] ?: return null
+        val inventory = candidatesByInitial[language] ?: return null
         val input = Normalizer.normalize(ipa.trim(), Normalizer.Form.NFC)
         val tokens = mutableListOf<String>()
         val bases = singleBases.getValue(language)
@@ -58,7 +68,8 @@ internal object IpaSearchKeys {
                 val start = position
                 while (position < input.length && isPostfix(input[position])) position++
                 val modifiers = input.substring(start, position)
-                val following = inventory.firstOrNull { input.startsWith(it, position) }
+                val following = input.getOrNull(position)?.let { inventory[it] }
+                    ?.firstOrNull { input.startsWith(it, position) }
                 if (atBoundary && value in prefix && following != null) {
                     position += following.length
                     val token = StringBuilder(modifiers).append(following)
@@ -72,7 +83,7 @@ internal object IpaSearchKeys {
                 atBoundary = false
                 continue
             }
-            var match = inventory.firstOrNull { input.startsWith(it, position) }
+            var match = inventory[character]?.firstOrNull { input.startsWith(it, position) }
             if (match == null) {
                 val decomposed = Normalizer.normalize(value, Normalizer.Form.NFD)
                 if (decomposed.length <= 1 || decomposed.take(1) !in bases ||
@@ -133,16 +144,21 @@ internal object IpaSearchKeys {
     }
 
     private fun isVowel(token: String, language: String): Boolean {
-        val base = token.dropWhile { it.toString() in prefix }
-        val decomposed = Normalizer.normalize(base, Normalizer.Form.NFD)
-        return vowels.getValue(language).any { vowel ->
-            base.startsWith(vowel) || decomposed.startsWith(Normalizer.normalize(vowel, Normalizer.Form.NFD))
-        }
+        val first = token.firstOrNull { it !in prefixCharacters } ?: return false
+        if (first in vowelInitials.getValue(language)) return true
+        if (first in baseInitials.getValue(language) || first.toString() in stress || first.toString() in prosody) return false
+        // Only uncommon precomposed characters need Unicode decomposition. Ordinary
+        // vowels, consonants, affricates and modifiers stay on the character-set path.
+        val decomposed = Normalizer.normalize(first.toString(), Normalizer.Form.NFD)
+        return decomposed.firstOrNull() in decomposedVowelInitials.getValue(language)
     }
 
-    private fun isPostfix(character: Char): Boolean =
-        character.toString() in postfix || Character.getType(character) == Character.NON_SPACING_MARK.toInt() ||
-            Character.getType(character) == Character.ENCLOSING_MARK.toInt()
+    private fun isPostfix(character: Char): Boolean {
+        if (character in postfixCharacters) return true
+        if (character in allBaseInitials) return false
+        val type = Character.getType(character)
+        return type == Character.NON_SPACING_MARK.toInt() || type == Character.ENCLOSING_MARK.toInt()
+    }
 
     private fun isPhoneme(token: String): Boolean = token !in stress && token !in prosody
 

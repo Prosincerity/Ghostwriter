@@ -2,25 +2,45 @@ package com.prosincerity.ghostwriter.logic
 
 /** Two independent rimes; vowel agreement admits the loose rhymes used in rap. */
 internal object DoubleRhymePhonetics {
+    private val syllabicConsonant = Regex("([nlm])̩")
     fun keys(ipa: String): IpaSearchKeys.Keys? = IpaSearchKeys.fromIpa(
-        ipa.replace(Regex("([nlm])̩"), "ə$1").replace("̯", "").replace('ɑ', 'a'), "de",
+        ipa.replace(syllabicConsonant, "ə$1").replace("̯", "").replace('ɑ', 'a'), "de",
     )
 
     /** 0: exact rime, 1: voicing difference, 2: vowel match, null: no match. */
-    fun distance(input: List<String>, candidate: String): Int? {
-        val other = keys(candidate) ?: return null
-        return input.mapNotNull { ipa ->
-            val query = keys(ipa) ?: return@mapNotNull null
-            if (query.assonance != other.assonance) return@mapNotNull null
-            val left = IpaSearchKeys.rimeTokens(query, "de")?.let(IpaSearchKeys::phonemeTokens)
-            val right = IpaSearchKeys.rimeTokens(other, "de")?.let(IpaSearchKeys::phonemeTokens)
-            when {
-                left == null || right == null -> null
-                left == right -> 0
-                left.map(::devoice) == right.map(::devoice) -> 1
-                else -> 2
+    fun distance(input: List<String>, candidate: String): Int? = Matcher(input).distance(candidate)
+
+    /** Compile query pronunciations once and analyse each distinct candidate IPA once per anchor. */
+    class Matcher(input: List<String>, private val parse: (String) -> IpaSearchKeys.Keys? = ::keys) {
+        private data class Profile(val vowels: String, val rime: List<String>?, val devoiced: List<String>?)
+        private val profiles = mutableMapOf<String, Profile?>()
+        private val queries = input.distinct().mapNotNull(::profile)
+        private val vowelKeys = queries.mapTo(mutableSetOf()) { it.vowels }
+
+        private fun profile(ipa: String): Profile? {
+            if (!profiles.containsKey(ipa)) {
+                profiles[ipa] = parse(ipa)?.let { keys ->
+                    val rime = IpaSearchKeys.rimeTokens(keys, "de")?.let(IpaSearchKeys::phonemeTokens)
+                    Profile(keys.assonance, rime, rime?.map(::devoice))
+                }
             }
-        }.minOrNull()
+            return profiles[ipa]
+        }
+
+        fun matchesVowels(candidate: String): Boolean = profile(candidate)?.vowels in vowelKeys
+
+        fun distance(candidate: String): Int? {
+            val other = profile(candidate) ?: return null
+            if (other.rime == null) return null
+            var best: Int? = null
+            for (query in queries) {
+                if (query.vowels != other.vowels || query.rime == null) continue
+                if (query.rime == other.rime) return 0
+                val score = if (query.devoiced == other.devoiced) 1 else 2
+                if (best == null || score < best) best = score
+            }
+            return best
+        }
     }
 
     /** Stored indexes can omit syllabic schwas and mark diphthongs as nonsyllabic. */

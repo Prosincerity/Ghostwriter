@@ -13,7 +13,7 @@ internal class DoubleRhymeSearch(private val data: DictionarySearchData) {
         val anchors = when (tokens.size) {
             1 -> {
                 lexicon.prepare(tokens)
-                val parts = lexicon.decompounder.decompound(input)
+                val parts = lexicon.decompound(input)
                 if (parts.size < 2) return DictionarySearchResult(null, emptyList())
                 listOf(parts.dropLast(1).joinToString("") { it.surface }, parts.last().surface)
             }
@@ -37,8 +37,13 @@ internal class DoubleRhymeSearch(private val data: DictionarySearchData) {
         val rightIpa = pronounce(anchors[1]) ?: return DictionarySearchResult(null, emptyList())
         val combined = leftIpa.ipa.flatMap { left -> rightIpa.ipa.map { right -> "$left $right" } }
         val pronunciation = PronunciationResult(combined, weakerSource(leftIpa.source, rightIpa.source))
+        val leftMatcher = DoubleRhymePhonetics.Matcher(leftIpa.ipa)
+        val rightMatcher = DoubleRhymePhonetics.Matcher(rightIpa.ipa)
         val used = mutableSetOf<String>()
         val matches = mutableListOf<DictionaryMatch>()
+        val offset = page.toLong() * PAGE_SIZE
+        fun pageResult() = DictionarySearchResult(pronunciation, matches.drop(offset.toInt()).take(PAGE_SIZE),
+            matches.size.toLong() > offset + PAGE_SIZE)
         fun reserve(match: DictionaryMatch): Boolean {
             val words = match.components.map(GermanDecompounder::key)
             if (words.any { it in used } || words.distinct().size != words.size) return false
@@ -47,72 +52,83 @@ internal class DoubleRhymeSearch(private val data: DictionarySearchData) {
             return true
         }
         fun identity(parts: List<String>): Boolean = parts.indices.all { index ->
-            lexicon.decompounder.decompound(parts[index]).last().lemma ==
-                lexicon.decompounder.decompound(anchors[index]).last().lemma
+            lexicon.decompound(parts[index]).last().lemma ==
+                lexicon.decompound(anchors[index]).last().lemma
         }
         val compounds = collect(combined)
         lexicon.prepare(compounds.map { it.word })
         val attested = mutableListOf<Pair<Int, DictionaryMatch>>()
         for (compound in compounds) {
             coroutineContext.ensureActive()
-            val parts = lexicon.decompounder.decompound(compound.word)
+            val parts = lexicon.decompound(compound.word)
             if (parts.size < 2) continue
             val surfaces = listOf(parts.dropLast(1).joinToString("") { it.surface }, parts.last().surface)
             if (identity(surfaces)) continue
             val first = pronounce(surfaces[0]) ?: continue
             val second = pronounce(surfaces[1]) ?: continue
-            val leftScore = first.ipa.mapNotNull { DoubleRhymePhonetics.distance(leftIpa.ipa, it) }.minOrNull() ?: continue
-            val rightScore = second.ipa.mapNotNull { DoubleRhymePhonetics.distance(rightIpa.ipa, it) }.minOrNull() ?: continue
+            val leftScore = first.ipa.mapNotNull(leftMatcher::distance).minOrNull() ?: continue
+            val rightScore = second.ipa.mapNotNull(rightMatcher::distance).minOrNull() ?: continue
             attested += leftScore + rightScore to compound.copy(components = surfaces)
         }
         attested.sortedWith(compareBy<Pair<Int, DictionaryMatch>> { it.first }
-            .thenBy { it.second.source.ordinal }.thenBy { it.second.word })
-            .distinctBy { GermanDecompounder.key(it.second.word) }.forEach { reserve(it.second) }
+            .thenBy { it.second.source.ordinal }.thenBy { it.second.word }.thenBy { it.second.ipa })
+            .distinctBy { GermanDecompounder.key(it.second.word) }.forEach {
+                reserve(it.second)
+                // All compounds precede free pairs. A full page plus one real result
+                // already determines both the page and hasNext, so stop here.
+                if (matches.size.toLong() > offset + PAGE_SIZE) return pageResult()
+            }
 
-        fun ranked(rows: List<DictionaryMatch>, ipa: List<String>, anchor: String): List<DictionaryMatch> = rows
-            .mapNotNull { match -> DoubleRhymePhonetics.distance(ipa, match.ipa)?.let { it to match } }
+        fun ranked(rows: List<DictionaryMatch>, matcher: DoubleRhymePhonetics.Matcher, anchor: String): List<DictionaryMatch> = rows
+            .mapNotNull { match -> matcher.distance(match.ipa)?.let { it to match } }
             .sortedWith(compareBy<Pair<Int, DictionaryMatch>> { it.first }
                 .thenBy { it.second.source.ordinal }.thenBy { it.second.word }.thenBy { it.second.ipa })
             .map { it.second }.distinctBy { GermanDecompounder.key(it.word) }
             .filterNot { GermanDecompounder.key(it.word) == GermanDecompounder.key(anchor) }
-        val left = ranked(collect(leftIpa.ipa), leftIpa.ipa, anchors[0])
-        val right = ranked(collect(rightIpa.ipa), rightIpa.ipa, anchors[1])
+        val left = ranked(collect(leftIpa.ipa, leftMatcher), leftMatcher, anchors[0])
+        val right = ranked(collect(rightIpa.ipa, rightMatcher), rightMatcher, anchors[1])
+        val remaining = right.associateByTo(linkedMapOf()) { GermanDecompounder.key(it.word) }
+        used.forEach(remaining::remove)
         // Pair the strongest remaining alternatives without constructing a Cartesian product.
         for (first in left) {
             coroutineContext.ensureActive()
-            if (GermanDecompounder.key(first.word) in used) continue
-            val second = right.firstOrNull {
-                GermanDecompounder.key(it.word) !in used &&
-                    GermanDecompounder.key(it.word) != GermanDecompounder.key(first.word)
-            } ?: break
+            val firstKey = GermanDecompounder.key(first.word)
+            if (firstKey in used) continue
+            val choices = remaining.entries.iterator()
+            if (!choices.hasNext()) break
+            var choice = choices.next()
+            if (choice.key == firstKey) {
+                if (!choices.hasNext()) break
+                choice = choices.next()
+            }
+            val second = choice.value
+            remaining.remove(firstKey)
+            remaining.remove(choice.key)
             reserve(DictionaryMatch("${first.word} + ${second.word}", "${first.ipa} + ${second.ipa}",
                 weakerSource(first.source, second.source), listOf(first.word, second.word)))
         }
-        val offset = page.toLong() * PAGE_SIZE
-        return DictionarySearchResult(pronunciation, matches.drop(offset.toInt()).take(PAGE_SIZE),
-            matches.size.toLong() > offset + PAGE_SIZE)
+        return pageResult()
     }
 
-    private suspend fun collect(ipa: List<String>): List<DictionaryMatch> {
+    private suspend fun collect(
+        ipa: List<String>, matcher: DoubleRhymePhonetics.Matcher = DoubleRhymePhonetics.Matcher(ipa),
+    ): List<DictionaryMatch> {
         val keys = DoubleRhymePhonetics.indexKeys(ipa).toList()
         if (keys.isEmpty()) return emptyList()
-        val vowels = ipa.mapNotNull { DoubleRhymePhonetics.keys(it)?.assonance }.toSet()
         val matches = mutableListOf<DictionaryMatch>()
         for (source in DictionarySource.entries) {
             data.withSource("de", source) { rows ->
-                var offset = 0
-                do {
-                    coroutineContext.ensureActive()
-                    val count = rows.read(
-                        "SELECT word, ipa FROM dictionary WHERE assonance_reversed IN (${keys.joinToString(",") { "?" }}) " +
-                            "ORDER BY word, ipa LIMIT 200 OFFSET $offset", keys.toTypedArray(),
-                    ) { word, candidate ->
-                        if (DoubleRhymePhonetics.keys(candidate)?.assonance in vowels) {
-                            matches += DictionaryMatch(word, candidate, source.pronunciationSource)
-                        }
+                coroutineContext.ensureActive()
+                // This mode consumes the entire bucket. One covering-index cursor avoids
+                // sorting and revisiting the bucket for each 200-row OFFSET page.
+                rows.read(
+                    "SELECT word, ipa FROM dictionary WHERE assonance_reversed IN (${keys.joinToString(",") { "?" }}) " +
+                        "ORDER BY assonance_reversed, word, ipa", keys.toTypedArray(),
+                ) { word, candidate ->
+                    if (matcher.matchesVowels(candidate)) {
+                        matches += DictionaryMatch(word, candidate, source.pronunciationSource)
                     }
-                    offset += count
-                } while (count == 200)
+                }
             }
         }
         return matches.distinctBy { it.word to it.ipa }

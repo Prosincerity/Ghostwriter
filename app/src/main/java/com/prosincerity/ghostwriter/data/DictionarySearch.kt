@@ -57,21 +57,26 @@ internal class DictionarySearch(
         val plan = DictionarySearchPlan.fromIpa(pronunciation?.ipa.orEmpty(), language, mode)
         val matches = linkedMapOf<String, DictionaryMatch>()
         val earlierPageWords = mutableSetOf<String>()
+        var filteredCount = -1
+        var filtered = emptyList<DictionaryMatch>()
         fun visibleMatches(): List<DictionaryMatch> {
+            if (filteredCount == matches.size) return filtered
             val collected = matches.values.toList()
             val excluded = when (mode) {
                 DictionarySearchMode.RHYME -> CompoundRhymeFilter.excludedWords(
                     collected.map { CompoundRhymeFilter.Entry(it.word, it.ipa) },
                     pronunciation?.ipa.orEmpty().map { CompoundRhymeFilter.Entry(normalized, it) },
                     language,
-                    lexicon?.decompounder?.let { it::decompound },
+                    lexicon?.let { it::decompound },
                 )
                 DictionarySearchMode.ASSONANCE -> AssonanceFormFilter.excludedWords(
                     collected.map { AssonanceFormFilter.Entry(it.word, it.ipa) }, language, earlierPageWords,
                 )
                 else -> emptySet()
             }
-            return collected.filterNot { it.word in excluded }
+            filtered = collected.filterNot { it.word in excluded }
+            filteredCount = matches.size
+            return filtered
         }
         fun enough(): Boolean {
             val visible = visibleMatches()

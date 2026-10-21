@@ -4,6 +4,22 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DoubleRhymePhoneticsTest {
+    @Test fun matcherParsesEachPronunciationOnlyOnceIncludingInvalidInput() {
+        val calls = mutableMapOf<String, Int>()
+        val query = "/ˈbandə/"
+        val candidate = "/ˈkantə/"
+        val matcher = DoubleRhymePhonetics.Matcher(listOf(query, query)) {
+            calls[it] = calls.getOrDefault(it, 0) + 1
+            DoubleRhymePhonetics.keys(it)
+        }
+        repeat(3) {
+            assertTrue(matcher.matchesVowels(candidate))
+            assertEquals(1, matcher.distance(candidate))
+            assertFalse(matcher.matchesVowels("☃"))
+            assertNull(matcher.distance("☃"))
+        }
+        assertEquals(mapOf(query to 1, candidate to 1, "☃" to 1), calls)
+    }
     @Test fun ranksExactBeforeVoicingBeforeLooseMatches() {
         assertEquals(0, DoubleRhymePhonetics.distance(listOf("/ˈbandə/"), "/ˈʃandə/"))
         assertEquals(1, DoubleRhymePhonetics.distance(listOf("/ˈʃtʁaːsən/"), "/ˈnaːzən/"))

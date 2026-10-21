@@ -6,6 +6,60 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DoubleRhymeSearchTest {
+    @Test fun aFullCompoundPageWithLookaheadDoesNotScanStandaloneAlternatives() = runBlocking {
+        val compounds = (0..69).flatMap { index ->
+            val suffix = "${('a'.code + index / 26).toChar()}${('a'.code + index % 26).toChar()}"
+            val left = "links$suffix"
+            val right = "rechts$suffix"
+            listOf(row(left, "/ˈʃʁankɐ/"), row(right, "/ˈʁoːtə/"), row(left + right, "/ˈʃʁankɐˌʁoːtə/"))
+        }
+        val fixture = Fixture(listOf(row("Anker", "/ˈankɐ/"), row("Bote", "/ˈboːtə/")) + compounds)
+        var candidateReads = 0
+        val data = object : DictionarySearchData by fixture {
+            override suspend fun withSource(language: String, source: DictionarySource, scan: suspend (DictionarySearchRows) -> Unit) {
+                fixture.withSource(language, source) { rows ->
+                    scan(DictionarySearchRows { sql, args, onRow ->
+                        if ("WHERE assonance_reversed" in sql) candidateReads++
+                        rows.read(sql, args, onRow)
+                    })
+                }
+            }
+        }
+        val result = DictionarySearch(data).search("Anker Bote", "de", DictionarySearchMode.DOUBLE_RHYME)
+        assertEquals(compounds.filter { it.word.contains("rechts") && it.word.startsWith("links") }
+            .sortedBy { it.word }.take(60).map { it.word }, result.matches.map { it.word })
+        assertTrue(result.hasNext)
+        assertEquals("Only the compound bucket is needed across the two sources", 2, candidateReads)
+    }
+    @Test fun pairingSkipsTheSameSpellingAndReservesWordsAcrossBothPositions() = runBlocking {
+        // Artificial homograph rows isolate pairing order without asserting linguistic facts.
+        val rows = listOf(row("Anker", "/ˈankɐ/"), row("Bote", "/ˈboːtə/"),
+            row("shared", "/ˈʃʁankɐ/"), row("shared", "/ˈʁoːtə/"),
+            row("zleft", "/ˈʃʁankɐ/"), row("zright", "/ˈʁoːtə/"))
+        val result = DictionarySearch(Fixture(rows)).search("Anker Bote", "de", DictionarySearchMode.DOUBLE_RHYME)
+        assertEquals(listOf("shared + zright"), result.matches.map { it.word })
+        assertFalse(result.hasNext)
+    }
+    @Test fun scansEachCandidateBucketOnceInsteadOfRepeatingSortedOffsets() = runBlocking {
+        val rows = listOf(row("Anker", "/ˈankɐ/"), row("Bote", "/ˈboːtə/")) +
+            (0..204).flatMap { listOf(row("links$it", "/ˈʃʁankɐ/"), row("rechts$it", "/ˈʁoːtə/")) }
+        val fixture = Fixture(rows)
+        var candidateReads = 0
+        val data = object : DictionarySearchData by fixture {
+            override suspend fun withSource(language: String, source: DictionarySource, scan: suspend (DictionarySearchRows) -> Unit) {
+                fixture.withSource(language, source) { database ->
+                    scan(DictionarySearchRows { sql, args, onRow ->
+                        if ("WHERE assonance_reversed" in sql) candidateReads++
+                        database.read(sql, args, onRow)
+                    })
+                }
+            }
+        }
+        val result = DictionarySearch(data).search("Anker Bote", "de", DictionarySearchMode.DOUBLE_RHYME)
+        assertEquals(60, result.matches.size)
+        assertTrue(result.hasNext)
+        assertEquals("Three buckets across two sources need six indexed scans", 6, candidateReads)
+    }
     private fun row(word: String, ipa: String) = DictionaryMatch(word, ipa, PronunciationSource.WIKTIONARY)
     private val street = listOf(
         row("Straße", "/ˈʃtʁaːsə/"), row("Straßen", "/ˈʃtʁaːsən/"), row("Bande", "/ˈbandə/"),

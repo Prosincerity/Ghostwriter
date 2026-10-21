@@ -8,13 +8,40 @@ import kotlin.coroutines.coroutineContext
 internal class DictionaryLexicon(private val data: DictionarySearchData, private val language: String) {
     private val checked = mutableSetOf<String>()
     private val words = mutableMapOf<String, MutableList<DictionaryMatch>>()
+    private val decompositions = mutableMapOf<String, List<GermanDecompounder.Part>>()
+    private var probes: MutableSet<String>? = null
     val decompounder = GermanDecompounder(
-        pronunciations = { word -> entries(word).map { it.ipa } },
-        contains = { it in words },
+        pronunciations = { word -> request(word); words[word].orEmpty().map { it.ipa } },
+        contains = { request(it); it in words },
     )
 
     suspend fun prepare(inputs: Collection<String>) {
-        load(inputs.flatMap { GermanDecompounder.vocabulary(it) }.toSet())
+        var pending = inputs.distinct().filterNot { it in decompositions }
+        while (pending.isNotEmpty()) {
+            val required = mutableSetOf<String>()
+            val unresolved = mutableListOf<String>()
+            for (word in pending) {
+                coroutineContext.ensureActive()
+                val missing = mutableSetOf<String>()
+                probes = missing
+                val parts = try { decompounder.decompound(word) } finally { probes = null }
+                if (missing.isEmpty()) decompositions[word] = parts else {
+                    required += missing
+                    unresolved += word
+                }
+            }
+            // Resolve only atoms visited by the splitter. Unknown heads prune their
+            // modifiers; no eager enumeration of every interior substring is needed.
+            load(required)
+            pending = unresolved
+        }
+    }
+
+    fun decompound(word: String): List<GermanDecompounder.Part> =
+        decompositions[word] ?: decompounder.decompound(word)
+
+    private fun request(key: String) {
+        if (key !in checked) probes?.add(key)
     }
 
     suspend fun load(inputs: Collection<String>) {

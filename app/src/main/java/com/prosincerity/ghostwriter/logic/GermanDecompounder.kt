@@ -35,16 +35,17 @@ internal class GermanDecompounder(
         return split(word, false) ?: listOf(Part(word, key(word)))
     }
 
-    private fun known(word: String): Boolean = contains(key(word))
+    // Atom/stem callers already pass lowercase NFC text from the normalized input.
+    private fun known(word: String): Boolean = contains(word)
 
     private fun atom(text: String, modifier: Boolean): Part? {
-        val normalized = key(text)
+        val normalized = text.lowercase(Locale.GERMAN)
         // Keep the linking material on the modifier, while retaining its dictionary lemma.
         for (link in if (modifier) LINKS else emptyList()) {
             val base = normalized.removeSuffix(link)
             if (base.length >= 2 && base != normalized && known(base)) return Part(text, base, link)
         }
-        if (known(text)) return Part(text, normalized)
+        if (known(normalized)) return Part(text, normalized)
         // A bound compound lexeme is licensed by its independently attested source verb.
         if (BOUND_HEADS[normalized]?.let(::known) == true) return Part(text, normalized)
         // Schulfest, Blumengarten: productive loss of a lemma's final -e.
@@ -84,18 +85,5 @@ internal class GermanDecompounder(
             listOf(stem, stem + "e", stem + "en", stem + "n", stem.removeSuffix("l") + "eln")
         fun key(word: String): String = DictionaryHeadword.normalize(word).lowercase(Locale.GERMAN)
 
-        /** Possible dictionary atoms, for batched indexed lookups rather than a full lexicon scan. */
-        fun vocabulary(word: String): Set<String> = buildSet {
-            if (word.length > MAX_LENGTH) return@buildSet
-            addAll(BOUND_HEADS.values)
-            for (start in word.indices) for (end in start + 2..word.length) {
-                val atom = key(word.substring(start, end))
-                add(atom)
-                add(atom + "e")
-                for (suffix in DERIVATIONAL_SUFFIXES) {
-                    if (atom.endsWith(suffix)) addAll(stemForms(atom.removeSuffix(suffix)))
-                }
-            }
-        }
     }
 }

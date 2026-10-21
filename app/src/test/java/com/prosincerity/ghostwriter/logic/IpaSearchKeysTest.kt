@@ -7,6 +7,17 @@ import org.junit.Test
 
 class IpaSearchKeysTest {
     @Test
+    fun vowelClassificationRetainsAccentsPrefixesAndModifiedAffricates() {
+        for (language in listOf("en", "de", "tr")) {
+            for (vowel in listOf("a", "áː", "ã", "ʰaː", "øː", "ʷə", "i̯")) {
+                val keys = IpaSearchKeys.fromIpa("/$vowel/", language)!!
+                assertEquals("$language $vowel", keys.tokens.single(), keys.assonance)
+            }
+            assertEquals(false, IpaSearchKeys.hasVowel(listOf("ʰkː", "t͡s", "ʃ", "ˈ", "↗"), language))
+        }
+        assertEquals(listOf("t͡s", "aɪ̯", "t"), IpaSearchKeys.fromIpa("/t͡saɪ̯t/", "de")!!.tokens)
+    }
+    @Test
     fun matchesProducerTokenFixtures() {
         val fixtures = listOf(
             Triple("en", "[ˈtʃɝːtʃ]", listOf("ˈ", "tʃ", "ɝː", "tʃ")),

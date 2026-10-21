@@ -128,8 +128,10 @@ The databases supply the lexicon and IPA, but contain no parts of speech or
 etymology annotations. These are dictionary-backed morphological heuristics,
 not a claim to reproduce all Wiktionary analyses. Missing entries, ambiguous
 derivations, inflection, and incomplete stress notation can prevent or distort
-a split. The algorithm uses batched indexed word lookups; generated IPA never
-counts as evidence that an atom exists. Words longer than 96 characters stay
+a split. The algorithm batches indexed lookups for atoms actually visited
+by the splitter. Unknown heads prune modifier analysis; fully resolved splits
+are cached for the current search. Generated IPA never counts as evidence
+that an atom exists. Words longer than 96 characters stay
 whole. No frequency dataset or additional library is required.
 
 ### Double rhymes
@@ -161,9 +163,19 @@ vocabulary: attested `Nasenkante` wins over a constructed pair using `Nasen`,
 but the app does not claim an unseen joined spelling is an existing word.
 
 Search rebuilds the same deterministic selection before slicing each page.
-It scans the relevant vowel-key buckets in batches and does not build the
-Cartesian product of alternatives. Broad inputs can still require substantial
-work; performance with complete release dictionaries remains unbenchmarked.
+Each relevant vowel-key bucket is streamed once per source using the existing
+covering index, without repeated sorts or OFFSET scans. Input sound profiles
+are compiled once, and candidate pronunciation profiles are cached per anchor.
+The shared IPA tokenizer groups longest-match candidates by their first
+character and classifies known phonemes with character sets; Unicode
+decomposition is reserved for uncommon precomposed characters.
+An ordered map removes reserved right-hand words during pairing, so selecting
+pairs takes linear rather than quadratic work in the number of alternatives.
+Ranking still sorts candidates. When compounds fill the requested page plus
+one lookahead result, standalone searches and pairing are skipped entirely.
+Broad inputs can still require substantial work.
+Ordinary search modes also reuse their filtered results between unchanged
+scan checkpoints.
 
 ### Source-checked regression examples
 
