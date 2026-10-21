@@ -8,7 +8,10 @@ import kotlin.coroutines.coroutineContext
 internal class DictionaryLexicon(private val data: DictionarySearchData, private val language: String) {
     private val checked = mutableSetOf<String>()
     private val words = mutableMapOf<String, MutableList<DictionaryMatch>>()
-    val decompounder = GermanDecompounder { it in words }
+    val decompounder = GermanDecompounder(
+        pronunciations = { word -> entries(word).map { it.ipa } },
+        contains = { it in words },
+    )
 
     suspend fun prepare(inputs: Collection<String>) {
         load(inputs.flatMap { GermanDecompounder.vocabulary(it) }.toSet())

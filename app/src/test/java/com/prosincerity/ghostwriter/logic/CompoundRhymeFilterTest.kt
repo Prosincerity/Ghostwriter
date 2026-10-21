@@ -7,10 +7,18 @@ class CompoundRhymeFilterTest {
     private fun entry(word: String, ipa: String) = CompoundRhymeFilter.Entry(word, ipa)
 
     @Test
-    fun lexicalizedGermanWordsAreNotIdentityCompounds() {
+    fun unsupportedGermanSplitsAreNotUsedForIdentityFiltering() {
         assertEquals(emptySet<String>(), CompoundRhymeFilter.excludedWords(
             listOf(entry("Handschuh", "/ˈhantˌʃuː/")),
             listOf(entry("Schuh", "/ˈʃuː/")), "de"))
+    }
+
+    @Test
+    fun handschuhIsAnIdentityCompoundWhenItsPartsAreAttested() {
+        val splitter = GermanDecompounder { it in setOf("hand", "schuh") }
+        assertEquals(setOf("Handschuh"), CompoundRhymeFilter.excludedWords(
+            listOf(entry("Handschuh", "/ˈhantˌʃuː/")),
+            listOf(entry("Schuh", "/ˈʃuː/")), "de", splitter::decompound))
     }
 
     @Test
