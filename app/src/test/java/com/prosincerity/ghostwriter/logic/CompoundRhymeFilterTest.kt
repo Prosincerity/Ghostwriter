@@ -7,6 +7,13 @@ class CompoundRhymeFilterTest {
     private fun entry(word: String, ipa: String) = CompoundRhymeFilter.Entry(word, ipa)
 
     @Test
+    fun lexicalizedGermanWordsAreNotIdentityCompounds() {
+        assertEquals(emptySet<String>(), CompoundRhymeFilter.excludedWords(
+            listOf(entry("Handschuh", "/ˈhantˌʃuː/")),
+            listOf(entry("Schuh", "/ˈʃuː/")), "de"))
+    }
+
+    @Test
     fun removesCompoundWhenStandaloneEndingIsAlsoReturned() {
         val results = listOf(
             entry("point", "/ˈpɔɪnt/"),
@@ -37,13 +44,21 @@ class CompoundRhymeFilterTest {
     }
 
     @Test
-    fun germanSuffixMatchesRegardlessOfNounCapitalization() {
-        assertEquals(setOf("Anwaltschaft", "Wissenschaft"), CompoundRhymeFilter.excludedWords(
+    fun germanDerivationsAreNotCompoundsDespiteMatchingSuffixes() {
+        assertEquals(emptySet<String>(), CompoundRhymeFilter.excludedWords(
             listOf(
                 entry("Schaft", "/ʃaft/"),
                 entry("Anwaltschaft", "/ˈanvaltʃaft/"),
                 entry("Wissenschaft", "/ˈvɪsn̩ʃaft/"),
             ), emptyList(), "de"))
+    }
+
+    @Test
+    fun germanCompoundsWithDifferentModifiersShareAnIdentityHead() {
+        val splitter = GermanDecompounder { it in setOf("straße", "seite", "land") }
+        assertEquals(setOf("Seitenstraße"), CompoundRhymeFilter.excludedWords(
+            listOf(entry("Seitenstraße", "/ˈzaɪtn̩ˌʃtʁaːsə/")),
+            listOf(entry("Landstraße", "/ˈlantˌʃtʁaːsə/")), "de", splitter::decompound))
     }
 
     @Test

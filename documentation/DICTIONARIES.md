@@ -79,8 +79,22 @@ Rhyme matching uses the last primary stress, falling back to secondary stress.
 A pronunciation with one vowel can omit stress; an unmarked pronunciation
 with multiple vowels has no reliable rime. Rhyme mode does not progressively
 shorten that rime. It suppresses longer compounds when their written and
-phonetic ending duplicates the query or an earlier match. Word-suffix mode
-retains compounds.
+phonetic ending duplicates the query or an earlier match. German uses a
+dictionary-backed decompounder and compares the final component, including
+between two compounds. Word-suffix mode retains compounds.
+
+German decompounding preserves the original surface spelling and attaches
+linking material (`s`, `es`, `n`, `en`, `e`, `er`, `ens`, `ns`) to the left
+component, while recording its dictionary base separately. It analyses the
+longest head first, backtracks when the modifier is unknown, and supports
+multiple components and stems with a dropped final `e`. For example,
+`Wissenschaftskolleg` becomes `Wissenschafts + kolleg` and `Hundehütte` becomes
+`Hunde + hütte`. A small protected atom list keeps lexicalized or derived
+words such as `Handschuh`, `Hinterziehung`, and `Wissenschaft` intact. This
+is a spelling-based heuristic, not a complete morphological dictionary;
+unknown components and missing dictionary entries can prevent a split.
+It uses batched indexed word lookups; generated pronunciation never counts
+as evidence that an atom exists. Words longer than 96 characters stay whole.
 
 For assonance with multiple input pronunciations, shorter complete vowel keys
 are searched first. Each exact key is searched across both sources before the
