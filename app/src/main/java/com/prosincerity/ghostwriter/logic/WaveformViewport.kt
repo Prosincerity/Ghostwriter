@@ -53,7 +53,7 @@ data class WaveformViewport(
         val contentWidth = viewport.contentWidthPx(viewportWidthPx)
         val contentPosition = (xPx + viewport.scrollOffsetPx)
             .coerceIn(0f, contentWidth)
-        return ((contentPosition / contentWidth) * durationMs)
+        return (contentPosition.toDouble() * durationMs / contentWidth)
             .toLong()
             .coerceIn(0L, durationMs)
     }

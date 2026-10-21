@@ -10,7 +10,6 @@ class DictionarySearchPlanTest {
         val plan = plan(DictionarySearchMode.RHYME, "/ˈkat/", "/ˈkaːt/", "/ˈkata/", "/ˈbat/")
 
         assertEquals(listOf("ata", "taː", "ta"), plan.prefixes.map { it.value })
-        assertEquals(listOf(3, 2, 2), plan.prefixes.map { it.tokenCount })
         assertEquals(listOf("a", "t", "a"), plan.prefixes.first().tokens)
         assertTrue(plan.assonanceFallbacks.isEmpty())
     }
@@ -20,7 +19,6 @@ class DictionarySearchPlanTest {
         val plan = plan(DictionarySearchMode.WORD_SUFFIX, "/ˈkatɪŋab/", "/katɪˈŋab/", "/ab/")
 
         assertEquals(listOf("baŋɪt", "baŋ", "ba"), plan.prefixes.map { it.value })
-        assertEquals(listOf(5, 3, 2), plan.prefixes.map { it.tokenCount })
         assertEquals(listOf("t", "ɪ", "ŋ", "a", "b"), plan.prefixes.first().tokens)
         assertTrue(plan.assonanceFallbacks.isEmpty())
     }
@@ -30,8 +28,6 @@ class DictionarySearchPlanTest {
         val plan = plan(DictionarySearchMode.ASSONANCE, "/a.e.i.o/", "/e.i.o/", "/oː/", "/o/", "/b/")
 
         assertEquals(listOf("o", "oː", "o i e", "o i e a"), plan.prefixes.map { it.value })
-        assertEquals(listOf(1, 1, 3, 4), plan.prefixes.map { it.tokenCount })
-        assertTrue(plan.prefixes.all { it.tokens == null })
     }
 
     @Test

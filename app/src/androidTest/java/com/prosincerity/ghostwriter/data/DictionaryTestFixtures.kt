@@ -6,11 +6,13 @@ import android.database.sqlite.SQLiteDatabase
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.ByteArrayOutputStream
 import java.io.File
+import org.junit.rules.TemporaryFolder
 import java.util.zip.GZIPOutputStream
 
 internal fun <T> withDictionaryTestContext(block: (Context) -> T): T {
     val baseContext = InstrumentationRegistry.getInstrumentation().targetContext
-    val root = File(baseContext.cacheDir, "dictionary-test-${System.nanoTime()}")
+    val folder = TemporaryFolder(baseContext.cacheDir).apply { create() }
+    val root = folder.root
     val files = File(root, "files").apply { mkdirs() }
     val cache = File(root, "cache").apply { mkdirs() }
     val context = object : ContextWrapper(baseContext) {
@@ -21,12 +23,12 @@ internal fun <T> withDictionaryTestContext(block: (Context) -> T): T {
     return try {
         block(context)
     } finally {
-        root.deleteRecursively()
+        folder.delete()
     }
 }
 
 internal fun dictionaryArchive(context: Context, entries: List<Pair<String, String>>): ByteArray {
-    val file = File(context.cacheDir, "dictionary-fixture-${System.nanoTime()}.db")
+    val file = File.createTempFile("dictionary-fixture-", ".db", context.cacheDir)
     try {
         SQLiteDatabase.openOrCreateDatabase(file, null).use { database ->
             database.beginTransaction()

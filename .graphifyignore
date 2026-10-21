@@ -1,0 +1,156 @@
+# Graph Ghostwriter's authored code, first-party tests, and project guides.
+# Keep app/src/test, app/src/androidTest, and scripts/test_*.py: their
+# relationships to production code are useful during bug hunts.
+# Keep authored Gradle/CMake logic, manifests, the dependency catalog,
+# coverage policy, and behavioral resources. Avoid blanket *.json/*.xml rules.
+
+# Upstream eSpeak implementation, ports, tests, examples, data, and docs.
+# Keep our integration in app/src/main/cpp and documentation/ESPEAK_NATIVE.md.
+/third_party/
+
+# Build products, generated source, caches, reports, and local captures.
+build/
+bin/
+gen/
+generated/
+out/
+dist/
+release/
+.gradle/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+.cache/
+.pytest_cache/
+__pycache__/
+.venv/
+node_modules/
+coverage/
+reports/
+captures/
+screenshots/
+
+# Agent, IDE, VCS, and graph tooling. Agent policy is read separately.
+.git/
+.agents/
+.codex/
+.claude/
+.cursor/
+.idea/
+.vscode/
+graphify-out/
+.graphify-cache/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+/.github/copilot-instructions.md
+/.github/instructions/
+/.github/agents/
+/.github/prompts/
+/.gitignore
+/app/.gitignore
+/.gitmodules
+/.graphifyignore
+*.iml
+.DS_Store
+
+# Local environment, credentials, and signing configuration.
+.aws/
+.env
+.env.*
+local.properties
+keystore.properties
+signing.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+
+# Gradle bootstrap files and machine/runtime tuning; retain build logic.
+/gradlew
+/gradlew.bat
+/gradle/wrapper/
+/gradle.properties
+/gradle/gradle-daemon-jvm.properties
+*.lock
+*.lockfile
+package-lock.json
+pnpm-lock.yaml
+
+# Static fixtures and assets, including generated eSpeak dictionaries and
+# duplicated licenses. The release manifest is an authored runtime contract.
+/scripts/fixtures/
+**/src/test/resources/
+**/src/androidTest/assets/
+/app/src/main/assets/*
+!/app/src/main/assets/dictionary_release.json
+/app/src/main/res/drawable/
+/app/src/main/res/mipmap*/
+/app/src/main/res/font/
+/LICENSE
+/THIRD_PARTY_LICENSES.md
+
+# Binary packages, native/JVM outputs, archives, media, fonts, and databases.
+*.class
+*.dex
+*.jar
+*.aar
+*.apk
+*.aab
+*.ap_
+*.so
+*.a
+*.o
+*.obj
+*.dll
+*.dylib
+*.exe
+*.wasm
+*.pyc
+*.zip
+*.gz
+*.tar
+*.tgz
+*.xz
+*.bz2
+*.7z
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.icns
+*.ttf
+*.otf
+*.ttc
+*.woff
+*.woff2
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.m4a
+*.aac
+*.pcm
+*.mp4
+*.webm
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs, profiling output, temporary files, and editor backups.
+*.log
+*.hprof
+*.heapdump
+*.perfetto-trace
+*.tmp
+*.bak
+*.bak-*
+*.backup
+*~
+*.swp
+*.swo

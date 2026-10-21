@@ -1,126 +1,144 @@
 # Dictionaries
 
-Ghostwriter provides pronunciation and rhyme search for English (`en`),
-German (`de`), and Turkish (`tr`). Dictionary data is produced by
+This guide describes dictionary installation, pronunciation lookup, and search behavior.
+
+## Use dictionaries
+
+Languages are English (`en`), German (`de`), and Turkish (`tr`). Each has separate
+Wiktionary-derived and eSpeak-generated indexes from
 [Ghostwriter Dictionary](https://github.com/Prosincerity/Ghostwriter-Dict).
-Each language has separate Wiktionary-derived and eSpeak-generated indexes.
 
-## Using dictionaries
+1. Open **Settings → Download Dictionaries** and install a source.
+2. Open the editor's book button, select an installed language and mode, and search.
+3. Use **Previous** and **Next** to page through words, IPA, and source labels.
 
-Open **Settings → Download Dictionaries** to download a source. Sources can be
-installed independently, with archive size, progress, cancellation, and retry
-shown in the download screen. Network access is needed for downloads; normal
-editing and installed-dictionary searches work offline.
+Downloads require network access and offer progress, cancellation, and retry.
+Installed search works offline. Bundled pronunciation generation can supply IPA
+for a missing input, but searchable result words come from installed indexes.
 
-The editor's book button opens the Dictionary screen and returns to the same
-project. Select an installed language and a search mode, then enter a word.
-Results show pronunciation and source labels, with Previous and Next controls.
-If no dictionaries are installed, the screen links to downloads.
-
-The bundled pronunciation engine can generate IPA (International Phonetic
-Alphabet) for a missing input word. Matching words still come from installed
-indexes; the engine does not supply a searchable word list.
-
-## Release inputs and installation
+## Release manifest and installation
 
 [`dictionary_release.json`](../app/src/main/assets/dictionary_release.json)
-defines the pinned release, explicit archive URLs, and compressed sizes.
-Update this manifest when changing dictionary releases. Use finished `.db.gz`
-assets rather than word lists or intermediate archives, and verify their
-schema and pronunciation rules. Do not derive download URLs from an assumed
-release date.
+pins the release tag, explicit `.db.gz` URLs, filenames, and compressed sizes.
+Update it when changing data releases. Do not infer URLs from release dates.
 
-`DictionaryInstaller.kt` uses framework networking and SQLite APIs. It streams
-decompressed data into a staging file in versioned app-private internal
-storage, checks that the expected columns can be queried, and activates the
-file only after successful installation. This check is not a full integrity
-or content audit. Failed or cancelled installs clean up staging files and
-preserve usable older releases. Downloaded databases are excluded from Android
-backup and are not bundled in the APK.
+`DictionaryInstaller.kt` streams decompressed data into versioned app-private
+storage. It checks that the required columns can be queried before activating
+the staged database. This is a schema check, not a full content audit.
+Failed or cancelled installs remove staging files and retain usable older data.
 
-The expected table is:
+Downloaded databases are excluded from Android backup and the APK.
+Search opens them read-only and never inserts generated pronunciations.
+The required `dictionary` columns are:
 
-```text
-dictionary(word, ipa, ipa_reversed, assonance_reversed)
-```
-
-The primary key is `(word, ipa)`, with indexes on the reversed search fields.
-Installed databases are opened read-only; runtime fallback never adds rows.
+| Column | Use |
+| --- | --- |
+| `word` | Written headword |
+| `ipa` | Pronunciation variant |
+| `ipa_reversed` | Reversed phoneme search key |
+| `assonance_reversed` | Reversed vowel search key |
 
 ## Pronunciation lookup
 
-`DictionaryPronunciations.kt` checks sources in this order:
+`DictionaryPronunciations.kt` returns all variants from the first matching source:
 
-1. The installed Wiktionary index.
-2. The installed eSpeak index.
-3. The bundled [eSpeak engine](ESPEAK_NATIVE.md), if both indexes miss.
+1. Installed Wiktionary index.
+2. Installed eSpeak index.
+3. Bundled [native engine](ESPEAK_NATIVE.md).
 
-Lookup returns all IPA variants from the first source containing the word and
-records their source. It does not merge variants across sources.
-`DictionaryHeadword.kt` applies the producer's normalization and eligibility
-rules, including Unicode NFC and punctuation cleanup. Spelling identity
-remains case-sensitive.
+Variants from different sources are not merged. `DictionaryHeadword.kt`
+normalizes Unicode NFC, apostrophes, dashes, and subscript digits, then checks
+headword eligibility. Lookup spelling remains case-sensitive.
 
-## Search behavior
+## Search modes
 
-`DictionarySearchPlan.kt` defines phonetic search stages, and
-`DictionarySearch.kt` reads candidates in batches and returns bounded pages.
-Search excludes the queried spelling and deduplicates result words.
-Different spellings with the same pronunciation remain eligible.
+`DictionarySearchPlan.kt` orders search stages; `DictionarySearch.kt` scans
+candidates and returns pages. Ordinary modes exclude the input spelling and
+deduplicate result words. Different spellings may share a pronunciation.
 
-| Mode | Matching and ordering |
+| Mode | Match |
 | --- | --- |
-| Rhyme | Match the full vowel-through-end sequence of the stressed syllable; shorter candidate pronunciations are scanned first within each source |
-| Assonance | Match the complete vowel sequence first, then progressively shorter vowel suffixes; exact matches precede fallback matches across sources |
-| Word prefix | Match the written beginning of a word, preserving case |
-| Word suffix | Match phoneme endings, with longer matches before shorter ones across sources |
+| Rhyme | Full stressed-vowel-through-end sequence, without shortening |
+| Assonance | Complete vowel sequence, followed by shorter vowel suffixes |
+| Word prefix | Written beginning, case-sensitive |
+| Word suffix | Phoneme endings, longer matches first |
+| Double rhyme | German compounds or two-word input; see below |
 
-Rhyme matching uses the last primary stress, falling back to secondary stress.
-A pronunciation with one vowel can omit stress; an unmarked pronunciation
-with multiple vowels has no reliable rime. Rhyme mode does not progressively
-shorten that rime. It suppresses longer compounds when their written and
-phonetic ending duplicates the query or an earlier match. Word-suffix mode
-retains compounds.
+Rhyme uses the last primary stress, falling back to secondary stress.
+An unstressed single-vowel pronunciation is eligible; an unmarked multi-vowel
+pronunciation has no reliable rime. Candidates with shorter pronunciations
+are scanned first within each source.
 
-For assonance with multiple input pronunciations, shorter complete vowel keys
-are searched first. Each exact key is searched across both sources before the
-next key; fallback tiers then run from longest to shortest. For assonance and
-word-suffix searches, Wiktionary takes precedence within the same tier. Rhyme
-and word-prefix searches traverse Wiktionary before eSpeak.
+Rhyme suppresses compounds that repeat the written and phonetic ending of the
+query or an earlier result. German compares dictionary-backed final components.
+Word-suffix mode retains compounds.
 
-English and German assonance results group compatible spelling and phonetic
-forms. English favors a returned base form. German favors a compatible
-returned infinitive; otherwise, it favors the form whose pronunciation is a
-prefix of the most other returned pronunciations, then the shortest spelling.
-German grouping accounts
-for syllabic endings and final devoicing. These are matching heuristics,
-not lemma lookup: the databases have no lemma column. Completed pages keep
-their selected forms so later batches do not shift pagination offsets.
+Assonance searches shorter complete input vowel keys first. Each exact key
+visits both sources before the next key; fallback tiers run longest first.
+Assonance and word-suffix searches prioritize Wiktionary within a tier.
+Rhyme and word-prefix searches visit Wiktionary before eSpeak.
 
-`IpaSearchKeys.kt` follows the producer's phoneme-token rules when constructing
-reversed keys. Reversing raw Unicode characters would break multi-character
-phonemes and modifiers. Candidates are checked against token boundaries after
-SQL filtering. Queries are parameterized; prefix queries use case-sensitive
-`LIKE` and escape literal wildcard characters. See `IpaSearchKeys.kt` and its
-JVM tests for suffix-length rules and language-specific edge cases.
+English and German assonance group compatible written and phonetic forms.
+English favors a returned base form. German favors a compatible infinitive,
+then pronunciation-prefix support and shorter spelling. These are heuristics,
+not lemma lookup. Completed pages retain their selected forms.
 
-## Responsiveness and verification
+`IpaSearchKeys.kt` reverses phoneme tokens rather than Unicode characters.
+SQL queries use parameters; `LIKE` escapes literal wildcards. Token checks
+validate candidates after SQL filtering.
 
-Installed-status checks, lookup, search, native initialization, and downloads
-run off the UI thread. Input changes cancel obsolete searches and reset stale
-results and errors. Download progress delivery belongs to the download job,
-so UI updates finish before that job returns.
+## German decompounding
 
-Cancellation is cooperative between database rows and scans and before
-installation activation. It cannot interrupt a SQLite call or native
-conversion already in progress. Result pages and database batches limit
-individual reads; broad searches can still scan many batches.
+`GermanDecompounder.kt` tries the longest dictionary-backed head first and
+backtracks when the modifier is unknown. Surface parts reconstruct the input.
+Linking material stays on the modifier, with its lemma stored separately.
+Multiple components and dropped final `e` stems are supported.
 
-See [Testing](TESTING.md) for regression coverage and
-[Releasing](RELEASING.md) for full-data offline checks. A timed benchmark with
-release dictionaries, particularly for phonetic suffix searches, remains
-outstanding. Syllable coloring is separate planned work in the
-[roadmap](FEATURES.md).
+Derivational suffixes remain attached when the base is attested, unless an
+independently stressed noun head licenses a split. The bound head `nahme`
+requires attested `nehmen`. Generated IPA never establishes that a word exists.
 
-Attribution and data-license terms are maintained in
-[THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md).
+`DictionaryLexicon.kt` batches indexed atom lookups and caches resolved splits
+within each search. Inputs longer than 96 characters remain whole.
+
+### Regression examples
+
+| Input | Analysis covered by regression tests |
+| --- | --- |
+| `Hundehütte` | `Hunde + hütte` |
+| `Wissenschaftskolleg` | `Wissenschafts + kolleg` |
+| `Wissenschaft` | Whole derivation |
+| `Gewehrschaft` | `Gewehr + schaft` |
+
+Missing entries, inflection, ambiguous derivations, and incomplete stress
+notation can prevent or distort a split. The lexicon supplies no part-of-speech
+or etymology annotations.
+
+## Double rhymes
+
+Select German and **Double rhyme**. Enter a compound such as `Straßenbande`
+or exactly two words such as `bleibe Straße`. Compound input uses its modifier
+and final head as anchors; each surface component receives a pronunciation.
+
+Both anchors must match complete vowel sequences. Attested compounds precede
+constructed pairs. Within each group, lower total distance ranks first: exact
+rimes score zero, voicing variants one, and other consonant differences two.
+Syllabic consonants, diphthong marks, and German `ɑ`/`a` are normalized.
+
+Attested compounds show their parts underneath; free pairs use `+`.
+Component spellings occur at most once, ignoring case, across sources and pages.
+Compounds with both component bases identical to the input are rejected;
+constructed pairs change both written anchors. Pairs need not form natural phrases.
+
+`DoubleRhymeSearch.kt` rebuilds a deterministic selection before slicing pages.
+It scans indexed vowel buckets, caches sound profiles, and pairs remaining words
+without a Cartesian product. Broad searches can still require substantial work.
+
+## Cancellation and distribution
+
+Search and installation run off the UI thread. Input changes cancel obsolete
+searches and clear stale results and errors. Cancellation is cooperative between
+rows and scans; it cannot interrupt a SQLite call or native conversion in progress.
+
+Follow [Releasing](RELEASING.md#runtime-checks) for full-data checks and benchmarks.
+[THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md) defines attribution and data terms.

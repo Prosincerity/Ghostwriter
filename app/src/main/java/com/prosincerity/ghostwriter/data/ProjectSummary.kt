@@ -16,11 +16,12 @@ internal data class ProjectSummary(
                 JSONObject(File(directory, "project.json").readText())
             }.getOrNull()
             val snapshotTime = directory.listFiles { file ->
-                file.isFile && file.extension == "txt" && !file.name.startsWith(".")
+                file.isFile && !file.name.startsWith(".") &&
+                    (file.extension == "txt" || ProjectLyricsStorage.autosaveFileName.matches(file.name))
             }?.maxOfOrNull { it.lastModified() } ?: 0L
             val editTime = maxOf(snapshotTime, metadata?.optLong("updatedAt", 0L) ?: 0L)
             return ProjectSummary(
-                title = directory.name,
+                title = (metadata?.opt("title") as? String)?.takeIf { it.isNotBlank() } ?: if (ProjectStorage.isProjectId(directory.name)) "Untitled" else directory.name,
                 lastEditedAt = editTime.takeIf { it > 0L } ?: directory.lastModified(),
                 bpm = metadata?.optInt("bpm", 0)?.takeIf { it > 0 },
                 key = metadata?.takeUnless { it.isNull("key") }?.optString("key")

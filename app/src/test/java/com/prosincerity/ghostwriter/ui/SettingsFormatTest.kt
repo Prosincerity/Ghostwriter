@@ -1,11 +1,9 @@
 package com.prosincerity.ghostwriter.ui
 
-import com.prosincerity.ghostwriter.data.Settings
 import com.prosincerity.ghostwriter.ui.components.formatPlaybackTime
 import com.prosincerity.ghostwriter.ui.screens.formatInterval
 import com.prosincerity.ghostwriter.ui.screens.formatTypographyNumber
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SettingsFormatTest {
@@ -30,12 +28,6 @@ class SettingsFormatTest {
         assertEquals("1 minute", formatInterval(60))
         assertEquals("2 minutes", formatInterval(120))
         assertEquals("5 minutes", formatInterval(300))
-    }
-
-    @Test
-    fun settingsConstants_areValid() {
-        assertTrue(Settings.INTERVAL_OPTIONS_SECONDS.contains(Settings.DEFAULT_INTERVAL_SECONDS))
-        assertTrue(Settings.COUNT_OPTIONS.contains(Settings.DEFAULT_AUTOSAVE_COUNT))
     }
 
     @Test

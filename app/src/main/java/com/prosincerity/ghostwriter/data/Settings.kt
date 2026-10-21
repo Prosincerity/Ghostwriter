@@ -12,6 +12,7 @@ import androidx.core.content.edit
  */
 object Settings {
     private const val PREFS_NAME = "ghostwriter_settings"
+    private const val KEY_PERSISTENT_LYRICS_FOLDER = "persistent_lyrics_folder"
     private const val KEY_AUTOSAVE_INTERVAL_SECONDS = "autosave_interval_seconds"
     private const val KEY_AUTOSAVE_COUNT = "autosave_count"
     private const val KEY_LYRIC_FONT_FAMILY = "lyric_font_family"
@@ -31,6 +32,12 @@ object Settings {
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    fun getPersistentLyricsFolder(context: Context): String? =
+        prefs(context).getString(KEY_PERSISTENT_LYRICS_FOLDER, null)
+
+    fun setPersistentLyricsFolder(context: Context, uri: String?): Boolean =
+        prefs(context).edit().putString(KEY_PERSISTENT_LYRICS_FOLDER, uri).commit()
 
     fun getAutosaveIntervalSeconds(context: Context): Int =
         prefs(context).getInt(KEY_AUTOSAVE_INTERVAL_SECONDS, DEFAULT_INTERVAL_SECONDS)

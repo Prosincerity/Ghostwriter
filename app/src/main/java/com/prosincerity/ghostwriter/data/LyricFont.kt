@@ -2,8 +2,6 @@ package com.prosincerity.ghostwriter.data
 
 import org.json.JSONObject
 import java.io.File
-import java.util.Locale
-import kotlin.math.abs
 
 sealed interface LyricFont {
     val label: String
@@ -59,21 +57,3 @@ internal fun lyricFontFromPreference(value: String?): LyricFont {
         LyricFontFamily.MONOSPACE
     }
 }
-
-internal fun systemFontOptions(fonts: Iterable<SystemFontFile>): List<LyricFont> =
-    listOf(LyricFontFamily.SYSTEM_DEFAULT) + fonts
-        .groupBy { it.label.lowercase(Locale.ROOT) }
-        .values.map { family ->
-            family.minWith(compareBy<SystemFontFile> { it.familyName.trim().endsWith(" UI") }
-                .thenBy { it.italic }
-                .thenBy { abs(it.weight - 400) }
-                .thenBy { font ->
-                    val width = Regex("'wdth'\\s+([\\d.]+)")
-                        .find(font.variationSettings)?.groupValues?.get(1)?.toFloatOrNull() ?: 100f
-                    abs(width - 100f)
-                }
-                .thenBy { it.path }.thenBy { it.ttcIndex }.thenBy { it.variationSettings })
-        }.sortedWith(
-            compareBy<SystemFontFile, String>(String.CASE_INSENSITIVE_ORDER) { it.label }
-                .thenBy { it.path },
-        )

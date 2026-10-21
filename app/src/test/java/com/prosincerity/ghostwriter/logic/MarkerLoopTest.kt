@@ -67,7 +67,7 @@ class MarkerLoopTest {
             current[index].copy(label = "Loop start", loopRole = MarkerLoopRole.START))
         assertEquals(MarkerLoopRole.NONE, edited[0].loopRole)
         assertEquals(44100L, edited[1].frameIndex)
-        assertSame(current[2], edited[2])
+        assertEquals(current[2], edited[2])
         assertEquals(MarkerLoopFrames(44100, 110250), MarkerLoopFrames.fromMarkers(edited, 44100, 132300))
     }
 

@@ -62,8 +62,50 @@ internal fun BeatPlaybackControls(
 ) {
     val haptics = LocalHapticFeedback.current
     var volume by remember(beatPlayer) { mutableFloatStateOf(beatPlayer.volume) }
+    BeatPlaybackControlsContent(
+        volume = volume,
+        loopMode = beatPlayer.loopMode,
+        isPlaying = isPlaying,
+        isReassigningBeat = isReassigningBeat,
+        onPlayFromStart = {
+            onPlayFromStart()
+            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+        },
+        onTogglePlayback = {
+            onTogglePlayback()
+            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+        },
+        onToggleLoop = {
+            beatPlayer.toggleLoop()
+            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+        },
+        onToggleMute = {
+            beatPlayer.toggleMute()
+            volume = beatPlayer.volume
+            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+        },
+        onVolumeChange = {
+            beatPlayer.setVolume(it)
+            volume = beatPlayer.volume
+        },
+        onReassignBeat = onReassignBeat,
+    )
+}
+
+@Composable
+private fun BeatPlaybackControlsContent(
+    volume: Float,
+    loopMode: BeatLoopMode,
+    isPlaying: Boolean,
+    isReassigningBeat: Boolean,
+    onPlayFromStart: () -> Unit,
+    onTogglePlayback: () -> Unit,
+    onToggleLoop: () -> Unit,
+    onToggleMute: () -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onReassignBeat: () -> Unit,
+) {
     val isMuted = volume == 0f
-    val loopMode = beatPlayer.loopMode
     val loopLabel = stringResource(loopMode.labelRes)
 
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -108,10 +150,7 @@ internal fun BeatPlaybackControls(
             ) {
                 // Equal slots keep Play centered even when the loop label is wider.
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    IconButton(modifier = Modifier.size(32.dp), shape = GhostButtonShape, onClick = {
-                        onPlayFromStart()
-                        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
-                    }) {
+                    IconButton(modifier = Modifier.size(32.dp), shape = GhostButtonShape, onClick = onPlayFromStart) {
                         Icon(Icons.Filled.SkipPrevious, contentDescription = "Play from start")
                     }
                 }
@@ -123,10 +162,7 @@ internal fun BeatPlaybackControls(
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
                         modifier = Modifier.size(32.dp),
-                        onClick = {
-                            onTogglePlayback()
-                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
-                        },
+                        onClick = onTogglePlayback,
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
@@ -149,10 +185,7 @@ internal fun BeatPlaybackControls(
                             contentDescription = loopLabel
                             stateDescription = loopLabel
                         },
-                        onClick = {
-                            beatPlayer.toggleLoop()
-                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
-                        },
+                        onClick = onToggleLoop,
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Icon(painterResource(loopMode.iconRes), contentDescription = null, modifier = Modifier.size(16.dp))
@@ -189,11 +222,7 @@ internal fun BeatPlaybackControls(
                 IconButton(
                     shape = GhostButtonShape,
                     modifier = Modifier.size(32.dp),
-                    onClick = {
-                        beatPlayer.toggleMute()
-                        volume = beatPlayer.volume
-                        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
-                    },
+                    onClick = onToggleMute,
                 ) {
                     Icon(
                         imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff
@@ -205,10 +234,7 @@ internal fun BeatPlaybackControls(
                 Box(Modifier.width(56.dp).testTag("Beat volume slider slot"), contentAlignment = Alignment.Center) {
                     SlimSlider(
                         value = volume,
-                        onValueChange = { newVolume ->
-                            beatPlayer.setVolume(newVolume)
-                            volume = beatPlayer.volume
-                        },
+                        onValueChange = onVolumeChange,
                         accentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.height(16.dp).fillMaxWidth().semantics { contentDescription = "Beat volume" },
                     )

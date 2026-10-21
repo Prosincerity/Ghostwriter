@@ -43,13 +43,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.data.EditorLyricsSession
+import com.prosincerity.ghostwriter.data.importProjectBeat
 import com.prosincerity.ghostwriter.data.ProjectMetadata
 import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.data.MarkerLoopRole
-import com.prosincerity.ghostwriter.logic.indexOfSelectedMarker
+import com.prosincerity.ghostwriter.logic.moveMarker
 import com.prosincerity.ghostwriter.data.Settings as AppSettings
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
+import com.prosincerity.ghostwriter.logic.WaveformPreparationState
+import com.prosincerity.ghostwriter.logic.prepareWaveform
 import com.prosincerity.ghostwriter.media.rememberBeatPlayback
 import com.prosincerity.ghostwriter.ui.components.BeatPlayerPanel
 import com.prosincerity.ghostwriter.ui.components.LongBeatWarningDialog
@@ -66,16 +69,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-
-private const val LONG_BEAT_WARNING_MS = 5 * 60 * 1_000L
-
-private data class PendingBeatPreparation(
-    val file: File,
-    val durationMs: Long,
-    val removeBeatOnCancel: Boolean,
-)
 
 /**
  * The Phase 1 notepad, now with a title bar (back + settings) and a
@@ -92,63 +88,90 @@ fun EditorScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenDictionary: () -> Unit = {},
+    projectId: String = projectTitle,
+    persistLyrics: (File, Int) -> Boolean = { _, _ -> true },
+    onStorageFailure: () -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
-    val playback = rememberBeatPlayback(projectTitle)
-
     val context = LocalContext.current
+    val projectDir = remember(projectId) { ProjectStorage.projectDir(context, projectId) }
+    var loadedLyrics by rememberSaveable(projectId) {
+        mutableStateOf(try {
+            ProjectStorage.loadLatest(projectDir)
+        } catch (_: IOException) {
+            null
+        })
+    }
+    val lyrics = loadedLyrics
+    if (lyrics == null) {
+        LaunchedEffect(projectDir) {
+            onStorageFailure()
+            Toast.makeText(context, "Couldn't read this project's lyrics. Existing files have been kept.", Toast.LENGTH_LONG).show()
+            onBack()
+        }
+        return
+    }
+
+    val playback = rememberBeatPlayback(projectId, projectTitle)
     val haptics = LocalHapticFeedback.current
     val lyricTextSettings = remember(context) { AppSettings.getLyricTextSettings(context) }
     val coroutineScope = rememberCoroutineScope()
-    val projectDir = remember(projectTitle) { ProjectStorage.projectDir(context, projectTitle) }
-    val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle) }
-
-    var lyrics by rememberSaveable(projectTitle) {
-        mutableStateOf(ProjectStorage.loadLatest(projectDir))
-    }
+    val waveformDirectory = remember(projectDir) { ProjectStorage.waveformCacheDirectory(context, projectDir) }
+    val lyricsSession = remember(projectDir, projectTitle) { EditorLyricsSession(projectDir, projectTitle, persistLyrics) }
 
     var intervalSeconds by remember { mutableIntStateOf(AppSettings.getAutosaveIntervalSeconds(context)) }
     var keepCount by remember { mutableIntStateOf(AppSettings.getAutosaveCount(context)) }
 
-    var metadata by remember(projectTitle) {
+    var metadata by remember(projectId) {
         mutableStateOf(ProjectStorage.loadMetadata(projectDir, projectTitle))
     }
     var showInfoDialog by rememberSaveable { mutableStateOf(false) }
 
     val beatPlayer = playback?.player
-    var isBeatReady by remember(projectTitle) { mutableStateOf(false) }
-    var beatFile by remember(projectTitle) {
+    var isBeatReady by remember(projectId) { mutableStateOf(false) }
+    var beatFile by remember(projectId) {
         mutableStateOf(ProjectStorage.getProjectBeatFile(projectDir, metadata))
     }
-    var isImporting by remember(projectTitle) { mutableStateOf(false) }
-    var isReassigningBeat by remember(projectTitle) { mutableStateOf(false) }
-    var waveformAmplitudes by remember(projectTitle) { mutableStateOf(IntArray(0)) }
-    var isWaveformLoading by remember(projectTitle) { mutableStateOf(false) }
-    var waveformRevision by remember(projectTitle) { mutableIntStateOf(0) }
-    var waveformCancellation by remember(projectTitle) { mutableStateOf<AtomicBoolean?>(null) }
-    var cancellationRequested by remember(projectTitle) { mutableStateOf(false) }
-    var waveformPreparationCancelled by remember(projectTitle) { mutableStateOf(false) }
-    var waveformPreparationFailed by remember(projectTitle) { mutableStateOf(false) }
-    var autoPlayWhenBeatReady by remember(projectTitle) { mutableStateOf(false) }
-    var isImportedBeatPreparation by remember(projectTitle) { mutableStateOf(false) }
-    var approvedLongBeatPath by remember(projectTitle) { mutableStateOf<String?>(null) }
-    var pendingLongBeatPreparation by remember(projectTitle) {
-        mutableStateOf<PendingBeatPreparation?>(null)
+    var isImporting by remember(projectId) { mutableStateOf(false) }
+    var isReassigningBeat by remember(projectId) { mutableStateOf(false) }
+    var waveformAmplitudes by remember(projectId) { mutableStateOf(IntArray(0)) }
+    var waveformPreparation by remember(projectId) {
+        mutableStateOf<WaveformPreparationState>(WaveformPreparationState.Idle)
     }
-    var showReassignConfirmation by rememberSaveable(projectTitle) { mutableStateOf(false) }
-    var markerPositionToAdd by remember(projectTitle) { mutableStateOf<Long?>(null) }
-    var markerToEdit by remember(projectTitle) { mutableStateOf<WaveformMarker?>(null) }
+    val isWaveformLoading = beatFile != null && (
+        waveformPreparation is WaveformPreparationState.Idle ||
+            waveformPreparation is WaveformPreparationState.Loading
+        )
+    var waveformRevision by remember(projectId) { mutableIntStateOf(0) }
+    var waveformCancellation by remember(projectId) { mutableStateOf<AtomicBoolean?>(null) }
+    var cancellationRequested by remember(projectId) { mutableStateOf(false) }
+    var autoPlayWhenBeatReady by remember(projectId) { mutableStateOf(false) }
+    var isImportedBeatPreparation by remember(projectId) { mutableStateOf(false) }
+    var approvedLongBeatPath by remember(projectId) { mutableStateOf<String?>(null) }
+    var showReassignConfirmation by rememberSaveable(projectId) { mutableStateOf(false) }
+    var markerPositionToAdd by remember(projectId) { mutableStateOf<Long?>(null) }
+    var markerToEdit by remember(projectId) { mutableStateOf<WaveformMarker?>(null) }
     val latestLyrics = rememberUpdatedState(lyrics)
     val latestKeepCount = rememberUpdatedState(keepCount)
     val latestWaveformCancellation = rememberUpdatedState(waveformCancellation)
-    val projectMutationMutex = remember(projectTitle) { Mutex() }
-    val projectMutationRevision = remember(projectTitle) { AtomicLong(0L) }
+    fun reportStorageFailure() {
+        val report = {
+            onStorageFailure()
+            Toast.makeText(context, "Couldn't update the lyric folder. Local draft kept; reconnect before uninstalling.", Toast.LENGTH_LONG).show()
+        }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) report()
+        else android.os.Handler(android.os.Looper.getMainLooper()).post { report() }
+    }
+
+    val projectMutationMutex = remember(projectId) { Mutex() }
+    val projectMutationRevision = remember(projectId) { AtomicLong(0L) }
 
     suspend fun removeBeatAndLoadMetadata(): ProjectMetadata =
         projectMutationMutex.withLock {
             withContext(Dispatchers.IO) {
-                ProjectStorage.removeBeatFromProject(projectDir)
-                ProjectStorage.loadMetadata(projectDir, projectTitle)
+                ProjectStorage.removeBeatAndPersist(projectDir, waveformDirectory) {
+                    persistLyrics(it, keepCount)
+                }
             }
         }
 
@@ -166,7 +189,7 @@ fun EditorScreen(
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             val saved = projectMutationMutex.withLock {
                 withContext(Dispatchers.IO) {
-                    ProjectStorage.saveMetadata(projectDir, updatedMetadata)
+                    ProjectStorage.saveMetadata(projectDir, updatedMetadata) && persistLyrics(projectDir, keepCount)
                 }
             }
             // Compose test scopes can resume off the UI thread after IO.
@@ -181,6 +204,7 @@ fun EditorScreen(
                     metadata = withContext(Dispatchers.IO) {
                         ProjectStorage.loadMetadata(projectDir, projectTitle)
                     }
+                    reportStorageFailure()
                     Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -229,6 +253,17 @@ fun EditorScreen(
                         onRemoved()
                     }
                 }
+            } catch (failure: Exception) {
+                if (failure is CancellationException) throw failure
+                withContext(Dispatchers.Main.immediate) {
+                    reportStorageFailure()
+                    if (removalRevision == projectMutationRevision.get()) {
+                        // The retained beat was released before removal. Reload
+                        // it so transport controls remain usable after a failure.
+                        isImportedBeatPreparation = false
+                        waveformRevision++
+                    }
+                }
             } finally {
                 isReassigningBeat = false
             }
@@ -242,13 +277,10 @@ fun EditorScreen(
         val currentBeat = beatFile
         if (currentBeat == null) {
             waveformAmplitudes = IntArray(0)
-            isWaveformLoading = false
+            waveformPreparation = WaveformPreparationState.Idle
             isBeatReady = false
             autoPlayWhenBeatReady = false
             isImportedBeatPreparation = false
-            waveformPreparationCancelled = false
-            waveformPreparationFailed = false
-            pendingLongBeatPreparation = null
             return@LaunchedEffect
         }
         if (playback == null || beatPlayer == null) {
@@ -260,9 +292,7 @@ fun EditorScreen(
         val cancellation = AtomicBoolean(false)
         waveformCancellation = cancellation
         cancellationRequested = false
-        waveformPreparationCancelled = false
-        waveformPreparationFailed = false
-        isWaveformLoading = true
+        waveformPreparation = WaveformPreparationState.Loading
         playback.setBeatTitle(metadata.beatOriginalName ?: currentBeat.nameWithoutExtension)
         isBeatReady = beatPlayer.ensureLoaded(currentBeat)
         if (isBeatReady) beatPlayer.setMarkers(metadata.markers)
@@ -272,41 +302,40 @@ fun EditorScreen(
         if (isBeatReady && autoPlayWhenBeatReady) beatPlayer.play()
         autoPlayWhenBeatReady = false
         try {
-            val cachedWaveform = withContext(Dispatchers.IO) {
-                ProjectStorage.loadCachedWaveform(
-                    projectDir,
-                    WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
-                )
-            }
-            if (cachedWaveform == null && approvedLongBeatPath != currentBeat.absolutePath) {
-                val durationMs = withContext(Dispatchers.IO) {
-                    WaveformExtractor.durationMs(currentBeat)
-                }
-                if (durationMs != null && shouldWarnBeforeWaveformExtraction(durationMs)) {
-                    pendingLongBeatPreparation = PendingBeatPreparation(
-                        file = currentBeat,
-                        durationMs = durationMs,
-                        removeBeatOnCancel = isImportedBeatPreparation,
-                    )
-                    return@LaunchedEffect
-                }
-            }
-
-            waveformAmplitudes = cachedWaveform ?: withContext(Dispatchers.IO) {
-                ProjectStorage.loadOrExtractWaveform(
-                    projectDir = projectDir,
-                    beatFile = currentBeat,
+            val approvedPath = approvedLongBeatPath
+            val result = withContext(Dispatchers.IO) {
+                prepareWaveform(
+                    file = currentBeat,
+                    removeBeatOnCancel = removeBeatOnCancellation,
+                    approvedLongBeatPath = approvedPath,
+                    loadCached = {
+                        ProjectStorage.loadCachedWaveform(
+                            waveformDirectory,
+                            WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+                        )
+                    },
+                    readDurationMs = { WaveformExtractor.durationMs(currentBeat) },
+                    extract = {
+                        ProjectStorage.loadOrExtractWaveform(
+                            projectDir = projectDir,
+                            beatFile = currentBeat,
+                            shouldCancel = cancellation::get,
+                            waveformDirectory = waveformDirectory,
+                        )
+                    },
                     shouldCancel = cancellation::get,
                 )
             }
-            if (cancellation.get()) throw CancellationException()
-            if (waveformAmplitudes.isEmpty()) {
-                waveformPreparationFailed = true
-                autoPlayWhenBeatReady = false
-                isImportedBeatPreparation = false
-                return@LaunchedEffect
+            // A cancellation can arrive while the result waits to resume on Main.
+            if (result !is WaveformPreparationState.AwaitingApproval && cancellation.get()) {
+                throw CancellationException()
             }
-
+            waveformPreparation = result
+            when (result) {
+                is WaveformPreparationState.Ready -> waveformAmplitudes = result.amplitudes
+                WaveformPreparationState.Failed -> waveformAmplitudes = IntArray(0)
+                else -> return@LaunchedEffect
+            }
             isImportedBeatPreparation = false
         } catch (cancellation: CancellationException) {
             if (!cancellationRequested) throw cancellation
@@ -314,16 +343,12 @@ fun EditorScreen(
                 if (removeBeatOnCancellation) {
                     beatPlayer.release()
                     isBeatReady = false
-                    val removalRevision = projectMutationRevision.incrementAndGet()
-                    val updatedMetadata = removeBeatAndLoadMetadata()
-                    if (removalRevision == projectMutationRevision.get()) {
-                        metadata = updatedMetadata
-                        beatFile = null
+                    removeBeatFromEditor {
                         waveformRevision++
                         isImportedBeatPreparation = false
                     }
                 } else {
-                    waveformPreparationCancelled = true
+                    waveformPreparation = WaveformPreparationState.Cancelled
                 }
                 waveformAmplitudes = IntArray(0)
                 autoPlayWhenBeatReady = false
@@ -331,7 +356,7 @@ fun EditorScreen(
         } finally {
             if (waveformCancellation === cancellation) {
                 waveformCancellation = null
-                isWaveformLoading = false
+                waveformPreparation = waveformPreparation.finish()
             }
         }
     }
@@ -357,35 +382,32 @@ fun EditorScreen(
                 val imported = projectMutationMutex.withLock {
                     withContext(Dispatchers.IO) {
                         runCatching {
-                            val originalName = displayNameFor(context, uri) ?: "beat.mp3"
-                            val extension = originalName.substringAfterLast('.', "").lowercase()
-                            require(extension in ProjectStorage.SUPPORTED_AUDIO_EXTENSIONS) {
-                                "Choose an MP3, WAV, OGG, FLAC, M4A, or AAC file"
-                            }
-
-                            val assigned = ProjectStorage.assignBeatToProject(
+                            importProjectBeat(
                                 projectDir = projectDir,
-                                originalName = originalName,
+                                projectTitle = projectTitle,
+                                originalName = displayNameFor(context, uri),
+                                waveformDirectory = waveformDirectory,
+                                persistLyrics = { directory ->
+                                    persistLyrics(directory, keepCount).also { saved ->
+                                        if (!saved) reportStorageFailure()
+                                    }
+                                },
                             ) { destination ->
                                 context.contentResolver.openInputStream(uri)?.use { input ->
                                     destination.outputStream().use { output -> input.copyTo(output) }
                                 } ?: error("Couldn't read the selected beat")
                             }
-                            Pair(
-                                assigned,
-                                ProjectStorage.loadMetadata(projectDir, projectTitle),
-                            )
                         }
                     }
                 }
                 if (importRevision != projectMutationRevision.get()) return@launch
 
-                imported.onSuccess { (assigned, updatedMetadata) ->
-                    metadata = updatedMetadata
+                imported.onSuccess { importedBeat ->
+                    metadata = importedBeat.metadata
                     approvedLongBeatPath = null
                     autoPlayWhenBeatReady = true
                     isImportedBeatPreparation = true
-                    beatFile = assigned
+                    beatFile = importedBeat.file
                     waveformRevision++
                 }.onFailure {
                     if (it is CancellationException) throw it
@@ -404,16 +426,17 @@ fun EditorScreen(
     // Background autosave loop. Settings are re-read every cycle so a
     // change made in the Settings screen takes effect from the next tick
     // onward (the cycle already in progress finishes on its old interval).
-    LaunchedEffect(projectTitle) {
+    LaunchedEffect(projectId) {
         while (true) {
             delay(intervalSeconds.seconds)
             intervalSeconds = AppSettings.getAutosaveIntervalSeconds(context)
             keepCount = AppSettings.getAutosaveCount(context)
-            val contentToSave = lyrics
+            val contentToSave = latestLyrics.value
             val backupsToKeep = keepCount
-            withContext(Dispatchers.IO) {
+            val saved = withContext(Dispatchers.IO) {
                 lyricsSession.autosave(contentToSave, backupsToKeep)
             }
+            if (!saved) reportStorageFailure()
         }
     }
 
@@ -423,10 +446,10 @@ fun EditorScreen(
     DisposableEffect(lyricsSession) {
         onDispose {
             latestWaveformCancellation.value?.set(true)
-            lyricsSession.finish(
+            if (!lyricsSession.finish(
                 latestLyrics.value,
                 latestKeepCount.value,
-            )
+            )) reportStorageFailure()
         }
     }
 
@@ -484,9 +507,10 @@ fun EditorScreen(
                                 lyricsSession.saveManual(contentToSave, backupsToKeep)
                             }
                             withContext(Dispatchers.Main.immediate) {
+                                if (!saved) reportStorageFailure()
                                 Toast.makeText(
                                     context,
-                                    if (saved) "Saved ${ProjectStorage.manualSaveFileName(projectTitle)}"
+                                    if (saved) "Saved lyrics"
                                     else "Couldn't save lyrics",
                                     Toast.LENGTH_SHORT,
                                 ).show()
@@ -540,11 +564,8 @@ fun EditorScreen(
                 onAddMarker = { positionMs -> markerPositionToAdd = positionMs },
                 onMarkerClick = { marker -> markerToEdit = marker },
                 onMarkerMove = { marker, positionMs ->
-                    val markerIndex = indexOfSelectedMarker(metadata.markers, marker)
-                    if (markerIndex >= 0 && marker.positionMs != positionMs) {
-                        val updatedMarkers = metadata.markers.toMutableList().apply {
-                            this[markerIndex] = marker.atPositionMs(positionMs, beatPlayer?.sampleRate ?: 0)
-                        }
+                    val updatedMarkers = moveMarker(metadata.markers, marker, positionMs, beatPlayer?.sampleRate ?: 0)
+                    if (updatedMarkers != null) {
                         persistMarkers(
                             markers = updatedMarkers,
                             successMessage = null,
@@ -557,22 +578,23 @@ fun EditorScreen(
                     waveformCancellation?.set(true)
                 },
                 cancelRemovesImportedBeat = isImportedBeatPreparation,
-                waveformPreparationCancelled = waveformPreparationCancelled,
-                waveformPreparationFailed = waveformPreparationFailed,
+                waveformPreparationCancelled = waveformPreparation is WaveformPreparationState.Cancelled,
+                waveformPreparationFailed = waveformPreparation is WaveformPreparationState.Failed,
                 onRetryWaveformPreparation = { waveformRevision++ },
+                isAwaitingWaveformApproval = waveformPreparation is WaveformPreparationState.AwaitingApproval,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = 6.dp),
             )
 
             LyricsNotepad(
                 lyrics = lyrics,
-                onLyricsChange = { lyrics = it },
+                onLyricsChange = { loadedLyrics = it },
                 textSettings = lyricTextSettings,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(top = 8.dp),
+                    .padding(top = 4.dp),
             )
         }
     }
@@ -601,7 +623,7 @@ fun EditorScreen(
         )
     }
 
-    pendingLongBeatPreparation?.let { pendingBeat ->
+    (waveformPreparation as? WaveformPreparationState.AwaitingApproval)?.let { pendingBeat ->
         LongBeatWarningDialog(
             durationMs = pendingBeat.durationMs,
             cancelRemovesImportedBeat = pendingBeat.removeBeatOnCancel,
@@ -610,12 +632,12 @@ fun EditorScreen(
                 isImportedBeatPreparation = pendingBeat.removeBeatOnCancel
                 beatFile = pendingBeat.file
                 waveformRevision++
-                pendingLongBeatPreparation = null
+                waveformPreparation = WaveformPreparationState.Idle
             },
             onCancel = {
-                pendingLongBeatPreparation = null
+                waveformPreparation = WaveformPreparationState.Idle
                 if (!pendingBeat.removeBeatOnCancel) {
-                    waveformPreparationCancelled = true
+                    waveformPreparation = WaveformPreparationState.Cancelled
                 } else {
                     beatPlayer?.release()
                     isBeatReady = false
@@ -628,10 +650,6 @@ fun EditorScreen(
         )
     }
 }
-
-
-internal fun shouldWarnBeforeWaveformExtraction(durationMs: Long?): Boolean =
-    durationMs != null && durationMs >= LONG_BEAT_WARNING_MS
 
 private fun displayNameFor(context: Context, uri: Uri): String? {
     return context.contentResolver.query(

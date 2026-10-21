@@ -1,17 +1,25 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
@@ -19,11 +27,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +41,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -50,12 +61,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.prosincerity.ghostwriter.R
-import com.prosincerity.ghostwriter.data.ProjectStorage
 import com.prosincerity.ghostwriter.data.ProjectSummary
+import com.prosincerity.ghostwriter.logic.homeProjectRows
+import com.prosincerity.ghostwriter.logic.ProjectTitleRules
+import com.prosincerity.ghostwriter.logic.ProjectTitleState
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
 import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 
 /** Local projects, ordered by their most recent lyric or metadata edit. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,19 +80,24 @@ internal fun HomeScreen(
     onRenameProject: (currentTitle: String, renamedTitle: String) -> Unit,
     onOpenSettings: () -> Unit,
     projectSummaries: Map<String, ProjectSummary> = emptyMap(),
+    projectTitles: Map<String, String> = emptyMap(),
+    onChooseLyricsFolder: () -> Unit = {},
+    lyricsFolderReady: Boolean = true,
+    storageLoading: Boolean = false,
+    storageError: String? = null,
 ) {
     var showTitleDialog by remember { mutableStateOf(false) }
     var projectMenuFor by remember { mutableStateOf<String?>(null) }
     var projectToDelete by remember { mutableStateOf<String?>(null) }
     var projectToRename by remember { mutableStateOf<String?>(null) }
 
-    val recentProjects = remember(existingProjects, projectSummaries) {
-        existingProjects.sortedWith(
-            compareByDescending<String> { projectSummaries[it]?.lastEditedAt ?: 0L }
-                .thenBy { it.lowercase(Locale.ROOT) },
-        )
-    }
     val dateFormat = remember { DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT) }
+    val recentProjects = remember(existingProjects, projectSummaries, projectTitles, dateFormat) {
+        homeProjectRows(existingProjects, projectSummaries, projectTitles) { timestamp ->
+            dateFormat.format(Date(timestamp))
+        }
+    }
+    val projectsEnabled = lyricsFolderReady && !storageLoading
 
     Scaffold(
         topBar = {
@@ -102,6 +119,30 @@ internal fun HomeScreen(
                 },
             )
         },
+        bottomBar = {
+            if (storageLoading || storageError != null) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    storageError?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    }
+                    if (storageLoading) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Text(
+                                "Preparing your projects…", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 8.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -112,6 +153,7 @@ internal fun HomeScreen(
             Button(
                 shape = GhostButtonShape,
                 onClick = { showTitleDialog = true },
+                enabled = projectsEnabled,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null)
@@ -119,33 +161,52 @@ internal fun HomeScreen(
                 Text("New project")
             }
 
-            if (existingProjects.isEmpty()) {
-                Column(
+            if (existingProjects.isEmpty() || !lyricsFolderReady) {
+                Box(
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.secondaryContainer,
+                    Column(
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                     ) {
-                        Icon(
-                            Icons.Filled.MusicNote, contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(20.dp).size(32.dp),
+                        Surface(
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                        ) {
+                            Icon(
+                                Icons.Filled.MusicNote, contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(20.dp).size(32.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(20.dp))
+                        Text("Start your next track", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+                        Text(
+                            if (lyricsFolderReady) "Create a project for your lyrics and beat." else "Choose a lyric folder",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 8.dp),
                         )
+                        if (!lyricsFolderReady) {
+                            Spacer(Modifier.height(16.dp))
+                            OutlinedButton(
+                                onClick = onChooseLyricsFolder,
+                                enabled = !storageLoading,
+                                shape = GhostButtonShape,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            ) {
+                                Icon(Icons.Filled.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Choose folder", style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
                     }
-                    Spacer(Modifier.height(20.dp))
-                    Text("Start your next track", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
-                    Text(
-                        "Create a project for your lyrics and beat.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
                 }
-            } else {
+            }
+            if (existingProjects.isNotEmpty()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -158,10 +219,11 @@ internal fun HomeScreen(
                     )
                 }
                 LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    items(recentProjects, key = { it }) { title ->
-                        val summary = projectSummaries[title]
+                    items(recentProjects, key = { it.projectId }) { project ->
+                        val projectId = project.projectId
+                        val displayTitle = project.title
                         Row(
-                            modifier = Modifier.fillMaxWidth().clickable { onOpenProject(title) }
+                            modifier = Modifier.fillMaxWidth().clickable(enabled = projectsEnabled) { onOpenProject(projectId) }
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -178,17 +240,12 @@ internal fun HomeScreen(
                             }
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    title, style = MaterialTheme.typography.titleMedium,
+                                    displayTitle, style = MaterialTheme.typography.titleMedium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 )
-                                summary?.let {
-                                    val details = buildList {
-                                        if (it.lastEditedAt > 0) add("Edited ${dateFormat.format(Date(it.lastEditedAt))}")
-                                        it.bpm?.let { bpm -> add("$bpm BPM") }
-                                        it.key?.let { key -> add(key) }
-                                    }
-                                    if (details.isNotEmpty()) Text(
-                                        details.joinToString(" · "),
+                                project.details?.let { details ->
+                                    Text(
+                                        details,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -197,20 +254,20 @@ internal fun HomeScreen(
                                 }
                             }
                             Box {
-                                IconButton(shape = GhostButtonShape, onClick = { projectMenuFor = title }) {
-                                    Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $title")
+                                IconButton(shape = GhostButtonShape, enabled = projectsEnabled, onClick = { projectMenuFor = projectId }) {
+                                    Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $displayTitle")
                                 }
                                 DropdownMenu(
-                                    expanded = projectMenuFor == title,
+                                    expanded = projectMenuFor == projectId,
                                     onDismissRequest = { projectMenuFor = null },
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("Rename") },
-                                        onClick = { projectMenuFor = null; projectToRename = title },
+                                        onClick = { projectMenuFor = null; projectToRename = projectId },
                                     )
                                     DropdownMenuItem(
                                         text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
-                                        onClick = { projectMenuFor = null; projectToDelete = title },
+                                        onClick = { projectMenuFor = null; projectToDelete = projectId },
                                     )
                                 }
                             }
@@ -224,7 +281,7 @@ internal fun HomeScreen(
 
     if (showTitleDialog) {
         NewProjectDialog(
-            existingProjects = existingProjects,
+            existingProjects = existingProjects.map { projectTitles[it] ?: it },
             onConfirm = { title ->
                 showTitleDialog = false
                 onCreateProject(title)
@@ -235,8 +292,8 @@ internal fun HomeScreen(
 
     projectToRename?.let { title ->
         RenameProjectDialog(
-            projectTitle = title,
-            existingProjects = existingProjects,
+            projectTitle = projectTitles[title] ?: title,
+            existingProjects = existingProjects.map { projectTitles[it] ?: it },
             onConfirm = { renamedTitle ->
                 projectToRename = null
                 onRenameProject(title, renamedTitle)
@@ -251,7 +308,7 @@ internal fun HomeScreen(
             title = { Text("Delete project?") },
             text = {
                 Text(
-                    "Delete \"$title\" and all of its lyrics, autosaves, project info, and beat? This cannot be undone."
+                    "Delete \"${projectTitles[title] ?: title}\" and all of its lyrics, autosaves, project info, and beat? This cannot be undone."
                 )
             },
             confirmButton = {
@@ -282,10 +339,10 @@ private fun RenameProjectDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember(projectTitle) { mutableStateOf(projectTitle) }
-    val candidate = ProjectStorage.sanitizeTitle(text)
-    val alreadyExists = existingProjects.any { existingTitle ->
-        existingTitle != projectTitle && existingTitle.equals(candidate, ignoreCase = true)
+    val titleState = remember(text, projectTitle, existingProjects) {
+        ProjectTitleRules.forRename(text, projectTitle, existingProjects)
     }
+    val alreadyExists = titleState is ProjectTitleState.Existing
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -300,12 +357,12 @@ private fun RenameProjectDialog(
                 } else null,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onDone = { if (!alreadyExists) onConfirm(candidate) },
+                    onDone = { if (!alreadyExists) onConfirm(titleState.title) },
                 ),
             )
         },
         confirmButton = {
-            TextButton(shape = GhostButtonShape, onClick = { onConfirm(candidate) }, enabled = !alreadyExists) {
+            TextButton(shape = GhostButtonShape, onClick = { onConfirm(titleState.title) }, enabled = !alreadyExists) {
                 Text("Rename")
             }
         },
@@ -322,8 +379,8 @@ private fun NewProjectDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
-    val candidate = ProjectStorage.resolveProjectTitle(text.trim().ifBlank { "Untitled" }, existingProjects)
-    val isDuplicate = candidate in existingProjects
+    val titleState = remember(text, existingProjects) { ProjectTitleRules.forCreation(text, existingProjects) }
+    val isDuplicate = titleState is ProjectTitleState.Existing
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -339,12 +396,12 @@ private fun NewProjectDialog(
                 } else null,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
-                    onDone = { onConfirm(candidate) }
+                    onDone = { onConfirm(titleState.title) }
                 ),
             )
         },
         confirmButton = {
-            TextButton(shape = GhostButtonShape, onClick = { onConfirm(candidate) }) {
+            TextButton(shape = GhostButtonShape, onClick = { onConfirm(titleState.title) }) {
                 Text(if (isDuplicate) "Open" else "Create")
             }
         },

@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider
+            android:name="com.prosincerity.ghostwriter.ui.screens.BeatImportTestProvider"
+            android:authorities="com.prosincerity.ghostwriter.test.beat-import"
+            android:exported="true" />
+        <provider
+            android:name="com.prosincerity.ghostwriter.data.LyricArchiveTestProvider"
+            android:authorities="com.prosincerity.ghostwriter.test.lyric-archive"
+            android:grantUriPermissions="true"
+            android:exported="true" />
+    </application>
+</manifest>

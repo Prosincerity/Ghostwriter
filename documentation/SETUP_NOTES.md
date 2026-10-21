@@ -1,45 +1,50 @@
 # Build setup
 
+This guide configures the Android toolchain and builds a debug APK.
+
 ## Requirements
 
-- Android Studio compatible with the Android Gradle Plugin declared in
-  [`gradle/libs.versions.toml`](../gradle/libs.versions.toml).
-- A JDK supported by that plugin and the checked-in Gradle wrapper.
-  Android Studio's bundled runtime is the usual starting point.
-- Android SDK, NDK, and CMake versions declared in
-  [`app/build.gradle.kts`](../app/build.gradle.kts).
-- Git with submodule support for the native pronunciation engine.
+| Requirement | Source of truth |
+| --- | --- |
+| Android Studio and Android Gradle Plugin compatibility | [Version catalog](../gradle/libs.versions.toml) |
+| Gradle distribution | [Wrapper properties](../gradle/wrapper/gradle-wrapper.properties) |
+| Gradle runtime JDK | [Daemon JVM criteria](../gradle/gradle-daemon-jvm.properties) |
+| Android SDK, NDK, CMake, application ID, and packaged ABIs | [App configuration](../app/build.gradle.kts) |
+| Git submodule source | [.gitmodules](../.gitmodules) |
 
-Gradle's runtime JDK and the application's bytecode target are separate
-settings. Use the checked-in wrapper; build configuration is the source of
-truth for toolchain and SDK versions.
+Gradle's runtime JDK differs from the app's Java bytecode target.
+Use the checked-in wrapper rather than a system Gradle installation.
 
-## Checkout and build
+## Configure the checkout
 
-1. Clone the repository. Use `dev` for active development or the branch being
-   reviewed.
-2. Initialize the native source from the repository root:
+Work on `dev` and initialize the pinned native source from the repository root:
 
-   ```sh
-   git submodule update --init third_party/espeak-ng
-   ```
+```sh
+git switch dev
+git submodule update --init third_party/espeak-ng
+```
 
-3. Open the repository root in Android Studio and let Gradle sync. Install
-   the required SDK and native build components through SDK Manager.
-4. Build the app from Android Studio or a terminal:
+Open the repository in Android Studio. Install the declared SDK, NDK, and CMake
+components through SDK Manager, then sync the project to cache dependencies.
+Configure `sdk.dir` in `local.properties` for terminal builds.
+Keep machine-specific configuration out of version control.
 
-   ```sh
-   ./gradlew assembleDebug
-   ```
+Bundled pronunciation data is checked in. Ordinary Android builds do not
+require a host eSpeak build. See [Native pronunciation engine](ESPEAK_NATIVE.md)
+when changing the engine or its data.
 
-For terminal builds, configure the Android SDK through `local.properties`
-(`sdk.dir`) or the environment. Keep machine-specific paths and that local
-configuration out of version control.
+## Build and run
 
-To run the app, the maintainer selects an emulator or device meeting `minSdk`
-and a packaged ABI from `app/build.gradle.kts`, then runs the `app`
-configuration in Android Studio.
+After caching dependencies and toolchain components:
 
-The language data is checked in, so ordinary builds do not require a host
-eSpeak build. See [Native pronunciation engine](ESPEAK_NATIVE.md) when changing
-that data, and [Testing](TESTING.md) for verification commands.
+```sh
+./gradlew --offline :app:assembleDebug
+```
+
+The installable, debug-signed APK is `app/build/outputs/apk/debug/app-debug.apk`.
+Debug builds include coverage instrumentation and UI tooling.
+Use Android Studio's `app` run configuration on a device matching the minimum
+SDK and an ABI declared in the app configuration.
+
+See [Testing](TESTING.md) for verification and device access instructions.
+Follow [Releasing](RELEASING.md) before distributing a build.

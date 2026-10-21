@@ -1,132 +1,67 @@
-# Feature roadmap
+# Features
 
-This is the authoritative feature status. Planned items are not commitments
-to a release date or implementation order. Checked items are implemented;
-unchecked items are planned. Phases group capabilities rather than set a
-release schedule.
+This checklist records implemented features and planned work.
 
-## Guiding rules
+Checked items are **Implemented**. Unchecked items are **Planned** and have no
+release commitment. [Contributor instructions](../AGENTS.md#project-constraints)
+define project constraints and non-goals.
 
-- No AI functionality.
-- Work offline by default.
-- Keep dependencies small; every feature must earn its place for someone
-  writing rap lyrics.
-- Use Android/AOSP APIs where adequate; do not require Google Play Services.
+## Projects and lyrics
 
-## Phase 1 — Barebones notepad (MVP)
+- [x] **Lyric editor:** edit lyrics in a full-screen notepad.
+- [x] **Project management:** create, rename, delete, and reopen projects.
+- [x] **Local persistence:** save manually, autosave at a configurable interval,
+  and save on editor exit; configure the number of rotating backups.
+- [x] **Shared lyric folder:** retain lyrics and project metadata outside app
+  storage. See [Project storage](README.md#project-storage) for recovery limits.
+- [x] **Project information:** store tempo, musical key, time signature, notes,
+  beat references, and timestamps.
+- [x] **Typography settings:** select a device font or System default, size,
+  line height, letter spacing, and alignment; preview changes in Settings.
+  Settings apply across projects and respect Android font scaling.
+- [x] **Dark interface:** use a dark Material 3 theme in either device appearance.
+- [ ] **Syllable counter:** show a left gutter with per-line counts,
+  independently selectable from bar numbers.
+- [ ] **Bar counter:** show a right gutter grouping pairs of lyric lines, with
+  an optional greyed-out `|` or `/` separator.
+- [ ] **Hyphenation:** split words automatically with a configurable separator
+  and an on/off toggle.
+- [ ] **Rhyme coloring:** assign consistent colors to matching syllables within a bar.
+- [ ] **Text-processing verification:** add JVM tests for counters, hyphenation,
+  and rhyme analysis, plus UI tests for gutter visibility and alignment.
 
-- [x] **Full-screen lyric editor** — write and edit lyrics in a focused text editor.
-- [x] **Modern, dark-friendly UI** — Material 3 with dark-theme support.
-- [x] **Lyric projects** — create, rename, and delete projects.
-- [x] **Local persistence** — manual saves and loading saved lyrics after an
-  app restart.
+## Beats and playback
 
-## Phase 2 — Songwriting environment
+- [x] **Beat import:** copy an audio file into a project.
+- [x] **Transport controls:** play, pause, restart, adjust volume, and mute.
+- [x] **Collapsible player:** minimize and reopen the Beat Player panel while
+  preserving playback and waveform zoom.
+- [x] **Background playback:** use notification and lock-screen controls;
+  pause for audio interruptions and stop when dismissed from Recents.
+- [x] **Waveform timeline:** seek, pan, zoom, and add, move, rename, or delete markers.
+- [x] **Loop modes:** select Off, Whole beat, or Markers; assign start and end
+  markers. See [Playback architecture](README.md#playback-and-waveforms).
+- [x] **Waveform preparation:** cache peaks, warn before long-file processing,
+  and provide cancellation and retry actions.
+- [x] **Interaction haptics:** provide native feedback for transport, marker,
+  and deletion actions while respecting system settings.
+- [ ] **Instrumentals library:** browse and reuse beats across projects.
+- [ ] **Android Auto:** browse project instrumentals through the media session.
 
-### Lyric editor
+## Dictionaries
 
-- [x] **Autosave** — configurable periodic saves with a configurable number
-  of rotating backups; load the newest readable manual or autosave snapshot.
-- [x] **Lyric-pad typography** — choose a device font discovered through Android's
-  system font API (Android 10+), with clean family names grouped by style and
-  filtered to the device language, or System default, plus font size,
-  relative line height, letter spacing, and alignment in Settings, with a live
-  preview. Line height (0.5–4×) and letter spacing (−2–10 sp) use sliders.
-  Choices apply across projects and follow Android's font scaling.
-  Justified alignment uses normal letter spacing to keep wrapped words inside
-  the pad; the chosen spacing is retained for other alignments.
-- [x] **Project information** — musical key, tempo, time signature, notes,
-  beat references, and timestamps stored with each project.
-- [ ] **Syllable counter column** — left-hand gutter with one count per lyric
-  line, independently toggleable from bar numbers.
-- [ ] **Bar counter** — right-hand gutter, grouping pairs of lyric lines into
-  bars, with an independent toggle and a configurable greyed-out `|` or `/`
-  separator.
-- [ ] **Hyphenation** — optional automatic word splitting with a configurable
-  separator, such as `-` or a space, and an on/off toggle.
-- [ ] **Rhyme detection and coloring** — syllable-by-syllable analysis within
-  a bar, with a unique, consistent color for each rhyme group.
-- [ ] **Text-processing tests** — independently JVM-testable syllable counting,
-  bar grouping, rhyme detection, and hyphenation, plus Compose coverage for
-  gutter visibility and alignment as these features are implemented.
+- [x] **Pronunciation search:** download independent sources and search installed
+  data offline. See [Dictionaries](DICTIONARIES.md) for languages and modes.
+- [ ] **Definitions:** provide general word lookup alongside pronunciation search.
 
-### Beats and playback
+## Import, export, and sync
 
-- [x] **Offline beat playback** — import a beat into a project; play, pause,
-  restart, loop, and adjust volume from the editor.
-- [x] **Background playback** — continue across screens and other apps, with
-  Android notification and lock-screen controls. Loop state stays in sync
-  with the editor, and audio interruptions pause playback. Dismissing the app
-  from Recents stops playback and removes media controls.
-- [x] **Interaction haptics** — ticks when starting marker placement and saving
-  a new marker, light ticks when manually scrubbing across markers, clicks on
-  play/pause, restart, loop, and mute, and stronger feedback after project,
-  marker, or beat deletion succeeds. Uses native Android feedback with system
-  settings and device support respected. Typing, autosaves, normal playback,
-  waveform panning/zooming, and volume changes remain silent.
-- [x] **Waveform timeline and loop markers** — seek, zoom, pan, and manage named markers.
-  Marker dialogs offer **Looping: None / Start / End**, with one start and one
-  end per beat. Setting a role transfers it from the previous marker. The Loop
-  button cycles **Off / Whole beat / Markers**, with distinct icons, three
-  indicators, and a visible **Off / Beat / Marker** label that scales to fit
-  on small screens. Its accessibility label always identifies the mode.
-  A compact, adaptive Reassign button leaves more room for playback, while
-  Play stays centered in the full row and volume controls keep their sizes.
-  Notifications and lock-screen controls show the same mode. Whole beat ignores marker boundaries and uses normal playback. Valid
-  loop markers prepare PCM in the background in every mode; decoded audio and
-  paused PCM output are reused across mode changes and marker edits until the
-  beat is released. Selecting Markers jumps to the loop start while preserving
-  play/pause state: a missing start uses 0:00, and a missing end uses the end of
-  the beat. Start markers use a brighter shade of purple and
-  end markers a darker shade. Loop audio is prepared locally and streamed
-  with memory caching, worker prefetch for long beats, live loop boundaries,
-  and a 3 ms overlapping crossfade to reduce clicks. Crossfades overlap samples,
-  so each repeat is up to 3 ms shorter. Marker positions are saved as audio
-  frames; old projects migrate when opened.
-  Waveforms are cached; processing supports cancel and retry, with a warning
-  for long audio files. Playback and controls remain available during waveform
-  and loop-audio preparation. PCM playback continues from the live beat position
-  using silent buffering and a short volume blend; a user pause remains paused.
-- [ ] **Instrumentals library** — browse and reuse beats across projects;
-  assigned beats remain copied into each project.
-- [ ] **Android Auto** — browse project instrumentals using offline playback
-  and the existing media session, without requiring Google Play Services.
+- [ ] **File import and export:** support plain text through Android's Storage
+  Access Framework; consider `.docx` and `.pdf` later.
+- [ ] **Optional sync:** use a user-provided backend or account while retaining
+  local writing and playback.
 
-### Dictionaries
+## About
 
-- [x] **Rhyme dictionary** — download pronunciation sources independently and
-  search for rhymes, assonance, written prefixes, and phonetic suffixes.
-  English, German, and Turkish are supported. Installed searches work offline,
-  and missing-word pronunciations can be generated locally. See
-  [Dictionaries](DICTIONARIES.md) for supported languages and search behavior.
-- [ ] **General dictionary** — word definitions alongside pronunciation search
-  for word lookup while writing.
-
-### Import, export, and optional sync
-
-- [ ] **Import and export** — plain text first, using Android's Storage Access
-  Framework to choose files and destinations; consider `.docx` and `.pdf`
-  export later. Autosaves remain in app storage.
-- [ ] **Optional cloud sync** — a user-provided backend/account without Google
-  Play Services; local writing and playback remain usable offline.
-
-### About and attribution
-
-- [x] **About and attribution** — project information, source links, licenses,
+- [x] **Attribution:** display project information, source links, licenses,
   and dictionary-data notices.
-
-## Implementation guidance
-
-New syllable, bar, rhyme-coloring, and hyphenation logic should remain
-independently testable on the JVM. Extend `LyricsNotepad` for gutters while
-keeping persistence in `EditorScreen`. Gutter changes also need Compose
-coverage for visibility and alignment.
-
-## Non-goals
-
-- AI-generated or AI-assisted writing.
-- Social features, analytics, or accounts beyond those needed for optional sync.
-- Ads, telemetry, or monetization that compromises software freedom.
-
-Architecture and known limitations are documented in the
-[documentation index](README.md).

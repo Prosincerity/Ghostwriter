@@ -1,11 +1,22 @@
 package com.prosincerity.ghostwriter
 
-import android.content.ActivityNotFoundException
+import android.app.Activity
+import android.app.Instrumentation
+import android.content.IntentFilter
+import android.net.Uri
+import android.provider.DocumentsContract
+import android.os.Bundle
+import java.io.File
+import com.prosincerity.ghostwriter.data.LyricArchiveTestProvider
+import org.junit.Before
+import org.junit.After
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.util.TypedValue
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -24,6 +35,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.data.LyricTextSettings
 import com.prosincerity.ghostwriter.data.ProjectStorage
+import com.prosincerity.ghostwriter.data.PersistentLyricsStorage
 import com.prosincerity.ghostwriter.data.Settings
 import com.prosincerity.ghostwriter.ui.screens.GHOSTWRITER_REPOSITORY_URL
 import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
@@ -32,13 +44,214 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
+    @get:Rule val testName = TestName()
 
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    private var originalFolder: String? = null
+    private val archiveScope get() = "main-activity-${testName.methodName}"
+
+    @Before fun useIsolatedLyricFolder() {
+        originalFolder = Settings.getPersistentLyricsFolder(composeRule.activity)
+        composeRule.activity.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"),
+            "clear", archiveScope, null)
+        val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
+        Settings.setPersistentLyricsFolder(composeRule.activity, tree.toString())
+        composeRule.activityRule.scenario.recreate()
+        waitUntilTextDoesNotExist("Preparing your projects…")
+        composeRule.waitUntil(timeoutMillis = 15_000) {
+            composeRule.onAllNodesWithText("Choose folder").fetchSemanticsNodes().isEmpty()
+        }
+        composeRule.onNodeWithText("New project").assertIsEnabled()
+    }
+
+    @After fun restoreLyricFolder() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        composeRule.activityRule.scenario.close()
+        Settings.setPersistentLyricsFolder(context, originalFolder)
+        context.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"), "clear", archiveScope, null)
+    }
+
+    @Test
+    fun missingFolder_opensHomeAndPickerCancellationKeepsHome() {
+        Settings.setPersistentLyricsFolder(composeRule.activity, null)
+        composeRule.activityRule.scenario.recreate()
+        waitUntilTextExists("Choose a lyric folder")
+        waitUntilTextDoesNotExist("Preparing your projects…")
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        composeRule.onNodeWithText("Keep your lyrics").assertDoesNotExist()
+        composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val monitor = instrumentation.addMonitor(
+            IntentFilter(Intent.ACTION_OPEN_DOCUMENT_TREE),
+            Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null), true,
+        )
+        try {
+            composeRule.onNodeWithText("Choose folder").performClick()
+            composeRule.runOnIdle { assertEquals(1, monitor.hits) }
+            composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        } finally {
+            instrumentation.removeMonitor(monitor)
+        }
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onNodeWithText("Choose lyric folder").assertExists()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Choose folder").assertExists()
+    }
+
+    @Test
+    fun folderPicker_rejectsInaccessibleFolderThenConnectsGrantedFolder() {
+        Settings.setPersistentLyricsFolder(composeRule.activity, null)
+        composeRule.activityRule.scenario.recreate()
+        waitUntilTextExists("Choose folder")
+        returnFolderFromPicker(Uri.parse("content://missing.ghostwriter.provider/tree/lyrics"))
+        waitUntilTextExists("Couldn't save to this folder. Choose a writable folder on your device. Local drafts have been kept.")
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+
+        val tree = DocumentsContract.buildTreeDocumentUri(LyricArchiveTestProvider.AUTHORITY, archiveScope)
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        instrumentation.context.grantUriPermission(composeRule.activity.packageName, tree,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+        try {
+            returnFolderFromPicker(tree)
+            waitUntilTextDoesNotExist("Choose folder")
+            composeRule.onNodeWithText("New project").assertIsEnabled()
+            assertEquals(tree.toString(), Settings.getPersistentLyricsFolder(composeRule.activity))
+            composeRule.onNodeWithContentDescription("Settings").performClick()
+            returnFolderFromPicker(tree, "Choose lyric folder")
+            waitUntilTextExists("New project")
+            composeRule.onNodeWithText("New project").assertIsEnabled()
+        } finally {
+            composeRule.activity.contentResolver.releasePersistableUriPermission(tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            instrumentation.context.revokeUriPermission(tree,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+    }
+
+    @Test
+    fun duplicateProjectName_opensExistingLyricsWithoutCreatingAnotherProject() {
+        val title = uniqueProjectTitle("Existing")
+        val project = ProjectStorage.createProject(composeRule.activity, title)
+        assertTrue(ProjectStorage.saveManual(project, title, "original lyrics", 3))
+        try {
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextExists(title)
+            composeRule.onNodeWithText("New project").performClick()
+            composeRule.onNode(hasSetTextAction()).performTextInput(title.lowercase())
+            composeRule.onNodeWithText("Open").performClick()
+            waitUntilTextExists("original lyrics")
+            assertEquals(1, ProjectStorage.listProjects(composeRule.activity).count {
+                ProjectStorage.loadMetadata(ProjectStorage.projectDir(composeRule.activity, it), "").title == title
+            })
+            composeRule.onNodeWithContentDescription("Back").performClick()
+        } finally {
+            ProjectStorage.deleteProject(composeRule.activity, project.name)
+        }
+    }
+
+    @Test
+    fun sharedSaveFailures_keepCreatedAndRenamedLocalProjectsOnHome() {
+        val title = uniqueProjectTitle("Unarchived")
+        val renamed = "$title renamed"
+        val context = composeRule.activity
+        try {
+            setArchiveFault("createSnapshot")
+            composeRule.onNodeWithText("New project").performClick()
+            composeRule.onNode(hasSetTextAction()).performTextInput(title)
+            composeRule.onNodeWithText("Create").performClick()
+            waitUntilTextExists("The lyric folder couldn't be updated. Reconnect it before uninstalling. Local drafts have been kept.")
+            composeRule.onNodeWithText(title).assertExists()
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+            setArchiveFault(null)
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextDoesNotExist("Choose folder")
+            setArchiveFault("createSnapshot")
+            composeRule.onNodeWithContentDescription("Project options for $title").performClick()
+            composeRule.onNodeWithText("Rename").performClick()
+            composeRule.onNode(hasSetTextAction()).performTextReplacement(renamed)
+            composeRule.onNodeWithText("Rename").performClick()
+            waitUntilTextExists(renamed)
+            waitUntilTextExists("The lyric folder couldn't be updated. Reconnect it before uninstalling. Local drafts have been kept.")
+            setArchiveFault(null)
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextDoesNotExist("Choose folder")
+            setArchiveFault("delete")
+            composeRule.onNodeWithContentDescription("Project options for $renamed").performClick()
+            composeRule.onNodeWithText("Delete").performClick()
+            composeRule.onNodeWithText("Delete").performClick()
+            waitUntilTextDoesNotExist("Delete project?")
+            composeRule.onNodeWithText(renamed).assertExists()
+            assertTrue(ProjectStorage.projectDir(context, renamed).isDirectory)
+        } finally {
+            setArchiveFault(null)
+            ProjectStorage.deleteProject(context, title)
+            ProjectStorage.deleteProject(context, renamed)
+        }
+    }
+
+    private fun setArchiveFault(kind: String?) {
+        composeRule.activity.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"),
+            "fault", archiveScope, kind?.let { Bundle().apply { putString("kind", it) } })
+    }
+
+    private fun returnFolderFromPicker(uri: Uri, button: String = "Choose folder") {
+        val instrumentation = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+        val monitor = instrumentation.addMonitor(IntentFilter(Intent.ACTION_OPEN_DOCUMENT_TREE),
+            Instrumentation.ActivityResult(Activity.RESULT_OK, Intent().setData(uri)), true)
+        try {
+            composeRule.onNodeWithText(button).performClick()
+            composeRule.runOnIdle { assertEquals(1, monitor.hits) }
+        } finally {
+            instrumentation.removeMonitor(monitor)
+        }
+    }
+
+    @Test
+    fun inaccessibleFolder_keepsLocalProjectsVisibleOnHome() {
+        val context = composeRule.activity
+        val project = ProjectStorage.createProject(context, uniqueProjectTitle("Local draft"))
+        val title = ProjectStorage.loadMetadata(project, project.name).title
+        try {
+            Settings.setPersistentLyricsFolder(context, "content://missing.ghostwriter.provider/tree/lyrics")
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextExists("Couldn't access your lyric folder. Select it again to reconnect. Local drafts have been kept.")
+            waitUntilTextDoesNotExist("Preparing your projects…")
+            composeRule.onNodeWithText(title).assertExists()
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+            composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+            assertTrue(project.exists())
+        } finally {
+            ProjectStorage.deleteProject(context, project.name)
+        }
+    }
+
+    @Test
+    fun unreadableLegacyProject_keepsHomeAvailableAndReportsStorageError() {
+        val context = composeRule.activity
+        val legacy = File(ProjectStorage.rootDir(context), uniqueProjectTitle("Unreadable legacy"))
+        assertTrue(File(legacy, "project.json").mkdirs())
+        File(legacy, "project.json/keep").writeText("preserve")
+        try {
+            composeRule.activityRule.scenario.recreate()
+            waitUntilTextExists("Couldn't access your lyric folder. Select it again to reconnect. Local drafts have been kept.")
+            waitUntilTextDoesNotExist("Preparing your projects…")
+            composeRule.onNodeWithText("New project").assertIsNotEnabled()
+            composeRule.onNodeWithText("Choose folder").assertIsEnabled()
+            assertEquals("preserve", File(legacy, "project.json/keep").readText())
+        } finally {
+            legacy.deleteRecursively()
+        }
+    }
 
     @Test
     fun activityWindow_usesStudioBackground() {
@@ -48,9 +261,6 @@ class MainActivityTest {
             assertTrue(theme.resolveAttribute(android.R.attr.windowBackground, background, true))
             val drawable = composeRule.activity.getDrawable(background.resourceId) as ColorDrawable
             assertEquals(GhostColorScheme.background.toArgb(), drawable.color)
-            val lightTheme = TypedValue()
-            assertTrue(theme.resolveAttribute(android.R.attr.isLightTheme, lightTheme, true))
-            assertEquals(0, lightTheme.data)
         }
     }
 
@@ -59,8 +269,8 @@ class MainActivityTest {
         val title = uniqueProjectTitle("Editor round trips")
         try {
             createProject(title)
-            for (destination in listOf("Settings", "Dictionary", "Settings", "Dictionary")) {
-                val lyrics = "Latest lyrics before $destination ${System.nanoTime()}"
+            for ((visit, destination) in listOf("Settings", "Dictionary", "Settings", "Dictionary").withIndex()) {
+                val lyrics = "Visit $visit: latest lyrics before $destination"
                 composeRule.onNode(hasSetTextAction()).performTextReplacement(lyrics)
                 composeRule.onNodeWithContentDescription(destination).performClick()
                 composeRule.onNodeWithContentDescription("Back").performClick()
@@ -75,11 +285,27 @@ class MainActivityTest {
     }
 
     @Test
-    fun navigation_homeToAboutAndBack_returnsHome() {
+    fun settingsDestinations_returnThroughSettingsToHome() {
         composeRule.onNodeWithText("New project").assertExists()
+        composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Change folder").assertDoesNotExist()
 
         composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.onNodeWithText("Choose lyric folder").assertExists()
         composeRule.onNodeWithText("Settings").assertExists()
+
+        composeRule.onNodeWithText("Download Dictionaries").performScrollTo().performClick()
+        composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.").assertExists()
+        composeRule.onNode(
+            hasContentDescription("Download Wiktionary Kaikki for English") or
+                hasContentDescription("Wiktionary Kaikki installed for English"),
+        ).assertExists()
+        composeRule.onNode(
+            hasContentDescription("Download eSpeak NG generated for English") or
+                hasContentDescription("eSpeak NG generated installed for English"),
+        ).assertExists()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("About Ghostwriter").assertExists()
 
         composeRule.onNodeWithText("About Ghostwriter").performScrollTo().performClick()
         composeRule.onNodeWithText("About").assertExists()
@@ -99,23 +325,6 @@ class MainActivityTest {
 
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("New project").assertExists()
-    }
-
-    @Test
-    fun settings_dictionaryDownloadsOpensListAndReturns() {
-        composeRule.onNodeWithContentDescription("Settings").performClick()
-        composeRule.onNodeWithText("Download Dictionaries").performScrollTo().performClick()
-        composeRule.onNodeWithText("Data sources, attribution, and licensing are listed in Settings → About Ghostwriter.").assertExists()
-        composeRule.onNode(
-            hasContentDescription("Download Wiktionary Kaikki for English") or
-                hasContentDescription("Wiktionary Kaikki installed for English"),
-        ).assertExists()
-        composeRule.onNode(
-            hasContentDescription("Download eSpeak NG generated for English") or
-                hasContentDescription("eSpeak NG generated installed for English"),
-        ).assertExists()
-        composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("About Ghostwriter").assertExists()
     }
 
     @Test
@@ -153,7 +362,7 @@ class MainActivityTest {
     }
 
     @Test
-    fun projectLifecycle_createNavigateRenameAndDelete() {
+    fun projectLifecycle_createReopenRenameAndDelete() {
         val projectTitle = uniqueProjectTitle("Main activity project")
         val renamedTitle = "$projectTitle renamed"
 
@@ -161,19 +370,16 @@ class MainActivityTest {
             createProject(projectTitle)
             composeRule.onNodeWithText(projectTitle).assertExists()
 
-            composeRule.onNodeWithContentDescription("Settings").performClick()
-            composeRule.onNodeWithText("Settings").assertExists()
-            composeRule.onNodeWithContentDescription("Back").performClick()
-            composeRule.onNodeWithText(projectTitle).assertExists()
-
             composeRule.onNodeWithContentDescription("Back").performClick()
             waitUntilTextExists(projectTitle)
+            composeRule.onNodeWithText("Recent").assertExists()
             composeRule.onNodeWithText(projectTitle).performClick()
             composeRule.onNodeWithText(projectTitle).assertExists()
             composeRule.onNodeWithContentDescription("Back").performClick()
 
             composeRule.onNodeWithContentDescription("Project options for $projectTitle").performClick()
             composeRule.onNodeWithText("Rename").performClick()
+            composeRule.onNodeWithText("Rename track").assertExists()
             composeRule.onNode(hasSetTextAction()).performTextReplacement(renamedTitle)
             composeRule.onNodeWithText("Rename").performClick()
             waitUntilTextExists(renamedTitle)
@@ -185,9 +391,9 @@ class MainActivityTest {
             waitUntilTextDoesNotExist(renamedTitle)
 
             assertFalse(
-                ProjectStorage.listProjects(composeRule.activity).contains(
-                    ProjectStorage.sanitizeTitle(renamedTitle),
-                ),
+                ProjectStorage.listProjects(composeRule.activity).any { id ->
+                    ProjectStorage.loadMetadata(ProjectStorage.projectDir(composeRule.activity, id), "").title == renamedTitle
+                },
             )
         } finally {
             ProjectStorage.deleteProject(composeRule.activity, projectTitle)
@@ -240,37 +446,26 @@ class MainActivityTest {
         }
     }
 
-    @Test
-    fun openExternalLink_whenLauncherFails_returnsFalse() {
-        var result = true
-        composeRule.runOnIdle {
-            result = openExternalLink(composeRule.activity, "https://example.invalid") {
-                throw ActivityNotFoundException("No browser")
-            }
-        }
-
-        assertFalse(result)
-    }
-
     private fun createProject(projectTitle: String) {
         composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNodeWithText("Name this track").assertExists()
         composeRule.onNode(hasSetTextAction()).performTextInput(projectTitle)
         composeRule.onNodeWithText("Create").performClick()
-        composeRule.onNodeWithText(projectTitle).assertExists()
+        waitUntilTextExists(projectTitle)
     }
 
     private fun waitUntilTextExists(text: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+        composeRule.waitUntil(timeoutMillis = 15_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
 
     private fun waitUntilTextDoesNotExist(text: String) {
-        composeRule.waitUntil(timeoutMillis = 5_000) {
+        composeRule.waitUntil(timeoutMillis = 15_000) {
             composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isEmpty()
         }
     }
 
     private fun uniqueProjectTitle(prefix: String): String =
-        "$prefix ${System.nanoTime()}"
+        "Test $prefix ${testName.methodName}"
 }

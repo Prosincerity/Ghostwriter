@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
@@ -56,6 +57,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
@@ -65,6 +67,197 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class EditorScreenTest {
+    @get:Rule val testName = TestName()
+    @Test
+    fun documentImport_handlesCancellationFailuresSuccessfulCopyAndLongImportCancellation() {
+        val title = uniqueProjectTitle("Document import")
+        val visible = mutableStateOf(true)
+        val project = ProjectStorage.projectDir(context, title)
+        var result: android.net.Uri? = null
+        var storageFailures = 0
+        val registry = object : androidx.activity.result.ActivityResultRegistry() {
+            override fun <I, O> onLaunch(requestCode: Int,
+                contract: androidx.activity.result.contract.ActivityResultContract<I, O>, input: I,
+                options: androidx.core.app.ActivityOptionsCompat?) {
+                dispatchResult(requestCode, if (result == null) android.app.Activity.RESULT_CANCELED else android.app.Activity.RESULT_OK,
+                    Intent().setData(result))
+            }
+        }
+        val owner = object : androidx.activity.result.ActivityResultRegistryOwner {
+            override val activityResultRegistry = registry
+        }
+        composeRule.setContent {
+            CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                if (visible.value) GhostwriterTheme {
+                    EditorScreen(title, {}, {}, onStorageFailure = { storageFailures++ })
+                }
+            }
+        }
+        fun choose(name: String?, query: String = "") {
+            result = name?.let { android.net.Uri.parse("content://com.prosincerity.ghostwriter.test.beat-import/$it$query") }
+            composeRule.onNodeWithText("Import beat").performClick()
+        }
+        fun reassign() {
+            composeRule.onNodeWithText("Reassign").performClick()
+            composeRule.onNodeWithText("Cancel").performClick()
+            composeRule.waitUntil(5_000) {
+                composeRule.onAllNodesWithText("Reassign").fetchSemanticsNodes().size == 1
+            }
+            composeRule.onNodeWithText("Reassign").performClick()
+            val buttons = composeRule.onAllNodesWithText("Reassign")
+            buttons[buttons.fetchSemanticsNodes().lastIndex].performClick()
+            waitUntilTextExists("Import beat")
+        }
+        try {
+            waitUntilTextExists("Import beat")
+            choose(null)
+            composeRule.onNodeWithText("Import beat").assertIsEnabled()
+            choose("unsupported.txt")
+            composeRule.waitUntil(5000) { composeRule.onAllNodesWithText("Import beat").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(null, ProjectStorage.getProjectBeatFile(project))
+            choose("missing.wav")
+            composeRule.waitUntil(5000) { composeRule.onAllNodesWithText("Import beat").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(null, ProjectStorage.getProjectBeatFile(project))
+            choose("short.wav")
+            waitUntilTextExists("short")
+            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(ProjectStorage.waveformCacheDirectory(context, project), 1000) != null }
+            assertEquals("short.wav", ProjectStorage.loadMetadata(project, title).beatOriginalName)
+            reassign()
+            choose("long.wav", "?duration=300000")
+            waitUntilTextExists("Long audio file")
+            composeRule.onNodeWithText("Cancel import").performClick()
+            waitUntilTextExists("Import beat")
+            assertEquals(null, ProjectStorage.getProjectBeatFile(project))
+            assertEquals(null, ProjectStorage.loadMetadata(project, title).beatFile)
+            choose("short.wav", "?name=missing")
+            waitUntilTextExists("beat")
+            composeRule.waitUntil(10000) { ProjectStorage.loadCachedWaveform(ProjectStorage.waveformCacheDirectory(context, project), 1000) != null }
+            assertEquals("beat.mp3", ProjectStorage.loadMetadata(project, title).beatOriginalName)
+            composeRule.runOnIdle { assertEquals(0, storageFailures) }
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
+    fun unreadableLyrics_reportsFailureWithoutOpeningOrSavingAnEmptyDraft() {
+        val title = uniqueProjectTitle("Unreadable lyrics")
+        val visible = mutableStateOf(true)
+        val project = ProjectStorage.projectDir(context, title)
+        val blocked = File(project, "autosave1.txt").apply { assertTrue(mkdir()) }
+        val retained = File(blocked, "keep").apply { writeText("retained bytes") }
+        var failures = 0
+        var exits = 0
+        var sharedSaves = 0
+        composeRule.setContent {
+            if (visible.value) GhostwriterTheme {
+                EditorScreen(title,
+                    onBack = { exits++; visible.value = false },
+                    onOpenSettings = {},
+                    persistLyrics = { _, _ -> sharedSaves++; true },
+                    onStorageFailure = { failures++ })
+            }
+        }
+        try {
+            composeRule.waitForIdle()
+
+            composeRule.runOnIdle {
+                assertEquals(1, failures)
+                assertEquals(1, exits)
+                assertEquals(0, sharedSaves)
+            }
+            composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
+            assertEquals("retained bytes", retained.readText())
+            assertFalse(File(project, "lyrics.txt").exists())
+            assertFalse(File(project, "autosave2.txt").exists())
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
+    fun failedSharedBeatImport_reportsTheReconnectRequirement() {
+        val title = uniqueProjectTitle("Failed shared import")
+        val visible = mutableStateOf(true)
+        val project = ProjectStorage.projectDir(context, title)
+        val saveStarted = CountDownLatch(1)
+        val releaseSave = CountDownLatch(1)
+        val failSave = java.util.concurrent.atomic.AtomicBoolean(false)
+        var failures = 0
+        val registry = object : androidx.activity.result.ActivityResultRegistry() {
+            override fun <I, O> onLaunch(requestCode: Int,
+                contract: androidx.activity.result.contract.ActivityResultContract<I, O>, input: I,
+                options: androidx.core.app.ActivityOptionsCompat?) {
+                dispatchResult(requestCode, android.app.Activity.RESULT_OK,
+                    Intent().setData(android.net.Uri.parse(
+                        "content://com.prosincerity.ghostwriter.test.beat-import/short.wav")))
+            }
+        }
+        val owner = object : androidx.activity.result.ActivityResultRegistryOwner {
+            override val activityResultRegistry = registry
+        }
+        composeRule.setContent {
+            CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner) {
+                if (visible.value) GhostwriterTheme {
+                    EditorScreen(title, {}, {}, persistLyrics = { _, _ ->
+                        if (failSave.get()) {
+                            saveStarted.countDown()
+                            releaseSave.await()
+                            false
+                        } else true
+                    }, onStorageFailure = { failures++ })
+                }
+            }
+        }
+        try {
+            waitUntilTextExists("Import beat")
+            failSave.set(true)
+            composeRule.onNodeWithText("Import beat").performClick()
+            assertTrue(saveStarted.await(5, TimeUnit.SECONDS))
+            composeRule.onNodeWithText("Importing…").assertExists()
+
+            releaseSave.countDown()
+            composeRule.waitUntil(5_000) {
+                composeRule.onAllNodesWithText("Importing…").fetchSemanticsNodes().isEmpty()
+            }
+
+            assertEquals("short.wav", ProjectStorage.loadMetadata(project, title).beatOriginalName)
+            assertTrue(ProjectStorage.getProjectBeatFile(project)!!.isFile)
+            composeRule.runOnIdle { assertEquals(1, failures) }
+            composeRule.onNodeWithText("No beat selected").assertExists()
+            composeRule.onNodeWithText("Import beat").assertIsEnabled()
+        } finally {
+            failSave.set(false)
+            releaseSave.countDown()
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
+    fun autosaveTickPersistsEditsAndMetadataFailureKeepsExistingInformation() {
+        val title = uniqueProjectTitle("Autosave")
+        val project = ProjectStorage.projectDir(context, title)
+        val visible = mutableStateOf(true)
+        val oldInterval = com.prosincerity.ghostwriter.data.Settings.getAutosaveIntervalSeconds(context)
+        try {
+            com.prosincerity.ghostwriter.data.Settings.setAutosaveIntervalSeconds(context, 1)
+            setEditorContent(title, visible)
+            composeRule.onNode(hasSetTextAction()).performTextReplacement("Autosaved verse")
+            composeRule.mainClock.advanceTimeBy(1000)
+            composeRule.waitUntil(5000) { ProjectStorage.loadLatest(project) == "Autosaved verse" }
+            File(project, "project.json").delete()
+            File(project, "project.json/keep").apply { parentFile!!.mkdir(); writeText("keep") }
+            composeRule.onNodeWithContentDescription("Project Info").performClick()
+            composeRule.onNodeWithText("BPM (optional)").performTextReplacement("123")
+            composeRule.onNodeWithText("Save").performClick()
+            composeRule.waitForIdle()
+            assertEquals(null, ProjectStorage.loadMetadata(project, title).bpm)
+            assertEquals("keep", File(project, "project.json/keep").readText())
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+            com.prosincerity.ghostwriter.data.Settings.setAutosaveIntervalSeconds(context, oldInterval)
+        }
+    }
 
     @get:Rule
     // Queue resumptions after IO instead of running recomposition on the IO worker.
@@ -143,7 +336,7 @@ class EditorScreenTest {
         val visible = mutableStateOf(true)
         val title = uniqueProjectTitle("Pending playback")
         val projectDir = ProjectStorage.projectDir(context, title)
-        assertTrue(ProjectStorage.saveManual(projectDir, title, "Saved lyrics", keepCount = 2))
+        assertTrue(ProjectStorage.saveManual(projectDir, title, "Saved lyrics", keepCount = 3))
         try {
             composeRule.setContent {
                 // Capture the host Activity's owner before replacing its context
@@ -256,6 +449,44 @@ class EditorScreenTest {
     }
 
     @Test
+    fun minimizingBeatPlayer_freesEditorSpaceAndKeepsPlaybackRunning() {
+        val title = uniqueProjectTitle("Minimized beat")
+        val visible = mutableStateOf(true)
+        createAssignedBeat(title, durationMs = 30_000, cacheWaveform = true)
+        try {
+            setEditorContent(title, visible)
+            waitUntilTextExists("editor-fixture")
+            val expandedEditor = composeRule.onNode(hasSetTextAction())
+                .fetchSemanticsNode().boundsInRoot
+            composeRule.onNodeWithContentDescription("Play").performClick()
+            composeRule.waitUntil(5_000) {
+                context.getSystemService(NotificationManager::class.java).activeNotifications.isNotEmpty()
+            }
+            val notification = context.getSystemService(NotificationManager::class.java)
+                .activeNotifications.single().notification
+            @Suppress("DEPRECATION")
+            val token = notification.extras.getParcelable<MediaSession.Token>(Notification.EXTRA_MEDIA_SESSION)!!
+            val controller = MediaController(context, token)
+
+            composeRule.onNodeWithContentDescription("Minimize beat player").performClick()
+            val tab = composeRule.onNodeWithText("Beat Player").assertIsDisplayed()
+                .fetchSemanticsNode().boundsInRoot
+            val minimizedEditor = composeRule.onNode(hasSetTextAction())
+                .fetchSemanticsNode().boundsInRoot
+            assertTrue("The tab belongs above the lyrics", tab.bottom <= minimizedEditor.top)
+            assertTrue("Minimizing should free space for lyrics", minimizedEditor.height > expandedEditor.height)
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
+
+            composeRule.onNodeWithContentDescription("Open beat player").performClick()
+            composeRule.onNodeWithText("editor-fixture").assertIsDisplayed()
+            composeRule.onNodeWithContentDescription("Pause").assertIsDisplayed()
+            assertEquals(PlaybackState.STATE_PLAYING, controller.playbackState!!.state)
+        } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
     fun leavingAndReturningToEditor_keepsBeatPlaying_andSystemControlsStopIt() {
         val title = uniqueProjectTitle("Background beat")
         val visible = mutableStateOf(true)
@@ -339,7 +570,7 @@ class EditorScreenTest {
     }
 
     @Test
-    fun editingLyricsAndProjectInfo_persistsBothWhenLeaving() {
+    fun editingLyricsAndProjectInfo_manualSaveAndExitPersistLatestValues() {
         val projectTitle = uniqueProjectTitle("Editor persistence")
         val projectDir = ProjectStorage.projectDir(context, projectTitle)
         val showEditor = mutableStateOf(true)
@@ -347,13 +578,15 @@ class EditorScreenTest {
 
         try {
             composeRule.setContent {
-                if (showEditor.value) {
-                    GhostwriterTheme {
-                        EditorScreen(
-                            projectTitle = projectTitle,
-                            onBack = { showEditor.value = false },
-                            onOpenSettings = {},
-                        )
+                CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                    if (showEditor.value) {
+                        GhostwriterTheme {
+                            EditorScreen(
+                                projectTitle = projectTitle,
+                                onBack = { showEditor.value = false },
+                                onOpenSettings = {},
+                            )
+                        }
                     }
                 }
             }
@@ -372,35 +605,18 @@ class EditorScreenTest {
             }
 
             composeRule.onNode(hasSetTextAction()).performTextInput(lyrics)
-            composeRule.onNodeWithContentDescription("Back").performClick()
-            composeRule.waitForIdle()
-
-            assertEquals(lyrics, ProjectStorage.loadLatest(projectDir))
-        } finally {
-            disposeEditorAndDeleteProject(showEditor, projectTitle)
-        }
-    }
-
-    @Test
-    fun manualSave_persistsCurrentLyrics() {
-        val projectTitle = uniqueProjectTitle("Editor manual save")
-        val projectDir = ProjectStorage.projectDir(context, projectTitle)
-        val showEditor = mutableStateOf(true)
-        val lyrics = "Saved from the toolbar"
-
-        try {
-            setEditorContent(projectTitle, showEditor)
-
-            composeRule.waitUntil(timeoutMillis = 10_000) {
-                composeRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().size == 1
-            }
-            composeRule.onNode(hasSetTextAction()).performTextInput(lyrics)
             composeRule.onNodeWithContentDescription("Save").performClick()
-
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 ProjectStorage.loadLatest(projectDir) == lyrics
             }
             composeRule.runOnIdle { assertTrue(feedback.isEmpty()) }
+
+            val exitLyrics = "$lyrics\nWritten after the manual save"
+            composeRule.onNode(hasSetTextAction()).performTextReplacement(exitLyrics)
+            composeRule.onNodeWithContentDescription("Back").performClick()
+            composeRule.waitForIdle()
+
+            assertEquals(exitLyrics, ProjectStorage.loadLatest(projectDir))
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }
@@ -517,6 +733,52 @@ class EditorScreenTest {
     }
 
     @Test
+    fun failedBeatRemoval_reportsFailureRetainsAssignmentAndAllowsRetry() {
+        val title = uniqueProjectTitle("Failed beat removal")
+        val visible = mutableStateOf(true)
+        val project = createAssignedBeat(title, durationMs = 1_000, cacheWaveform = true)
+        val beat = ProjectStorage.getProjectBeatFile(project)!!
+        val previousMetadata = ProjectStorage.metadataFile(project).readText()
+        var failSave = true
+        var failures = 0
+        composeRule.setContent {
+            CompositionLocalProvider(LocalHapticFeedback provides haptics) {
+                if (visible.value) GhostwriterTheme {
+                    EditorScreen(title, { visible.value = false }, {},
+                        persistLyrics = { _, _ -> !failSave },
+                        onStorageFailure = { failures++ })
+                }
+            }
+        }
+        fun removeBeat() {
+            composeRule.onNodeWithText("Reassign").performClick()
+            val buttons = composeRule.onAllNodesWithText("Reassign")
+            buttons[buttons.fetchSemanticsNodes().lastIndex].performClick()
+        }
+        try {
+            waitUntilTextExists("editor-fixture")
+            removeBeat()
+            composeRule.waitUntil(5_000) { failures == 1 }
+            composeRule.onNodeWithText("editor-fixture").assertExists()
+            assertTrue(beat.isFile)
+            assertEquals(previousMetadata, ProjectStorage.metadataFile(project).readText())
+            assertTrue(ProjectStorage.loadCachedWaveform(
+                ProjectStorage.waveformCacheDirectory(context, project),
+                WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+            ) != null)
+            composeRule.runOnIdle { assertTrue(feedback.isEmpty()); failSave = false }
+            removeBeat()
+            waitUntilTextExists("No beat selected")
+            assertFalse(beat.exists())
+            assertEquals(null, ProjectStorage.loadMetadata(project, title).beatFile)
+            composeRule.runOnIdle { assertEquals(listOf(HapticFeedbackType.LongPress), feedback) }
+        } finally {
+            composeRule.runOnIdle { failSave = false }
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
     fun corruptBeat_retryThenRemove_clearsBeatAndMetadata() {
         val projectTitle = uniqueProjectTitle("Editor corrupt beat")
         val showEditor = mutableStateOf(true)
@@ -570,15 +832,14 @@ class EditorScreenTest {
             storageThread = Thread {
                 synchronized(ProjectStorage) {
                     storageLocked.countDown()
-                    if (releaseStorage.await(30, TimeUnit.SECONDS)) {
-                        // Supply the cache before extraction resumes to keep this
-                        // navigation test independent of decoder speed.
-                        ProjectStorage.saveCachedWaveform(
-                            projectDir,
-                            WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
-                            cachedWaveform(),
-                        )
-                    }
+                    releaseStorage.await()
+                    // Supply the cache before extraction resumes to keep this
+                    // navigation test independent of decoder speed.
+                    ProjectStorage.saveCachedWaveform(
+                        ProjectStorage.waveformCacheDirectory(context, projectDir),
+                        WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
+                        cachedWaveform(),
+                    )
                 }
             }.apply { start() }
             assertTrue(storageLocked.await(5, TimeUnit.SECONDS))
@@ -615,15 +876,13 @@ class EditorScreenTest {
 
             composeRule.onNodeWithText("Cancel preparation").performClick()
             waitUntilTextExists("Waveform preparation canceled")
-            composeRule.onNodeWithContentDescription("Play").assertIsEnabled().performClick()
-            composeRule.onNodeWithContentDescription("Pause").performClick()
-            composeRule.onNodeWithContentDescription("Play").assertExists()
+            composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
             composeRule.onNodeWithText("Retry").performClick()
             waitUntilTextExists("Long audio file")
 
             assertTrue(
                 ProjectStorage.saveCachedWaveform(
-                    projectDir,
+                    ProjectStorage.waveformCacheDirectory(context, projectDir),
                     WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
                     cachedWaveform(),
                 ),
@@ -631,6 +890,8 @@ class EditorScreenTest {
             composeRule.onNodeWithText("Process anyway").performClick()
 
             waitUntilTextExists("editor-fixture")
+            composeRule.onNodeWithContentDescription("Play").assertIsEnabled().performClick()
+            composeRule.onNodeWithContentDescription("Pause").performClick()
             composeRule.onNodeWithContentDescription("Play").assertExists()
             composeRule.onNodeWithContentDescription("Pause").assertDoesNotExist()
         } finally {
@@ -671,7 +932,7 @@ class EditorScreenTest {
         if (cacheWaveform) {
             assertTrue(
                 ProjectStorage.saveCachedWaveform(
-                    projectDir,
+                    ProjectStorage.waveformCacheDirectory(context, projectDir),
                     WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
                     cachedWaveform(),
                 ),
@@ -731,7 +992,7 @@ class EditorScreenTest {
     }
 
     private fun uniqueProjectTitle(prefix: String): String =
-        "$prefix ${System.nanoTime()}"
+        "Test $prefix ${testName.methodName}"
 
     private companion object {
         private const val WAV_HEADER_SIZE = 44

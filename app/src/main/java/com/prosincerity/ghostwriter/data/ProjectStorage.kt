@@ -1,33 +1,15 @@
 package com.prosincerity.ghostwriter.data
 
 import android.content.Context
+import com.prosincerity.ghostwriter.logic.ProjectTitleRules
 import com.prosincerity.ghostwriter.logic.WaveformExtractor
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CancellationException
+import java.util.UUID
+import org.json.JSONObject
 
-/**
- * Handles the on-disk layout for lyric projects.
- *
- * Layout, under the app's own external files directory (no storage
- * permission needed, private to this app, removed on uninstall):
- *
- *   <externalFilesDir>/ghostwriter/<project title>/autosave1.txt   (newest)
- *   <externalFilesDir>/ghostwriter/<project title>/autosave2.txt
- *   ...
- *
- * autosave1.txt is always the most recent snapshot. On each autosave
- * tick, older files shift up by one index (oldest beyond the configured
- * count is dropped) and autosave1.txt is overwritten with the current
- * text — a small rolling backup ring buffer.
- *
- * NOTE: this directory isn't easily browsable from a stock file manager
- * (Android's scoped storage rules hide other apps' external-files
- * directories from general browsing). That's fine for autosave/backup
- * purposes, but when real Import/Export is built, that feature should
- * use the Storage Access Framework so the user can point at a folder
- * they actually see and manage themselves.
- */
+/** App-local project working copies, addressed by UUID rather than display title. */
 object ProjectStorage {
 
     private const val MAX_PROJECT_TITLE_UTF8_BYTES = 251
@@ -37,34 +19,92 @@ object ProjectStorage {
     fun rootDir(context: Context): File =
         File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
 
-    fun projectDir(context: Context, title: String): File =
-        File(rootDir(context), sanitizeTitle(title)).apply { mkdirs() }
+    /** UUIDs are path components; legacy title callers resolve through metadata. */
+    @Synchronized
+    fun projectDir(context: Context, projectId: String): File {
+        val root = rootDir(context)
+        migrateLegacyProjects(root)
+        if (isProjectId(projectId)) return File(root, projectId).also {
+            require(it.isDirectory) { "Project no longer exists" }
+        }
+        val title = normalizeTitle(projectId)
+        return root.listFiles()?.firstOrNull {
+            it.isDirectory && loadMetadata(it, it.name).title == title
+        } ?: createProjectDirectory(root, title)
+    }
 
-    fun listProjects(context: Context): List<String> =
-        rootDir(context).listFiles { f -> f.isDirectory && !f.name.startsWith(".") }
-            ?.map { it.name }
-            ?.sorted()
-            ?: emptyList()
+    @Synchronized
+    fun listProjects(context: Context): List<String> {
+        val root = rootDir(context)
+        migrateLegacyProjects(root)
+        val directories = root.listFiles { f -> f.isDirectory && isProjectId(f.name) }.orEmpty()
+        // Old releases kept this regenerable cache alongside backed-up project data.
+        directories.forEach { WaveformCache.invalidate(it) }
+        return directories.map { it.name }.sorted()
+    }
 
-    /**
-     * Permanently deletes the project directory for [title], including all
-     * lyrics, autosaves, metadata, and any copied beat file.
-     */
-    fun deleteProject(context: Context, title: String): Boolean =
-        deleteProjectDirectory(File(rootDir(context), sanitizeTitle(title)))
+    fun createProject(context: Context, title: String): File =
+        createProjectDirectory(rootDir(context), title)
 
-    /**
-     * Renames a project without changing its contents. The title-based manual
-     * save file and the metadata title are updated to match the new folder.
-     *
-     * @return the renamed project title, or null if the source is missing, the
-     * destination already exists, or the rename cannot be completed safely.
-     */
-    fun renameProject(context: Context, currentTitle: String, requestedTitle: String): String? =
-        renameProjectDirectory(
-            projectDir = File(rootDir(context), sanitizeTitle(currentTitle)),
-            requestedTitle = requestedTitle,
-        )?.name
+    @Synchronized
+    internal fun createProjectDirectory(root: File, title: String): File {
+        val directory = File(root, UUID.randomUUID().toString())
+        check(directory.mkdir()) { "Couldn't create project" }
+        if (!saveMetadata(directory, ProjectMetadata(title = normalizeTitle(title)))) {
+            directory.delete()
+            throw IOException("Couldn't save project information")
+        }
+        return directory
+    }
+
+    internal fun isProjectId(value: String): Boolean =
+        runCatching { UUID.fromString(value).toString() == value }.getOrDefault(false)
+
+    fun normalizeTitle(title: String): String = ProjectTitleRules.normalize(title)
+
+    /** Convert old title folders once; keep every lyric/beat file and snapshot age. */
+    @Synchronized
+    internal fun migrateLegacyProjects(root: File) {
+        root.listFiles { file -> file.isDirectory && !file.name.startsWith(".") && !isProjectId(file.name) }
+            ?.forEach { source ->
+                val metadata = loadMetadata(source, source.name)
+                val destination = File(root, UUID.randomUUID().toString())
+                // Persist the display title before changing its fallback folder name.
+                // A failed migration leaves the original directory available for retry.
+                runCatching {
+                    val json = runCatching { JSONObject(metadataFile(source).readText()) }
+                        .getOrElse { metadata.toJsonObject() }
+                    json.put("title", metadata.title)
+                    // Freeze old missing timestamps once; otherwise the tolerant
+                    // reader invents new times on every shared save/checkpoint.
+                    val metadataTime = metadataFile(source).lastModified().takeIf { it > 0L }
+                        ?: source.lastModified()
+                    if (!json.has("createdAt")) json.put("createdAt", metadataTime)
+                    if (!json.has("updatedAt")) json.put("updatedAt", maxOf(metadataTime,
+                        source.listFiles { it.isFile && it.extension == "txt" }
+                            ?.maxOfOrNull { it.lastModified() } ?: 0L))
+                    StagedFileWriter.writeText(metadataFile(source), json.toString(2))
+                    if (!source.renameTo(destination)) throw IOException("Couldn't migrate ${source.name}")
+                }.getOrThrow()
+            }
+    }
+
+    fun deleteProject(context: Context, projectId: String): Boolean {
+        val root = rootDir(context)
+        val directory = if (isProjectId(projectId)) File(root, projectId) else
+            root.listFiles()?.firstOrNull { it.isDirectory && loadMetadata(it, it.name).title == projectId }
+                ?: return false
+        return deleteProjectDirectory(directory)
+    }
+
+    /** Renaming changes metadata only; project identity, lyrics and playback paths stay stable. */
+    fun renameProject(context: Context, projectId: String, requestedTitle: String): String? {
+        val root = rootDir(context)
+        val directory = if (isProjectId(projectId)) File(root, projectId) else
+            root.listFiles()?.firstOrNull { it.isDirectory && loadMetadata(it, it.name).title == projectId }
+                ?: return null
+        return renameProjectDirectory(directory, requestedTitle)?.name
+    }
 
     @Synchronized
     internal fun deleteProjectDirectory(projectDir: File): Boolean {
@@ -75,55 +115,34 @@ object ProjectStorage {
     @Synchronized
     internal fun renameProjectDirectory(projectDir: File, requestedTitle: String): File? {
         if (!projectDir.isDirectory) return null
-
-        val renamedTitle = sanitizeTitle(requestedTitle)
-        if (projectDir.name == renamedTitle) return projectDir
-
-        val renamedProjectDir = File(projectDir.parentFile ?: return null, renamedTitle)
-        if (renamedProjectDir.exists()) return null
-
-        val originalManualSave = File(projectDir, ProjectLyricsStorage.manualFileName(projectDir.name))
-        val renamedManualSave = File(projectDir, ProjectLyricsStorage.manualFileName(renamedTitle))
-        val manualSaveWasRenamed = originalManualSave.isFile && originalManualSave != renamedManualSave
-        if (manualSaveWasRenamed && renamedManualSave.exists()) return null
-        if (manualSaveWasRenamed && !originalManualSave.renameTo(renamedManualSave)) return null
-
-        if (!projectDir.renameTo(renamedProjectDir)) {
-            if (manualSaveWasRenamed) renamedManualSave.renameTo(originalManualSave)
-            return null
-        }
-
-        val renamedMetadata = loadMetadata(renamedProjectDir, renamedTitle).copy(title = renamedTitle)
-        if (!saveMetadata(renamedProjectDir, renamedMetadata)) {
-            // Keep the old project intact if its metadata cannot be updated.
-            if (renamedProjectDir.renameTo(projectDir) && manualSaveWasRenamed) {
-                File(projectDir, renamedManualSave.name).renameTo(originalManualSave)
-            }
-            return null
-        }
-
-        return renamedProjectDir
+        val metadata = loadMetadata(projectDir, projectDir.name)
+        val title = normalizeTitle(requestedTitle)
+        if (metadata.title == title) return projectDir
+        return projectDir.takeIf { saveMetadata(it, metadata.copy(title = title)) }
     }
 
-    /** Most recent readable manual save or autosave, falling back through the backup ring. */
+    /**
+     * Most recent readable manual save or autosave, falling back through the backup ring.
+     * @throws IOException if listing fails or no existing snapshot is readable.
+     */
     fun loadLatest(projectDir: File): String = ProjectLyricsStorage.loadLatest(projectDir)
 
-    /** Saves a title-based manual snapshot and updates the autosave ring. */
+    /** Saves a fixed-name manual snapshot and updates the autosave ring. */
     @Synchronized
     fun saveManual(projectDir: File, title: String, content: String, keepCount: Int): Boolean =
         ProjectLyricsStorage.saveManual(
             projectDir,
-            manualSaveFileName(title),
+            ProjectLyricsStorage.MANUAL_FILE_NAME,
             content,
             keepCount,
         )
 
-    fun manualSaveFileName(title: String): String =
-        ProjectLyricsStorage.manualFileName(sanitizeTitle(title))
+    fun manualSaveFileName(@Suppress("UNUSED_PARAMETER") title: String): String =
+        ProjectLyricsStorage.MANUAL_FILE_NAME
 
     /** Rotates the backup ring only when the lyrics have changed. */
     @Synchronized
-    fun rotateAndSave(projectDir: File, content: String, keepCount: Int) =
+    fun rotateAndSave(projectDir: File, content: String, keepCount: Int): Boolean =
         ProjectLyricsStorage.rotateAndSave(projectDir, content, keepCount)
 
     fun sanitizeTitle(title: String): String {
@@ -153,14 +172,16 @@ object ProjectStorage {
         return substring(0, endIndex)
     }
 
-    /** Match the folder name used on disk, including an existing name's casing. */
-    fun resolveProjectTitle(title: String, existingProjects: List<String>): String {
-        val sanitized = sanitizeTitle(title)
-        return existingProjects.firstOrNull { it.equals(sanitized, ignoreCase = true) } ?: sanitized
-    }
+    /** Reuse an existing display title's casing when matching a requested title. */
+    fun resolveProjectTitle(title: String, existingProjects: List<String>): String =
+        ProjectTitleRules.resolve(title, existingProjects)
 
     fun metadataFile(projectDir: File): File =
         File(projectDir, "project.json")
+
+    /** Regenerable peaks stay outside project data and Android backups. */
+    fun waveformCacheDirectory(context: Context, projectDir: File): File =
+        File(context.cacheDir, "waveforms/${projectDir.name}").apply { mkdirs() }
 
     /** Project-local waveform cache for the currently assigned beat. */
     fun waveformCacheFile(projectDir: File): File =
@@ -195,11 +216,13 @@ object ProjectStorage {
         beatFile: File,
         targetSampleCount: Int = WaveformExtractor.DEFAULT_TARGET_SAMPLE_COUNT,
         shouldCancel: () -> Boolean = { false },
+        waveformDirectory: File = projectDir,
     ): IntArray = loadOrExtractWaveform(
         projectDir = projectDir,
         beatFile = beatFile,
         targetSampleCount = targetSampleCount,
         shouldCancel = shouldCancel,
+        waveformDirectory = waveformDirectory,
         extract = { file, sampleCount ->
             WaveformExtractor.extractAmplitudes(file, sampleCount, shouldCancel)
         },
@@ -210,6 +233,7 @@ object ProjectStorage {
         beatFile: File,
         targetSampleCount: Int,
         shouldCancel: () -> Boolean = { false },
+        waveformDirectory: File = projectDir,
         extract: (File, Int) -> IntArray,
     ): IntArray {
         if (targetSampleCount !in 1..WaveformCache.MAX_SAMPLES || !beatFile.isFile) {
@@ -222,7 +246,7 @@ object ProjectStorage {
 
         val beatRevisionAtStart = synchronized(this) { beatMutationRevision }
         throwIfWaveformCancelled(shouldCancel)
-        loadCachedWaveform(projectDir, targetSampleCount)?.let { return it }
+        loadCachedWaveform(waveformDirectory, targetSampleCount)?.let { return it }
 
         // Decoding can take tens of seconds on some devices. Do not hold the
         // ProjectStorage monitor while it runs: lyrics and metadata use that
@@ -232,7 +256,7 @@ object ProjectStorage {
         if (amplitudes.size == targetSampleCount) {
             synchronized(this) {
                 if (beatMutationRevision == beatRevisionAtStart) {
-                    saveCachedWaveform(projectDir, targetSampleCount, amplitudes)
+                    saveCachedWaveform(waveformDirectory, targetSampleCount, amplitudes)
                 }
             }
         }
@@ -244,17 +268,22 @@ object ProjectStorage {
     }
 
     fun loadMetadata(projectDir: File, fallbackTitle: String): ProjectMetadata {
+        val title = if (isProjectId(fallbackTitle)) "Untitled" else fallbackTitle
         val contents = runCatching { metadataFile(projectDir).readText() }.getOrNull()
-            ?: return ProjectMetadata(title = fallbackTitle)
-        return ProjectMetadata.fromJsonString(contents, fallbackTitle)
+            ?: return ProjectMetadata(title = title)
+        return ProjectMetadata.fromJsonString(contents, title)
     }
 
     @Synchronized
-    fun saveMetadata(projectDir: File, metadata: ProjectMetadata): Boolean =
+    fun saveMetadata(
+        projectDir: File,
+        metadata: ProjectMetadata,
+        now: () -> Long = System::currentTimeMillis,
+    ): Boolean =
         runCatching {
             val file = metadataFile(projectDir)
             val updated = metadata.copy(
-                updatedAt = System.currentTimeMillis(),
+                updatedAt = now(),
                 version = maxOf(metadata.version, ProjectMetadata.CURRENT_VERSION),
             )
             StagedFileWriter.writeText(file, updated.toJsonObject().toString(2))
@@ -303,6 +332,7 @@ object ProjectStorage {
     fun assignBeatToProject(
         projectDir: File,
         originalName: String,
+        waveformDirectory: File = projectDir,
         copyAction: (destination: File) -> Unit,
     ): File {
         val ext = originalName.substringAfterLast('.', "").lowercase()
@@ -327,6 +357,7 @@ object ProjectStorage {
             ?.forEach { it.delete() }
 
         invalidateWaveformCache(projectDir)
+        if (waveformDirectory != projectDir) invalidateWaveformCache(waveformDirectory)
 
         val currentMeta = loadMetadata(projectDir, projectDir.name)
         val updatedMeta = currentMeta.copy(
@@ -347,18 +378,59 @@ object ProjectStorage {
      * Unassigns and removes the beat from [projectDir], updating `project.json`.
      */
     @Synchronized
-    fun removeBeatFromProject(projectDir: File) {
-        projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
-        beatMutationRevision++
-        invalidateWaveformCache(projectDir)
+    fun removeBeatFromProject(projectDir: File, waveformDirectory: File = projectDir) {
+        removeBeatAndPersist(projectDir, waveformDirectory) { true }
+    }
 
-        val currentMeta = loadMetadata(projectDir, projectDir.name)
-        val updatedMeta = currentMeta.copy(
-            beatFile = null,
-            beatOriginalName = null,
-            markers = emptyList(),
-        )
-        saveMetadata(projectDir, updatedMeta)
+    /** Keep audio and its timeline until both local metadata and the shared save succeed. */
+    internal fun removeBeatAndPersist(
+        projectDir: File,
+        waveformDirectory: File,
+        persistLyrics: (File) -> Boolean,
+    ): ProjectMetadata {
+        val metadataFile = metadataFile(projectDir)
+        val previousMetadata = synchronized(this) {
+            val previous = if (metadataFile.exists()) metadataFile.readBytes() else null
+            val updated = loadMetadata(projectDir, projectDir.name).copy(
+                beatFile = null,
+                beatOriginalName = null,
+                markers = emptyList(),
+            )
+            if (!saveMetadata(projectDir, updated)) throw IOException("Couldn't save the beat's project information")
+            previous
+        }
+        try {
+            // Provider I/O must not hold the storage monitor: autosave acquires
+            // the persistent-storage monitor before reading project files.
+            if (!persistLyrics(projectDir)) throw IOException("Couldn't update the lyric folder; beat kept")
+        } catch (failure: Exception) {
+            try {
+                synchronized(this) {
+                    if (previousMetadata == null) {
+                        if (!metadataFile.delete()) throw IOException("Couldn't restore the beat's project information")
+                    } else {
+                        StagedFileWriter.replace(metadataFile, "beat-removal-", "Couldn't restore the beat's project information") {
+                            it.writeBytes(previousMetadata)
+                        }
+                    }
+                    // A provider can fail after publishing the tentative metadata.
+                    // Keep the restored assignment as a local draft on reconnect.
+                    val checkpoint = File(projectDir, ".lyric-archive.json")
+                    if (checkpoint.isFile && !checkpoint.delete()) throw IOException("Couldn't retain the beat's local assignment")
+                }
+            } catch (rollbackFailure: Exception) {
+                rollbackFailure.addSuppressed(failure)
+                throw rollbackFailure
+            }
+            throw failure
+        }
+        return synchronized(this) {
+            projectDir.listFiles { file -> file.isProjectBeatFile() }?.forEach { it.delete() }
+            beatMutationRevision++
+            invalidateWaveformCache(projectDir)
+            if (waveformDirectory != projectDir) invalidateWaveformCache(waveformDirectory)
+            loadMetadata(projectDir, projectDir.name)
+        }
     }
 
     private fun File.isSupportedAudioFile(): Boolean =

@@ -24,7 +24,7 @@ internal data class DictionarySearchPlan(
                 }
                 DictionarySearchMode.ASSONANCE -> keys.filter { it.assonance.isNotEmpty() }
                     .map { key -> Prefix(key.assonance, key.assonance.split(' ').size) }
-                DictionarySearchMode.WORD_PREFIX -> emptyList()
+                DictionarySearchMode.WORD_PREFIX, DictionarySearchMode.DOUBLE_RHYME -> emptyList()
             }
             // Short exact vowel keys come first; rhyme and suffix searches prefer
             // longer overlaps. Keep token boundaries when deduplicating phonemes.

@@ -23,6 +23,7 @@ import com.prosincerity.ghostwriter.data.WaveformMarker
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import java.io.File
 import java.nio.ByteBuffer
@@ -31,8 +32,30 @@ import java.nio.ByteOrder
 @RunWith(AndroidJUnit4::class)
 class BeatPlaybackServiceTest {
     @get:Rule val composeRule = createAndroidComposeRule<MainActivity>()
+    @get:Rule val folder = TemporaryFolder(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir)
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
+
+    @Test
+    fun permanentFocusLoss_allowsExplicitRestartAndProjectRemoval() {
+        withService { service, _ ->
+            onMain { service.player.play() }
+            val controller = mediaController(waitForMediaNotification("Pause", "Restart", "Loop: Whole beat"))
+            onMain {
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS)
+                service.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN)
+            }
+            assertFalse(onMainValue { service.player.isPlaying })
+            controller.transportControls.skipToPrevious()
+            waitUntil { service.player.isPlaying }
+            onMain {
+                service.onStartCommand(Intent(context, BeatPlaybackService::class.java)
+                    .setAction("com.prosincerity.ghostwriter.FORGET_PROJECT")
+                    .putExtra("project", "Service test"), 0, 2)
+                assertFalse(service.player.isReady)
+            }
+        }
+    }
 
     @Test
     fun markerLoop_survivesUnbindingAndFocusInterruptionsAndKeepsMediaControls() {
@@ -444,7 +467,7 @@ class BeatPlaybackServiceTest {
     private fun withService(block: (BeatPlaybackService, () -> Unit) -> Unit) {
         var service: BeatPlaybackService? = null
         var bound = false
-        val file = File(context.cacheDir, "service-playback-test.wav")
+        val file = File(folder.root, "service-playback-test.wav")
         val connection = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
                 service = (binder as BeatPlaybackService.LocalBinder).service

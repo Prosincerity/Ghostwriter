@@ -1,7 +1,9 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.onNodeWithTag
@@ -10,6 +12,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performClick
@@ -38,6 +41,37 @@ import kotlin.coroutines.suspendCoroutine
 @RunWith(AndroidJUnit4::class)
 class DictionaryScreenTest {
     @get:Rule val composeRule = createComposeRule()
+
+    @Test
+    fun germanDoubleRhymeAcceptsAPhraseAndDisplaysCompoundParts() {
+        composeRule.setContent {
+            GhostwriterTheme {
+                DictionaryScreen(onBack = {}, onOpenDownloads = {}, installedLanguages = listOf("en", "de"),
+                    search = { word, language, mode, _ ->
+                        assertEquals("bleibe Straße", word)
+                        assertEquals("de", language)
+                        assertEquals(DictionarySearchMode.DOUBLE_RHYME, mode)
+                        DictionarySearchResult(null, listOf(DictionaryMatch("Seitenstraße", "/ˈzaɪtn̩ˌʃtʁaːsə/",
+                            PronunciationSource.WIKTIONARY, listOf("Seiten", "straße"))))
+                    })
+            }
+        }
+        composeRule.onNodeWithText("Mode: Rhyme").performClick()
+        composeRule.onNodeWithText("Double rhyme").assertDoesNotExist()
+        composeRule.onNodeWithText("Rhyme").performClick()
+        composeRule.onNodeWithText("Language: English").performClick()
+        composeRule.onNodeWithText("German").performClick()
+        composeRule.onNodeWithText("Mode: Rhyme").performClick()
+        composeRule.onNodeWithText("Double rhyme").performClick()
+        composeRule.onNodeWithText("Compound or two words").performTextInput("bleibe Straße")
+        composeRule.onNodeWithText("Search").performClick()
+        composeRule.onNodeWithText("Seitenstraße").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Seiten + straße").assertExists()
+        composeRule.onNodeWithText("Language: German").performScrollTo().performClick()
+        composeRule.onNodeWithText("English").performClick()
+        composeRule.onNodeWithText("Mode: Rhyme").assertExists()
+        composeRule.onNodeWithText("Seitenstraße").assertDoesNotExist()
+    }
 
     @Test
     fun selectorsShareOneRowAndSearchButtonStaysCompact() {
@@ -132,18 +166,20 @@ class DictionaryScreenTest {
 
         try {
             composeRule.onNodeWithText("Word").performTextInput("cat")
-            composeRule.onNodeWithText("Search").performClick()
+            Espresso.closeSoftKeyboard()
+            composeRule.onNodeWithText("Search").performScrollTo().performClick()
             composeRule.onNodeWithText("Searching…").assertExists()
             composeRule.onNodeWithText("Word").performTextReplacement("hat")
             composeRule.onNodeWithText("Searching…").assertDoesNotExist()
-            composeRule.onNodeWithText("Search").performClick()
+            Espresso.closeSoftKeyboard()
+            composeRule.onNodeWithText("Search").performScrollTo().performClick()
 
-            composeRule.runOnIdle { pending.remove("cat")!!.resume(result("stale result")) }
+            composeRule.runOnIdle { checkNotNull(pending.remove("cat")).resume(result("stale result")) }
             composeRule.onNodeWithText("stale result").assertDoesNotExist()
             composeRule.onNodeWithText("Searching…").assertExists()
             composeRule.onNodeWithText("Search").assertIsNotEnabled()
 
-            composeRule.runOnIdle { pending.remove("hat")!!.resume(result("current result")) }
+            composeRule.runOnIdle { checkNotNull(pending.remove("hat")).resume(result("current result")) }
             composeRule.onNodeWithText("current result").assertExists()
             composeRule.onNodeWithText("Searching…").assertDoesNotExist()
             composeRule.onNodeWithText("stale result").assertDoesNotExist()
@@ -159,29 +195,48 @@ class DictionaryScreenTest {
     fun searchesAndReturnsToEditor() {
         var searched: Triple<String, String, DictionarySearchMode>? = null
         var returned = false
+        var originalSearches = 0
+        val search = mutableStateOf<suspend (String, String, DictionarySearchMode, Int) -> DictionarySearchResult>(
+            { _, _, _, _ ->
+                originalSearches++
+                DictionarySearchResult(null, emptyList())
+            },
+        )
         composeRule.setContent {
             GhostwriterTheme {
-                DictionaryScreen(
-                    onBack = { returned = true },
-                    onOpenDownloads = {},
-                    installedLanguages = listOf("en"),
-                    search = { word, language, mode, _ ->
-                        searched = Triple(word, language, mode)
-                        DictionarySearchResult(
-                            PronunciationResult(listOf("/ˈkæt/"), PronunciationSource.WIKTIONARY),
-                            listOf(DictionaryMatch("bat", "/ˈbæt/", PronunciationSource.WIKTIONARY)),
-                        )
-                    },
-                )
+                // Keep results below the fold so the test cannot rely on lazy
+                // items remaining composed while the keyboard changes size.
+                Box(Modifier.width(320.dp).height(360.dp)) {
+                    DictionaryScreen(
+                        onBack = { returned = true },
+                        onOpenDownloads = {},
+                        installedLanguages = listOf("en"),
+                        search = search.value,
+                    )
+                }
             }
         }
 
-        composeRule.onNodeWithText("Word").performTextInput("cat")
-        composeRule.onNodeWithText("Search").performClick()
-        composeRule.onNodeWithText("Pronunciation").assertExists()
-        composeRule.onNodeWithText("Matches (1)").assertExists()
-        composeRule.onNodeWithText("bat").assertExists()
-        composeRule.runOnIdle { assertEquals(Triple("cat", "en", DictionarySearchMode.RHYME), searched) }
+        composeRule.onNodeWithText("Word").performTextInput("  cat  ")
+        composeRule.runOnIdle {
+            search.value = { word, language, mode, _ ->
+                searched = Triple(word, language, mode)
+                DictionarySearchResult(
+                    PronunciationResult(listOf("/ˈkæt/"), PronunciationSource.WIKTIONARY),
+                    listOf(DictionaryMatch("bat", "/ˈbæt/", PronunciationSource.WIKTIONARY)),
+                )
+            }
+        }
+        Espresso.closeSoftKeyboard()
+        composeRule.onNodeWithText("Search").performScrollTo().performClick()
+        for (text in listOf("Pronunciation", "IPA: /ˈkæt/", "Matches (1)", "bat")) {
+            composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(text))
+            composeRule.onNodeWithText(text).assertIsDisplayed()
+        }
+        composeRule.runOnIdle {
+            assertEquals(0, originalSearches)
+            assertEquals(Triple("cat", "en", DictionarySearchMode.RHYME), searched)
+        }
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.runOnIdle { assertTrue(returned) }
     }

@@ -1,53 +1,53 @@
 package com.prosincerity.ghostwriter.data
 
+import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.File
 
-/** File format and validation for the project-local waveform cache. */
+/** Versioned binary peaks; a missing or obsolete cache is decoded again. */
 internal object WaveformCache {
     const val MAX_SAMPLES = 100_000
+    private const val MAGIC = 0x47574631 // GWF1
+    private const val HEADER_BYTES = 8L
     private const val FILE_NAME = "waveform.dat"
 
-    fun file(projectDir: File): File = File(projectDir, FILE_NAME)
+    fun file(cacheDirectory: File): File = File(cacheDirectory, FILE_NAME)
 
-    fun load(projectDir: File, targetSampleCount: Int): IntArray? {
+    fun load(cacheDirectory: File, targetSampleCount: Int): IntArray? {
         if (targetSampleCount !in 1..MAX_SAMPLES) return null
-        val cacheFile = file(projectDir)
-        if (!cacheFile.isFile) return null
-
-        return runCatching { decode(cacheFile.readText(), targetSampleCount) }.getOrNull()
+        val cacheFile = file(cacheDirectory)
+        // Check before allocating: rejects truncated, trailing, legacy text,
+        // and oversized payloads without loading them into memory.
+        if (!cacheFile.isFile || cacheFile.length() != HEADER_BYTES + targetSampleCount * 2L) return null
+        return runCatching {
+            DataInputStream(cacheFile.inputStream().buffered()).use { input ->
+                if (input.readInt() != MAGIC || input.readInt() != targetSampleCount) return null
+                val samples = IntArray(targetSampleCount) { input.readUnsignedShort() }
+                if (samples.any { it > 32_768 } || input.read() != -1) null else samples
+            }
+        }.getOrNull()
     }
 
-    private fun decode(encoded: String, targetSampleCount: Int): IntArray? {
-        val headerEnd = encoded.indexOf('\n')
-        if (headerEnd < 0) return null
-        if (encoded.substring(0, headerEnd).toInt() != targetSampleCount) return null
-
-        val payload = encoded.substring(headerEnd + 1).trim()
-        if (payload.isEmpty()) return null
-        val samples = payload.split(',').map { it.toInt() }
-        if (samples.size != targetSampleCount || samples.any { it !in 0..32_768 }) return null
-        return samples.toIntArray()
-    }
-
-    fun save(projectDir: File, targetSampleCount: Int, amplitudes: IntArray): Boolean {
+    fun save(cacheDirectory: File, targetSampleCount: Int, amplitudes: IntArray): Boolean {
         if (
             targetSampleCount !in 1..MAX_SAMPLES ||
             amplitudes.size != targetSampleCount ||
             amplitudes.any { it !in 0..32_768 }
         ) return false
-
         return runCatching {
-            val encoded = buildString {
-                append(targetSampleCount)
-                append('\n')
-                amplitudes.joinTo(this, separator = ",")
+            check(cacheDirectory.isDirectory || cacheDirectory.mkdirs())
+            StagedFileWriter.replace(file(cacheDirectory), "waveform-", "Couldn't replace waveform cache") { staged ->
+                DataOutputStream(staged.outputStream().buffered()).use { output ->
+                    output.writeInt(MAGIC)
+                    output.writeInt(targetSampleCount)
+                    amplitudes.forEach { output.writeShort(it) }
+                }
             }
-            StagedFileWriter.writeText(file(projectDir), encoded)
         }.isSuccess
     }
 
-    fun invalidate(projectDir: File): Boolean {
-        val cacheFile = file(projectDir)
+    fun invalidate(cacheDirectory: File): Boolean {
+        val cacheFile = file(cacheDirectory)
         return !cacheFile.exists() || cacheFile.delete()
     }
 }

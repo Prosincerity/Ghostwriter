@@ -9,12 +9,13 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
 
-internal enum class DictionarySearchMode { RHYME, WORD_PREFIX, WORD_SUFFIX, ASSONANCE }
+internal enum class DictionarySearchMode { RHYME, WORD_PREFIX, WORD_SUFFIX, ASSONANCE, DOUBLE_RHYME }
 
 internal data class DictionaryMatch(
     val word: String,
     val ipa: String,
     val source: PronunciationSource,
+    val components: List<String> = emptyList(),
 )
 
 internal data class DictionarySearchResult(
@@ -44,25 +45,38 @@ internal class DictionarySearch(
         if (normalized.isEmpty()) return@withContext DictionarySearchResult(null, emptyList())
         val firstIndex = page.toLong() * PAGE_SIZE
         require(firstIndex < Int.MAX_VALUE - PAGE_SIZE)
+        if (mode == DictionarySearchMode.DOUBLE_RHYME) {
+            require(language == "de") { "Double rhyme currently supports German" }
+            return@withContext DoubleRhymeSearch(data).search(normalized, page)
+        }
         val nextPageIndex = (firstIndex + PAGE_SIZE).toInt()
         val pronunciation = data.lookup(normalized, language)
+        val lexicon = if (mode == DictionarySearchMode.RHYME && language == "de") {
+            DictionaryLexicon(data, language).also { it.prepare(listOf(normalized)) }
+        } else null
         val plan = DictionarySearchPlan.fromIpa(pronunciation?.ipa.orEmpty(), language, mode)
         val matches = linkedMapOf<String, DictionaryMatch>()
         val earlierPageWords = mutableSetOf<String>()
+        var filteredCount = -1
+        var filtered = emptyList<DictionaryMatch>()
         fun visibleMatches(): List<DictionaryMatch> {
+            if (filteredCount == matches.size) return filtered
             val collected = matches.values.toList()
             val excluded = when (mode) {
                 DictionarySearchMode.RHYME -> CompoundRhymeFilter.excludedWords(
                     collected.map { CompoundRhymeFilter.Entry(it.word, it.ipa) },
                     pronunciation?.ipa.orEmpty().map { CompoundRhymeFilter.Entry(normalized, it) },
                     language,
+                    lexicon?.let { it::decompound },
                 )
                 DictionarySearchMode.ASSONANCE -> AssonanceFormFilter.excludedWords(
                     collected.map { AssonanceFormFilter.Entry(it.word, it.ipa) }, language, earlierPageWords,
                 )
                 else -> emptySet()
             }
-            return collected.filterNot { it.word in excluded }
+            filtered = collected.filterNot { it.word in excluded }
+            filteredCount = matches.size
+            return filtered
         }
         fun enough(): Boolean {
             val visible = visibleMatches()
@@ -160,7 +174,8 @@ internal class DictionarySearch(
                     val sql = "SELECT word, ipa FROM dictionary WHERE ipa_reversed LIKE ? ESCAPE '!' " +
                         "ORDER BY length(ipa_reversed), ipa_reversed, word, ipa"
                     collectRows(database, sql, arrayOf("${escapeLike(prefix)}%"),
-                        normalized, source, matches, ::enough) { ipa ->
+                        normalized, source, matches, ::enough,
+                        prepare = { lexicon?.prepare(it.map(DictionaryMatch::word)) }) { ipa ->
                         val candidateKeys = IpaSearchKeys.fromIpa(ipa, language) ?: return@collectRows false
                         IpaSearchKeys.rimeTokens(candidateKeys, language) == searchPrefix.tokens
                     }
@@ -179,15 +194,22 @@ internal class DictionarySearch(
         source: PronunciationSource,
         matches: MutableMap<String, DictionaryMatch>,
         enough: () -> Boolean,
+        prepare: suspend (List<DictionaryMatch>) -> Unit = {},
         validIpa: (String) -> Boolean,
     ) {
         var offset = 0
         while (!enough()) {
+            val added = mutableListOf<DictionaryMatch>()
             val rows = database.read("$sql LIMIT $SCAN_LIMIT OFFSET $offset", args) { candidate, ipa ->
                 if (candidate != input && candidate !in matches) {
-                    if (validIpa(ipa)) matches[candidate] = DictionaryMatch(candidate, ipa, source)
+                    if (validIpa(ipa)) {
+                        val match = DictionaryMatch(candidate, ipa, source)
+                        matches[candidate] = match
+                        added += match
+                    }
                 }
             }
+            prepare(added)
             if (rows < SCAN_LIMIT) break
             offset += rows
         }

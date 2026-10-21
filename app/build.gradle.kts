@@ -8,6 +8,8 @@ jacoco {
     toolVersion = libs.versions.jacoco.get()
 }
 
+apply(from = rootProject.file("gradle/coverage.gradle.kts"))
+
 android {
     namespace = "com.prosincerity.ghostwriter"
     ndkVersion = "30.0.16248370"
@@ -19,8 +21,8 @@ android {
         applicationId = "com.prosincerity.ghostwriter"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.2.1-studio-polish.1"
+        versionCode = 5
+        versionName = "1.3.0-beta.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {

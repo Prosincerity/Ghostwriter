@@ -35,6 +35,7 @@ release/
 *~
 *.swp
 *.swo
+__pycache__/
 
 # Local agent tooling and generated knowledge graphs
 /.agents/

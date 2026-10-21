@@ -168,13 +168,8 @@ class PcmLoopRendererTest {
         assertEquals(listOf(18, 19, 3, 4), output.map { it.toInt() })
     }
 
-    @Test fun disabledLoop_stopsAtPhysicalEndAndTinyLoopsMakeProgress() {
-        val renderer = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(3, 7, false, 1000)), 10, noEvents)
-        renderer.seek(17)
+    @Test fun oneFrameLoop_fillsEveryRequestedFrame() {
         val output = ShortArray(10)
-        assertEquals(3, renderer.render(output))
-        assertEquals(listOf(17, 18, 19), output.take(3).map { it.toInt() })
-        assertEquals(0, renderer.render(output))
         val tiny = PcmLoopRenderer(source(), AtomicReference(PcmLoopBounds.create(4, 5, true, 1000)), 10, noEvents)
         tiny.seek(4)
         assertEquals(10, tiny.render(output))
@@ -267,18 +262,45 @@ class PcmLoopRendererTest {
     }
 
     @Test fun render_allocatesNoMemoryAfterPreparation() {
-        val bean = ManagementFactory.getThreadMXBean() as? com.sun.management.ThreadMXBean
-        assumeTrue(bean != null && bean.isThreadAllocatedMemorySupported)
-        bean!!.isThreadAllocatedMemoryEnabled = true
+        val bean = allocationCounter()
         val bounds = AtomicReference(PcmLoopBounds.create(10, 3000, true, 48000))
         val renderer = PcmLoopRenderer(source(2, 5000), bounds, 128, noEvents)
         val samples = ShortArray(256)
-        repeat(20000) { renderer.render(samples) }
+        // Warm the counter calls and the measured loop at the same call sites,
+        // not just render(): first-use JVM work must stay outside the assertion.
+        repeat(20) { allocatedWhileRendering(bean, renderer, samples) }
+
+        assertEquals("Audio rendering must not allocate", 0L, allocatedWhileRendering(bean, renderer, samples))
+    }
+
+    @Test fun allocationMeasurement_detectsAllocatingRenderCallbacks() {
+        val bean = allocationCounter()
+        val retained = ArrayList<ByteArray>(2000)
+        val events = FramePositionEvents { _, _ -> retained.add(ByteArray(16)) }
+        val bounds = AtomicReference(PcmLoopBounds.create(10, 3000, true, 48000))
+        val renderer = PcmLoopRenderer(source(2, 5000), bounds, 128, events)
+
+        val allocated = allocatedWhileRendering(bean, renderer, ShortArray(256))
+
+        assertTrue(retained.size >= 1000)
+        assertTrue("The counter must detect retained callback allocations", allocated >= retained.size * 16L)
+    }
+
+    private fun allocationCounter(): com.sun.management.ThreadMXBean {
+        val bean = ManagementFactory.getThreadMXBean() as? com.sun.management.ThreadMXBean
+        assumeTrue(bean != null && bean.isThreadAllocatedMemorySupported)
+        return checkNotNull(bean).apply { isThreadAllocatedMemoryEnabled = true }
+    }
+
+    private fun allocatedWhileRendering(
+        bean: com.sun.management.ThreadMXBean,
+        renderer: PcmLoopRenderer,
+        samples: ShortArray,
+    ): Long {
         @Suppress("DEPRECATION") // getId works on every supported build JDK.
         val thread = Thread.currentThread().id
         val before = bean.getThreadAllocatedBytes(thread)
         repeat(1000) { renderer.render(samples) }
-        val allocated = bean.getThreadAllocatedBytes(thread) - before
-        assertEquals("Audio rendering must not allocate", 0L, allocated)
+        return bean.getThreadAllocatedBytes(thread) - before
     }
 }

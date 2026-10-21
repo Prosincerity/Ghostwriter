@@ -25,7 +25,7 @@ class LyricFontTest {
         val restored = lyricFontFromPreference(font.toPreferenceValue())
         assertEquals(font, restored)
         assertEquals(font, LyricTextSettings(fontFamily = restored).normalized().fontFamily)
-        assertEquals("Device Font", font.label)
+        assertEquals("Device Font", (restored as SystemFontFile).label)
     }
 
     @Test
@@ -49,31 +49,6 @@ class LyricFontTest {
             val font = SystemFontFile("/fonts/Collection.ttc", ttcIndex = 99, weight = weight)
             assertEquals(font, lyricFontFromPreference(font.toPreferenceValue()))
         }
-    }
-
-    @Test
-    fun options_sortFamiliesAndChooseRegularUprightNormalWidthFaces() {
-        val zed = SystemFontFile("/system/fonts/Zed.ttf", familyName = "Zed")
-        val alpha = SystemFontFile("/product/fonts/alpha.ttc", familyName = "Alpha")
-        val secondFace = alpha.copy(ttcIndex = 1)
-        val variable = alpha.copy(weight = 600, variationSettings = "'wght' 600")
-        val italic = alpha.copy(italic = true)
-        val ui = alpha.copy(path = "/fonts/AlphaUI.ttf", familyName = "Alpha UI")
-        val condensed = alpha.copy(variationSettings = "'wdth' 75")
-        val fonts = listOf(zed, variable, secondFace, italic, ui, condensed, alpha, zed, alpha)
-        val options = systemFontOptions(fonts)
-
-        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT, alpha, zed), options)
-        assertEquals(options, systemFontOptions(fonts.reversed()))
-        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT), systemFontOptions(emptyList()))
-    }
-
-    @Test
-    fun options_keepDistinctCollectionFamiliesAndUseNearestWeightWhenRegularIsMissing() {
-        val mono = SystemFontFile("/fonts/Device.ttc", familyName = "Droid Sans Mono", weight = 500)
-        val serif = mono.copy(ttcIndex = 1, familyName = "Noto Serif")
-        assertEquals(listOf(LyricFontFamily.SYSTEM_DEFAULT, mono, serif),
-            systemFontOptions(listOf(mono.copy(weight = 700), serif, mono)))
     }
 
     @Test

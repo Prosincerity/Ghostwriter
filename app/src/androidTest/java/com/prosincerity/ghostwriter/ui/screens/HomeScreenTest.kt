@@ -7,6 +7,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.onRoot
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import com.prosincerity.ghostwriter.data.ProjectSummary
@@ -21,6 +29,199 @@ class HomeScreenTest {
 
     @get:Rule
     val composeRule = createComposeRule()
+
+    @Test fun folderPreparationAndFailure_stayOnHomeAndAllowReconnection() {
+        var loading by mutableStateOf(true)
+        var ready by mutableStateOf(false)
+        var error by mutableStateOf<String?>(null)
+        var selected = false
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(listOf("Local draft"), {}, {}, {}, { _, _ -> }, {},
+                    onChooseLyricsFolder = { selected = true }, lyricsFolderReady = ready,
+                    storageLoading = loading, storageError = error)
+            }
+        }
+        composeRule.onNodeWithText("Local draft").assertIsDisplayed()
+        composeRule.onNodeWithText("Preparing your projects…").assertIsDisplayed()
+        composeRule.onNodeWithText("Choose folder").assertIsNotEnabled()
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Settings").assertIsEnabled()
+        composeRule.runOnIdle { loading = false; error = "Local draft kept" }
+        composeRule.onNodeWithText("Local draft kept").assertIsDisplayed()
+        composeRule.onNodeWithText("Preparing your projects…").assertDoesNotExist()
+        composeRule.onNodeWithText("Local draft").assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Project options for Local draft").assertIsNotEnabled()
+        composeRule.onNodeWithText("Choose folder").performClick()
+        composeRule.runOnIdle { assertTrue(selected); ready = true; error = null }
+        composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Change folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Local draft kept").assertDoesNotExist()
+        composeRule.onNodeWithText("New project").assertIsEnabled()
+        composeRule.onNodeWithText("Local draft").assertIsEnabled()
+    }
+
+    @Test fun folderSelection_isCenteredBelowThePromptAndDisappearsWhenReady() {
+        var selected = false
+        var settings = false
+        var ready by mutableStateOf(false)
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(emptyList(), {}, {}, {}, { _, _ -> }, { settings = true },
+                    onChooseLyricsFolder = { selected = true }, lyricsFolderReady = ready)
+            }
+        }
+        composeRule.onNodeWithText("Start your next track").assertIsDisplayed()
+        composeRule.onNodeWithText("Keep your lyrics").assertDoesNotExist()
+        composeRule.onNodeWithText("Create a project for your lyrics and beat.").assertDoesNotExist()
+        composeRule.onNodeWithText("New project").assertIsNotEnabled()
+        val heading = composeRule.onNodeWithText("Start your next track").fetchSemanticsNode().boundsInRoot
+        val prompt = composeRule.onNodeWithText("Choose a lyric folder").fetchSemanticsNode().boundsInRoot
+        val button = composeRule.onNodeWithText("Choose folder").fetchSemanticsNode().boundsInRoot
+        val screen = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
+        assertEquals(screen.center.x, heading.center.x, 1f)
+        assertEquals(screen.center.x, prompt.center.x, 1f)
+        assertEquals(screen.center.x, button.center.x, 1f)
+        assertTrue(heading.bottom < prompt.top)
+        assertTrue(prompt.bottom < button.top)
+        composeRule.onNodeWithText("Choose folder").assertIsDisplayed().performClick()
+        composeRule.onNodeWithContentDescription("Settings").performClick()
+        composeRule.runOnIdle {
+            assertTrue(selected)
+            assertTrue(settings)
+            ready = true
+        }
+        composeRule.onNodeWithText("Choose a lyric folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Choose folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Change folder").assertDoesNotExist()
+        composeRule.onNodeWithText("Create a project for your lyrics and beat.").assertIsDisplayed()
+        composeRule.onNodeWithText("New project").assertIsEnabled().performClick()
+        composeRule.onNodeWithText("Name this track").assertExists()
+    }
+
+    @Test fun stableIdsUseDisplayTitlesAndActionsKeepTheirIdentity() {
+        val id = "2ecbf67a-9271-459f-9e31-77b40b15e1ba"
+        var opened: String? = null
+        var renamed: Pair<String, String>? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(listOf(id), {}, { opened = it }, {}, { old, new -> renamed = old to new }, {},
+                    projectTitles = mapOf(id to "Verse / chorus"))
+            }
+        }
+        composeRule.onNodeWithText(id).assertDoesNotExist()
+        composeRule.onNodeWithText("Verse / chorus").performClick()
+        composeRule.runOnIdle { assertEquals(id, opened) }
+        composeRule.onNodeWithContentDescription("Project options for Verse / chorus").performClick()
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("New / title")
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.runOnIdle { assertEquals(id to "New / title", renamed) }
+    }
+
+    @Test fun duplicateNamesAndDialogCancellation_preserveProjects() {
+        var created: String? = null
+        var renamed: Pair<String, String>? = null
+        var deleted: String? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(listOf("Alpha", "Beta"), { created = it }, {}, { deleted = it },
+                    { old, new -> renamed = old to new }, {})
+            }
+        }
+        composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("alpha")
+        composeRule.onNodeWithText("Track already exists (will open existing)").assertExists()
+        composeRule.onNode(hasSetTextAction()).performImeAction()
+        composeRule.runOnIdle { assertEquals("Alpha", created) }
+
+        composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithText("Name this track").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Project options for Alpha").performClick()
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("beta")
+        composeRule.onNodeWithText("A project with this name already exists").assertExists()
+        composeRule.onNodeWithText("Rename").assertIsNotEnabled()
+        composeRule.onNode(hasSetTextAction()).performImeAction()
+        composeRule.runOnIdle { assertEquals(null, renamed) }
+        composeRule.onNode(hasSetTextAction()).performTextReplacement("Gamma")
+        composeRule.onNode(hasSetTextAction()).performImeAction()
+        composeRule.runOnIdle { assertEquals("Alpha" to "Gamma", renamed) }
+
+        composeRule.onNodeWithContentDescription("Project options for Alpha").performClick()
+        composeRule.onNodeWithText("Rename").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.onNodeWithContentDescription("Project options for Alpha").performClick()
+        composeRule.onNodeWithText("Delete").performClick()
+        composeRule.onNodeWithText("Cancel").performClick()
+        composeRule.runOnIdle { assertEquals(null, deleted) }
+    }
+
+    @Test fun newProjectDialog_rechecksExistingTitlesWithoutLosingDraft() {
+        var projects by mutableStateOf(listOf("Alpha"))
+        var created: String? = null
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(projects, { created = it }, {}, {}, { _, _ -> }, {})
+            }
+        }
+        composeRule.onNodeWithText("New project").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextReplacement(" beta ")
+        composeRule.onNodeWithText("Create").assertIsEnabled()
+
+        composeRule.runOnIdle { projects = listOf("Alpha", "Beta") }
+
+        composeRule.onNodeWithText("Track already exists (will open existing)").assertExists()
+        composeRule.onNodeWithText("Open").performClick()
+        composeRule.runOnIdle { assertEquals("Beta", created) }
+    }
+
+    @Test fun summaryUpdates_showMusicalDetailsAndResortProjectsByLatestEdit() {
+        var summaries by mutableStateOf(emptyMap<String, ProjectSummary>())
+        composeRule.setContent {
+            GhostwriterTheme { HomeScreen(listOf("Zulu", "Alpha"), {}, {}, {}, { _, _ -> }, {}, summaries) }
+        }
+        fun top(title: String) = composeRule.onNodeWithText(title).fetchSemanticsNode().boundsInRoot.top
+        assertTrue(top("Alpha") < top("Zulu"))
+        composeRule.runOnIdle { summaries = mapOf("Zulu" to ProjectSummary("Zulu", 2000, 92, "C minor")) }
+        composeRule.onNodeWithText("92 BPM", substring = true).assertExists()
+        composeRule.onNodeWithText("C minor", substring = true).assertExists()
+        assertTrue(top("Zulu") < top("Alpha"))
+        composeRule.runOnIdle { summaries = summaries + ("Alpha" to ProjectSummary("Alpha", 3000)) }
+        assertTrue(top("Alpha") < top("Zulu"))
+    }
+
+    @Test fun equalEditTimes_followDisplayTitleChangesBeforeProjectsWithoutSummaries() {
+        var titles by mutableStateOf(mapOf("first-id" to "Beta", "second-id" to "Alpha"))
+        composeRule.setContent {
+            GhostwriterTheme {
+                HomeScreen(
+                    existingProjects = listOf("first-id", "legacy", "second-id"),
+                    onCreateProject = {},
+                    onOpenProject = {},
+                    onDeleteProject = {},
+                    onRenameProject = { _, _ -> },
+                    onOpenSettings = {},
+                    projectSummaries = mapOf(
+                        "first-id" to ProjectSummary("Old first title", 2000),
+                        "second-id" to ProjectSummary("Old second title", 2000),
+                    ),
+                    projectTitles = titles,
+                )
+            }
+        }
+        fun top(title: String) = composeRule.onNodeWithText(title).fetchSemanticsNode().boundsInRoot.top
+
+        assertTrue(top("Alpha") < top("Beta"))
+        assertTrue(top("Beta") < top("legacy"))
+        composeRule.onNodeWithText("Old first title").assertDoesNotExist()
+
+        composeRule.runOnIdle { titles = titles + ("first-id" to "Aardvark") }
+
+        assertTrue(top("Aardvark") < top("Alpha"))
+        assertTrue(top("Alpha") < top("legacy"))
+    }
 
     @Test
     fun emptyHome_createsNamedProjectAndOpensSettings() {
@@ -54,69 +255,4 @@ class HomeScreenTest {
         }
     }
 
-    @Test
-    fun projectRowsShowMusicalDetailsAndSortByLatestEdit() {
-        composeRule.setContent {
-            GhostwriterTheme {
-                HomeScreen(
-                    existingProjects = listOf("Older", "Newest"),
-                    projectSummaries = mapOf(
-                        "Older" to ProjectSummary("Older", 1000),
-                        "Newest" to ProjectSummary("Newest", 2000, 92, "C minor"),
-                    ),
-                    onCreateProject = {}, onOpenProject = {}, onDeleteProject = {},
-                    onRenameProject = { _, _ -> }, onOpenSettings = {},
-                )
-            }
-        }
-        composeRule.onNodeWithText("92 BPM", substring = true).assertExists()
-        composeRule.onNodeWithText("C minor", substring = true).assertExists()
-        val newest = composeRule.onNodeWithText("Newest").fetchSemanticsNode().boundsInRoot
-        val older = composeRule.onNodeWithText("Older").fetchSemanticsNode().boundsInRoot
-        assertTrue(newest.top < older.top)
-    }
-
-    @Test
-    fun existingProject_opensRenamesAndDeletesThroughItsMenu() {
-        var openedProject: String? = null
-        var renamedProject: Pair<String, String>? = null
-        var deletedProject: String? = null
-
-        composeRule.setContent {
-            GhostwriterTheme {
-                HomeScreen(
-                    existingProjects = listOf("Existing Track"),
-                    onCreateProject = {},
-                    onOpenProject = { openedProject = it },
-                    onDeleteProject = { deletedProject = it },
-                    onRenameProject = { current, renamed ->
-                        renamedProject = current to renamed
-                    },
-                    onOpenSettings = {},
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Recent").assertExists()
-        composeRule.onNodeWithText("Existing Track").performClick()
-
-        composeRule.onNodeWithContentDescription("Project options for Existing Track")
-            .performClick()
-        composeRule.onNodeWithText("Rename").performClick()
-        composeRule.onNodeWithText("Rename track").assertExists()
-        composeRule.onNode(hasSetTextAction()).performTextReplacement("Renamed Track")
-        composeRule.onNodeWithText("Rename").performClick()
-
-        composeRule.onNodeWithContentDescription("Project options for Existing Track")
-            .performClick()
-        composeRule.onNodeWithText("Delete").performClick()
-        composeRule.onNodeWithText("Delete project?").assertExists()
-        composeRule.onNodeWithText("Delete").performClick()
-
-        composeRule.runOnIdle {
-            assertEquals("Existing Track", openedProject)
-            assertEquals("Existing Track" to "Renamed Track", renamedProject)
-            assertEquals("Existing Track", deletedProject)
-        }
-    }
 }

@@ -1,6 +1,6 @@
 package com.prosincerity.ghostwriter.ui
 
-import com.prosincerity.ghostwriter.ui.screens.parsePositiveBpm
+import com.prosincerity.ghostwriter.logic.parsePositiveBpm
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

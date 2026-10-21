@@ -6,7 +6,11 @@ import java.util.Locale
 internal object CompoundRhymeFilter {
     data class Entry(val word: String, val ipa: String)
 
-    fun excludedWords(results: List<Entry>, query: List<Entry>, language: String): Set<String> {
+    fun excludedWords(
+        results: List<Entry>, query: List<Entry>, language: String,
+        decompound: ((String) -> List<GermanDecompounder.Part>)? = null,
+    ): Set<String> {
+        if (language == "de") return germanExclusions(results, query, decompound)
         val locale = Locale.forLanguageTag(language)
         fun pronounced(entry: Entry): Pronounced? {
             val keys = IpaSearchKeys.fromIpa(entry.ipa, language) ?: return null
@@ -28,6 +32,29 @@ internal object CompoundRhymeFilter {
             seen.getOrPut(candidate.spelling) { mutableListOf() } += candidate
         }
         return excluded
+    }
+
+    private fun germanExclusions(
+        results: List<Entry>, query: List<Entry>,
+        decompound: ((String) -> List<GermanDecompounder.Part>)?,
+    ): Set<String> {
+        val vocabulary = (results + query).map { GermanDecompounder.key(it.word) }.toSet()
+        val split = decompound ?: GermanDecompounder { it in vocabulary }::decompound
+        fun ending(entry: Entry): Pair<String, List<String>>? {
+            val keys = IpaSearchKeys.fromIpa(entry.ipa, "de") ?: return null
+            val lastStress = keys.tokens.indexOfLast { it == "ˈ" || it == "ˌ" }
+            val tail = if (lastStress >= 0) keys.copy(tokens = keys.tokens.drop(lastStress)) else keys
+            val rime = IpaSearchKeys.rimeTokens(tail, "de") ?: return null
+            return split(entry.word).last().lemma to IpaSearchKeys.phonemeTokens(rime)
+        }
+        val seen = query.mapNotNull(::ending).toMutableSet()
+        return buildSet {
+            for (entry in results) {
+                val head = ending(entry) ?: continue
+                if (split(entry.word).size > 1 && head in seen) add(entry.word)
+                seen += head
+            }
+        }
     }
 
     private data class Pronounced(

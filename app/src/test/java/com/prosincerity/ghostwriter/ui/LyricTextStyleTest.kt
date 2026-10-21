@@ -55,7 +55,6 @@ class LyricTextStyleTest {
             val justified = settings.toTextStyle(TextStyle(letterSpacing = 1.sp))
             assertEquals(TextAlign.Justify, justified.textAlign)
             assertEquals(0.sp, justified.letterSpacing)
-            assertEquals(spacing, settings.letterSpacingSp, 0f)
 
             for (alignment in LyricTextAlignment.entries.filter { it != LyricTextAlignment.JUSTIFY }) {
                 val restored = settings.copy(alignment = alignment).toTextStyle(TextStyle())

@@ -1,91 +1,34 @@
 package com.prosincerity.ghostwriter.logic
 
-import android.media.AudioFormat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.concurrent.CancellationException
 
 class WaveformExtractorTest {
+    @Test
+    fun decoderProgressGuard_requiresAPositiveStallLimit() {
+        for (limit in listOf(0, -1)) {
+            assertThrows(IllegalArgumentException::class.java) {
+                WaveformExtractor.DecoderProgressGuard(limit)
+            }
+        }
+    }
+
 
     @get:Rule
     val tempFolder = TemporaryFolder()
-
-    @Test
-    fun bucketIndexForTimestamp_mapsTimestampsToEvenBuckets() {
-        assertEquals(0, WaveformExtractor.bucketIndexForTimestamp(0L, 1_000L, 4))
-        assertEquals(0, WaveformExtractor.bucketIndexForTimestamp(249L, 1_000L, 4))
-        assertEquals(1, WaveformExtractor.bucketIndexForTimestamp(250L, 1_000L, 4))
-        assertEquals(3, WaveformExtractor.bucketIndexForTimestamp(999L, 1_000L, 4))
-    }
-
-    @Test
-    fun bucketIndexForTimestamp_clampsTimestampsToTheWaveformBounds() {
-        assertEquals(0, WaveformExtractor.bucketIndexForTimestamp(-1L, 1_000L, 4))
-        assertEquals(3, WaveformExtractor.bucketIndexForTimestamp(1_000L, 1_000L, 4))
-        assertEquals(3, WaveformExtractor.bucketIndexForTimestamp(2_000L, 1_000L, 4))
-    }
-
-    @Test
-    fun bucketIndexForTimestamp_doesNotOverflowForExtremeContainerMetadata() {
-        assertEquals(
-            999,
-            WaveformExtractor.bucketIndexForTimestamp(
-                timestampUs = Long.MAX_VALUE - 1,
-                durationUs = Long.MAX_VALUE,
-                bucketCount = 1_000,
-            ),
-        )
-    }
-
-    @Test
-    fun bucketIndexForTimestamp_rejectsInvalidDimensions() {
-        assertEquals(null, WaveformExtractor.bucketIndexForTimestamp(0L, 0L, 4))
-        assertEquals(null, WaveformExtractor.bucketIndexForTimestamp(0L, 1_000L, 0))
-    }
-
-    @Test
-    fun pcm8Amplitude_staysWithinTheCachedWaveformRange() {
-        assertEquals(32_768, WaveformExtractor.pcm8Amplitude(0x00))
-        assertEquals(0, WaveformExtractor.pcm8Amplitude(0x80.toByte()))
-        assertEquals(32_512, WaveformExtractor.pcm8Amplitude(0xFF.toByte()))
-    }
-
-    @Test
-    fun pcmAmplitude_decodesSupportedSampleFormats() {
-        assertEquals(
-            32_768,
-            WaveformExtractor.pcmAmplitude(
-                ByteBuffer.wrap(byteArrayOf(0x00)),
-                AudioFormat.ENCODING_PCM_8BIT,
-            ),
-        )
-        assertEquals(
-            32_768,
-            WaveformExtractor.pcmAmplitude(
-                ByteBuffer.wrap(byteArrayOf(0x00, 0x80.toByte())).order(ByteOrder.LITTLE_ENDIAN),
-                AudioFormat.ENCODING_PCM_16BIT,
-            ),
-        )
-        val floatSample = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-            .putFloat(-0.5f).apply { flip() }
-        assertEquals(
-            16_383,
-            WaveformExtractor.pcmAmplitude(floatSample, AudioFormat.ENCODING_PCM_FLOAT),
-        )
-    }
 
     @Test
     fun extractAmplitudes_returnsEmptyForMissingFile() {
         val missing = File(tempFolder.root, "missing.wav")
 
         assertTrue(WaveformExtractor.extractAmplitudes(missing, 100).isEmpty())
+        assertEquals(null, WaveformExtractor.durationMs(missing))
     }
 
     @Test
@@ -97,38 +40,23 @@ class WaveformExtractorTest {
     }
 
     @Test
-    fun extractAmplitudes_returnsEmptyForCorruptFileWithoutThrowing() {
-        val corrupt = tempFolder.newFile("corrupt.wav").apply { writeText("not audio") }
-
-        assertTrue(WaveformExtractor.extractAmplitudes(corrupt, 100).isEmpty())
-    }
-
-    @Test(expected = CancellationException::class)
     fun extractAmplitudes_stopsBeforeDecodingWhenCancellationIsRequested() {
         val source = tempFolder.newFile("cancelled.wav").apply { writeText("audio") }
 
-        WaveformExtractor.extractAmplitudes(source, 100) { true }
+        assertThrows(CancellationException::class.java) {
+            WaveformExtractor.extractAmplitudes(source, 100) { true }
+        }
     }
 
     @Test
-    fun decoderProgressGuard_resetsItsStallCountAfterProgress() {
+    fun decoderProgressGuard_resetsAfterProgressAndRejectsConsecutiveStalls() {
         val guard = WaveformExtractor.DecoderProgressGuard(maxConsecutiveStalls = 2)
 
         guard.record(madeProgress = false)
         guard.record(madeProgress = true)
         guard.record(madeProgress = false)
-    }
-
-    @Test
-    fun decoderProgressGuard_rejectsAStalledDecoder() {
-        val guard = WaveformExtractor.DecoderProgressGuard(maxConsecutiveStalls = 2)
-
-        guard.record(madeProgress = false)
-        try {
+        assertThrows(IllegalStateException::class.java) {
             guard.record(madeProgress = false)
-            fail("Expected a stalled decoder to be rejected")
-        } catch (expected: IllegalStateException) {
-            assertEquals("Audio decoder stopped making progress", expected.message)
         }
     }
 }

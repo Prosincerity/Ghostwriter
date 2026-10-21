@@ -1,9 +1,7 @@
 package com.prosincerity.ghostwriter.data
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -14,6 +12,24 @@ import org.json.JSONObject
 import java.io.File
 
 class ProjectMetadataTest {
+
+    @Test
+    fun nonStringTitle_usesFallbackAndRetainsValidMetadata() {
+        for (title in listOf(42, true, JSONObject.NULL, JSONArray().put("Track"), JSONObject().put("name", "Track"))) {
+            val json = JSONObject().put("title", title).put("bpm", 95).put("notes", "Keep this verse")
+
+            val metadata = ProjectMetadata.fromJsonObject(json, "Recovered track")
+
+            assertEquals("Recovered track", metadata.title)
+            assertEquals(95, metadata.bpm)
+            assertEquals("Keep this verse", metadata.notes)
+        }
+    }
+
+    @Test
+    fun numericStringTitle_remainsTheSavedTitle() {
+        assertEquals("42", ProjectMetadata.fromJsonObject(JSONObject().put("title", "42"), "Fallback").title)
+    }
 
     @Test
     fun frameMarkers_persistExactSamplesWithoutMillisecondRounding() {
@@ -43,23 +59,6 @@ class ProjectMetadataTest {
     }
 
     @Test
-    fun normalizingAfterAnotherMarkerChanges_preservesUnchangedMarkerReferences() {
-        val start = WaveformMarker("Start", 1000, MarkerLoopRole.START).withSampleRate(44100)
-        val end = WaveformMarker("End", 2000, MarkerLoopRole.END).withSampleRate(44100)
-        val added = listOf(start, end).map { it.withSampleRate(44100) }
-        assertSame(start, added[0])
-        assertSame(end, added[1])
-
-        val movedEnd = end.atPositionMs(3000, 44100)
-        val moved = listOf(added[0], movedEnd).map { it.withSampleRate(44100) }
-        // Pointer handlers retain these references when their equal keys do not restart.
-        assertSame(start, moved[0])
-        assertSame(movedEnd, moved[1])
-        assertEquals(0, moved.indexOfFirst { it === start })
-        assertSame(start, start.withSampleRate(0))
-    }
-
-    @Test
     fun markerLoopRoles_roundTripAndOldOrUnknownRolesRemainOrdinary() {
         val markers = listOf(
             WaveformMarker("Start", 1000, MarkerLoopRole.START),
@@ -69,6 +68,9 @@ class ProjectMetadataTest {
         val json = ProjectMetadata("Loop", markers = markers).toJsonObject()
         assertEquals(markers, ProjectMetadata.fromJsonObject(json, "Fallback").markers)
         val entries = json.getJSONArray("markers")
+        assertEquals(3, entries.length())
+        assertEquals("Start", entries.getJSONObject(0).getString("label"))
+        assertEquals(1000L, entries.getJSONObject(0).getLong("positionMs"))
         assertEquals("start", entries.getJSONObject(0).getString("loopRole"))
         entries.getJSONObject(0).remove("loopRole")
         entries.getJSONObject(1).put("loopRole", "future-role")
@@ -78,7 +80,9 @@ class ProjectMetadataTest {
     @Test
     fun framePositions_rejectInvalidTargetRatesAndFallBackForIncompleteSavedFrames() {
         val marker = WaveformMarker("Start", 1500, MarkerLoopRole.START)
+        val precise = marker.withSampleRate(48000)
         for (rate in listOf(0, -1)) {
+            assertEquals(precise, precise.withSampleRate(rate))
             assertThrows(IllegalArgumentException::class.java) { marker.frameAt(rate) }
         }
         for (incomplete in listOf(
@@ -101,7 +105,7 @@ class ProjectMetadataTest {
         val normalized = marker.withSampleRate(48000)
         assertEquals(1000L, normalized.positionMs)
         assertEquals(48001L, normalized.frameIndex)
-        assertSame(normalized, normalized.withSampleRate(48000))
+        assertEquals(normalized, normalized.withSampleRate(48000))
         val movedWithoutRate = normalized.atPositionMs(2000, 0)
         assertEquals(2000L, movedWithoutRate.positionMs)
         assertNull(movedWithoutRate.frameIndex)
@@ -178,7 +182,7 @@ class ProjectMetadataTest {
             version = 1,
         )
 
-        ProjectStorage.saveMetadata(projectDir, initial)
+        assertTrue(ProjectStorage.saveMetadata(projectDir, initial, now = { 3000L }))
 
         val loaded = ProjectStorage.loadMetadata(projectDir, "HitTrack")
         assertEquals("HitTrack", loaded.title)
@@ -193,8 +197,7 @@ class ProjectMetadataTest {
             loaded.markers,
         )
         assertEquals(1000L, loaded.createdAt)
-        // updatedAt should be refreshed on save
-        assertTrue("updatedAt should be updated on save", loaded.updatedAt >= 2000L)
+        assertEquals(3000L, loaded.updatedAt)
         assertEquals(ProjectMetadata.CURRENT_VERSION, loaded.version)
     }
 
@@ -217,11 +220,9 @@ class ProjectMetadataTest {
         assertNull(loaded.key)
         assertNull(loaded.timeSignature)
         assertNull(loaded.notes)
-    }
-
-    @Test
-    fun toJsonObject_writesJsonNullForEveryOptionalField() {
-        val json = ProjectMetadata(title = "Acapella").toJsonObject()
+        assertNull(loaded.beatFile)
+        assertNull(loaded.beatOriginalName)
+        val json = JSONObject(File(projectDir, "project.json").readText())
 
         for (field in listOf("bpm", "key", "timeSignature", "notes", "beatFile", "beatOriginalName")) {
             assertTrue("Expected $field to be present", json.has(field))
@@ -280,6 +281,9 @@ class ProjectMetadataTest {
             put(JSONObject().put("positionMs", 100L))
             put(JSONObject().put("label", JSONObject.NULL).put("positionMs", 100L))
             put(JSONObject().put("label", "   ").put("positionMs", 100L))
+            put(JSONObject().put("label", "").put("positionMs", 2000L))
+            put(JSONObject().put("label", "Negative").put("positionMs", -1L))
+            put("not an object")
             put(JSONObject.NULL)
             put(JSONObject().put("label", "Hook").put("positionMs", 32_000L))
         })
@@ -292,31 +296,4 @@ class ProjectMetadataTest {
         )
     }
 
-    @Test
-    fun metadata_serializesMarkersAndIgnoresMalformedMarkerEntries() {
-        val metadata = ProjectMetadata(
-            title = "Marked Track",
-            markers = listOf(WaveformMarker("Bridge", 45_000L)),
-        )
-
-        val serializedMarkers = metadata.toJsonObject().getJSONArray("markers")
-        assertEquals(1, serializedMarkers.length())
-        assertEquals("Bridge", serializedMarkers.getJSONObject(0).getString("label"))
-        assertEquals(45_000L, serializedMarkers.getJSONObject(0).getLong("positionMs"))
-
-        val malformed = JSONObject().apply {
-            put("title", "Marked Track")
-            put("markers", JSONArray().apply {
-                put(JSONObject().put("label", "Valid").put("positionMs", 1_000L))
-                put(JSONObject().put("label", "").put("positionMs", 2_000L))
-                put(JSONObject().put("label", "Negative").put("positionMs", -1L))
-                put("not an object")
-            })
-        }
-
-        assertEquals(
-            listOf(WaveformMarker("Valid", 1_000L)),
-            ProjectMetadata.fromJsonObject(malformed, "Fallback").markers,
-        )
-    }
 }

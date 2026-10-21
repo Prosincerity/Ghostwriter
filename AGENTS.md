@@ -1,57 +1,81 @@
-# Ghostwriter agent instructions
+# Ghostwriter contributor instructions
 
-Before modifying code, read:
+This guide defines project constraints and the workflow for repository changes.
 
-- documentation/README.md
-- documentation/FEATURES.md
-- README.md
+## Required reading
 
-## Non-negotiable project constraints
+Read these files before modifying code:
 
-- Never add AI features to the Android application.
-- Do not add Google Play Services.
-- Features must work offline by default.
-- Minimize dependencies. Do not replace deliberately simple implementations
-  with larger libraries/frameworks without explicit maintainer approval.
-- Keep SharedPreferences unless specifically instructed otherwise.
-- Keep hand-rolled navigation unless specifically instructed otherwise.
-- Keep org.json unless specifically instructed otherwise.
+- [Architecture](documentation/README.md)
+- [Features](documentation/FEATURES.md)
+- [Project README](README.md)
+
+Repository documentation takes precedence over assumptions about Android design.
+
+## Project constraints
+
+- Never add AI features to the Android app or Google Play Services.
+- Keep features offline by default.
+- Minimize dependencies. Obtain explicit maintainer approval before replacing
+  simple implementations with larger libraries or frameworks.
+- Keep `SharedPreferences`, hand-rolled navigation, and `org.json` unless
+  specifically instructed otherwise.
 - Prefer Android/AOSP APIs where they adequately solve the problem.
+- Do not add ads, analytics, telemetry, social features, or monetization that
+  compromises software freedom. Accounts belong only to the optional sync work
+  listed in [Features](documentation/FEATURES.md#import-export-and-sync).
 
 ## Development workflow
 
-- Work against the dev branch.
-- Make focused changes; do not opportunistically refactor unrelated code.
-- Inspect existing architecture before introducing abstractions.
-- Add or update tests for behavior changes.
-- Agents may run relevant instrumented tests on an already connected emulator
-  or physical device, including devices connected over wireless debugging.
-  Confirm the target with `adb devices -l` and select it with `ANDROID_SERIAL`.
-  If no device is available, compile the tests and leave execution to the maintainer.
-- Before completing a task, run the relevant non-device tests, including JVM tests.
-- Run ./gradlew test and ./gradlew lint when practical.
-- Do not modify main unless explicitly requested.
+- Work on `dev`. Do not modify or merge into `main` without an explicit request.
+- Inspect the architecture before introducing abstractions.
+- Make focused changes. Do not refactor unrelated code.
+- Follow [Testing](documentation/TESTING.md) for verification scope, test design,
+  coverage gates, and device access. Documentation-only changes require diff
+  and command review, not Gradle or device execution.
+- Wait for Gradle builds and tests to finish before inspecting results.
+  Do not poll partial logs or stream intermediate output. Use completion
+  notifications or long blocking continuations when required.
 
-## Current architecture
+## Commits
 
-See documentation/README.md for architecture and deliberate decisions.
+- Make one small, atomic commit per working step. Separate features, fixes,
+  refactors, and formatting changes.
+- Use Conventional Commits: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, or
+  `chore:`. Use the imperative mood and a subject of at most 50 characters.
+- Explain the reason in the body when it is not obvious.
+- Commit code only after compilation and the focused checks required by
+  [Testing](documentation/TESTING.md#verification-scope) pass.
+- Leave unrelated changes unstaged and report them to the maintainer.
+- Never commit secrets or generated files.
+- Never force-push or amend commits that have been pushed.
 
-If documentation conflicts with assumptions or general Android conventions,
-the repository documentation wins.
+## Knowledge graph
 
-## graphify
+Use the installed `graphify` skill before any other action when the user invokes
+`/graphify`. For codebase questions, query `graphify-out/graph.json` first when
+it exists:
 
-Graphify is optional local developer tooling. Install its skill locally when
-needed; agent skills, hooks, IDE settings, and generated `graphify-out/` files
-are ignored by Git and are not required to build or test the application.
-An existing local graph provides god nodes, community structure, and cross-file
-relationships.
+```sh
+graphify query "How does lyric recovery work?"
+```
 
-When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+Use path and concept queries to narrow the result:
 
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Local graphify-out/ files are expected after hooks or incremental updates; ignored graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` when graphify is installed and a local graph exists to keep it current (AST-only, no API cost).
+```sh
+graphify path "EditorScreen" "ProjectStorage"
+graphify explain "BeatPlayer"
+```
+
+- Dirty `graphify-out/` files are expected and do not justify skipping the graph.
+- Skip the graph only for stale or incorrect graph-output work, or at the
+  user's explicit request.
+- Use `graphify-out/wiki/index.md` for broad navigation when it exists.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or
+  when scoped queries provide insufficient context.
+
+After code changes, refresh the graph with AST extraction only:
+
+```sh
+graphify update .
+```

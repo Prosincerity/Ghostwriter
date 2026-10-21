@@ -26,6 +26,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -36,15 +37,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.prosincerity.ghostwriter.data.DictionaryDownloadProgress
 import com.prosincerity.ghostwriter.data.DictionaryInstaller
 import com.prosincerity.ghostwriter.data.DictionarySource
+import com.prosincerity.ghostwriter.logic.DictionaryDownloadState
+import com.prosincerity.ghostwriter.logic.DictionaryDownloadSession
 import com.prosincerity.ghostwriter.ui.components.SettingsSection
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,34 +93,14 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
         installed.putAll(status)
         checkingDictionaries = false
     }
-    var active by remember { mutableStateOf<Pair<String, DictionarySource>?>(null) }
-    var downloadJob by remember { mutableStateOf<Job?>(null) }
-    var progress by remember { mutableStateOf<DictionaryDownloadProgress?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
+    val downloadSession = remember(scope) { DictionaryDownloadSession(scope) }
+    val downloadState by downloadSession.state.collectAsState()
+    val active = downloadState as? DictionaryDownloadState.Downloading
 
     fun startDownload(language: String, source: DictionarySource) {
         val key = language to source
-        val sourceLabel = downloadSourceLabel(source)
-        val languageLabel = dictionaryLanguageLabel(language)
-        active = key
-        progress = null
-        error = null
-        downloadJob = scope.launch {
-            try {
-                installer.install(language, source) { value ->
-                    withContext(Dispatchers.Main.immediate) { progress = value }
-                }
-                installed[key] = true
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Exception) {
-                error = "Could not download $sourceLabel for $languageLabel: " +
-                    (failure.message ?: "unknown error")
-            } finally {
-                active = null
-                progress = null
-                downloadJob = null
-            }
+        downloadSession.start(key, onInstalled = { installed[key] = true }) { onProgress ->
+            installer.install(language, source, onProgress)
         }
     }
 
@@ -178,13 +157,9 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                             }
                         }
                     }
-                    if (active == key) {
-                        val fraction = progress?.takeIf { it.totalBytes > 0 }?.let {
-                            (it.downloadedBytes.toFloat() / it.totalBytes).coerceIn(0f, 1f)
-                        }
-                        val percent = progress?.takeIf { it.totalBytes > 0 }?.let {
-                            (100 * it.downloadedBytes / it.totalBytes).toInt().coerceIn(0, 100)
-                        }
+                    if (active?.key == key) {
+                        val fraction = active.fraction
+                        val percent = active.percent
                         if (fraction == null) {
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                         } else {
@@ -196,7 +171,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp),
                         )
-                        TextButton(shape = GhostButtonShape, onClick = { downloadJob?.cancel() }) {
+                        TextButton(shape = GhostButtonShape, onClick = downloadSession::cancel) {
                             Text("Cancel download")
                         }
                     }
@@ -204,9 +179,10 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
             }
             Spacer(Modifier.height(24.dp))
         }
-        error?.let {
+        (downloadState as? DictionaryDownloadState.Failed)?.let { failure ->
             Text(
-                it,
+                "Could not download ${downloadSourceLabel(failure.key.second)} for " +
+                    "${dictionaryLanguageLabel(failure.key.first)}: ${failure.message}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(bottom = 24.dp),

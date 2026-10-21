@@ -35,8 +35,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -58,11 +58,9 @@ import com.prosincerity.ghostwriter.data.DictionarySearch
 import com.prosincerity.ghostwriter.data.DictionarySearchMode
 import com.prosincerity.ghostwriter.data.DictionarySearchResult
 import com.prosincerity.ghostwriter.data.PronunciationSource
+import com.prosincerity.ghostwriter.logic.DictionarySearchSession
 import com.prosincerity.ghostwriter.ui.theme.GhostButtonShape
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,48 +88,25 @@ internal fun DictionaryScreen(
     var selectedLanguage by rememberSaveable { mutableStateOf("en") }
     val language = selectedLanguage.takeIf { it in availableLanguages } ?: availableLanguages.firstOrNull().orEmpty()
     var modeName by rememberSaveable { mutableStateOf(DictionarySearchMode.RHYME.name) }
-    val mode = DictionarySearchMode.valueOf(modeName)
+    val mode = DictionarySearchMode.valueOf(modeName).takeUnless {
+        it == DictionarySearchMode.DOUBLE_RHYME && language != "de"
+    } ?: DictionarySearchMode.RHYME
     var languageMenu by remember { mutableStateOf(false) }
     var modeMenu by remember { mutableStateOf(false) }
-    var result by remember { mutableStateOf<DictionarySearchResult?>(null) }
-    var page by remember { mutableIntStateOf(0) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var job by remember { mutableStateOf<Job?>(null) }
-    var revision by remember { mutableIntStateOf(0) }
-
-    fun resetSearch() {
-        revision++
-        job?.cancel()
-        job = null
-        loading = false
-        result = null
-        error = null
-        page = 0
-    }
+    val searchSession = remember(scope) { DictionarySearchSession(scope) }
+    val searchState by searchSession.state.collectAsState()
+    val result = searchState.result
+    val page = searchState.page
+    val loading = searchState.loading
+    val error = searchState.error
 
     fun submit(requestedPage: Int = 0) {
         val input = word.trim()
         if (input.isEmpty() || language !in availableLanguages) return
         keyboard?.hide()
         focusManager.clearFocus()
-        resetSearch()
-        val requested = revision
-        loading = true
-        job = scope.launch {
-            try {
-                val found = searchAction(input, language, mode, requestedPage)
-                if (requested == revision) {
-                    result = found
-                    page = requestedPage
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (failure: Exception) {
-                if (requested == revision) error = failure.message ?: "Dictionary search failed"
-            } finally {
-                if (requested == revision) loading = false
-            }
+        searchSession.submit(requestedPage) {
+            searchAction(input, language, mode, requestedPage)
         }
     }
 
@@ -188,9 +163,9 @@ internal fun DictionaryScreen(
                                     value = word,
                                     onValueChange = {
                                         word = it
-                                        resetSearch()
+                                        searchSession.reset()
                                     },
-                                    label = { Text("Word") },
+                                    label = { Text(if (mode == DictionarySearchMode.DOUBLE_RHYME) "Compound or two words" else "Word") },
                                     leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                                     shape = MaterialTheme.shapes.medium,
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -200,7 +175,7 @@ internal fun DictionaryScreen(
                                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                                     ),
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                    keyboardActions = KeyboardActions(onSearch = { if (!loading) submit() }),
+                                    keyboardActions = KeyboardActions(onSearch = { if (!searchState.loading) submit() }),
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
@@ -230,7 +205,7 @@ internal fun DictionaryScreen(
                                                     onClick = {
                                                         selectedLanguage = code
                                                         languageMenu = false
-                                                        resetSearch()
+                                                        searchSession.reset()
                                                     },
                                                 )
                                             }
@@ -251,13 +226,15 @@ internal fun DictionaryScreen(
                                             )
                                         }
                                         DropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
-                                            DictionarySearchMode.entries.forEach { option ->
+                                            DictionarySearchMode.entries.filter {
+                                                it != DictionarySearchMode.DOUBLE_RHYME || language == "de"
+                                            }.forEach { option ->
                                                 DropdownMenuItem(
                                                     text = { Text(modeLabel(option)) },
                                                     onClick = {
                                                         modeName = option.name
                                                         modeMenu = false
-                                                        resetSearch()
+                                                        searchSession.reset()
                                                     },
                                                 )
                                             }
@@ -265,6 +242,10 @@ internal fun DictionaryScreen(
                                     }
                                 }
                                 Button(shape = GhostButtonShape, onClick = { submit() }, enabled = word.isNotBlank() && !loading) { Text("Search") }
+                                if (mode == DictionarySearchMode.DOUBLE_RHYME) {
+                                    Text("Enter a compound or two words. Includes loose rhymes; dictionary compounds appear first. Each component appears once.",
+                                        style = MaterialTheme.typography.bodySmall)
+                                }
                             }
                         }
                     }
@@ -325,6 +306,9 @@ internal fun DictionaryScreen(
                         ) {
                             Column(Modifier.fillMaxWidth().padding(16.dp)) {
                                 Text(match.word, style = MaterialTheme.typography.titleMedium)
+                                if (match.components.isNotEmpty() && !match.word.contains(" + ")) {
+                                    Text(match.components.joinToString(" + "), style = MaterialTheme.typography.bodyMedium)
+                                }
                                 Text(
                                     match.ipa, style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -345,9 +329,9 @@ internal fun DictionaryScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            TextButton(shape = GhostButtonShape, onClick = { submit(page - 1) }, enabled = page > 0) { Text("Previous") }
+                            TextButton(shape = GhostButtonShape, onClick = { submit(searchState.page - 1) }, enabled = page > 0) { Text("Previous") }
                             Text("Page ${page + 1}")
-                            TextButton(shape = GhostButtonShape, onClick = { submit(page + 1) }, enabled = found.hasNext) { Text("Next") }
+                            TextButton(shape = GhostButtonShape, onClick = { submit(searchState.page + 1) }, enabled = found.hasNext) { Text("Next") }
                         }
                     }
                 }
@@ -361,6 +345,7 @@ private fun modeLabel(mode: DictionarySearchMode): String = when (mode) {
     DictionarySearchMode.WORD_PREFIX -> "Word prefix"
     DictionarySearchMode.WORD_SUFFIX -> "Word suffix"
     DictionarySearchMode.ASSONANCE -> "Assonance"
+    DictionarySearchMode.DOUBLE_RHYME -> "Double rhyme"
 }
 
 private fun sourceLabel(source: PronunciationSource): String = when (source) {

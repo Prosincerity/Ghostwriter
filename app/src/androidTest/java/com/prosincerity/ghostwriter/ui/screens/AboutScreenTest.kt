@@ -1,14 +1,15 @@
 package com.prosincerity.ghostwriter.ui.screens
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.ui.theme.GhostwriterTheme
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,14 +21,15 @@ class AboutScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun aboutScreen_showsProjectAndDictionaryAttribution() {
+    fun attributionLinks_openTheirUrlsAndUseTheCurrentHandler() {
         var openedUrl: String? = null
+        var onOpenLink by mutableStateOf<(String) -> Unit>({ openedUrl = it })
         composeRule.setContent {
             GhostwriterTheme {
                 AboutScreen(
                     versionName = "1.2.3",
                     onBack = {},
-                    onOpenLink = { openedUrl = it },
+                    onOpenLink = onOpenLink,
                 )
             }
         }
@@ -57,39 +59,9 @@ class AboutScreenTest {
             composeRule.onNodeWithText(label).performScrollTo().performClick()
             composeRule.runOnIdle { assertEquals(url, openedUrl) }
         }
+        composeRule.runOnIdle { onOpenLink = { openedUrl = "updated:$it" } }
+        composeRule.onNodeWithText("Source code").performScrollTo().performClick()
+        composeRule.runOnIdle { assertEquals("updated:$GHOSTWRITER_REPOSITORY_URL", openedUrl) }
     }
 
-    @Test
-    fun aboutScreen_backButtonInvokesNavigation() {
-        var wentBack = false
-        composeRule.setContent {
-            GhostwriterTheme {
-                AboutScreen(
-                    versionName = "1.2.3",
-                    onBack = { wentBack = true },
-                    onOpenLink = {},
-                )
-            }
-        }
-
-        composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.runOnIdle { assertTrue(wentBack) }
-    }
-
-    @Test
-    fun settingsScreen_aboutButtonInvokesNavigation() {
-        var openedAbout = false
-        composeRule.setContent {
-            GhostwriterTheme {
-                SettingsScreen(
-                    onBack = {},
-                    onOpenAbout = { openedAbout = true },
-                    onOpenDictionaryDownloads = {},
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("About Ghostwriter").performScrollTo().performClick()
-        composeRule.runOnIdle { assertTrue(openedAbout) }
-    }
 }

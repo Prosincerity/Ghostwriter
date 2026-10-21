@@ -41,14 +41,16 @@ class PcmSourceTest {
         assertFalse(file.exists())
     }
 
-    @Test fun cancellationAfterFirstBuffer_deletesPartiallyLoadedPcm() {
-        val file = audio(ShortArray(40000))
-        var checks = 0
-        assertThrows(CancellationException::class.java) {
-            PcmSources.prepare(PcmBeat(file, 48000, 1, 40000)) { ++checks == 2 }
+    @Test
+    fun cancellationBeforeOrDuringMemoryPreparation_deletesTemporaryPcm() {
+        for ((channels, frames, cancelAt) in listOf(Triple(2, 2048, 1), Triple(1, 40000, 2))) {
+            val file = audio(ShortArray(frames * channels))
+            var checks = 0
+            assertThrows(CancellationException::class.java) {
+                PcmSources.prepare(PcmBeat(file, 48000, channels, frames.toLong())) { ++checks == cancelAt }
+            }
+            assertFalse(file.exists())
         }
-        assertEquals(2, checks)
-        assertFalse(file.exists())
     }
 
     @Test fun truncatedPcm_failsPreparationAndDeletesTemporaryFile() {
@@ -57,6 +59,17 @@ class PcmSourceTest {
             PcmSources.prepare(PcmBeat(file, 48000, 2, 10)) { false }
         }
         assertFalse(file.exists())
+    }
+
+    @Test fun preparation_aboveMemoryLimitRetainsTheBackingFileForStreaming() {
+        val file = folder.newFile()
+        val bytes = PcmSources.MEMORY_LIMIT_BYTES + 4
+        RandomAccessFile(file, "rw").use { it.setLength(bytes) }
+        val source = PcmSources.prepare(PcmBeat(file, 48000, 2, bytes / 4)) { false }
+        try {
+            assertTrue(file.exists())
+            assertEquals(bytes, file.length())
+        } finally { source.close() }
     }
 
     @Test fun cancelledDiskPreparation_throwsAndRemovesTemporaryPcm() {

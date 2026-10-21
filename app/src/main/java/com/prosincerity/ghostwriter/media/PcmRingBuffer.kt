@@ -4,6 +4,7 @@ import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -23,6 +24,12 @@ internal class PcmRingBuffer(
     private val pageCount: Int = 16,
     private val deleteOnClose: Boolean = false,
     private val regionLimitBytes: Long = PcmSources.MEMORY_LIMIT_BYTES,
+    workerFactory: ThreadFactory = ThreadFactory { task ->
+        Thread(task, "Beat PCM prefetch").apply { isDaemon = true }
+    },
+    private val waitForWork: (Boolean) -> Unit = { playing ->
+        LockSupport.parkNanos(if (playing) 5_000_000 else 250_000_000)
+    },
 ) : PcmSource {
     private class Page(samples: Int) {
         val data = ShortArray(samples)
@@ -44,7 +51,7 @@ internal class PcmRingBuffer(
 
     init {
         require(channels > 0 && frames > 0 && pageFrames > 0 && pageCount >= 12)
-        worker = Thread(::prefetch, "Beat PCM prefetch").apply { isDaemon = true; start() }
+        worker = workerFactory.newThread(::prefetch).apply { start() }
     }
 
     override fun requestFrame(frame: Long) { requested.set(frame.coerceIn(0, frames - 1)) }
@@ -164,7 +171,7 @@ internal class PcmRingBuffer(
                         page.count = count
                         page.state.set(READY)
                     }
-                    LockSupport.parkNanos(if (playing.get()) 5_000_000 else 250_000_000)
+                    waitForWork(playing.get())
                 }
             }
         } catch (problem: Exception) {

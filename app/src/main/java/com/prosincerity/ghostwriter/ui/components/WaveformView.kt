@@ -1,10 +1,10 @@
 package com.prosincerity.ghostwriter.ui.components
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -38,8 +39,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +50,8 @@ import com.prosincerity.ghostwriter.data.MarkerLoopRole
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.MarkerLoopRange
 import com.prosincerity.ghostwriter.logic.WaveformViewport
+import com.prosincerity.ghostwriter.logic.WaveformDrawingGeometry
+import com.prosincerity.ghostwriter.logic.waveformPeakHalfHeight
 import com.prosincerity.ghostwriter.logic.crossesWaveformMarker
 import com.prosincerity.ghostwriter.logic.waveformMarkerHitBounds
 import com.prosincerity.ghostwriter.ui.theme.GhostBorder
@@ -54,7 +59,6 @@ import com.prosincerity.ghostwriter.ui.theme.GhostPrimary
 import com.prosincerity.ghostwriter.ui.theme.GhostSecondary
 import com.prosincerity.ghostwriter.ui.theme.GhostText
 import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /**
@@ -91,7 +95,22 @@ fun WaveformView(
         fontFamily = MaterialTheme.typography.labelSmall.fontFamily,
         fontSize = 11.sp,
     )
+    val markerLabels = remember(markers, markerLabelStyle, textMeasurer) {
+        markers.map { marker ->
+            val color = when (marker.loopRole) {
+                MarkerLoopRole.NONE -> lerp(GhostSecondary, Color.White, 0.24f)
+                MarkerLoopRole.START -> lerp(GhostSecondary, Color.White, 0.55f)
+                MarkerLoopRole.END -> lerp(GhostSecondary, Color.White, 0.18f)
+            }
+            WaveformMarkerLabel(
+                color,
+                textMeasurer.measure(marker.displayLabel(), markerLabelStyle.copy(color = color)),
+            )
+        }
+    }
     val latestViewport = rememberUpdatedState(viewport)
+    // Playback invalidates drawing without rebuilding cached geometry and text.
+    val latestPositionMs = rememberUpdatedState(currentPositionMs)
     var draggedMarker by remember { mutableStateOf<WaveformMarker?>(null) }
     var pendingMarkerPositionMs by remember { mutableLongStateOf(0L) }
 
@@ -110,7 +129,7 @@ fun WaveformView(
                 viewportWidthPx = newWidthPx
             },
     ) {
-        Canvas(
+        Spacer(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(durationMs, markers, viewportWidthPx) {
@@ -147,109 +166,120 @@ fun WaveformView(
                             )
                         }
                     }
+                }
+                .drawWithCache {
+                    val geometry = WaveformDrawingGeometry(viewport, size.width, amplitudes.size)
+                    val markerAreaHeight = 24.dp.toPx()
+                    val waveformHeight = (size.height - markerAreaHeight).coerceAtLeast(0f)
+                    val waveformCenterY = markerAreaHeight + waveformHeight / 2f
+                    val strokeWidth = 1.dp.toPx()
+                    val markerTickWidth = 3.dp.toPx()
+                    val markerTickLength = 8.dp.toPx()
+                    val markerTickY = markerAreaHeight - 2.dp.toPx()
+                    val playheadStrokeWidth = 2.dp.toPx()
+                    val markerMinX = -48.dp.toPx()
+                    val labelPadding = 4.dp.toPx()
+                    val displayedMarkers = if (draggedMarker == null) markers else markers.map {
+                        if (it === draggedMarker) it.copy(positionMs = pendingMarkerPositionMs) else it
+                    }
+                    val loopRange = MarkerLoopRange.fromMarkers(displayedMarkers, durationMs)
+                    val loopLeft = loopRange?.let {
+                        geometry.positionToX(it.startMs, durationMs).coerceIn(0f, size.width)
+                    } ?: 0f
+                    val loopRight = loopRange?.let {
+                        geometry.positionToX(it.endMs, durationMs).coerceIn(0f, size.width)
+                    } ?: 0f
+                    val loopColor = GhostSecondary.copy(alpha = if (loopEnabled) 0.16f else 0.08f)
+                    val drawingMarkerXs = FloatArray(markerLabels.size) { index ->
+                        val marker = markers[index]
+                        val positionMs = if (marker === draggedMarker) pendingMarkerPositionMs else marker.positionMs
+                        geometry.positionToX(positionMs, durationMs)
+                    }
+                    // Match drawText's original available-space wrapping, including
+                    // labels moving near the right edge during a drag preview.
+                    val drawingLabels = markerLabels.mapIndexed { index, label ->
+                        textMeasurer.measure(
+                            text = label.layout.layoutInput.text,
+                            style = label.layout.layoutInput.style,
+                            constraints = Constraints(
+                                maxWidth = ceil(size.width - drawingMarkerXs[index] - labelPadding)
+                                    .toInt().coerceAtLeast(0),
+                                maxHeight = ceil(size.height).toInt().coerceAtLeast(0),
+                            ),
+                            layoutDirection = layoutDirection,
+                            density = this,
+                        )
+                    }
+
+                    onDrawBehind {
+                        if (loopRight > loopLeft) drawRect(
+                            color = loopColor,
+                            topLeft = Offset(loopLeft, markerAreaHeight),
+                            size = Size(loopRight - loopLeft, waveformHeight),
+                        )
+                        drawLine(
+                            color = GhostBorder,
+                            start = Offset(0f, waveformCenterY),
+                            end = Offset(size.width, waveformCenterY),
+                            strokeWidth = strokeWidth,
+                        )
+                        for (sampleIndex in geometry.firstSample..geometry.lastSample) {
+                            val x = geometry.sampleX(sampleIndex)
+                            val halfHeight = waveformPeakHalfHeight(amplitudes[sampleIndex], waveformHeight)
+                            drawLine(
+                                color = GhostPrimary,
+                                start = Offset(x, waveformCenterY - halfHeight),
+                                end = Offset(x, waveformCenterY + halfHeight),
+                                strokeWidth = strokeWidth,
+                                cap = StrokeCap.Round,
+                            )
+                        }
+                        for (index in markerLabels.indices) {
+                            val label = markerLabels[index]
+                            val markerX = drawingMarkerXs[index]
+                            if (markerX >= markerMinX && markerX <= size.width) {
+                                drawLine(
+                                    color = label.color,
+                                    start = Offset(markerX, 0f),
+                                    end = Offset(markerX, size.height),
+                                    strokeWidth = strokeWidth,
+                                )
+                                drawLine(
+                                    color = label.color,
+                                    start = Offset(markerX, markerTickY),
+                                    end = Offset(markerX + markerTickLength, markerTickY),
+                                    strokeWidth = markerTickWidth,
+                                    cap = StrokeCap.Square,
+                                )
+                                drawText(
+                                    textLayoutResult = drawingLabels[index],
+                                    topLeft = Offset(markerX + labelPadding, 0f),
+                                )
+                            }
+                        }
+                        val playheadX = geometry.positionToX(latestPositionMs.value, durationMs)
+                        drawLine(
+                            color = GhostText,
+                            start = Offset(playheadX, markerAreaHeight),
+                            end = Offset(playheadX, size.height),
+                            strokeWidth = playheadStrokeWidth,
+                        )
+                    }
                 },
-        ) {
-            val drawingViewport = viewport.clamped(size.width)
-            val markerAreaHeight = 24.dp.toPx()
-            val waveformTop = markerAreaHeight
-            val waveformHeight = (size.height - waveformTop).coerceAtLeast(0f)
-            val waveformCenterY = waveformTop + waveformHeight / 2f
-
-            val displayedMarkers = if (draggedMarker == null) markers else markers.map {
-                if (it === draggedMarker) it.copy(positionMs = pendingMarkerPositionMs) else it
-            }
-            MarkerLoopRange.fromMarkers(displayedMarkers, durationMs)?.let { range ->
-                val left = drawingViewport.positionToX(range.startMs, durationMs, size.width).coerceIn(0f, size.width)
-                val right = drawingViewport.positionToX(range.endMs, durationMs, size.width).coerceIn(0f, size.width)
-                if (right > left) drawRect(
-                    color = GhostSecondary.copy(alpha = if (loopEnabled) 0.16f else 0.08f),
-                    topLeft = Offset(left, waveformTop),
-                    size = Size(right - left, waveformHeight),
-                )
-            }
-
-            drawLine(
-                color = GhostBorder,
-                start = Offset(0f, waveformCenterY),
-                end = Offset(size.width, waveformCenterY),
-                strokeWidth = 1.dp.toPx(),
-            )
-
-            if (amplitudes.isNotEmpty() && drawingViewport.contentWidthPx(size.width) > 0f) {
-                val contentWidth = drawingViewport.contentWidthPx(size.width)
-                val firstSample = floor(
-                    (drawingViewport.scrollOffsetPx / contentWidth) * amplitudes.size,
-                ).toInt().coerceIn(0, amplitudes.lastIndex)
-                val lastSample = ceil(
-                    ((drawingViewport.scrollOffsetPx + size.width) / contentWidth) * amplitudes.size,
-                ).toInt().coerceIn(firstSample, amplitudes.lastIndex)
-
-                for (sampleIndex in firstSample..lastSample) {
-                    val x = ((sampleIndex.toFloat() / amplitudes.lastIndex.coerceAtLeast(1)) * contentWidth) -
-                        drawingViewport.scrollOffsetPx
-                    val normalizedAmplitude = (amplitudes[sampleIndex] / 32_768f).coerceIn(0f, 1f)
-                    val halfHeight = normalizedAmplitude * waveformHeight / 2f
-                    drawLine(
-                        color = GhostPrimary,
-                        start = Offset(x, waveformCenterY - halfHeight),
-                        end = Offset(x, waveformCenterY + halfHeight),
-                        strokeWidth = 1.dp.toPx(),
-                        cap = StrokeCap.Round,
-                    )
-                }
-            }
-
-            markers.forEach { marker ->
-                val markerColor = when (marker.loopRole) {
-                    MarkerLoopRole.NONE -> lerp(GhostSecondary, Color.White, 0.24f)
-                    MarkerLoopRole.START -> lerp(GhostSecondary, Color.White, 0.55f)
-                    MarkerLoopRole.END -> lerp(GhostSecondary, Color.White, 0.18f)
-                }
-                val displayPositionMs = if (marker === draggedMarker) pendingMarkerPositionMs else marker.positionMs
-                val markerX = drawingViewport.positionToX(displayPositionMs, durationMs, size.width)
-                if (markerX in -48.dp.toPx()..size.width) {
-                    drawLine(
-                        color = markerColor,
-                        start = Offset(markerX, 0f),
-                        end = Offset(markerX, size.height),
-                        strokeWidth = 1.dp.toPx(),
-                    )
-                    drawLine(
-                        color = markerColor,
-                        start = Offset(markerX, markerAreaHeight - 2.dp.toPx()),
-                        end = Offset(markerX + 8.dp.toPx(), markerAreaHeight - 2.dp.toPx()),
-                        strokeWidth = 3.dp.toPx(),
-                        cap = StrokeCap.Square,
-                    )
-                    drawText(
-                        textMeasurer = textMeasurer,
-                        text = marker.displayLabel(),
-                        topLeft = Offset(markerX + 4.dp.toPx(), 0f),
-                        style = markerLabelStyle.copy(color = markerColor),
-                    )
-                }
-            }
-
-            val currentPlayheadX = drawingViewport.positionToX(currentPositionMs, durationMs, size.width)
-            drawLine(
-                color = GhostText,
-                start = Offset(currentPlayheadX, waveformTop),
-                end = Offset(currentPlayheadX, size.height),
-                strokeWidth = 2.dp.toPx(),
-            )
-        }
+        )
 
         // Each marker gets a transparent hit target. This keeps its gestures
         // separate from the waveform's seek and pan gestures underneath.
         val markerXs = markers.map {
             viewport.positionToX(it.positionMs, durationMs, viewportWidthPx)
         }
-        markers.forEach { marker ->
+        markers.forEachIndexed { index, marker ->
+            val label = markerLabels[index]
             // Keep this target at the marker's pre-drag position. Moving the
             // target under an active pointer changes its local coordinates and
             // makes the marker lag or jump.
             val markerX = viewport.positionToX(marker.positionMs, durationMs, viewportWidthPx)
-            val labelSize = textMeasurer.measure(marker.displayLabel(), markerLabelStyle).size
+            val labelSize = label.layout.size
             val hitBounds = waveformMarkerHitBounds(
                 markerX, markerHitRadiusPx, labelSize.width.toFloat(), markerLabelPaddingPx, markerXs,
             )
@@ -339,3 +369,8 @@ fun WaveformView(
 
 private fun WaveformMarker.displayLabel(): String =
     if (loopRole == MarkerLoopRole.NONE) label else "${loopRole.displayName} · $label"
+
+private data class WaveformMarkerLabel(
+    val color: Color,
+    val layout: TextLayoutResult,
+)
