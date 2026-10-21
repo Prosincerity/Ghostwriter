@@ -126,9 +126,11 @@ continues playback.
 Opening another project, changing its beat, or deleting or renaming the
 playing project releases playback. Process death does not restart audio.
 Volume, loop mode, and playback position are session state. The compact beat
-panel places its minimize button opposite the zoom controls, with the beat title
-underneath. Minimizing replaces the panel with an accent-colored, slanted
-"Beat Player" tab above the lyrics, preserving playback and waveform zoom.
+panel has a centered, accent-colored, slanted "Beat Player" tab to minimize it.
+The title sits at the upper left, truncating before the tab; zoom controls stay
+at the upper right. This shared header preserves the waveform's original height.
+Minimizing leaves the same tab above the lyrics to reopen the panel, preserving
+playback and waveform zoom.
 The loop button cycles Off, Whole beat, and Markers, using distinct icons and three position
 dots, a visible Off / Beat / Marker label, and an accessibility label in all
 layouts. The compact Reassign button scales to the available width. Playback
@@ -185,8 +187,10 @@ the handoff aligns their millisecond positions, not individual hardware samples.
 off the UI thread. `WaveformCache.kt` validates cached peaks, and
 `WaveformViewport.kt` handles zoom and seek calculations. Compose Canvas and
 gestures provide the timeline controls. Extraction supports cancellation,
-retry, and cache reuse. Playback is available during waveform processing,
-cancellation, and failure; retry does not restart a paused beat. Newly imported
+retry, and cache reuse. Editor playback controls appear only with the ready
+waveform. Preparing, awaiting long-file approval, cancellation, and failure
+hide those controls and retain their cancellation or recovery actions.
+Retry does not restart a paused beat. Newly imported
 beats start playing as soon as they are loaded, including while the long-file
 waveform warning is open.
 Canceling an import removes its beat and stops playback.

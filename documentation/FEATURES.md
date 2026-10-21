@@ -57,8 +57,9 @@ release schedule.
 
 - [x] **Offline beat playback** — import a beat into a project; play, pause,
   restart, loop, and adjust volume from the editor. Minimize the compact player
-  with its upper-left button and reopen it from the accent-colored, slanted
-  **Beat Player** tab above the lyrics; playback continues while minimized.
+  with the centered, accent-colored, slanted **Beat Player** tab; the same tab
+  reopens it above the lyrics. Playback continues while minimized. Beat titles
+  sit at the upper left and truncate before the tab.
 - [x] **Background playback** — continue across screens and other apps, with
   Android notification and lock-screen controls. Loop state stays in sync
   with the editor, and audio interruptions pause playback. Dismissing the app
@@ -89,8 +90,10 @@ release schedule.
   so each repeat is up to 3 ms shorter. Marker positions are saved as audio
   frames; old projects migrate when opened.
   Waveforms are cached; processing supports cancel and retry, with a warning
-  for long audio files. Playback and controls remain available during waveform
-  and loop-audio preparation. PCM playback continues from the live beat position
+  for long audio files. Editor playback controls appear only after audio and
+  waveform loading finish; preparation, cancellation, and failure show their
+  own actions. Playback and controls remain available during loop-audio
+  preparation. PCM playback continues from the live beat position
   using silent buffering and a short volume blend; a user pause remains paused.
 - [ ] **Instrumentals library** — browse and reuse beats across projects;
   assigned beats remain copied into each project.

@@ -5,6 +5,17 @@ import org.junit.Test
 
 class BeatPanelStateTest {
     @Test
+    fun awaitingApproval_hidesReadyControlsAndTakesPriorityOverLoading() {
+        for (ready in listOf(false, true)) {
+            assertEquals(
+                BeatPanelState.AwaitingWaveformApproval,
+                state(ready = ready, loading = true, awaitingApproval = true),
+            )
+        }
+        assertEquals(BeatPanelState.Connecting, state(hasPlayer = false, awaitingApproval = true))
+    }
+
+    @Test
     fun missingPlayer_showsConnectionBeforeAnyBeatOrWaveformStatus() {
         assertEquals(BeatPanelState.Connecting, state(hasPlayer = false))
         assertEquals(
@@ -72,6 +83,7 @@ class BeatPanelStateTest {
         removeOnCancel: Boolean = false,
         cancelled: Boolean = false,
         failed: Boolean = false,
+        awaitingApproval: Boolean = false,
     ): BeatPanelState = resolveBeatPanelState(
         hasPlayer = hasPlayer,
         isBeatReady = ready,
@@ -81,5 +93,6 @@ class BeatPanelStateTest {
         cancelRemovesImportedBeat = removeOnCancel,
         waveformPreparationCancelled = cancelled,
         waveformPreparationFailed = failed,
+        isAwaitingWaveformApproval = awaitingApproval,
     )
 }

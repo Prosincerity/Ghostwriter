@@ -5,15 +5,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Button
@@ -42,6 +43,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import com.prosincerity.ghostwriter.data.WaveformMarker
 import com.prosincerity.ghostwriter.logic.BeatPanelState
 import com.prosincerity.ghostwriter.logic.resolveBeatPanelState
@@ -72,6 +75,7 @@ internal fun BeatPlayerPanel(
     waveformPreparationCancelled: Boolean,
     waveformPreparationFailed: Boolean,
     onRetryWaveformPreparation: () -> Unit,
+    isAwaitingWaveformApproval: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     var isMinimized by rememberSaveable { mutableStateOf(false) }
@@ -89,6 +93,7 @@ internal fun BeatPlayerPanel(
         cancelRemovesImportedBeat = cancelRemovesImportedBeat,
         waveformPreparationCancelled = waveformPreparationCancelled,
         waveformPreparationFailed = waveformPreparationFailed,
+        isAwaitingWaveformApproval = isAwaitingWaveformApproval,
     )
 
     // MediaPlayer has no Compose-observable position state. Poll only while
@@ -107,25 +112,16 @@ internal fun BeatPlayerPanel(
 
     if (isMinimized) {
         Box(modifier = modifier, contentAlignment = Alignment.TopCenter) {
-            Surface(
+            BeatPlayerTab(
+                isMinimized = true,
                 onClick = { isMinimized = false },
-                shape = BeatPlayerTabShape,
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.semantics { contentDescription = "Open beat player" },
-            ) {
-                Text(
-                    text = "Beat Player",
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
-                )
-            }
+            )
         }
         return
     }
 
     Card(
-        modifier = modifier.height(164.dp),
+        modifier = modifier.height(172.dp),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
@@ -134,48 +130,55 @@ internal fun BeatPlayerPanel(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(
-                    shape = GhostButtonShape,
-                    onClick = { isMinimized = true },
-                    modifier = Modifier.size(32.dp),
+                Text(
+                    text = if (panelState == BeatPanelState.Waveform) beatDisplayName else "",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f).padding(end = 4.dp),
+                )
+                BeatPlayerTab(isMinimized = false, onClick = { isMinimized = true })
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.ExpandLess,
-                        contentDescription = "Minimize beat player",
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                if (panelState == BeatPanelState.Waveform) {
-                    WaveformZoomButton(
-                        imageVector = Icons.Filled.ZoomOut,
-                        contentDescription = "Zoom out waveform",
-                        onClick = {
-                            waveformViewport = waveformViewport.zoomBy(
-                                scaleFactor = 0.5f,
-                                focalXpx = waveformWidthPx / 2f,
-                                viewportWidthPx = waveformWidthPx,
-                            )
-                        },
-                        enabled = waveformWidthPx > 0f &&
-                            waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
-                    )
-                    WaveformZoomButton(
-                        imageVector = Icons.Filled.ZoomIn,
-                        contentDescription = "Zoom in waveform",
-                        onClick = {
-                            waveformViewport = waveformViewport.zoomBy(
-                                scaleFactor = 2f,
-                                focalXpx = waveformWidthPx / 2f,
-                                viewportWidthPx = waveformWidthPx,
-                            )
-                        },
-                        enabled = waveformWidthPx > 0f &&
-                            waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
-                    )
+                    if (panelState == BeatPanelState.Waveform) {
+                        WaveformZoomButton(
+                            imageVector = Icons.Filled.ZoomOut,
+                            contentDescription = "Zoom out waveform",
+                            onClick = {
+                                waveformViewport = waveformViewport.zoomBy(
+                                    scaleFactor = 0.5f,
+                                    focalXpx = waveformWidthPx / 2f,
+                                    viewportWidthPx = waveformWidthPx,
+                                )
+                            },
+                            enabled = waveformWidthPx > 0f &&
+                                waveformViewport.zoom > WaveformViewport.MIN_ZOOM,
+                        )
+                        WaveformZoomButton(
+                            imageVector = Icons.Filled.ZoomIn,
+                            contentDescription = "Zoom in waveform",
+                            onClick = {
+                                waveformViewport = waveformViewport.zoomBy(
+                                    scaleFactor = 2f,
+                                    focalXpx = waveformWidthPx / 2f,
+                                    viewportWidthPx = waveformWidthPx,
+                                )
+                            },
+                            enabled = waveformWidthPx > 0f &&
+                                waveformViewport.zoom < WaveformViewport.MAX_ZOOM,
+                        )
+                    }
                 }
             }
             when (panelState) {
+                BeatPanelState.AwaitingWaveformApproval -> PlayerStatusMessage(
+                    message = "Waiting for waveform approval…",
+                    modifier = Modifier.weight(1f),
+                )
                 BeatPanelState.Connecting -> PlayerStatusMessage(
                     message = "Connecting beat player…",
                     modifier = Modifier.weight(1f),
@@ -243,14 +246,6 @@ internal fun BeatPlayerPanel(
                     Column(
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(
-                            text = beatDisplayName,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
                         WaveformView(
                             amplitudes = waveformAmplitudes,
                             durationMs = durationMs.toLong(),
@@ -288,7 +283,7 @@ internal fun BeatPlayerPanel(
                     }
                 }
             }
-            if (isBeatReady && beatPlayer != null) {
+            if (panelState == BeatPanelState.Waveform && beatPlayer != null) {
                 BeatPlaybackControls(
                     beatPlayer = beatPlayer,
                     isPlaying = isPlaying,
@@ -306,6 +301,33 @@ internal fun BeatPlayerPanel(
                     isReassigningBeat = isReassigningBeat,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun BeatPlayerTab(isMinimized: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = BeatPlayerTabShape,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        modifier = Modifier.width(132.dp).height(32.dp).semantics {
+            contentDescription = if (isMinimized) "Open beat player" else "Minimize beat player"
+        },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            BasicText(
+                text = "Beat Player",
+                style = MaterialTheme.typography.labelLarge.copy(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    lineHeight = 1.2.em,
+                ),
+                maxLines = 1,
+                softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 14.sp),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+            )
         }
     }
 }

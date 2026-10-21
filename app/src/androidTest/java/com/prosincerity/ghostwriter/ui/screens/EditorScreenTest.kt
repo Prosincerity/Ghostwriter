@@ -100,6 +100,9 @@ class EditorScreenTest {
         fun reassign() {
             composeRule.onNodeWithText("Reassign").performClick()
             composeRule.onNodeWithText("Cancel").performClick()
+            composeRule.waitUntil(5_000) {
+                composeRule.onAllNodesWithText("Reassign").fetchSemanticsNodes().size == 1
+            }
             composeRule.onNodeWithText("Reassign").performClick()
             val buttons = composeRule.onAllNodesWithText("Reassign")
             buttons[buttons.fetchSemanticsNodes().lastIndex].performClick()
@@ -873,9 +876,7 @@ class EditorScreenTest {
 
             composeRule.onNodeWithText("Cancel preparation").performClick()
             waitUntilTextExists("Waveform preparation canceled")
-            composeRule.onNodeWithContentDescription("Play").assertIsEnabled().performClick()
-            composeRule.onNodeWithContentDescription("Pause").performClick()
-            composeRule.onNodeWithContentDescription("Play").assertExists()
+            composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
             composeRule.onNodeWithText("Retry").performClick()
             waitUntilTextExists("Long audio file")
 
@@ -889,6 +890,8 @@ class EditorScreenTest {
             composeRule.onNodeWithText("Process anyway").performClick()
 
             waitUntilTextExists("editor-fixture")
+            composeRule.onNodeWithContentDescription("Play").assertIsEnabled().performClick()
+            composeRule.onNodeWithContentDescription("Pause").performClick()
             composeRule.onNodeWithContentDescription("Play").assertExists()
             composeRule.onNodeWithContentDescription("Pause").assertDoesNotExist()
         } finally {

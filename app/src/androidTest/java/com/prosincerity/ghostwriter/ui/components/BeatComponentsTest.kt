@@ -14,6 +14,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -282,43 +283,65 @@ class BeatComponentsTest {
     @Test
     fun playerPanel_minimizesToTabAndRestoresZoomAndControls() {
         val player = BeatPlayer()
+        val width = mutableStateOf(320.dp)
+        val fontScale = mutableStateOf(1f)
+        val beatTitle = "Midnight instrumental extended mix with an especially long beat title"
         composeRule.setContent {
-            GhostwriterTheme {
-                Box(Modifier.width(320.dp)) {
-                    BeatPlayerPanel(
-                        beatPlayer = player,
-                        isBeatReady = true,
-                        isImporting = false,
-                        beatDisplayName = "Midnight instrumental",
-                        onImportBeat = {},
-                        onReassignBeat = {},
-                        isReassigningBeat = false,
-                        waveformAmplitudes = intArrayOf(0, 8_000, 16_000),
-                        isWaveformLoading = false,
-                        markers = emptyList(),
-                        onAddMarker = {},
-                        onMarkerClick = {},
-                        onMarkerMove = { _, _ -> },
-                        onCancelWaveformPreparation = {},
-                        cancelRemovesImportedBeat = false,
-                        waveformPreparationCancelled = false,
-                        waveformPreparationFailed = false,
-                        onRetryWaveformPreparation = {},
-                    )
+            val density = LocalDensity.current.density
+            CompositionLocalProvider(LocalDensity provides Density(density, fontScale.value)) {
+                GhostwriterTheme {
+                    Box(Modifier.width(width.value)) {
+                        BeatPlayerPanel(
+                            beatPlayer = player,
+                            isBeatReady = true,
+                            isImporting = false,
+                            beatDisplayName = beatTitle,
+                            onImportBeat = {},
+                            onReassignBeat = {},
+                            isReassigningBeat = false,
+                            waveformAmplitudes = intArrayOf(0, 8_000, 16_000),
+                            isWaveformLoading = false,
+                            markers = emptyList(),
+                            onAddMarker = {},
+                            onMarkerClick = {},
+                            onMarkerMove = { _, _ -> },
+                            onCancelWaveformPreparation = {},
+                            cancelRemovesImportedBeat = false,
+                            waveformPreparationCancelled = false,
+                            waveformPreparationFailed = false,
+                            onRetryWaveformPreparation = {},
+                        )
+                    }
                 }
             }
         }
 
-        val minimize = composeRule.onNodeWithContentDescription("Minimize beat player")
-            .fetchSemanticsNode().boundsInRoot
-        val zoom = composeRule.onNodeWithContentDescription("Zoom in waveform")
-            .fetchSemanticsNode().boundsInRoot
-        val title = composeRule.onNodeWithText("Midnight instrumental")
-            .fetchSemanticsNode().boundsInRoot
-        assertTrue("Minimize belongs opposite zoom", minimize.right < zoom.left)
-        assertEquals(minimize.center.y, zoom.center.y, 1f)
-        assertTrue("Beat title belongs below the buttons", title.top >= zoom.bottom)
-        composeRule.onNodeWithTag("Waveform").assertIsDisplayed()
+        for ((rowWidth, scale) in listOf(280.dp to 1f, 320.dp to 1f, 360.dp to 1f, 280.dp to 1.5f)) {
+            composeRule.runOnIdle {
+                width.value = rowWidth
+                fontScale.value = scale
+            }
+            val minimize = composeRule.onNodeWithContentDescription("Minimize beat player")
+                .fetchSemanticsNode().boundsInRoot
+            val zoom = composeRule.onNodeWithContentDescription("Zoom out waveform")
+                .fetchSemanticsNode().boundsInRoot
+            val title = composeRule.onNodeWithText(beatTitle).fetchSemanticsNode().boundsInRoot
+            val waveform = composeRule.onNodeWithTag("Waveform").assertIsDisplayed()
+                .fetchSemanticsNode().boundsInRoot
+            assertEquals("The tab must stay centered", waveform.center.x, minimize.center.x, 1f)
+            assertTrue("The title must stop before the tab", title.right <= minimize.left)
+            assertTrue("Zoom controls must fit beside the tab", minimize.right <= zoom.left)
+            assertEquals("The title belongs on the top row", minimize.center.y, title.center.y, 1f)
+            composeRule.onNodeWithText(beatTitle)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { getLayout ->
+                    val results = mutableListOf<TextLayoutResult>()
+                    assertTrue(getLayout(results))
+                    assertTrue("Long beat titles must end in an ellipsis", results.single().isLineEllipsized(0))
+                }
+            if (scale == 1f) {
+                composeRule.onNodeWithTag("Waveform").assertHeightIsAtLeast(72.dp)
+            }
+        }
         composeRule.onNodeWithContentDescription("Zoom out waveform").assertIsNotEnabled()
         composeRule.onNodeWithContentDescription("Zoom in waveform").performClick()
         composeRule.onNodeWithContentDescription("Zoom out waveform").assertIsEnabled()
@@ -326,13 +349,13 @@ class BeatComponentsTest {
         composeRule.onNodeWithContentDescription("Minimize beat player").performClick()
 
         composeRule.onNodeWithText("Beat Player").assertIsDisplayed()
-        composeRule.onNodeWithText("Midnight instrumental").assertDoesNotExist()
+        composeRule.onNodeWithText(beatTitle).assertDoesNotExist()
         composeRule.onNodeWithTag("Waveform").assertDoesNotExist()
         composeRule.onNodeWithContentDescription("Play").assertDoesNotExist()
         composeRule.onNodeWithContentDescription("Open beat player").performClick()
 
-        composeRule.onNodeWithText("Beat Player").assertDoesNotExist()
-        composeRule.onNodeWithText("Midnight instrumental").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Open beat player").assertDoesNotExist()
+        composeRule.onNodeWithText(beatTitle).assertIsDisplayed()
         composeRule.onNodeWithTag("Waveform").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Zoom out waveform").assertIsEnabled()
         composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
@@ -346,6 +369,7 @@ class BeatComponentsTest {
     @Test
     fun playerPanel_prioritizesConnectionThenLoadingCancellationAndFailure() {
         val connected = mutableStateOf(false)
+        val awaitingApproval = mutableStateOf(true)
         val loading = mutableStateOf(true)
         val cancelled = mutableStateOf(true)
         val failed = mutableStateOf(true)
@@ -371,6 +395,7 @@ class BeatComponentsTest {
                     waveformPreparationCancelled = cancelled.value,
                     waveformPreparationFailed = failed.value,
                     onRetryWaveformPreparation = {},
+                    isAwaitingWaveformApproval = awaitingApproval.value,
                 )
             }
         }
@@ -380,9 +405,14 @@ class BeatComponentsTest {
         composeRule.onNodeWithContentDescription("Play").assertDoesNotExist()
 
         composeRule.runOnIdle { connected.value = true }
+        composeRule.onNodeWithText("Waiting for waveform approval…").assertIsDisplayed()
+        composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
+        composeRule.onNodeWithText("Cancel preparation").assertDoesNotExist()
+        composeRule.onNodeWithText("Preparing waveform…").assertDoesNotExist()
+        composeRule.runOnIdle { awaitingApproval.value = false }
         composeRule.onNodeWithText("Preparing waveform…").assertExists()
         composeRule.onNodeWithText("Waveform preparation canceled").assertDoesNotExist()
-        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
 
         composeRule.runOnIdle { loading.value = false }
         composeRule.onNodeWithText("Waveform preparation canceled").assertExists()
@@ -449,7 +479,7 @@ class BeatComponentsTest {
     }
 
     @Test
-    fun readyPlayer_keepsControlsDuringWaveformPreparationCancellationAndFailure() {
+    fun readyPlayer_showsControlsOnlyAfterWaveformIsReady() {
         val loading = mutableStateOf(true)
         val cancelled = mutableStateOf(false)
         val failed = mutableStateOf(false)
@@ -486,24 +516,32 @@ class BeatComponentsTest {
             }
         }
         composeRule.onNodeWithText("Preparing waveform…").assertExists()
-        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
-        composeRule.onNodeWithContentDescription("Play from start").assertIsEnabled()
+        composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Play").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Play from start").assertDoesNotExist()
         composeRule.onNodeWithText("Cancel preparation").performClick()
         composeRule.onNodeWithText("Waveform preparation canceled").assertExists()
-        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
         val messageBounds = composeRule.onNodeWithText("Waveform preparation canceled")
             .fetchSemanticsNode().boundsInRoot
         val retryBounds = composeRule.onNodeWithText("Retry")
             .fetchSemanticsNode().boundsInRoot
         assertEquals(messageBounds.center.x, retryBounds.center.x, 1f)
         composeRule.onNodeWithText("Retry").performClick()
-        composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.onNodeWithText("Preparing waveform…").assertExists()
+        composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
         composeRule.runOnIdle {
             loading.value = false
             failed.value = true
         }
         composeRule.onNodeWithText("Couldn't create waveform").assertExists()
+        composeRule.onNodeWithTag("Beat playback controls").assertDoesNotExist()
+        composeRule.onNodeWithText("Retry").assertIsEnabled()
+        composeRule.onNodeWithText("Remove beat").assertIsEnabled()
+        composeRule.runOnIdle { failed.value = false }
+        composeRule.onNodeWithText("beat.wav").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Play").assertIsEnabled()
+        composeRule.onNodeWithContentDescription("Play from start").assertIsEnabled()
         composeRule.onNodeWithContentDescription("Mute").performClick()
         composeRule.runOnIdle { assertEquals(0f, player.volume) }
     }

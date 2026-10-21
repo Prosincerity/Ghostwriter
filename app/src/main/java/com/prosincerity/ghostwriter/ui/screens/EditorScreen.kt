@@ -138,7 +138,10 @@ fun EditorScreen(
     var waveformPreparation by remember(projectId) {
         mutableStateOf<WaveformPreparationState>(WaveformPreparationState.Idle)
     }
-    val isWaveformLoading = waveformPreparation is WaveformPreparationState.Loading
+    val isWaveformLoading = beatFile != null && (
+        waveformPreparation is WaveformPreparationState.Idle ||
+            waveformPreparation is WaveformPreparationState.Loading
+        )
     var waveformRevision by remember(projectId) { mutableIntStateOf(0) }
     var waveformCancellation by remember(projectId) { mutableStateOf<AtomicBoolean?>(null) }
     var cancellationRequested by remember(projectId) { mutableStateOf(false) }
@@ -578,6 +581,7 @@ fun EditorScreen(
                 waveformPreparationCancelled = waveformPreparation is WaveformPreparationState.Cancelled,
                 waveformPreparationFailed = waveformPreparation is WaveformPreparationState.Failed,
                 onRetryWaveformPreparation = { waveformRevision++ },
+                isAwaitingWaveformApproval = waveformPreparation is WaveformPreparationState.AwaitingApproval,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 6.dp),
