@@ -115,6 +115,12 @@ playback. The outputs have separate clocks; handoff is not sample-exact.
 
 `WaveformExtractor.kt` decodes peaks off the UI thread. `WaveformCache.kt`
 validates cached peaks; `WaveformViewport.kt` handles zoom and seek calculations.
+On API 35 and later, the AOSP C2 MP3 decoder can batch packets and PCM transfers.
+Extraction checks the decoder's packet clock before batching and preserves
+individual packet rounding when placing peaks. Other decoders and unsupported
+MP3 layouts use single-packet decoding; a failed batch retries with fresh media
+objects. Codec callbacks enqueue events while the calling worker processes
+PCM and checks cancellation.
 The panel shows transport controls only after the player and waveform are ready.
 New imports can start audio while the long-file warning is open.
 

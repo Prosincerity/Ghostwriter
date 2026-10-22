@@ -131,6 +131,101 @@ class WaveformExtractorInstrumentedTest {
         assertTrue(retried.any { it > 0 })
     }
 
+    @Test
+    fun silentMp3VariantsMatchTheSinglePacketDecoder() {
+        for ((version, channels) in listOf(3 to 2, 2 to 1, 0 to 2)) {
+            val source = createSilentMp3("silent-$version-$channels.mp3", version, channels)
+            val expected = WaveformExtractor.extractAmplitudes(source, 1003, { false }, allowBatching = false)
+            assertEquals(1003, expected.size)
+            assertArrayEquals(IntArray(1003), expected)
+            assertArrayEquals(expected, WaveformExtractor.extractAmplitudes(source, 1003))
+        }
+    }
+
+    @Test
+    fun shortMp3DrainsTheFinalDecoderPadding() {
+        val source = createSilentMp3("short.mp3", frameCount = 4)
+        val expected = WaveformExtractor.extractAmplitudes(source, 20, { false }, allowBatching = false)
+        assertEquals(20, expected.size)
+        assertArrayEquals(expected, WaveformExtractor.extractAmplitudes(source, 20))
+    }
+
+    @Test
+    fun mp3SampleRateChangeRetainsSinglePacketDecoding() {
+        val source = createSilentMp3("changing-rate.mp3", changeRate = true)
+        val expected = WaveformExtractor.extractAmplitudes(source, 20, { false }, allowBatching = false)
+        assertEquals(20, expected.size)
+        assertArrayEquals(expected, WaveformExtractor.extractAmplitudes(source, 20))
+    }
+
+    @Test
+    fun mp3CancellationDuringOutputIsPropagatedAndAllowsRetry() {
+        val source = createSilentMp3("cancelled.mp3")
+        var checks = 0
+        assertThrows(CancellationException::class.java) {
+            WaveformExtractor.extractAmplitudes(source, 20) { ++checks >= 220 }
+        }
+        assertEquals(220, checks)
+        assertArrayEquals(IntArray(20), WaveformExtractor.extractAmplitudes(source, 20))
+    }
+
+    @Test
+    fun mp3CancellationPredicateStaysOnTheCallingThread() {
+        val source = createSilentMp3("thread-affinity.mp3")
+        val callingThread = Thread.currentThread()
+        val peaks = WaveformExtractor.extractAmplitudes(source, 20) {
+            org.junit.Assert.assertSame(callingThread, Thread.currentThread())
+            false
+        }
+        assertArrayEquals(IntArray(20), peaks)
+    }
+
+    @Test
+    fun mp3FailureDuringOutputReturnsEmptyAndAllowsRetry() {
+        val source = createSilentMp3("failed.mp3")
+        var checks = 0
+        val failed = WaveformExtractor.extractAmplitudes(source, 20) {
+            check(++checks < 220) { "Interrupted MP3 source" }
+            false
+        }
+        assertTrue(failed.isEmpty())
+        assertArrayEquals(IntArray(20), WaveformExtractor.extractAmplitudes(source, 20))
+    }
+
+    /** Zero side information encodes no spectral coefficients: valid silent MP3. */
+    private fun createSilentMp3(
+        name: String,
+        version: Int = 3,
+        channels: Int = 2,
+        frameCount: Int = 120,
+        changeRate: Boolean = false,
+    ): File = generatedFile(name).apply {
+        outputStream().buffered().use { output ->
+            repeat(frameCount) { index ->
+                val currentVersion = if (changeRate && index >= frameCount / 2) 2 else version
+                val bitrateIndex = if (currentVersion == 3) {
+                    if (index % 2 == 0) 9 else 11
+                } else {
+                    if (index % 2 == 0) 8 else 10
+                }
+                val bitrate = if (currentVersion == 3) {
+                    if (index % 2 == 0) 128 else 192
+                } else {
+                    if (index % 2 == 0) 64 else 96
+                }
+                val rate = 44_100 / when (currentVersion) { 3 -> 1; 2 -> 2; else -> 4 }
+                val padding = index and 1
+                val size = (if (currentVersion == 3) 144_000 else 72_000) * bitrate / rate + padding
+                val header = 0xffe00000.toInt() or (currentVersion shl 19) or (1 shl 17) or
+                    (1 shl 16) or (bitrateIndex shl 12) or (padding shl 9) or
+                    (if (channels == 1) 3 shl 6 else 0)
+                val frame = ByteArray(size)
+                ByteBuffer.wrap(frame).putInt(header)
+                output.write(frame)
+            }
+        }
+    }
+
     private fun createPcm16Wav(fileName: String, durationMs: Int): File {
         val sampleRate = 8_000
         val channelCount = 1

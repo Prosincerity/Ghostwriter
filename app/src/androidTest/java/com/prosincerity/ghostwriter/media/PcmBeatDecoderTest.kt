@@ -151,6 +151,14 @@ class PcmBeatDecoderTest {
         assertTrue(readSamples(pcm.file).any { it.toInt() != 0 })
     }
 
+    @Test fun aacInM4a_producesWaveformPeaks() {
+        val source = encodeAac()
+        val peaks = com.prosincerity.ghostwriter.logic.WaveformExtractor.extractAmplitudes(source, 20)
+        assertEquals(20, peaks.size)
+        assertTrue("AAC waveform contained no audio", peaks.any { it > 0 })
+        assertTrue(peaks.all { it in 0..32768 })
+    }
+
     private fun readSamples(file: File): ShortArray {
         val bytes = ByteBuffer.wrap(file.readBytes()).order(ByteOrder.LITTLE_ENDIAN)
         return ShortArray(bytes.remaining() / 2) { bytes.short }

@@ -367,6 +367,72 @@ class WaveformPeaksTest {
         assertArrayEquals(intArrayOf(512), buckets)
     }
 
+    @Test
+    fun appendFrames_batchedPcmRetainsOriginalPacketRoundingAcrossOutputSplits() {
+        for ((rate, packetSize, firstSize) in listOf(
+            Triple(44_100, 1152, 623), Triple(22_050, 576, 47), Triple(11_025, 576, 47),
+        )) {
+            val frames = firstSize + packetSize * 4 + 529
+            val format = PcmFormat(2, rate, PcmEncoding.PCM_16BIT)
+            val buffer = pcm16(*ShortArray(frames * 2) { (it * 997).toShort() })
+            val anchor = -509L
+            val duration = 157_039L
+            val expected = IntArray(1003)
+            var offset = 0
+            for (count in listOf(firstSize, packetSize, packetSize, packetSize, packetSize, 529)) {
+                val readable = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN)
+                    .apply { position(offset * 4); limit((offset + count) * 4) }
+                WaveformPeaks.appendFrames(readable, format,
+                    anchor + offset * 1_000_000L / rate, duration, expected, { false })
+                offset += count
+            }
+            for (outputSize in listOf(1, 7, 255, 256, 257, 1024, 2048, frames)) {
+                val actual = IntArray(expected.size)
+                val first = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN)
+                    .apply { limit(firstSize * 4) }
+                WaveformPeaks.appendFrames(first, format, anchor, duration, actual, { false })
+                offset = firstSize
+                while (offset < frames) {
+                    val end = minOf(frames, offset + outputSize)
+                    val readable = buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN)
+                        .apply { position(offset * 4); limit(end * 4) }
+                    val consumed = WaveformPeaks.appendFrames(readable, format, 123L, duration,
+                        actual, { false }, packetTiming = WaveformPeaks.PacketTiming(
+                            anchor, firstSize, packetSize, offset.toLong()))
+                    assertEquals((end - offset).toLong(), consumed)
+                    assertEquals(end * 4, readable.position())
+                    offset = end
+                }
+                assertArrayEquals("rate=$rate outputFrames=$outputSize", expected, actual)
+            }
+        }
+    }
+
+    @Test
+    fun appendFrames_batchedPcmChecksCancellationWithinTheOriginalPacket() {
+        val buffer = pcm16(*ShortArray(1024) { (it + 1).toShort() })
+        val buckets = IntArray(2)
+        assertThrows(CancellationException::class.java) {
+            WaveformPeaks.appendFrames(buffer, PcmFormat(1, 1000, PcmEncoding.PCM_16BIT),
+                0L, 2_000_000L, buckets, { buffer.position() >= 312 },
+                packetTiming = WaveformPeaks.PacketTiming(0L, 623, 1152, 723L))
+        }
+        // The buffer starts 100 frames into an original packet. Its next
+        // cancellation checkpoint is 156 frames later, at packet frame 256.
+        assertEquals(312, buffer.position())
+        assertArrayEquals(intArrayOf(156, 0), buckets)
+    }
+
+    @Test
+    fun packetTimingRejectsInvalidPacketDimensions() {
+        for ((initial, packet, decoded) in listOf(Triple(0, 1152, 0L),
+            Triple(623, 0, 623L), Triple(623, 1152, 622L))) {
+            assertThrows(IllegalArgumentException::class.java) {
+                WaveformPeaks.PacketTiming(0L, initial, packet, decoded)
+            }
+        }
+    }
+
     private fun pcm16(vararg samples: Short): ByteBuffer =
         ByteBuffer.allocate(samples.size * 2).order(ByteOrder.LITTLE_ENDIAN).apply {
             samples.forEach { putShort(it) }

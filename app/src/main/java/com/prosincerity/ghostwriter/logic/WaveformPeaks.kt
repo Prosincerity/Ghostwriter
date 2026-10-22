@@ -17,6 +17,18 @@ internal object WaveformPeaks {
         }
     }
 
+    /** Original packet clock when the codec combines PCM into larger buffers. */
+    data class PacketTiming(
+        val anchorUs: Long,
+        val initialFrames: Int,
+        val packetFrames: Int,
+        val decodedFrames: Long,
+    ) {
+        init {
+            require(initialFrames > 0 && packetFrames > 0 && decodedFrames >= initialFrames)
+        }
+    }
+
     fun bucketIndexForTimestamp(
         timestampUs: Long,
         durationUs: Long,
@@ -45,6 +57,7 @@ internal object WaveformPeaks {
         buckets: IntArray,
         shouldCancel: () -> Boolean,
         scratch: Scratch = Scratch(),
+        packetTiming: PacketTiming? = null,
     ): Long {
         val channelCount = format.channelCount.coerceAtLeast(1)
         val sampleRate = format.sampleRate.coerceAtLeast(1)
@@ -62,13 +75,30 @@ internal object WaveformPeaks {
         }
         var frameIndex = 0
         while (frameIndex < frameCount) {
-            if (frameIndex != 0 && frameIndex and 255 == 0) checkWaveformCancelled(shouldCancel)
-            val frameTimeUs = timestampUs + frameIndex * 1_000_000L / sampleRate
+            val packetOffset: Int
+            val packetTimestampUs: Long
+            val packetRemaining: Int
+            if (packetTiming == null) {
+                packetOffset = frameIndex
+                packetTimestampUs = timestampUs
+                packetRemaining = frameCount - frameIndex
+            } else {
+                val streamFrame = packetTiming.decodedFrames + frameIndex
+                packetOffset = ((streamFrame - packetTiming.initialFrames) % packetTiming.packetFrames).toInt()
+                packetTimestampUs = packetTiming.anchorUs +
+                    (streamFrame - packetOffset) * 1_000_000L / sampleRate
+                packetRemaining = packetTiming.packetFrames - packetOffset
+            }
+            if (frameIndex != 0 && packetOffset and 255 == 0) checkWaveformCancelled(shouldCancel)
+            val frameTimeUs = packetTimestampUs + packetOffset * 1_000_000L / sampleRate
             val bucketIndex = bucketIndex(frameTimeUs, durationUs, buckets.size)
 
-            // Commit peaks before each cancellation check, including within a bucket.
-            val chunkEnd = minOf(frameCount.toLong(), (frameIndex.toLong() or 255L) + 1L).toInt()
-            val lastTimeUs = timestampUs + (chunkEnd - 1) * 1_000_000L / sampleRate
+            // Bound each run by its packet and cancellation checkpoint as well as
+            // its bucket. This retains integer rounding at original packet edges.
+            val chunkEnd = frameIndex + minOf(frameCount - frameIndex, packetRemaining,
+                256 - (packetOffset and 255))
+            val lastTimeUs = packetTimestampUs +
+                (packetOffset.toLong() + chunkEnd - frameIndex - 1) * 1_000_000L / sampleRate
             var end = chunkEnd
             if (lastTimeUs < frameTimeUs) {
                 // Preserve timestamp wrapping for extreme metadata; do not binary
@@ -79,7 +109,7 @@ internal object WaveformPeaks {
                 var high = chunkEnd - 1
                 while (low < high) {
                     val middle = low + (high - low) / 2
-                    val timeUs = timestampUs + middle * 1_000_000L / sampleRate
+                    val timeUs = packetTimestampUs + (packetOffset.toLong() + middle - frameIndex) * 1_000_000L / sampleRate
                     if (bucketIndex(timeUs, durationUs, buckets.size) == bucketIndex) {
                         low = middle + 1
                     } else {
