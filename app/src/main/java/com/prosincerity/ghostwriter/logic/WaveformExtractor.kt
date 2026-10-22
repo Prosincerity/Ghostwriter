@@ -116,11 +116,12 @@ object WaveformExtractor {
 
             val buckets = IntArray(targetSampleCount)
             val bufferInfo = MediaCodec.BufferInfo()
-            var outputFormat = inputFormat
+            var outputFormat = inputFormat.pcmFormat()
             var inputEnded = false
             var outputEnded = false
             var decodedFrameCount = 0L
             val progressGuard = DecoderProgressGuard()
+            val peakScratch = WaveformPeaks.Scratch()
 
             while (!outputEnded) {
                 checkWaveformCancelled(shouldCancel)
@@ -157,7 +158,7 @@ object WaveformExtractor {
 
                 when (val outputIndex = activeCodec.dequeueOutputBuffer(bufferInfo, DEQUEUE_TIMEOUT_US)) {
                     MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
-                        outputFormat = activeCodec.outputFormat
+                        outputFormat = activeCodec.outputFormat.pcmFormat()
                         madeProgress = true
                     }
                     MediaCodec.INFO_TRY_AGAIN_LATER -> Unit
@@ -169,6 +170,7 @@ object WaveformExtractor {
                                     buffer = outputBuffer,
                                     bufferInfo = bufferInfo,
                                     format = outputFormat,
+                                    scratch = peakScratch,
                                     durationUs = durationUs,
                                     buckets = buckets,
                                     shouldCancel = shouldCancel,
@@ -194,24 +196,13 @@ object WaveformExtractor {
     private fun appendFramePeaksToBuckets(
         buffer: ByteBuffer,
         bufferInfo: MediaCodec.BufferInfo,
-        format: MediaFormat,
+        format: PcmFormat,
+        scratch: WaveformPeaks.Scratch,
         durationUs: Long,
         buckets: IntArray,
         shouldCancel: () -> Boolean,
     ): Long {
         if (bufferInfo.size <= 0) return 0L
-
-        val channelCount = format.integerOrDefault(MediaFormat.KEY_CHANNEL_COUNT, 1)
-        val sampleRate = format.integerOrDefault(MediaFormat.KEY_SAMPLE_RATE, 44_100)
-        val pcmEncoding = format.integerOrDefault(
-            MediaFormat.KEY_PCM_ENCODING,
-            AudioFormat.ENCODING_PCM_16BIT,
-        )
-        val encoding = when (pcmEncoding) {
-            AudioFormat.ENCODING_PCM_8BIT -> PcmEncoding.PCM_8BIT
-            AudioFormat.ENCODING_PCM_FLOAT -> PcmEncoding.PCM_FLOAT
-            else -> PcmEncoding.PCM_16BIT
-        }
 
         val start = bufferInfo.offset.coerceIn(0, buffer.capacity())
         val end = (bufferInfo.offset.toLong() + bufferInfo.size)
@@ -225,12 +216,29 @@ object WaveformExtractor {
 
         return WaveformPeaks.appendFrames(
             buffer = readable,
-            format = PcmFormat(channelCount, sampleRate, encoding),
+            format = format,
+            scratch = scratch,
             timestampUs = bufferInfo.presentationTimeUs,
             durationUs = durationUs,
             buckets = buckets,
             shouldCancel = shouldCancel,
         )
+    }
+
+    private fun MediaFormat.pcmFormat(): PcmFormat {
+        val channelCount = integerOrDefault(MediaFormat.KEY_CHANNEL_COUNT, 1)
+        val sampleRate = integerOrDefault(MediaFormat.KEY_SAMPLE_RATE, 44_100)
+        val pcmEncoding = integerOrDefault(
+            MediaFormat.KEY_PCM_ENCODING,
+            AudioFormat.ENCODING_PCM_16BIT,
+        )
+        val encoding = when (pcmEncoding) {
+            AudioFormat.ENCODING_PCM_8BIT -> PcmEncoding.PCM_8BIT
+            AudioFormat.ENCODING_PCM_FLOAT -> PcmEncoding.PCM_FLOAT
+            else -> PcmEncoding.PCM_16BIT
+        }
+
+        return PcmFormat(channelCount, sampleRate, encoding)
     }
 
     private fun MediaExtractor.findAudioTrack(): Int? =

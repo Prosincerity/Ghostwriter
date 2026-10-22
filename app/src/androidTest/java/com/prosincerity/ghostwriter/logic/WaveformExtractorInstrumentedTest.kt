@@ -92,6 +92,20 @@ class WaveformExtractorInstrumentedTest {
     }
 
     @Test
+    fun pcmWav_spanningDecoderBuffersIncludesTheFinalPeak() {
+        val wavFile = createPcm16Wav("multiple-buffers.wav", durationMs = 8_000)
+        java.io.RandomAccessFile(wavFile, "rw").use { output ->
+            output.seek(output.length() - 2)
+            output.write(0xff)
+            output.write(0x7f)
+        }
+
+        val expected = IntArray(32) { 12_000 }.apply { this[lastIndex] = 32_767 }
+
+        assertArrayEquals(expected, WaveformExtractor.extractAmplitudes(wavFile, 32))
+    }
+
+    @Test
     fun corruptAudio_returnsNoDurationOrWaveform() {
         val corruptFile = generatedFile("corrupt-waveform.wav").apply {
             writeText("not a WAV file")

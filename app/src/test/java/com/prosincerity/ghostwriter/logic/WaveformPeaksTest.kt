@@ -126,6 +126,37 @@ class WaveformPeaksTest {
     }
 
     @Test
+    fun appendFrames_reusedScratchReadsOnlyTheCurrentBuffer() {
+        val scratch = WaveformPeaks.Scratch()
+        val buckets = IntArray(2)
+        val format = PcmFormat(1, 1000, PcmEncoding.PCM_16BIT)
+
+        WaveformPeaks.appendFrames(pcm16(500, 200), format, 0L, 4000L, buckets, { false }, scratch)
+        WaveformPeaks.appendFrames(pcm16(7), format, 2000L, 4000L, buckets, { false }, scratch)
+        assertArrayEquals(intArrayOf(500, 7), buckets)
+
+        WaveformPeaks.appendFrames(pcm16(8, 9, 10), format, 1000L, 4000L, buckets, { false }, scratch)
+        assertArrayEquals(intArrayOf(500, 10), buckets)
+    }
+
+    @Test
+    fun appendFrames_fullScalePeaksStillConsumeFramesAndCheckCancellation() {
+        val buffer = pcm16(*ShortArray(768) { Short.MIN_VALUE })
+        val buckets = IntArray(2)
+        var checks = 0
+
+        assertThrows(CancellationException::class.java) {
+            WaveformPeaks.appendFrames(
+                buffer, PcmFormat(1, 1000, PcmEncoding.PCM_16BIT),
+                0L, 768_000L, buckets, { ++checks == 3 },
+            )
+        }
+
+        assertEquals(512 * 2, buffer.position())
+        assertArrayEquals(intArrayOf(32_768, 32_768), buckets)
+    }
+
+    @Test
     fun appendFrames_positionsSamplesUsingTheBufferTimestampAndSampleRate() {
         val buckets = IntArray(4)
 
@@ -252,6 +283,88 @@ class WaveformPeaksTest {
         }
 
         assertArrayEquals(intArrayOf(7, 0), buckets)
+    }
+
+    @Test
+    fun appendFrames_matchesScalarPeaksAcrossBucketBoundariesAndFormats() {
+        for (encoding in PcmEncoding.entries) {
+            for (channels in listOf(1, 2, 3, 6)) {
+                val bytes = ByteBuffer.allocate(601 * channels * encoding.bytesPerSample + 7)
+                    .order(ByteOrder.LITTLE_ENDIAN)
+                bytes.position(3)
+                repeat(601 * channels) { index ->
+                    when (encoding) {
+                        PcmEncoding.PCM_8BIT -> bytes.put((index * 73).toByte())
+                        PcmEncoding.PCM_16BIT -> bytes.putShort((index * 997).toShort())
+                        PcmEncoding.PCM_FLOAT -> bytes.putFloat(
+                            when (index % 31) {
+                                0 -> Float.NaN
+                                1 -> Float.POSITIVE_INFINITY
+                                2 -> Float.NEGATIVE_INFINITY
+                                else -> ((index % 101) - 50) / 32f
+                            },
+                        )
+                    }
+                }
+                bytes.limit(bytes.position() + 1) // Incomplete trailing frame for 16-bit/float.
+                val readable = bytes.asReadOnlyBuffer().order(ByteOrder.LITTLE_ENDIAN)
+                for (sampleRate in listOf(1, 8_000, 44_100, 48_000)) {
+                    for (duration in listOf(997L, 37_013L, Long.MAX_VALUE)) {
+                        for (timestamp in listOf(-10_001L, 0L, 509L, Long.MAX_VALUE - 300L)) {
+                            for (bucketCount in listOf(1, 17, 1_003)) {
+                                val input = readable.duplicate().order(ByteOrder.LITTLE_ENDIAN)
+                                    .apply { position(3) }
+                                val reference = input.duplicate().order(ByteOrder.LITTLE_ENDIAN)
+                                val format = PcmFormat(channels, sampleRate, encoding)
+                                val expected = IntArray(bucketCount) { it % 13 }
+                                val actual = expected.copyOf()
+                                var frames = 0L
+                                val frameBytes = channels * encoding.bytesPerSample
+                                while (reference.remaining() >= frameBytes) {
+                                    var peak = 0
+                                    repeat(channels) {
+                                        peak = maxOf(peak, WaveformPeaks.pcmAmplitude(reference, encoding))
+                                    }
+                                    val bucket = WaveformPeaks.bucketIndexForTimestamp(
+                                        timestamp + frames * 1_000_000L / sampleRate,
+                                        duration, bucketCount,
+                                    )!!
+                                    expected[bucket] = maxOf(expected[bucket], peak)
+                                    frames++
+                                }
+                                val actualFrames = WaveformPeaks.appendFrames(
+                                    input, format, timestamp, duration, actual, { false },
+                                )
+                                assertEquals(frames, actualFrames)
+                                assertEquals(reference.position(), input.position())
+                                assertArrayEquals(
+                                    "$encoding channels=$channels rate=$sampleRate duration=$duration " +
+                                        "timestamp=$timestamp buckets=$bucketCount", expected, actual,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun appendFrames_cancellationPreservesPeaksWithinTheCurrentBucket() {
+        val buffer = pcm16(*ShortArray(768) { (it + 1).toShort() })
+        val buckets = IntArray(1)
+        var checks = 0
+
+        assertThrows(CancellationException::class.java) {
+            WaveformPeaks.appendFrames(
+                buffer, PcmFormat(1, 44_100, PcmEncoding.PCM_16BIT),
+                0L, 1_000_000L, buckets, { ++checks == 3 },
+            )
+        }
+
+        assertEquals(3, checks)
+        assertEquals(512 * 2, buffer.position())
+        assertArrayEquals(intArrayOf(512), buckets)
     }
 
     private fun pcm16(vararg samples: Short): ByteBuffer =
