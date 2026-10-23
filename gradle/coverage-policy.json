@@ -23,8 +23,7 @@
     "com/prosincerity/ghostwriter/dictionary/domain/AssonanceFormFilter$Entry.class",
     "com/prosincerity/ghostwriter/dictionary/domain/AssonanceFormFilter$Pronounced.class",
     "com/prosincerity/ghostwriter/player/audio/PcmRingBuffer$Loop.class",
-    "com/prosincerity/ghostwriter/player/audio/PcmRingBuffer$Region.class",
-    "com/prosincerity/ghostwriter/editor/ui/PendingBeatPreparation.class"
+    "com/prosincerity/ghostwriter/player/audio/PcmRingBuffer$Region.class"
   ],
   "sourceExclusions": [
     "com/prosincerity/ghostwriter/projects/ui/HomeScreenPreviews.kt"

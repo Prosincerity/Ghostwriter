@@ -251,7 +251,7 @@ object WaveformExtractor {
         data class Error(val exception: MediaCodec.CodecException) : DecoderEvent
     }
 
-    @android.annotation.TargetApi(35)
+    @androidx.annotation.RequiresApi(35)
     private fun decodeBatched(
         extractor: MediaExtractor,
         codec: MediaCodec,

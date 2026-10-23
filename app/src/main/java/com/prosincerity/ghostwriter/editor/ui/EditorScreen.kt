@@ -76,12 +76,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * The Phase 1 notepad, now with a title bar (back + settings) and a
- * background autosave loop.
- *
- * Text is kept in rememberSaveable so it survives recomposition/rotation
- * without a disk round-trip; the disk copy is only touched on the
- * autosave tick and when leaving the screen.
+ * Lyric editing, project information, and beat preparation for one project.
+ * In-memory lyrics are saved manually, on the autosave tick, and on editor exit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

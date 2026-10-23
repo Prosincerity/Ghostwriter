@@ -41,6 +41,8 @@ object Settings {
     fun getPersistentLyricsFolder(context: Context): String? =
         prefs(context).getString(KEY_PERSISTENT_LYRICS_FOLDER, null)
 
+    // The KTX edit helper discards commit's result; connecting a folder must check it.
+    @android.annotation.SuppressLint("UseKtx")
     fun setPersistentLyricsFolder(context: Context, uri: String?): Boolean =
         prefs(context).edit().putString(KEY_PERSISTENT_LYRICS_FOLDER, uri).commit()
 

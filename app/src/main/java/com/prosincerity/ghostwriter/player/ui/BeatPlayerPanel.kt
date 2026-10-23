@@ -77,8 +77,8 @@ internal fun BeatPlayerPanel(
     waveformPreparationCancelled: Boolean,
     waveformPreparationFailed: Boolean,
     onRetryWaveformPreparation: () -> Unit,
-    isAwaitingWaveformApproval: Boolean = false,
     modifier: Modifier = Modifier,
+    isAwaitingWaveformApproval: Boolean = false,
 ) {
     var isMinimized by rememberSaveable { mutableStateOf(false) }
     var isPlaying by remember(beatPlayer) { mutableStateOf(false) }

@@ -112,7 +112,7 @@ private fun GhostwriterApp(
             val folder = Settings.getPersistentLyricsFolder(context)
             if (folder != null) {
                 try {
-                    withContext(Dispatchers.IO) { PersistentLyricsStorage.reconcile(context, Uri.parse(folder)) }
+                    withContext(Dispatchers.IO) { PersistentLyricsStorage.reconcile(context, folder.toUri()) }
                     storageReady = true
                 } catch (failure: Exception) {
                     if (failure is kotlinx.coroutines.CancellationException) throw failure
