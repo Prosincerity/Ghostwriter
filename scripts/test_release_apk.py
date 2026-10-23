@@ -48,7 +48,7 @@ def elf_fixture(alignment=16_384, abi="arm64-v8a"):
 class ReleaseApkTest(unittest.TestCase):
     def setUp(self):
         self.old = release.ApkInfo(release.APPLICATION_ID, 5, "1.3.0-beta.1", 24, 37,
-                                   ("arm64-v8a", "x86_64"), True)
+                                   ("arm64-v8a", "x86_64"), False)
         self.new = replace(self.old, version_code=6, version_name="1.3.0-beta.2",
                            abis=tuple(sorted(release.REQUIRED_ABIS)), debuggable=False)
 
@@ -74,7 +74,7 @@ application-debuggable
         for text in ("", f"Signer #1 certificate SHA-256 digest: {digest}\nSigner #2 certificate SHA-256 digest: {'b'*64}"):
             with self.assertRaises(release.ReleaseError): release.parse_certificate(text)
 
-    def test_optimized_release_can_update_a_debug_signed_tester(self):
+    def test_optimized_release_can_update_the_previous_release(self):
         release.check_update(self.new, "a" * 64, self.old, "a" * 64)
 
     def test_update_rejects_wrong_key_package_version_or_reduced_device_support(self):

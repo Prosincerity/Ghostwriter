@@ -1,6 +1,0 @@
-{
-  "keystore": "/absolute/path/to/ghostwriter-signing.p12",
-  "keyAlias": "ghostwriter",
-  "previousApk": "/absolute/path/to/the-last-shared.apk",
-  "outputDir": "build/releases"
-}

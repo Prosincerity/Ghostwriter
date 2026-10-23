@@ -2,7 +2,6 @@
 """Build, verify, sign, and package a universal APK with its matching source."""
 import argparse
 from dataclasses import asdict
-import getpass
 import hashlib
 import io
 import json
@@ -18,6 +17,8 @@ import zipfile
 from release_apk import (APPLICATION_ID, ReleaseError, check_apk_payload, check_channel,
                          check_update, parse_badging, parse_certificate, sha256_file)
 from check_release_native_tests import verify_native_report
+from release_signing import (DEFAULT_CONFIG, KEY_ALIAS, read_config, password_environment,
+                             check_certificate, verification_environment)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,18 +54,6 @@ def sdk_from_properties(root):
     match = re.search(r"^sdk\.dir\s*=\s*(.+)$", path.read_text(encoding="utf-8"), re.M)
     if not match: return None
     return Path(match[1].replace(r"\:", ":").replace(r"\\", "\\").replace(r"\ ", " "))
-
-
-def read_config(path):
-    if path is None: return {}
-    try: config = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as error: raise ReleaseError("Cannot read the local release configuration") from error
-    allowed = {"keystore", "keyAlias", "previousApk", "sdk", "outputDir"}
-    if not isinstance(config, dict) or set(config) - allowed:
-        raise ReleaseError("Release config accepts only paths and a key alias; never put passwords in it")
-    if any(not isinstance(value, str) for value in config.values()):
-        raise ReleaseError("Release configuration values must be strings")
-    return config
 
 
 def check_source_member(name):
@@ -117,52 +106,51 @@ def clean_revision(root):
     return run(["git", "rev-parse", "HEAD"], cwd=root).strip()
 
 
-def password_environment():
-    env = os.environ.copy()
-    if not env.get("GHOSTWRITER_STORE_PASSWORD"):
-        if not sys.stdin.isatty():
-            raise ReleaseError("Run in a terminal for the password prompt, or set GHOSTWRITER_STORE_PASSWORD")
-        env["GHOSTWRITER_STORE_PASSWORD"] = getpass.getpass("Keystore password: ")
-    if not env.get("GHOSTWRITER_KEY_PASSWORD"):
-        if sys.stdin.isatty():
-            key = getpass.getpass("Key password (Enter to reuse the keystore password): ")
-            env["GHOSTWRITER_KEY_PASSWORD"] = key or env["GHOSTWRITER_STORE_PASSWORD"]
-        else:
-            env["GHOSTWRITER_KEY_PASSWORD"] = env["GHOSTWRITER_STORE_PASSWORD"]
-    return env
+def previous_release(output, certificate):
+    """Resolve the last release from public history, refusing missing or altered artifacts."""
+    output = Path(output)
+    history = output / "channel.json"
+    if not history.exists():
+        if any(output.glob("Ghostwriter-*/RELEASE.json")):
+            raise ReleaseError("Restore channel.json before building; existing releases must not lose their update history")
+        return None, None
+    try:
+        channel = json.loads(history.read_text(encoding="utf-8"))
+        if channel["package_name"] != APPLICATION_ID or channel["certificate_sha256"] != certificate:
+            raise ReleaseError("Release history does not match the registered release key")
+        stem = release_stem(channel["version_name"], int(channel["version_code"]))
+        apk = output / stem / (stem + ".apk")
+        if not apk.is_file() or sha256_file(apk) != channel["apk_sha256"]:
+            raise ReleaseError("Restore the previous release APK: it is missing or its checksum changed")
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        raise ReleaseError("Cannot read release history; restore channel.json and the previous release") from error
+    return apk, channel
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, help="Local JSON containing paths and alias, never passwords")
-    parser.add_argument("--keystore", type=Path)
-    parser.add_argument("--key-alias")
-    parser.add_argument("--previous-apk", type=Path, help="Last APK shared with this group; checked for update compatibility")
-    parser.add_argument("--new-install", action="store_true", help="Start a new signing channel with no older installs")
-    parser.add_argument("--sdk", type=Path)
-    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG,
+                        help="Registered release configuration (default: release.local.json)")
     parser.add_argument("--online", action="store_true", help="Allow Gradle to cache missing dependencies; otherwise build offline")
-    parser.add_argument("--device", help="Also run the isolated optimized JNI checks on this ADB serial")
+    device = parser.add_mutually_exclusive_group()
+    device.add_argument("--device", help="Also run the isolated optimized JNI checks on this ADB serial")
+    device.add_argument("--verify-native", metavar="SERIAL", help="Only verify optimized JNI; do not create a release")
     args = parser.parse_args(argv)
     config = read_config(args.config)
-    base = args.config.resolve().parent if args.config else Path.cwd()
-    def path_value(cli, name, default=None):
-        raw = cli or config.get(name) or default
+    base = args.config.resolve().parent
+    def path_value(name, default=None):
+        raw = config.get(name) or default
         if raw is None: return None
         path = Path(raw).expanduser()
         return (base / path).resolve() if not path.is_absolute() else path.resolve()
-    keystore = path_value(args.keystore, "keystore")
-    alias = args.key_alias or config.get("keyAlias")
-    previous = path_value(args.previous_apk, "previousApk")
-    output = path_value(args.output_dir, "outputDir", ROOT / "build/releases")
-    sdk = path_value(args.sdk, "sdk", os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
+    keystore = path_value("keystore")
+    alias = KEY_ALIAS
+    output = path_value("outputDir", ROOT / "dist/releases")
+    sdk = path_value("sdk", os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
                      or sdk_from_properties(ROOT))
-    if not keystore or not keystore.is_file() or not alias:
-        raise ReleaseError("Supply an existing --keystore and --key-alias, or set them in --config")
-    if args.new_install == bool(previous):
-        raise ReleaseError("Choose --previous-apk for updates OR --new-install for a new signing channel")
-    if previous and not previous.is_file(): raise ReleaseError("The previous shared APK is missing")
-    if not sdk: raise ReleaseError("Configure sdk.dir in local.properties, ANDROID_HOME, or --sdk")
+    if not keystore.is_file():
+        raise ReleaseError("The registered release key is missing; restore it from your private backup")
+    if not sdk: raise ReleaseError("Configure sdk.dir in local.properties or ANDROID_HOME")
     tools = find_build_tools(sdk)
     keytool = shutil.which("keytool")
     java = shutil.which("java")
@@ -184,22 +172,27 @@ def main(argv=None):
                                      "-storepass:env", "GHOSTWRITER_STORE_PASSWORD"], env=env, binary=True)).hexdigest()
     def inspect(apk): return parse_badging(run([tools["aapt"], "dump", "badging", apk]))
     def signer(apk): return parse_certificate(run([*signer_command, "verify", "--print-certs", apk]))
+    check_certificate(certificate, config)
+    previous, channel = previous_release(output, certificate)
     previous_info = inspect(previous) if previous else None
     previous_certificate = signer(previous) if previous else None
     if previous and (previous_info.package_name != APPLICATION_ID or previous_certificate != certificate):
-        raise ReleaseError("Selected key cannot update the previous APK; use its original keystore")
+        raise ReleaseError("The previous APK does not match the registered release identity")
     print("Signing certificate SHA-256:", certificate, flush=True)
-    print("Running repository checks and the optimized release build…", flush=True)
+    print("Running release checks…", flush=True)
     run([sys.executable, "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py"], stream=True)
     native_tests = None
-    if args.device:
-        device_env = os.environ.copy()
-        device_env["ANDROID_SERIAL"] = args.device
-        run([*wrapper, *([] if args.online else ["--offline"]), "-Pghostwriter.releaseCheck=true",
+    serial = args.device or args.verify_native
+    if serial:
+        device_env = verification_environment(env, keystore)
+        device_env["ANDROID_SERIAL"] = serial
+        run([*wrapper, *([] if args.online else ["--offline"]), "--no-configuration-cache", "-Pghostwriter.releaseCheck=true",
              ":app:connectedReleaseCheckAndroidTest", "--console=plain", "-Dorg.gradle.logging.level=lifecycle"],
             env=device_env, stream=True)
         native_tests = verify_native_report()
         print(f"Optimized JNI check: {native_tests} tests passed", flush=True)
+    if args.verify_native:
+        return 0
     run([*wrapper, *([] if args.online else ["--offline"]), ":app:testDebugUnitTest", ":app:lintRelease",
          ":app:assembleRelease", "--console=plain", "-Dorg.gradle.logging.level=lifecycle"], stream=True)
     if clean_revision(ROOT) != revision or clean_revision(native) != native_revision:
@@ -212,8 +205,6 @@ def main(argv=None):
     check_update(info, certificate, previous_info, previous_certificate)
     check_apk_payload(unsigned)
     channel_file = output / "channel.json"
-    try: channel = json.loads(channel_file.read_text(encoding="utf-8")) if channel_file.exists() else None
-    except (OSError, ValueError) as error: raise ReleaseError("Cannot read release channel history") from error
     check_channel(info, certificate, channel)
     stem = release_stem(info.version_name, info.version_code)
     destination = output / stem
@@ -274,7 +265,7 @@ Downloaded dictionaries are optional, separate downloads; installed data works o
     history.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     history.replace(channel_file)
     print("Finished:", destination / (stem + ".zip"))
-    print("Keep the original keystore, password, channel.json, and mapping.txt for future updates/crash reports.")
+    print("Keep the release key, password, release.local.json, channel.json, and mapping.txt for future releases.")
     return 0
 
 

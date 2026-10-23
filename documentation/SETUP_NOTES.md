@@ -41,7 +41,7 @@ After caching dependencies and toolchain components:
 ./gradlew --offline :app:assembleDebug
 ```
 
-The installable, debug-signed APK is `app/build/outputs/apk/debug/app-debug.apk`.
+The development APK is `app/build/outputs/apk/debug/app-debug.apk`.
 Debug builds include coverage instrumentation and UI tooling.
 Use Android Studio's `app` run configuration on a device matching the minimum
 SDK and an ABI declared in the app configuration.

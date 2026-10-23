@@ -111,12 +111,13 @@ The suite uses `AndroidJUnitRunner`, Espresso, and Compose UI testing.
 On the selected device, exercise the JNI entry points after R8 optimization:
 
 ```sh
-./gradlew --offline -Pghostwriter.releaseCheck=true :app:connectedReleaseCheckAndroidTest
-python3 scripts/check_release_native_tests.py
+python3 scripts/build_release.py --verify-native DEVICE_SERIAL
 ```
 
-The `releaseCheck` build inherits release optimization, uses the local debug
-signing key, and installs as `com.prosincerity.ghostwriter.releasecheck`. It stays
+First create the registered release key as described in [Releasing](RELEASING.md).
+The command prompts once for its password and verifies its certificate. The
+`releaseCheck` build inherits release optimization, uses that same release key,
+and installs as `com.prosincerity.ghostwriter.releasecheck`. It stays
 separate from the user's installation. Its platform instrumentation runner checks
 four known pronunciations without AndroidX test-runtime dependencies. The report
 checker requires all four tests, rejecting crashes or zero-test discovery.
@@ -165,4 +166,4 @@ python3 scripts/coverage_policy.py \
 The Gradle gate checks module minimums; the Python invocation also checks the
 merge diff. Require both coverage success and Gradle's `BUILD SUCCESSFUL`.
 Saved reports are evidence only for the code and execution data that produced them.
-Fixture suites do not replace the [release runtime checks](RELEASING.md#runtime-checks).
+Fixture suites do not replace the [release runtime checks](RELEASING.md#device-checks).

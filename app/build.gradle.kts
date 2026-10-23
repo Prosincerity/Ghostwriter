@@ -38,6 +38,20 @@ android {
         }
     }
 
+    signingConfigs {
+        create("releaseVerification") {
+            if (providers.gradleProperty("ghostwriter.releaseCheck").orNull == "true") {
+                val releaseStore = providers.environmentVariable("GHOSTWRITER_RELEASE_KEYSTORE").orNull
+                    ?: throw GradleException("Run python3 scripts/build_release.py --device DEVICE_SERIAL for signed release verification")
+                storeFile = file(releaseStore)
+                storeType = "PKCS12"
+                keyAlias = providers.environmentVariable("GHOSTWRITER_RELEASE_KEY_ALIAS").get()
+                storePassword = providers.environmentVariable("GHOSTWRITER_STORE_PASSWORD").get()
+                keyPassword = storePassword
+            }
+        }
+    }
+
     buildTypes {
         debug {
             enableUnitTestCoverage = true
@@ -51,7 +65,7 @@ android {
         create("releaseCheck") {
             initWith(getByName("release"))
             applicationIdSuffix = ".releasecheck"
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("releaseVerification")
             manifestPlaceholders["testProviderAuthority"] = "com.prosincerity.ghostwriter.releasecheck.test"
             matchingFallbacks += listOf("release")
         }

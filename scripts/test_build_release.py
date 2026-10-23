@@ -63,7 +63,7 @@ class BuildReleaseTest(unittest.TestCase):
                 (root / name).write_text(name)
             (root / "mapping.txt").write_text("Keep for crash reports")
             members = ["app.apk", "source.zip", "INSTALL.txt", "LICENSE", "THIRD_PARTY_LICENSES.md", "RELEASE.json"]
-            output = build.bundle_zip(root, "friends.zip", members)
+            output = build.bundle_zip(root, "release.zip", members)
             with zipfile.ZipFile(output) as archive:
                 self.assertEqual(set(archive.namelist()), set(members) | {"SHA256SUMS"})
                 self.assertNotIn("mapping.txt", archive.namelist())
@@ -81,6 +81,37 @@ class BuildReleaseTest(unittest.TestCase):
             path = Path(folder) / "release.local.json"
             path.write_text(json.dumps({"storePassword": "Never store passwords here"}))
             with self.assertRaises(ReleaseError): build.read_config(path)
+
+    def test_previous_release_is_selected_automatically_and_checked_against_its_hash(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder)
+            self.assertEqual(build.previous_release(output, "a" * 64), (None, None))
+            stem = build.release_stem("1.3.0", 7)
+            directory = output / stem
+            directory.mkdir()
+            apk = directory / (stem + ".apk")
+            apk.write_bytes(b"previous signed APK")
+            metadata = {"package_name": "com.prosincerity.ghostwriter", "version_name": "1.3.0",
+                        "version_code": 7, "certificate_sha256": "a" * 64, "apk_sha256": build.sha256_file(apk)}
+            history = output / "channel.json"
+            history.write_text(json.dumps(metadata))
+            self.assertEqual(build.previous_release(output, "a" * 64), (apk, metadata))
+            with self.assertRaises(ReleaseError): build.previous_release(output, "b" * 64)
+            apk.write_bytes(b"replaced APK")
+            with self.assertRaises(ReleaseError): build.previous_release(output, "a" * 64)
+            apk.unlink()
+            with self.assertRaises(ReleaseError): build.previous_release(output, "a" * 64)
+
+    def test_missing_or_malformed_channel_history_cannot_reset_an_existing_release(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder)
+            (output / "Ghostwriter-1.0-vc1").mkdir()
+            (output / "Ghostwriter-1.0-vc1/RELEASE.json").write_text("{}")
+            with self.assertRaises(ReleaseError): build.previous_release(output, "a" * 64)
+            for text in ("{broken", "[]", '{"certificate_sha256": "wrong"}'):
+                (output / "channel.json").write_text(text)
+                with self.subTest(text=text), self.assertRaises(ReleaseError):
+                    build.previous_release(output, "a" * 64)
 
 
 if __name__ == "__main__": unittest.main()

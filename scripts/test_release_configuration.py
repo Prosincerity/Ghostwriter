@@ -11,6 +11,13 @@ class ReleaseConfigurationTest(unittest.TestCase):
         build = (ROOT / "app/build.gradle.kts").read_text()
         self.assertRegex(build, r"release\s*\{\s*optimization\s*\{\s*enable\s*=\s*true")
 
+    def test_native_verification_uses_the_dedicated_release_signing_configuration(self):
+        build = (ROOT / "app/build.gradle.kts").read_text()
+        self.assertNotIn('signingConfigs.getByName("debug")', build)
+        self.assertIn('signingConfigs.getByName("releaseVerification")', build)
+        self.assertIn('GHOSTWRITER_RELEASE_KEYSTORE', build)
+        self.assertIn('GHOSTWRITER_STORE_PASSWORD', build)
+
     def test_keep_rule_matches_the_actual_jni_class_and_methods(self):
         kotlin = (ROOT / "app/src/main/java/com/prosincerity/ghostwriter/dictionary/data/EspeakIpa.kt").read_text()
         package = re.search(r"^package (\S+)", kotlin)[1]
