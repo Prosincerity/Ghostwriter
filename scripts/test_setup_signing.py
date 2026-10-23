@@ -1,5 +1,7 @@
 from pathlib import Path
+from contextlib import redirect_stdout
 import hashlib
+import io
 import json
 import tempfile
 import unittest
@@ -26,14 +28,17 @@ class SigningSetupTest(unittest.TestCase):
                     Path(command[command.index("-keystore") + 1]).write_bytes(b"encrypted fixture")
                     self.assertEqual(env["GHOSTWRITER_NEW_PASSWORD"], password)
                 return b"public certificate DER"
+            output = io.StringIO()
             with patch("setup_signing.getpass.getpass", side_effect=[password, password]), \
                     patch("setup_signing.sys.stdin.isatty", return_value=True), \
-                    patch("setup_signing.invoke", side_effect=invoke):
+                    patch("setup_signing.invoke", side_effect=invoke), redirect_stdout(output):
                 self.assertEqual(signing.main(["--keystore", str(destination), "--config", str(config)]), 0)
             registered = json.loads(config.read_text())
             self.assertEqual(registered["keystore"], str(destination))
             self.assertEqual(registered["keyAlias"], "ghostwriter-release")
             self.assertEqual(registered["certificateSha256"], hashlib.sha256(b"public certificate DER").hexdigest())
+            self.assertIn(f"Encrypted signing store: {destination}", output.getvalue())
+            self.assertIn(f"Certificate SHA-256: {registered['certificateSha256']}", output.getvalue())
             self.assertNotIn(password, config.read_text())
             self.assertEqual(destination.stat().st_mode & 0o077, 0)
 
