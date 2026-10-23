@@ -14,13 +14,14 @@ import org.json.JSONObject
 
 /** App-local project working copies, addressed by UUID rather than display title. */
 object ProjectStorage {
+    internal const val PROJECT_DIRECTORY = "ghostwriter"
 
     private const val MAX_PROJECT_TITLE_UTF8_BYTES = 251
     // Checked under the storage monitor before committing a decoded waveform.
     private var beatMutationRevision = 0L
 
     fun rootDir(context: Context): File =
-        File(context.getExternalFilesDir(null), "ghostwriter").apply { mkdirs() }
+        File(context.getExternalFilesDir(null), PROJECT_DIRECTORY).apply { mkdirs() }
 
     /** UUIDs are path components; legacy title callers resolve through metadata. */
     @Synchronized

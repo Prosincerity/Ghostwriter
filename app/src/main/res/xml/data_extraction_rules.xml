@@ -2,8 +2,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="dictionaries/" />
+        <exclude domain="file" path="espeak-ng/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="dictionaries/" />
+        <exclude domain="file" path="espeak-ng/" />
     </device-transfer>
 </data-extraction-rules>

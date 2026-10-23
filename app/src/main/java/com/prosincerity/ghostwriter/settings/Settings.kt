@@ -16,7 +16,7 @@ import androidx.core.content.edit
  * the job with zero new dependencies.
  */
 object Settings {
-    private const val PREFS_NAME = "ghostwriter_settings"
+    internal const val PREFS_NAME = "ghostwriter_settings"
     private const val KEY_PERSISTENT_LYRICS_FOLDER = "persistent_lyrics_folder"
     private const val KEY_AUTOSAVE_INTERVAL_SECONDS = "autosave_interval_seconds"
     private const val KEY_AUTOSAVE_COUNT = "autosave_count"

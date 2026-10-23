@@ -101,6 +101,16 @@ A failed shared save retains the local working copy and reports the failure.
 Reconnect successfully before uninstalling to preserve that draft outside app
 storage. Folder permission must be granted again after reinstall.
 
+### Android backup
+
+`ProjectBackupAgent` selects settings, local lyric snapshots (including legacy
+names), project metadata, archive checkpoints, and recovery journals for Android
+full backup and device transfer. Imported beats and regenerable dictionaries,
+engine data, waveforms, and staging files are excluded. Large audio imports
+therefore do not consume the cloud backup quota for writing data and settings.
+Android backups still depend on the device's backup configuration and quota;
+the connected shared folder remains the explicit uninstall recovery mechanism.
+
 ## Playback and waveforms
 
 `BeatPlaybackService` owns `BeatPlayer` and a framework `MediaSession`.
