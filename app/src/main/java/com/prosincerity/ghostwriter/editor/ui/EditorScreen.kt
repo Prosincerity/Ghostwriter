@@ -48,6 +48,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.editor.data.EditorLyricsSession
+import com.prosincerity.ghostwriter.editor.data.EditorSaveQueue
 import com.prosincerity.ghostwriter.editor.data.importProjectBeat
 import com.prosincerity.ghostwriter.projects.data.ProjectMetadata
 import com.prosincerity.ghostwriter.projects.data.ProjectStorage
@@ -98,7 +99,7 @@ fun EditorScreen(
     val projectDir = remember(projectId) { ProjectStorage.projectDir(context, projectId) }
     var loadedLyrics by rememberSaveable(projectId) {
         mutableStateOf(try {
-            ProjectStorage.loadLatest(projectDir)
+            EditorSaveQueue.process.pendingLyrics(projectDir) ?: ProjectStorage.loadLatest(projectDir)
         } catch (_: IOException) {
             null
         })
@@ -165,16 +166,20 @@ fun EditorScreen(
         else android.os.Handler(android.os.Looper.getMainLooper()).post { report() }
     }
 
+    fun queueLyrics(content: String, save: () -> Boolean) =
+        EditorSaveQueue.process.enqueue(projectDir, content) {
+            val saved = runCatching(save).getOrDefault(false)
+            if (!saved) reportStorageFailure()
+            saved
+        }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, lyricsSession) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
                 val content = latestLyrics()
                 val backups = latestKeepCount.value
-                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                    val saved = withContext(Dispatchers.IO) { lyricsSession.autosave(content, backups) }
-                    if (!saved) reportStorageFailure()
-                }
+                queueLyrics(content) { lyricsSession.autosave(content, backups) }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -451,23 +456,19 @@ fun EditorScreen(
             keepCount = AppSettings.getAutosaveCount(context)
             val contentToSave = latestLyrics()
             val backupsToKeep = keepCount
-            val saved = withContext(Dispatchers.IO) {
+            queueLyrics(contentToSave) {
                 lyricsSession.autosave(contentToSave, backupsToKeep)
-            }
-            if (!saved) reportStorageFailure()
+            }.await()
         }
     }
 
-    // Cancel decoding before the final save when leaving the screen. The
-    // updated-state holders avoid capturing the values from the first
-    // composition in this long-lived effect.
+    // Capture the final draft before disposal; the process queue owns its write.
     DisposableEffect(lyricsSession) {
         onDispose {
             latestWaveformCancellation.value?.set(true)
-            if (!lyricsSession.finish(
-                latestLyrics(),
-                latestKeepCount.value,
-            )) reportStorageFailure()
+            val content = latestLyrics()
+            val backups = latestKeepCount.value
+            queueLyrics(content) { lyricsSession.finish(content, backups) }
         }
     }
 
@@ -518,14 +519,14 @@ fun EditorScreen(
                         Icon(Icons.Filled.Info, contentDescription = "Project Info")
                     }
                     IconButton(shape = GhostButtonShape, onClick = {
-                        val contentToSave = lyrics
+                        val contentToSave = latestLyrics()
                         val backupsToKeep = keepCount
+                        val saving = queueLyrics(contentToSave) {
+                            lyricsSession.saveManual(contentToSave, backupsToKeep)
+                        }
                         coroutineScope.launch {
-                            val saved = withContext(Dispatchers.IO) {
-                                lyricsSession.saveManual(contentToSave, backupsToKeep)
-                            }
+                            val saved = saving.await()
                             withContext(Dispatchers.Main.immediate) {
-                                if (!saved) reportStorageFailure()
                                 Toast.makeText(
                                     context,
                                     if (saved) "Saved lyrics"

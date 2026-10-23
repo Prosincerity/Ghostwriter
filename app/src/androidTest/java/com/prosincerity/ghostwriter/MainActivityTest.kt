@@ -75,6 +75,7 @@ class MainActivityTest {
     @After fun restoreLyricFolder() {
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.activityRule.scenario.close()
+        kotlinx.coroutines.runBlocking { com.prosincerity.ghostwriter.editor.data.EditorSaveQueue.process.awaitIdle() }
         Settings.setPersistentLyricsFolder(context, originalFolder)
         context.contentResolver.call(Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}"), "clear", archiveScope, null)
     }
@@ -156,7 +157,7 @@ class MainActivityTest {
             })
             composeRule.onNodeWithContentDescription("Back").performClick()
         } finally {
-            ProjectStorage.deleteProject(composeRule.activity, project.name)
+            deleteProject(composeRule.activity, project.name)
         }
     }
 
@@ -195,8 +196,8 @@ class MainActivityTest {
             assertTrue(ProjectStorage.projectDir(context, renamed).isDirectory)
         } finally {
             setArchiveFault(null)
-            ProjectStorage.deleteProject(context, title)
-            ProjectStorage.deleteProject(context, renamed)
+            deleteProject(context, title)
+            deleteProject(context, renamed)
         }
     }
 
@@ -232,7 +233,7 @@ class MainActivityTest {
             composeRule.onNodeWithText("Choose folder").assertIsEnabled()
             assertTrue(project.exists())
         } finally {
-            ProjectStorage.deleteProject(context, project.name)
+            deleteProject(context, project.name)
         }
     }
 
@@ -285,7 +286,7 @@ class MainActivityTest {
         } finally {
             composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
             composeRule.activityRule.scenario.recreate()
-            ProjectStorage.deleteProject(context, title)
+            deleteProject(context, title)
             Settings.setAutosaveIntervalSeconds(context, oldInterval)
         }
     }
@@ -306,7 +307,7 @@ class MainActivityTest {
             composeRule.onNodeWithContentDescription("Back").performClick()
             waitUntilTextExists(title)
         } finally {
-            ProjectStorage.deleteProject(composeRule.activity, title)
+            deleteProject(composeRule.activity, title)
         }
     }
 
@@ -383,7 +384,7 @@ class MainActivityTest {
             waitUntilTextExists(projectTitle)
         } finally {
             Settings.setLyricTextSettings(composeRule.activity, originalSettings)
-            ProjectStorage.deleteProject(composeRule.activity, projectTitle)
+            deleteProject(composeRule.activity, projectTitle)
         }
     }
 
@@ -422,8 +423,8 @@ class MainActivityTest {
                 },
             )
         } finally {
-            ProjectStorage.deleteProject(composeRule.activity, projectTitle)
-            ProjectStorage.deleteProject(composeRule.activity, renamedTitle)
+            deleteProject(composeRule.activity, projectTitle)
+            deleteProject(composeRule.activity, renamedTitle)
         }
     }
 
@@ -440,14 +441,14 @@ class MainActivityTest {
             composeRule.onNodeWithContentDescription("Project options for $projectTitle").performClick()
             composeRule.onNodeWithText("Rename").performClick()
             composeRule.onNode(hasSetTextAction()).performTextReplacement(renamedTitle)
-            assertTrue(ProjectStorage.deleteProject(composeRule.activity, projectTitle))
+            assertTrue(deleteProject(composeRule.activity, projectTitle))
             composeRule.onNodeWithText("Rename").performClick()
 
             waitUntilTextDoesNotExist("Rename track")
             composeRule.onNodeWithText(projectTitle).assertExists()
         } finally {
-            ProjectStorage.deleteProject(composeRule.activity, projectTitle)
-            ProjectStorage.deleteProject(composeRule.activity, renamedTitle)
+            deleteProject(composeRule.activity, projectTitle)
+            deleteProject(composeRule.activity, renamedTitle)
         }
     }
 
@@ -462,14 +463,19 @@ class MainActivityTest {
 
             composeRule.onNodeWithContentDescription("Project options for $projectTitle").performClick()
             composeRule.onNodeWithText("Delete").performClick()
-            assertTrue(ProjectStorage.deleteProject(composeRule.activity, projectTitle))
+            assertTrue(deleteProject(composeRule.activity, projectTitle))
             composeRule.onNodeWithText("Delete").performClick()
 
             waitUntilTextDoesNotExist("Delete project?")
             composeRule.onNodeWithText(projectTitle).assertExists()
         } finally {
-            ProjectStorage.deleteProject(composeRule.activity, projectTitle)
+            deleteProject(composeRule.activity, projectTitle)
         }
+    }
+
+    private fun deleteProject(context: android.content.Context, projectId: String): Boolean {
+        kotlinx.coroutines.runBlocking { com.prosincerity.ghostwriter.editor.data.EditorSaveQueue.process.awaitIdle() }
+        return ProjectStorage.deleteProject(context, projectId)
     }
 
     private fun createProject(projectTitle: String) {

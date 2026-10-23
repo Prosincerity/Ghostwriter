@@ -64,10 +64,12 @@ It also reads legacy title-based lyric files. An empty saved lyric file counts
 as an intentional draft. If all existing snapshots fail to read, the editor
 reports the load failure and does not save over those files.
 
-`EditorScreen.kt` owns persistence; `LyricsNotepad.kt` owns editing.
-`EditorLyricsSession` serializes writes within an editor visit and rejects
-queued saves after the final exit save. `StagedFileWriter` syncs a complete
-temporary file before renaming it over the destination.
+`EditorScreen.kt` requests persistence; `LyricsNotepad.kt` owns editing.
+`EditorSaveQueue` runs accepted lyric saves off the main thread, in order for
+each project, and survives screen disposal. Reopening a project uses its pending
+draft until the write completes. `EditorLyricsSession` rejects stale writes after
+its final exit save. `StagedFileWriter` syncs a complete temporary file before
+renaming it over the destination.
 Stopping the activity requests a save of the latest lyrics without closing the
 editor session, so switching apps does not have to wait for the autosave timer.
 
@@ -153,7 +155,7 @@ the saved spacing remains available for other alignments.
 ## Known limitations
 
 - Navigation resets after process death; rotation uses `configChanges`.
-- Initial lyric reads and the final editor save can block the main thread.
+- Initial lyric reads can block the main thread.
 - Beat replacement and metadata updates are separate writes; a metadata failure
   can leave copied audio paired with old metadata.
 - Waveform extraction has no percentage progress.

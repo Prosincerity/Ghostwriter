@@ -45,6 +45,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.projects.data.ProjectStorage
+import com.prosincerity.ghostwriter.editor.data.EditorSaveQueue
 import com.prosincerity.ghostwriter.waveform.domain.MarkerLoopRole
 import com.prosincerity.ghostwriter.waveform.domain.WaveformMarker
 import com.prosincerity.ghostwriter.waveform.data.WaveformExtractor
@@ -135,6 +136,44 @@ class EditorScreenTest {
             assertEquals("beat.mp3", ProjectStorage.loadMetadata(project, title).beatOriginalName)
             composeRule.runOnIdle { assertEquals(0, storageFailures) }
         } finally {
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
+    fun leavingEditor_savesOffMainAndReopeningKeepsThePendingDraft() {
+        val title = uniqueProjectTitle("Pending exit save")
+        val visible = mutableStateOf(true)
+        val saveStarted = CountDownLatch(1)
+        val releaseSave = CountDownLatch(1)
+        val savedOnMain = java.util.concurrent.atomic.AtomicBoolean(false)
+        val lyrics = "Final draft before leaving"
+        composeRule.setContent {
+            GhostwriterTheme {
+                if (visible.value) EditorScreen(
+                    title, onBack = { visible.value = false }, onOpenSettings = {},
+                    persistLyrics = { _, _ ->
+                        val onMain = android.os.Looper.myLooper() == android.os.Looper.getMainLooper()
+                        savedOnMain.set(onMain)
+                        saveStarted.countDown()
+                        // Keep the old implementation's main-thread failure immediate.
+                        if (!onMain) assertTrue(releaseSave.await(10, TimeUnit.SECONDS))
+                        true
+                    },
+                ) else androidx.compose.material3.Text("Editor closed")
+            }
+        }
+        try {
+            composeRule.onNode(hasSetTextAction()).performTextReplacement(lyrics)
+            composeRule.onNodeWithContentDescription("Back").performClick()
+            composeRule.waitForIdle()
+            assertTrue(saveStarted.await(5, TimeUnit.SECONDS))
+            assertFalse("Shared saves must not run on the main thread", savedOnMain.get())
+            composeRule.onNodeWithText("Editor closed").assertExists()
+            composeRule.runOnIdle { visible.value = true }
+            waitUntilTextExists(lyrics)
+        } finally {
+            releaseSave.countDown()
             disposeEditorAndDeleteProject(visible, title)
         }
     }
@@ -380,6 +419,8 @@ class EditorScreenTest {
             }
         } finally {
             composeRule.runOnIdle { visible.value = false }
+            composeRule.waitForIdle()
+            kotlinx.coroutines.runBlocking { EditorSaveQueue.process.awaitIdle() }
             assertTrue(ProjectStorage.deleteProject(context, title))
         }
     }
@@ -442,7 +483,9 @@ class EditorScreenTest {
             // Compose actually disposes the editor in the next recomposition.
             composeRule.waitForIdle()
             composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
-            assertEquals("Written before playback connected", ProjectStorage.loadLatest(projectDir))
+            composeRule.waitUntil(5_000) {
+                ProjectStorage.loadLatest(projectDir) == "Written before playback connected"
+            }
         } finally {
             disposeEditorAndDeleteProject(visible, title)
         }
@@ -616,7 +659,7 @@ class EditorScreenTest {
             composeRule.onNodeWithContentDescription("Back").performClick()
             composeRule.waitForIdle()
 
-            assertEquals(exitLyrics, ProjectStorage.loadLatest(projectDir))
+            composeRule.waitUntil(5_000) { ProjectStorage.loadLatest(projectDir) == exitLyrics }
         } finally {
             disposeEditorAndDeleteProject(showEditor, projectTitle)
         }
@@ -987,6 +1030,7 @@ class EditorScreenTest {
     ) {
         composeRule.runOnIdle { showEditor.value = false }
         composeRule.waitForIdle()
+        kotlinx.coroutines.runBlocking { EditorSaveQueue.process.awaitIdle() }
         context.stopService(Intent(context, BeatPlaybackService::class.java))
         ProjectStorage.deleteProject(context, projectTitle)
     }
