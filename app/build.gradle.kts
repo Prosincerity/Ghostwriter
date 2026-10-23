@@ -21,15 +21,15 @@ android {
         applicationId = "com.prosincerity.ghostwriter"
         minSdk = 24
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.3.0-beta.1"
+        versionCode = 6
+        versionName = "1.3.0-beta.2"
 
         testInstrumentationRunner = if (providers.gradleProperty("ghostwriter.releaseCheck").orNull == "true")
             "com.prosincerity.ghostwriter.dictionary.data.EspeakReleaseCheckInstrumentation"
         else "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["testProviderAuthority"] = "com.prosincerity.ghostwriter.test"
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
         externalNativeBuild {
             cmake {
