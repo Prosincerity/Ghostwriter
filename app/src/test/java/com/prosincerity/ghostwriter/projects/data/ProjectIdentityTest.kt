@@ -1,0 +1,119 @@
+package com.prosincerity.ghostwriter.projects.data
+
+import java.io.File
+import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+
+class ProjectIdentityTest {
+    @get:Rule val temporaryFolder = TemporaryFolder()
+
+    @Test fun migrationHandlesMissingMetadataEmptyProjectsAndUnrelatedEntries() {
+        val root = temporaryFolder.root
+        val empty = temporaryFolder.newFolder("Empty")
+        File(empty, "project.json").apply { writeText("{}"); assertTrue(setLastModified(0)) }
+        assertTrue(empty.setLastModified(1000L))
+        val originalTime = empty.lastModified()
+        val lyrics = temporaryFolder.newFolder("Lyrics")
+        File(lyrics, "verse.txt").apply { writeText("draft"); setLastModified(originalTime + 60_000) }
+        File(lyrics, "beat.wav").writeText("beat")
+        File(lyrics, "nested").mkdir()
+        File(lyrics, "project.json").apply { writeText("{}"); assertTrue(setLastModified(0)) }
+        assertTrue(lyrics.setLastModified(1000L))
+        val hidden = temporaryFolder.newFolder(".backup")
+        val unrelated = temporaryFolder.newFile("readme")
+        ProjectStorage.migrateLegacyProjects(root)
+        assertTrue(hidden.isDirectory)
+        assertTrue(unrelated.isFile)
+        val projects = root.listFiles()!!.filter { ProjectStorage.isProjectId(it.name) }
+        assertEquals(2, projects.size)
+        val emptyMetadata = projects.map { ProjectStorage.loadMetadata(it, it.name) }.single { it.title == "Empty" }
+        assertEquals(originalTime, emptyMetadata.createdAt)
+        assertEquals(originalTime, emptyMetadata.updatedAt)
+        val lyricProject = projects.single { ProjectStorage.loadMetadata(it, it.name).title == "Lyrics" }
+        assertEquals("draft", ProjectStorage.loadLatest(lyricProject))
+        assertEquals(originalTime + 60_000, ProjectStorage.loadMetadata(lyricProject, "").updatedAt)
+    }
+
+    @Test fun collidingAndDuplicateDisplayTitlesHaveIndependentIds() {
+        val root = temporaryFolder.root
+        val projects = listOf("verse/chorus", "verse_chorus", "verse/chorus", "字".repeat(300), "  ")
+            .map { ProjectStorage.createProjectDirectory(root, it) }
+        assertEquals(5, projects.map { it.name }.distinct().size)
+        projects.forEach { assertTrue(ProjectStorage.isProjectId(it.name)) }
+        assertEquals("verse/chorus", ProjectStorage.loadMetadata(projects[0], "").title)
+        assertEquals("字".repeat(300), ProjectStorage.loadMetadata(projects[3], "").title)
+        assertEquals("Untitled", ProjectStorage.loadMetadata(projects[4], "").title)
+    }
+
+    @Test fun legacyMigrationKeepsContentMetadataAndSnapshotAgesAndIsIdempotent() {
+        val root = temporaryFolder.root
+        val legacy = temporaryFolder.newFolder("My Track")
+        File(legacy, "My Track.txt").apply { writeText("manual"); setLastModified(1000L) }
+        File(legacy, "autosave2.txt").apply { writeText("latest"); setLastModified(2000L) }
+        File(legacy, "beat.wav").writeText("beat")
+        File(legacy, "project.json").writeText("""{"title":"My Track","updatedAt":500,"notes":"keep me","unknownLegacyField":"preserve"}""")
+        ProjectStorage.migrateLegacyProjects(root)
+        val migrated = root.listFiles()!!.single()
+        assertTrue(ProjectStorage.isProjectId(migrated.name))
+        assertFalse(legacy.exists())
+        assertEquals("latest", ProjectStorage.loadLatest(migrated))
+        assertEquals(2000L, File(migrated, "autosave2.txt").lastModified())
+        assertEquals("beat", File(migrated, "beat.wav").readText())
+        val metadata = ProjectStorage.loadMetadata(migrated, "fallback")
+        assertEquals("My Track", metadata.title)
+        assertEquals("keep me", metadata.notes)
+        assertEquals(500L, metadata.updatedAt)
+        assertEquals("preserve", org.json.JSONObject(File(migrated, "project.json").readText()).getString("unknownLegacyField"))
+        ProjectStorage.migrateLegacyProjects(root)
+        assertEquals(listOf(migrated.name), root.list()!!.toList())
+        assertEquals(migrated, ProjectStorage.renameProjectDirectory(migrated, "Renamed / song"))
+        assertEquals("latest", ProjectStorage.loadLatest(migrated))
+    }
+
+    @Test fun migrationKeepsMixedCaseAutosaveTitlesReadable() {
+        for (title in listOf("AUTOSAVE1", "Autosave2", "AutoSave10")) {
+            val root = temporaryFolder.newFolder()
+            val legacy = File(root, title).apply { assertTrue(mkdir()) }
+            File(legacy, "$title.txt").apply {
+                writeText("saved lyrics for $title")
+                assertTrue(setLastModified(1_000L))
+            }
+            assertEquals("saved lyrics for $title", ProjectStorage.loadLatest(legacy))
+
+            ProjectStorage.migrateLegacyProjects(root)
+
+            val migrated = root.listFiles()!!.single()
+            assertTrue(ProjectStorage.isProjectId(migrated.name))
+            assertEquals("saved lyrics for $title", ProjectStorage.loadLatest(migrated))
+            assertEquals(1_000L, File(migrated, "$title.txt").lastModified())
+        }
+    }
+
+    @Test fun missingLegacyTimestampsBecomeStableWithoutDroppingUnknownFields() {
+        val legacy = temporaryFolder.newFolder("Older")
+        File(legacy, "Older.txt").apply { writeText("lyrics"); setLastModified(1000L) }
+        File(legacy, "project.json").apply {
+            writeText("""{"title":"Older","unknown":"keep"}""")
+            setLastModified(1500L)
+        }
+        ProjectStorage.migrateLegacyProjects(temporaryFolder.root)
+        val project = temporaryFolder.root.listFiles()!!.single()
+        val metadata = ProjectStorage.loadMetadata(project, project.name)
+        assertEquals(1500L, metadata.createdAt)
+        assertEquals(1500L, metadata.updatedAt)
+        assertEquals(metadata, ProjectStorage.loadMetadata(project, project.name))
+    }
+
+    @Test fun failedLegacyMigrationLeavesAllOriginalFilesForRetry() {
+        val legacy = temporaryFolder.newFolder("Original")
+        File(legacy, "Original.txt").writeText("lyrics")
+        File(legacy, "project.json").mkdir()
+        File(legacy, "project.json/keep").writeText("metadata")
+        assertThrows(Exception::class.java) { ProjectStorage.migrateLegacyProjects(temporaryFolder.root) }
+        assertTrue(legacy.isDirectory)
+        assertEquals("lyrics", File(legacy, "Original.txt").readText())
+        assertEquals(listOf("Original"), temporaryFolder.root.list()!!.toList())
+    }
+}

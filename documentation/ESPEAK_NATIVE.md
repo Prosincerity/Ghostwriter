@@ -35,7 +35,7 @@ Review generated asset changes before committing.
 
 Native code and data must use the same source revision. Keep the generator,
 asset bundle, runtime version directory, and `DATA_FILES` list in
-[`EspeakIpa.kt`](../app/src/main/java/com/prosincerity/ghostwriter/data/EspeakIpa.kt)
+[`EspeakIpa.kt`](../app/src/main/java/com/prosincerity/ghostwriter/dictionary/data/EspeakIpa.kt)
 consistent when updating the engine.
 
 ## Runtime contract

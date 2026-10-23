@@ -60,7 +60,7 @@ class CoveragePolicyTest(unittest.TestCase):
         self.assertEqual({}, changed_lines('+++ b/app/src/test/java/p/F.kt\n@@ -0,0 +1 @@\n', "app"))
 
     def test_preview_only_source_does_not_count(self):
-        self.assertEqual({}, changed_lines('+++ b/app/src/main/java/com/prosincerity/ghostwriter/ui/screens/HomeScreenPreviews.kt\n@@ -0,0 +1 @@\n', "app"))
+        self.assertEqual({}, changed_lines('+++ b/app/src/main/java/com/prosincerity/ghostwriter/projects/ui/HomeScreenPreviews.kt\n@@ -0,0 +1 @@\n', "app"))
 
     def write_report(self, text):
         directory = TemporaryDirectory()
@@ -91,7 +91,7 @@ class CoveragePolicyTest(unittest.TestCase):
         self.assertEqual(Coverage((80, 100), (70, 100)), coverage[("app", "debug")])
 
     def aggregated_report(self, classes, module=":app"):
-        return {"modules": [{"name": module, "packages": [{"name": "com.prosincerity.ghostwriter.data", "classes": classes}]}]}
+        return {"modules": [{"name": module, "packages": [{"name": "com.prosincerity.ghostwriter.dictionary.data", "classes": classes}]}]}
 
     def aggregated_class(self, name, covered, total, variants=None):
         return {"name": name, "testSuiteCoverages": [{"name": "Aggregated", "variantCoverages": variants or [

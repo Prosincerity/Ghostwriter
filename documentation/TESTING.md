@@ -70,6 +70,9 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/report_slow_tests.py app/build/test-results
 ```
 
+The tooling suite also checks feature package paths, dependency cycles, and the
+waveform/player ownership boundaries defined in [AGENTS.md](../AGENTS.md).
+
 JVM results are in `app/build/test-results/` and `app/build/reports/tests/`.
 Lint reports are in `app/build/reports/`.
 
@@ -96,7 +99,7 @@ Focused example; append `#methodName` to the class value to select a method:
 
 ```sh
 ./gradlew --offline :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.ui.screens.HomeScreenTest
+  -Pandroid.testInstrumentationRunnerArguments.class=com.prosincerity.ghostwriter.projects.ui.HomeScreenTest
 ```
 
 Confirm the selected classes in `app/build/outputs/androidTest-results/connected/`.

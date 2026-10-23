@@ -29,6 +29,19 @@ Repository documentation takes precedence over assumptions about Android design.
 
 - Work on `dev`. Do not modify or merge into `main` without an explicit request.
 - Inspect the architecture before introducing abstractions.
+- Organize production code by feature, not by top-level technical layers.
+  Assign files to the feature that owns their behavior. Within a large feature,
+  use smaller domain, data, audio, playback, or UI subpackages as needed.
+  Keep only app navigation at the package root and genuinely shared code in `core/`.
+- Mirror production packages in `src/test` and `src/androidTest`; keep tests
+  with their subject. Use `git mv` for moves and update package declarations,
+  imports, manifests, JNI symbols, coverage policy, and documentation in the
+  same commit as the corresponding move. Update ProGuard/R8 rules if present.
+- Keep feature dependencies acyclic. Stop and report exposed cycles instead
+  of repairing them as part of a package move.
+- Waveform owns `WaveformMarker` and `MarkerLoopRole`. The `waveform` feature
+  must not import `player`, `projects`, or `editor`; `player` must not import
+  `projects` or `editor`.
 - Make focused changes. Do not refactor unrelated code.
 - Follow [Testing](documentation/TESTING.md) for verification scope, test design,
   coverage gates, and device access. Documentation-only changes require diff

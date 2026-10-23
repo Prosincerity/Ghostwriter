@@ -122,7 +122,7 @@ def check_diff(lines, changes):
 
 
 def read_aggregated(path):
-    """AGP's dashboard embeds JSON; sum included classes per module and variant."""
+    """Sum included classes per module and variant across all feature packages."""
     script = Path(path).read_text().strip()
     prefix = "const fullReport = "
     if not script.startswith(prefix) or not script.endswith(";"):

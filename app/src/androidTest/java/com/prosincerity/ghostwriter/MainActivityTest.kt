@@ -7,7 +7,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.os.Bundle
 import java.io.File
-import com.prosincerity.ghostwriter.data.LyricArchiveTestProvider
+import com.prosincerity.ghostwriter.projects.data.LyricArchiveTestProvider
 import org.junit.Before
 import org.junit.After
 import android.content.Intent
@@ -33,12 +33,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.prosincerity.ghostwriter.data.LyricTextSettings
-import com.prosincerity.ghostwriter.data.ProjectStorage
-import com.prosincerity.ghostwriter.data.PersistentLyricsStorage
-import com.prosincerity.ghostwriter.data.Settings
-import com.prosincerity.ghostwriter.ui.screens.GHOSTWRITER_REPOSITORY_URL
-import com.prosincerity.ghostwriter.ui.theme.GhostColorScheme
+import com.prosincerity.ghostwriter.typography.LyricTextSettings
+import com.prosincerity.ghostwriter.projects.data.ProjectStorage
+import com.prosincerity.ghostwriter.projects.data.PersistentLyricsStorage
+import com.prosincerity.ghostwriter.settings.Settings
+import com.prosincerity.ghostwriter.about.GHOSTWRITER_REPOSITORY_URL
+import com.prosincerity.ghostwriter.core.ui.theme.GhostColorScheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

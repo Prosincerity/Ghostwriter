@@ -23,11 +23,25 @@ Paths below are relative to
 | Path | Responsibility |
 | --- | --- |
 | `MainActivity.kt` | Hand-rolled screen navigation and shared-folder connection |
-| `ui/screens/` | Project, editor, dictionary, settings, and About screens |
-| `ui/components/` | Lyric editing surface and reusable controls |
-| `data/` | Preferences, project files, dictionary installation, and lookup |
-| `logic/` | UI-free state, phonetic matching, and waveform calculations |
-| `media/` | Beat playback, audio focus, and media controls |
+| `projects/` | Project files, shared-folder recovery, Home, and project information |
+| `editor/` | Lyric editing, editor sessions, beat import, and editor dialogs |
+| `dictionary/` | Dictionary installation, pronunciation matching, downloads, and search UI |
+| `waveform/` | Waveform decoding, cache, markers, loop geometry, and timeline UI |
+| `player/` | Beat playback, PCM audio, audio focus, media controls, and player UI |
+| `settings/` | SharedPreferences and the settings screen |
+| `typography/` | Lyric text settings, device fonts, and Compose text styles |
+| `about/` | About screen and attribution |
+| `core/` | Shared file replacement, UI controls, and theme |
+
+Packages follow feature ownership. Larger features use internal `data`, `domain`,
+`ui`, `audio`, or `playback` subpackages. JVM and Android tests mirror their
+subject's production package. Keep this layout for future changes.
+
+Feature dependencies must remain acyclic. `waveform` owns `WaveformMarker` and
+`MarkerLoopRole` independently of projects and playback. It may depend on `core`,
+but must not import `player`, `projects`, or `editor`. `player` may depend on
+`waveform` and `core`, but must not import `projects` or `editor`. The root
+`MainActivity` composes features and remains the playback notification destination.
 
 `Settings.kt` stores preferences in `SharedPreferences`. Metadata uses `org.json`.
 

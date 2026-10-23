@@ -23,7 +23,7 @@ static char *copy_bytes(JNIEnv *env, jbyteArray bytes, jsize maximum) {
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_prosincerity_ghostwriter_data_EspeakIpa_nativeInitialize(
+Java_com_prosincerity_ghostwriter_dictionary_data_EspeakIpa_nativeInitialize(
     JNIEnv *env, jobject self, jbyteArray path_bytes) {
     (void)self;
     char *path = copy_bytes(env, path_bytes, 4096);
@@ -39,7 +39,7 @@ Java_com_prosincerity_ghostwriter_data_EspeakIpa_nativeInitialize(
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_com_prosincerity_ghostwriter_data_EspeakIpa_nativePhonemize(
+Java_com_prosincerity_ghostwriter_dictionary_data_EspeakIpa_nativePhonemize(
     JNIEnv *env, jobject self, jbyteArray word_bytes, jint language) {
     (void)self;
     const char *voice = language == 0 ? "en" : language == 1 ? "de" :

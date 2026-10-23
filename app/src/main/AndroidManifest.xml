@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ghostwriter">
         <service
-            android:name=".media.BeatPlaybackService"
+            android:name=".player.playback.BeatPlaybackService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
         <activity
