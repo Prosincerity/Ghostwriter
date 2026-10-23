@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.joinAll
@@ -14,17 +15,14 @@ import kotlinx.coroutines.joinAll
 internal class EditorSaveQueue(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
-    private class Pending(val lyrics: String, val result: Deferred<Boolean>)
+    private class Pending(val lyrics: String, val result: Job)
     private val pending = mutableMapOf<File, Pending>()
 
     @Synchronized
     fun pendingLyrics(project: File): String? = pending[project]?.lyrics
 
-    @Synchronized
-    fun enqueue(project: File, lyrics: String, save: suspend () -> Boolean): Deferred<Boolean> {
-        val previous = pending[project]?.result
-        val result = scope.async(start = CoroutineStart.LAZY) {
-            previous?.join()
+    fun enqueue(project: File, lyrics: String, save: suspend () -> Boolean): Deferred<Boolean> =
+        submit(project, lyrics) {
             try {
                 save()
             } catch (cancelled: CancellationException) {
@@ -32,6 +30,15 @@ internal class EditorSaveQueue(
             } catch (_: Exception) {
                 false
             }
+        }
+
+    /** Beat imports/removals must share the same ordering as lyric and metadata saves. */
+    @Synchronized
+    fun <T> submit(project: File, lyrics: String, save: suspend () -> T): Deferred<T> {
+        val previous = pending[project]?.result
+        val result = scope.async(start = CoroutineStart.LAZY) {
+            previous?.join()
+            save()
         }
         pending[project] = Pending(lyrics, result)
         result.invokeOnCompletion {

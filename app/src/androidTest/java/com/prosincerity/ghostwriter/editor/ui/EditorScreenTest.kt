@@ -179,6 +179,47 @@ class EditorScreenTest {
     }
 
     @Test
+    fun leavingEditor_keepsMetadataEditsQueuedBehindASlowSharedSave() {
+        val title = uniqueProjectTitle("Queued project information")
+        val project = ProjectStorage.projectDir(context, title)
+        val visible = mutableStateOf(true)
+        val firstSaveStarted = CountDownLatch(1)
+        val releaseFirstSave = CountDownLatch(1)
+        val saves = java.util.concurrent.atomic.AtomicInteger()
+        composeRule.setContent {
+            if (visible.value) GhostwriterTheme {
+                EditorScreen(title, onBack = { visible.value = false }, onOpenSettings = {},
+                    persistLyrics = { _, _ ->
+                        if (saves.incrementAndGet() == 1) {
+                            firstSaveStarted.countDown()
+                            assertTrue(releaseFirstSave.await(15, TimeUnit.SECONDS))
+                        }
+                        true
+                    })
+            }
+        }
+        try {
+            composeRule.onNodeWithContentDescription("Project Info").performClick()
+            composeRule.onNodeWithText("BPM (optional)").performTextReplacement("90")
+            composeRule.onNodeWithText("Save").performClick()
+            composeRule.waitForIdle()
+            assertTrue(firstSaveStarted.await(5, TimeUnit.SECONDS))
+            composeRule.onNodeWithContentDescription("Project Info").performClick()
+            composeRule.onNodeWithText("BPM (optional)").performTextReplacement("100")
+            composeRule.onNodeWithText("Save").performClick()
+            composeRule.onNodeWithContentDescription("Back").performClick()
+            composeRule.waitForIdle()
+            releaseFirstSave.countDown()
+            kotlinx.coroutines.runBlocking { EditorSaveQueue.process.awaitIdle() }
+
+            composeRule.waitUntil(5_000) { ProjectStorage.loadMetadata(project, title).bpm == 100 }
+        } finally {
+            releaseFirstSave.countDown()
+            disposeEditorAndDeleteProject(visible, title)
+        }
+    }
+
+    @Test
     fun unreadableLyrics_reportsFailureWithoutOpeningOrSavingAnEmptyDraft() {
         val title = uniqueProjectTitle("Unreadable lyrics")
         val visible = mutableStateOf(true)

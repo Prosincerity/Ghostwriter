@@ -122,6 +122,35 @@ class EditorSaveQueueTest {
         assertNull(queue.pendingLyrics(project))
     }
 
+    @Test fun projectMutations_keepTheirResultsAndOrderingBetweenLyricSaves() {
+        val project = temporaryFolder.newFolder()
+        val release = CompletableDeferred<Unit>()
+        val order = mutableListOf<String>()
+        queue.enqueue(project, "first") { release.await(); order += "lyrics"; true }
+        val mutation = queue.submit(project, "second") { order += "beat"; "imported.wav" }
+        queue.enqueue(project, "second") { order += "metadata"; true }
+        dispatcher.runPending()
+        assertTrue(order.isEmpty())
+
+        release.complete(Unit)
+        dispatcher.runPending()
+
+        assertEquals(listOf("lyrics", "beat", "metadata"), order)
+        assertEquals("imported.wav", runBlocking { mutation.await() })
+    }
+
+    @Test fun failedProjectMutation_doesNotCancelALaterSave() {
+        val project = temporaryFolder.newFolder()
+        val failure = queue.submit(project, "draft") { throw java.io.IOException("Import failed") }
+        val saved = queue.enqueue(project, "draft") { ProjectStorage.rotateAndSave(project, "draft", 3) }
+
+        dispatcher.runPending()
+
+        org.junit.Assert.assertThrows(java.io.IOException::class.java) { runBlocking { failure.await() } }
+        assertTrue(runBlocking { saved.await() })
+        assertEquals("draft", ProjectStorage.loadLatest(project))
+    }
+
     private class QueuedDispatcher : CoroutineDispatcher() {
         private val tasks = ArrayDeque<Runnable>()
         override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.addLast(block) }

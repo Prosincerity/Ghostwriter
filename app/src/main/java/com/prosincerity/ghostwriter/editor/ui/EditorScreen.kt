@@ -71,8 +71,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
@@ -166,7 +164,7 @@ fun EditorScreen(
         else android.os.Handler(android.os.Looper.getMainLooper()).post { report() }
     }
 
-    fun queueLyrics(content: String, save: () -> Boolean) =
+    fun queueSave(content: String, save: () -> Boolean) =
         EditorSaveQueue.process.enqueue(projectDir, content) {
             val saved = runCatching(save).getOrDefault(false)
             if (!saved) reportStorageFailure()
@@ -179,24 +177,14 @@ fun EditorScreen(
             if (event == Lifecycle.Event.ON_STOP) {
                 val content = latestLyrics()
                 val backups = latestKeepCount.value
-                queueLyrics(content) { lyricsSession.autosave(content, backups) }
+                queueSave(content) { lyricsSession.autosave(content, backups) }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val projectMutationMutex = remember(projectId) { Mutex() }
     val projectMutationRevision = remember(projectId) { AtomicLong(0L) }
-
-    suspend fun removeBeatAndLoadMetadata(): ProjectMetadata =
-        projectMutationMutex.withLock {
-            withContext(Dispatchers.IO) {
-                ProjectStorage.removeBeatAndPersist(projectDir, waveformDirectory) {
-                    persistLyrics(it, keepCount)
-                }
-            }
-        }
 
     fun persistMetadataUpdate(
         updatedMetadata: ProjectMetadata,
@@ -209,12 +197,12 @@ fun EditorScreen(
         metadata = updatedMetadata
         if (isBeatReady) beatPlayer?.setMarkers(updatedMetadata.markers)
         val revision = projectMutationRevision.incrementAndGet()
+        val backups = keepCount
+        val saving = queueSave(latestLyrics()) {
+            ProjectStorage.saveMetadata(projectDir, updatedMetadata) && persistLyrics(projectDir, backups)
+        }
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            val saved = projectMutationMutex.withLock {
-                withContext(Dispatchers.IO) {
-                    ProjectStorage.saveMetadata(projectDir, updatedMetadata) && persistLyrics(projectDir, keepCount)
-                }
-            }
+            val saved = saving.await()
             // Compose test scopes can resume off the UI thread after IO.
             withContext(Dispatchers.Main.immediate) {
                 if (revision != projectMutationRevision.get()) return@withContext
@@ -227,7 +215,6 @@ fun EditorScreen(
                     metadata = withContext(Dispatchers.IO) {
                         ProjectStorage.loadMetadata(projectDir, projectTitle)
                     }
-                    reportStorageFailure()
                     Toast.makeText(context, failureMessage, Toast.LENGTH_SHORT).show()
                 }
             }
@@ -260,9 +247,15 @@ fun EditorScreen(
     ) {
         isReassigningBeat = true
         val removalRevision = projectMutationRevision.incrementAndGet()
+        val backups = keepCount
+        val removing = EditorSaveQueue.process.submit(projectDir, latestLyrics()) {
+            ProjectStorage.removeBeatAndPersist(projectDir, waveformDirectory) {
+                persistLyrics(it, backups)
+            }
+        }
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                val updatedMetadata = removeBeatAndLoadMetadata()
+                val updatedMetadata = removing.await()
                 val removed = successHaptic != null && withContext(Dispatchers.IO) {
                     updatedMetadata.beatFile == null &&
                         ProjectStorage.getProjectBeatFile(projectDir, updatedMetadata) == null
@@ -400,29 +393,29 @@ fun EditorScreen(
 
         isImporting = true
         val importRevision = projectMutationRevision.incrementAndGet()
+        val backups = keepCount
+        val importing = EditorSaveQueue.process.submit(projectDir, latestLyrics()) {
+            runCatching {
+                importProjectBeat(
+                    projectDir = projectDir,
+                    projectTitle = projectTitle,
+                    originalName = displayNameFor(context, uri),
+                    waveformDirectory = waveformDirectory,
+                    persistLyrics = { directory ->
+                        persistLyrics(directory, backups).also { saved ->
+                            if (!saved) reportStorageFailure()
+                        }
+                    },
+                ) { destination ->
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        destination.outputStream().use { output -> input.copyTo(output) }
+                    } ?: error("Couldn't read the selected beat")
+                }
+            }
+        }
         coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                val imported = projectMutationMutex.withLock {
-                    withContext(Dispatchers.IO) {
-                        runCatching {
-                            importProjectBeat(
-                                projectDir = projectDir,
-                                projectTitle = projectTitle,
-                                originalName = displayNameFor(context, uri),
-                                waveformDirectory = waveformDirectory,
-                                persistLyrics = { directory ->
-                                    persistLyrics(directory, keepCount).also { saved ->
-                                        if (!saved) reportStorageFailure()
-                                    }
-                                },
-                            ) { destination ->
-                                context.contentResolver.openInputStream(uri)?.use { input ->
-                                    destination.outputStream().use { output -> input.copyTo(output) }
-                                } ?: error("Couldn't read the selected beat")
-                            }
-                        }
-                    }
-                }
+                val imported = importing.await()
                 if (importRevision != projectMutationRevision.get()) return@launch
 
                 imported.onSuccess { importedBeat ->
@@ -456,7 +449,7 @@ fun EditorScreen(
             keepCount = AppSettings.getAutosaveCount(context)
             val contentToSave = latestLyrics()
             val backupsToKeep = keepCount
-            queueLyrics(contentToSave) {
+            queueSave(contentToSave) {
                 lyricsSession.autosave(contentToSave, backupsToKeep)
             }.await()
         }
@@ -468,7 +461,7 @@ fun EditorScreen(
             latestWaveformCancellation.value?.set(true)
             val content = latestLyrics()
             val backups = latestKeepCount.value
-            queueLyrics(content) { lyricsSession.finish(content, backups) }
+            queueSave(content) { lyricsSession.finish(content, backups) }
         }
     }
 
@@ -521,7 +514,7 @@ fun EditorScreen(
                     IconButton(shape = GhostButtonShape, onClick = {
                         val contentToSave = latestLyrics()
                         val backupsToKeep = keepCount
-                        val saving = queueLyrics(contentToSave) {
+                        val saving = queueSave(contentToSave) {
                             lyricsSession.saveManual(contentToSave, backupsToKeep)
                         }
                         coroutineScope.launch {

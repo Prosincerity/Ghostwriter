@@ -65,8 +65,9 @@ as an intentional draft. If all existing snapshots fail to read, the editor
 reports the load failure and does not save over those files.
 
 `EditorScreen.kt` requests persistence; `LyricsNotepad.kt` owns editing.
-`EditorSaveQueue` runs accepted lyric saves off the main thread, in order for
-each project, and survives screen disposal. Reopening a project uses its pending
+`EditorSaveQueue` runs accepted lyric and metadata saves and beat changes off
+the main thread, in order for each project, and survives screen disposal.
+Reopening a project uses its pending
 draft until the write completes. `EditorLyricsSession` rejects stale writes after
 its final exit save. `StagedFileWriter` syncs a complete temporary file before
 renaming it over the destination.
