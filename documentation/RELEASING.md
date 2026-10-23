@@ -1,101 +1,209 @@
-# Releasing
+# Build a shareable release
 
-This guide prepares verified APKs and matching source for distribution.
+The release command creates a finished ZIP containing a signed universal APK,
+matching app/native source, installation instructions, licenses, and checksums.
+Friends extract the ZIP and open the APK; they do not need Android Studio.
 
-## Prepare the revision
+## 1. Configure the build machine once
 
-Complete the [testing merge gate](TESTING.md#coverage-and-merge-gate) for the
-intended code. Update `versionCode` and `versionName` in
-[app configuration](../app/build.gradle.kts), increasing the code for each build
-that must update an installed version. Commit the version change on `dev`.
+Install Git, Python 3.10 or newer, and Android Studio. Follow
+[Build setup](SETUP_NOTES.md) for the JDK, SDK, NDK, CMake, and `local.properties`
+versions declared by this checkout. Put the JDK's `java` and `keytool` on PATH.
+No Python packages are required. Windows users can replace `python3` with `py -3`.
 
-Use a clean, tagged commit for a public release.
-
-Follow [Build setup](SETUP_NOTES.md) to configure the SDK and native submodule.
-Check both working trees and the recorded submodule revision:
-
-```sh
-git status --short
-git -C third_party/espeak-ng status --short
-git submodule status
-```
-
-Both status commands must produce no output. The submodule status must start
-with a space, indicating that the checkout matches the recorded revision.
-
-## Build and sign
-
-Use the [debug build procedure](SETUP_NOTES.md#build-and-run) for testers.
-Debug-key signatures can update only installations signed with the same key.
-For a release build, run from the repository root:
+Obtain the code and pinned native source:
 
 ```sh
-./gradlew --offline :app:lintRelease :app:assembleRelease
+git clone --recurse-submodules --branch dev https://github.com/Prosincerity/Ghostwriter.git
+cd Ghostwriter
 ```
 
-The release configuration has no signing key. It produces
-`app/build/outputs/apk/release/app-release-unsigned.apk`.
-Keep keys outside the repository. Use installed SDK build tools to align,
-sign, and verify the release APK; the prompts accept local paths:
+For an existing checkout, run `git submodule update --init third_party/espeak-ng`.
+Use Android Studio's SDK Manager to install the declared components. The first
+build needs network access to cache dependencies; later builds work offline.
+
+## 2. Preserve the signing identity
+
+An update needs the same application ID and signing certificate, a higher
+`versionCode`, and continued support for the older APK's Android versions and
+CPU architectures. A new key cannot directly update APKs signed with an old key.
+
+Keep the original keystore, its alias, its password, and a copy of the last APK
+shared with your friends. Store backups outside this checkout and outside
+`build/`. Never send private keys or passwords with the ZIP or commit them.
+
+### Existing tester installations
+
+The earlier `1.3.0-beta.1` tester APK was debug-signed. An optimized,
+non-debuggable release can update it when signed with that exact existing key.
+Another computer's debug keystore has a different key even if its alias and
+password look identical. Keep a permanent copy of the original key.
+
+The standard debug password `android` is weak. To protect the existing identity
+with a new password and modern PKCS#12 encryption, run the signing setup helper
+locally after choosing a private destination outside the repository:
 
 ```sh
-read -r -p 'SDK build-tools directory: ' build_tools
-read -r -p 'Release keystore path: ' release_keystore
-mkdir -p build/release
-"$build_tools/zipalign" -P 16 -f 4 app/build/outputs/apk/release/app-release-unsigned.apk build/release/app-aligned.apk
-"$build_tools/apksigner" sign --ks "$release_keystore" --out build/release/app-release.apk build/release/app-aligned.apk
-"$build_tools/apksigner" verify --verbose build/release/app-release.apk
-"$build_tools/zipalign" -c -P 16 -v 4 build/release/app-release.apk
+python3 scripts/setup_signing.py \
+  --import-keystore /private/path/to/original-debug.keystore \
+  --source-alias androiddebugkey \
+  --keystore /private/path/to/ghostwriter-updates.p12 \
+  --alias ghostwriter
 ```
 
-Inspect the APK intended for distribution:
+The helper prompts locally for the source password and a strong new password,
+uses that new password for both the keystore and private-key entry, and verifies
+that the signing certificate has not changed. It does not overwrite the source
+or an existing destination. Put the new password in your password manager.
 
-- Include native libraries for every ABI declared in app configuration.
-- Include the language files listed in `EspeakIpa.DATA_FILES`.
-- Include all project and third-party notices under `assets/licenses/`.
-- Exclude downloaded SQLite dictionary databases.
+### A new signing channel
 
-ZIP alignment does not establish native runtime compatibility.
-
-## Runtime checks
-
-- Exercise download progress, cancellation, retry, and continued access to an
-  older installed source after an unsuccessful update.
-- Install full dictionaries and enable airplane mode. Search each supported
-  language and exercise pronunciation fallback after a database miss.
-- Measure search latency with release dictionaries, including phonetic suffix
-  and broad double-rhyme searches. Record input, data release, device, and timing.
-- Check **Settings → About** for licenses, warranty and redistribution notices,
-  dictionary attribution, and source links. Verify links on the published branch.
-- Verify native loading and IPA generation on Android with 16 KB memory pages.
-
-Record the app revision, dictionary release, and results in release notes.
-Fixture tests do not establish full release-data behavior or page-size support.
-
-## Package matching source
-
-Distribute the exact app and pinned native source with the APK, including build
-scripts, notices, and language/phoneme sources used to generate bundled data.
-GitHub's automatic app archive omits submodule contents.
-
-From the same clean commit used for the APK, use GNU tar and an empty
-`build/release-source` directory:
+Only when there are no older installs to preserve, create a new signing key:
 
 ```sh
-mkdir -p build/release-source
-git archive --format=tar --prefix=Ghostwriter/ --output=build/release-source/Ghostwriter-source.tar HEAD
-git -C third_party/espeak-ng archive --format=tar --prefix=Ghostwriter/third_party/espeak-ng/ HEAD > build/release-source/espeak-source.tar
-tar --concatenate --file=build/release-source/Ghostwriter-source.tar build/release-source/espeak-source.tar
-gzip -n build/release-source/Ghostwriter-source.tar
+python3 scripts/setup_signing.py --new-key \
+  --keystore /private/path/to/ghostwriter-release.p12 --alias ghostwriter
 ```
 
-Extract `Ghostwriter-source.tar.gz` to a fresh directory and configure the SDK.
-Cache dependencies first, then verify from that directory without prior outputs:
+The helper creates an RSA signing key in an AES-256 protected PKCS#12 keystore.
+Use a strong unique password, preferably generated by your password manager.
+Generating a different key for every release breaks updates.
+
+## 3. Save a local release configuration
+
+Copy `release.example.json` to `release.local.json`, then edit its paths and alias:
+
+```json
+{
+  "keystore": "/private/path/to/ghostwriter-updates.p12",
+  "keyAlias": "ghostwriter",
+  "previousApk": "/private/path/to/the-last-shared.apk",
+  "outputDir": "build/releases"
+}
+```
+
+`release.local.json` is ignored by Git and never enters the source archive.
+Do not put passwords in it; the release command prompts for them. Forward slashes
+work in Windows JSON paths, for example `C:/Users/me/Signing/ghostwriter.p12`.
+Optional `sdk` selects the SDK; otherwise `ANDROID_HOME`, `ANDROID_SDK_ROOT`, or
+`sdk.dir` in `local.properties` is used. Optional `outputDir` selects a permanent
+release directory; retain its `channel.json` history with the generated releases.
+
+For the first release of a new channel, omit `previousApk` and pass
+`--new-install`. This flag does not bypass history in an existing output directory.
+For updates, always point `previousApk` at the last APK actually shared.
+
+## 4. Prepare each revision
+
+On `dev`, update `versionCode` and `versionName` in `app/build.gradle.kts`.
+Increase the code above every build already shared, even when keeping the same
+visible version name. The current release is `1.3.0-beta.2`, code `6`.
+
+Commit the changes and leave the app and native submodule clean. Complete the
+[testing merge gate](TESTING.md#coverage-and-merge-gate) before a public release,
+and tag that clean revision. Personal tester ZIPs also record the exact commits.
+
+R8 code and resource optimization are enabled for release. The native bridge's
+class and method names are protected by `app/src/main/keepRules/rules.keep`.
+Keep the package and JNI exports synchronized as described in
+[Native pronunciation engine](ESPEAK_NATIVE.md).
+
+## 5. Run the release command
+
+After dependencies have been cached:
 
 ```sh
-./gradlew --offline :app:testDebugUnitTest :app:lintRelease :app:assembleRelease :app:assembleDebugAndroidTest --no-build-cache
+python3 scripts/build_release.py --config release.local.json
 ```
 
-Upload the verified source archive and
-[THIRD_PARTY_LICENSES.md](../THIRD_PARTY_LICENSES.md) alongside the APK.
-Identify the app tag or commit and the eSpeak commit in release notes.
+Add `--online` for the first build or after changing dependencies:
+
+```sh
+python3 scripts/build_release.py --config release.local.json --online
+```
+
+For a new channel, add `--new-install`. For updates, the command verifies the
+previous APK's certificate before building and refuses a different signing key.
+Passwords are entered in the terminal, never as command-line arguments.
+Automation may supply `GHOSTWRITER_STORE_PASSWORD` and
+`GHOSTWRITER_KEY_PASSWORD` in its private process environment.
+
+The command:
+
+1. Checks the clean revision and pinned native checkout.
+2. Runs the Python tooling checks, full JVM suite, release lint, and optimized build.
+3. Checks the actual APK's application ID, non-debuggable flag, version, and ABIs.
+4. Checks retained JNI descriptors in DEX, native symbol names, 16 KB alignment
+   for 64-bit ELF libraries, bundled pronunciation data, and license files.
+5. Rejects downloaded dictionary databases in the APK.
+6. Aligns the APK for 16 KB pages, signs it, and verifies its signature/alignment.
+7. Compares the signing certificate, version, minimum SDK, and ABI support with
+   the previous APK and local release history.
+8. Archives the exact committed app source AND pinned eSpeak source, excluding
+   untracked files and refusing tracked signing material.
+9. Creates the friends' ZIP and records this build in `channel.json`.
+
+Nothing is published or uploaded. A failed check prevents a finished release ZIP.
+The output directory is not overwritten; increment the version for the next build.
+
+## 6. Check the optimized native code on a device
+
+Select an already connected device according to [Device access](TESTING.md#device-access).
+Include the native runtime check in a release build with:
+
+```sh
+python3 scripts/build_release.py --config release.local.json --device DEVICE_SERIAL
+```
+
+This first runs four known pronunciation checks in an isolated, optimized
+`.releasecheck` app. A report guard rejects crashes, missing cases, skipped tests,
+and zero-test runs. The release APK retains the normal application ID.
+Every device command requires elevated execution permission when using Codex
+inside Distrobox, as explained in the testing guide.
+
+The same check can be run independently before packaging:
+
+```sh
+./gradlew --offline -Pghostwriter.releaseCheck=true :app:connectedReleaseCheckAndroidTest
+python3 scripts/check_release_native_tests.py
+```
+
+Also exercise release download/cancellation/retry, offline search in every
+language, project creation and lyric recovery, beat playback, and About notices.
+Record the revision, dictionary release, device, and results. Full release-data
+performance and runtime behavior on a 16 KB-page device need their own checks;
+ZIP/ELF alignment alone does not establish all runtime behavior.
+
+## 7. Send the finished ZIP
+
+For the current version, the default output is:
+
+```text
+build/releases/Ghostwriter-1.3.0-beta.2-vc6/
+  Ghostwriter-1.3.0-beta.2-vc6.zip
+  Ghostwriter-1.3.0-beta.2-vc6.zip.sha256
+  mapping.txt
+  ... unpacked copies of the ZIP contents
+```
+
+Send the `.zip`, and optionally its `.zip.sha256` file. Inside are:
+
+- The signed APK, installed directly after extraction.
+- Matching source ZIP, including the native submodule omitted by GitHub's normal archive.
+- `INSTALL.txt`, `RELEASE.json`, `LICENSE`, `THIRD_PARTY_LICENSES.md`, and `SHA256SUMS`.
+
+Keep `mapping.txt` locally for deobfuscating crash reports and keep `channel.json`
+with the release history. Neither private signing material nor passwords enter
+this ZIP. The matching source archive can be rebuilt following its setup guide;
+it does not require a GitHub-generated archive or a separate native download.
+
+Friends need Android 7.0/API 24 or newer and a supported ARM/x86 device. The APK
+contains all four standard 32-bit/64-bit ARM/x86 ABIs. They extract it, open the
+APK, allow installation from their trusted file manager if prompted, and choose
+**Update**. Keeping the existing installation retains its app data. Device
+management and sideloading restrictions can still prevent installation.
+
+If Android reports a signing conflict, obtain the APK signed with the original
+key. Do not uninstall as a shortcut: uninstall removes app-local beats and drafts.
+The connected shared lyric folder provides the recovery described in the
+[storage guide](README.md#shared-lyric-folder).

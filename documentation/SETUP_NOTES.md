@@ -48,3 +48,5 @@ SDK and an ABI declared in the app configuration.
 
 See [Testing](TESTING.md) for verification and device access instructions.
 Follow [Releasing](RELEASING.md) before distributing a build.
+That guide includes a repeatable signing and packaging command which produces
+the final shareable ZIP and verifies compatibility with the previous APK.

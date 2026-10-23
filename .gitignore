@@ -49,6 +49,7 @@ __pycache__/
 !.env.sample
 /keystore.properties
 /signing.properties
+/release.local.json
 *.p12
 *.pfx
 

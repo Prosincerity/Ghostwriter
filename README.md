@@ -19,6 +19,11 @@ uninstall behavior, and save failures.
 - [Contributor instructions](AGENTS.md): project constraints and commit rules.
 - [Releasing](documentation/RELEASING.md): APK verification and source distribution.
 
+To create a signed ZIP for friends, configure `release.local.json` as described
+in the release guide, then run `python3 scripts/build_release.py --config release.local.json`.
+The command checks update compatibility and packages the APK, matching native
+source, installation instructions, licenses, and checksums.
+
 The [documentation index](documentation/README.md) describes the architecture
 and links to dictionary and native-engine guides.
 
