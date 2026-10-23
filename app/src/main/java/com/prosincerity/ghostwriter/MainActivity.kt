@@ -31,6 +31,7 @@ import com.prosincerity.ghostwriter.about.AboutScreen
 import com.prosincerity.ghostwriter.dictionary.ui.DictionaryDownloadsScreen
 import com.prosincerity.ghostwriter.dictionary.ui.DictionaryScreen
 import com.prosincerity.ghostwriter.editor.ui.EditorScreen
+import com.prosincerity.ghostwriter.editor.data.EditorSaveQueue
 import com.prosincerity.ghostwriter.projects.ui.HomeScreen
 import com.prosincerity.ghostwriter.settings.SettingsScreen
 import com.prosincerity.ghostwriter.core.ui.theme.GhostwriterTheme
@@ -91,6 +92,7 @@ private fun GhostwriterApp(
     var storageReady by remember { mutableStateOf(false) }
     var storageLoading by remember { mutableStateOf(true) }
     var storageError by remember { mutableStateOf<String?>(null) }
+    var deletingProjects by remember { mutableStateOf(emptySet<String>()) }
     val versionName = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -174,6 +176,7 @@ private fun GhostwriterApp(
             lyricsFolderReady = storageReady,
             storageLoading = storageLoading,
             storageError = storageError,
+            deletingProjects = deletingProjects,
             onCreateProject = { title ->
                 coroutineScope.launch {
                     runCatching {
@@ -198,19 +201,27 @@ private fun GhostwriterApp(
                     }
                 }
             },
-            onOpenProject = { title -> screen = Screen.Editor(title) },
+            onOpenProject = { title -> if (title !in deletingProjects) screen = Screen.Editor(title) },
             onDeleteProject = { title ->
-                BeatPlaybackService.forgetProject(context, title)
-                coroutineScope.launch {
-                    val deleted = withContext(Dispatchers.IO) {
-                        PersistentLyricsStorage.delete(context, title) && ProjectStorage.deleteProject(context, title)
-                    }
-                    if (deleted) {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        refreshProjects()
-                    } else {
-                        withContext(Dispatchers.Main.immediate) {
-                            Toast.makeText(context, "Couldn't delete ${projectSummaries[title]?.title ?: "project"}", Toast.LENGTH_SHORT).show()
+                if (title !in deletingProjects) {
+                    deletingProjects = deletingProjects + title
+                    BeatPlaybackService.forgetProject(context, title)
+                    coroutineScope.launch {
+                        try {
+                            EditorSaveQueue.process.awaitPending(File(ProjectStorage.rootDir(context), title))
+                            val deleted = withContext(Dispatchers.IO) {
+                                PersistentLyricsStorage.delete(context, title) && ProjectStorage.deleteProject(context, title)
+                            }
+                            if (deleted) {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                refreshProjects()
+                            } else {
+                                withContext(Dispatchers.Main.immediate) {
+                                    Toast.makeText(context, "Couldn't delete ${projectSummaries[title]?.title ?: "project"}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } finally {
+                            deletingProjects = deletingProjects - title
                         }
                     }
                 }

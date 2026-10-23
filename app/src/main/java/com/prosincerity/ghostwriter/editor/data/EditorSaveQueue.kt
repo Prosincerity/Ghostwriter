@@ -50,6 +50,13 @@ internal class EditorSaveQueue(
         return result
     }
 
+    suspend fun awaitPending(project: File) {
+        while (true) {
+            val result = synchronized(this) { pending[project]?.result } ?: return
+            result.join()
+        }
+    }
+
     suspend fun awaitIdle() {
         while (true) {
             val results = synchronized(this) { pending.values.map { it.result } }

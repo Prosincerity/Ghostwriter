@@ -151,6 +151,28 @@ class EditorSaveQueueTest {
         assertEquals("draft", ProjectStorage.loadLatest(project))
     }
 
+    @Test fun awaitingAProject_waitsForItsWritesWithoutWaitingForOtherProjects() {
+        val project = temporaryFolder.newFolder()
+        val other = temporaryFolder.newFolder()
+        val release = CompletableDeferred<Unit>()
+        val otherRelease = CompletableDeferred<Unit>()
+        queue.enqueue(project, "draft") { release.await(); true }
+        queue.enqueue(other, "other") { otherRelease.await(); true }
+        var readyToDelete = false
+        CoroutineScope(owner + dispatcher).launch {
+            queue.awaitPending(project)
+            readyToDelete = true
+        }
+        dispatcher.runPending()
+        assertFalse(readyToDelete)
+
+        release.complete(Unit)
+        dispatcher.runPending()
+
+        assertTrue(readyToDelete)
+        assertEquals("other", queue.pendingLyrics(other))
+    }
+
     private class QueuedDispatcher : CoroutineDispatcher() {
         private val tasks = ArrayDeque<Runnable>()
         override fun dispatch(context: CoroutineContext, block: Runnable) { tasks.addLast(block) }

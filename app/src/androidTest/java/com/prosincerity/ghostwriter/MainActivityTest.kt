@@ -453,6 +453,34 @@ class MainActivityTest {
     }
 
     @Test
+    fun deletingProject_disablesItsRowUntilTheSharedDeletionCompletes() {
+        val title = uniqueProjectTitle("Pending deletion")
+        val context = composeRule.activity
+        val provider = Uri.parse("content://${LyricArchiveTestProvider.AUTHORITY}")
+        createProject(title)
+        val project = ProjectStorage.projectDir(context, title)
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        waitUntilTextExists(title)
+        context.contentResolver.call(provider, "blockDelete", archiveScope, null)
+        try {
+            composeRule.onNodeWithContentDescription("Project options for $title").performClick()
+            composeRule.onNodeWithText("Delete").performClick()
+            composeRule.onNodeWithText("Delete").performClick()
+            composeRule.waitForIdle()
+            assertTrue(context.contentResolver.call(provider, "awaitDelete", archiveScope, null)!!.getBoolean("started"))
+
+            composeRule.onNodeWithText(title).assertIsNotEnabled()
+            composeRule.onNodeWithContentDescription("Project options for $title").assertIsNotEnabled()
+            composeRule.onNodeWithText("New project").assertIsEnabled()
+            assertTrue(project.isDirectory)
+        } finally {
+            context.contentResolver.call(provider, "releaseDelete", archiveScope, null)
+            waitUntilTextDoesNotExist(title)
+            deleteProject(context, project.name)
+        }
+    }
+
+    @Test
     fun deleteFailure_keepsProjectVisible() {
         val projectTitle = uniqueProjectTitle("Main activity delete failure")
 

@@ -85,6 +85,7 @@ internal fun HomeScreen(
     lyricsFolderReady: Boolean = true,
     storageLoading: Boolean = false,
     storageError: String? = null,
+    deletingProjects: Set<String> = emptySet(),
 ) {
     var showTitleDialog by remember { mutableStateOf(false) }
     var projectMenuFor by remember { mutableStateOf<String?>(null) }
@@ -222,8 +223,10 @@ internal fun HomeScreen(
                     items(recentProjects, key = { it.projectId }) { project ->
                         val projectId = project.projectId
                         val displayTitle = project.title
+                        val deleting = projectId in deletingProjects
+                        val projectEnabled = projectsEnabled && !deleting
                         Row(
-                            modifier = Modifier.fillMaxWidth().clickable(enabled = projectsEnabled) { onOpenProject(projectId) }
+                            modifier = Modifier.fillMaxWidth().clickable(enabled = projectEnabled) { onOpenProject(projectId) }
                                 .padding(vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -243,7 +246,7 @@ internal fun HomeScreen(
                                     displayTitle, style = MaterialTheme.typography.titleMedium,
                                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 )
-                                project.details?.let { details ->
+                                (if (deleting) "Deleting…" else project.details)?.let { details ->
                                     Text(
                                         details,
                                         style = MaterialTheme.typography.bodySmall,
@@ -254,7 +257,7 @@ internal fun HomeScreen(
                                 }
                             }
                             Box {
-                                IconButton(shape = GhostButtonShape, enabled = projectsEnabled, onClick = { projectMenuFor = projectId }) {
+                                IconButton(shape = GhostButtonShape, enabled = projectEnabled, onClick = { projectMenuFor = projectId }) {
                                     Icon(Icons.Filled.MoreVert, contentDescription = "Project options for $displayTitle")
                                 }
                                 DropdownMenu(

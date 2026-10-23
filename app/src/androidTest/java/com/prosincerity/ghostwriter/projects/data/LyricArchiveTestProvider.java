@@ -16,12 +16,27 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /** A local, isolated SAF fixture; never accesses the user's selected folder. */
 public class LyricArchiveTestProvider extends ContentProvider {
     public static final String AUTHORITY = "com.prosincerity.ghostwriter.test.lyric-archive";
     private final Set<String> failedScopes = new HashSet<>();
     private final Map<String, String> faults = new HashMap<>();
+    private static class DeletionGate {
+        final CountDownLatch started = new CountDownLatch(1);
+        final CountDownLatch release = new CountDownLatch(1);
+    }
+    private final Map<String, DeletionGate> deletionGates = new ConcurrentHashMap<>();
+    private boolean await(CountDownLatch latch) {
+        try { return latch.await(15, TimeUnit.SECONDS); }
+        catch (InterruptedException failure) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(failure);
+        }
+    }
     private String fault(String id) { return faults.get(id.split("/")[0]); }
     @Override public boolean onCreate() { return true; }
 
@@ -78,6 +93,21 @@ public class LyricArchiveTestProvider extends ContentProvider {
     }
 
     @Override public Bundle call(String method, String arg, Bundle extras) {
+        if ("blockDelete".equals(method)) {
+            deletionGates.put(arg, new DeletionGate());
+            return new Bundle();
+        }
+        if ("awaitDelete".equals(method)) {
+            Bundle result = new Bundle();
+            DeletionGate gate = deletionGates.get(arg);
+            result.putBoolean("started", gate != null && await(gate.started));
+            return result;
+        }
+        if ("releaseDelete".equals(method)) {
+            DeletionGate gate = deletionGates.remove(arg);
+            if (gate != null) gate.release.countDown();
+            return new Bundle();
+        }
         if ("fault".equals(method)) {
             if (extras == null) faults.remove(arg); else faults.put(arg, extras.getString("kind"));
             return new Bundle();
@@ -87,6 +117,8 @@ public class LyricArchiveTestProvider extends ContentProvider {
             return new Bundle();
         }
         if ("clear".equals(method)) {
+            DeletionGate gate = deletionGates.remove(arg);
+            if (gate != null) gate.release.countDown();
             deleteRecursively(file(arg)); failedScopes.remove(arg); faults.remove(arg); return new Bundle();
         }
         Uri documentUri;
@@ -116,6 +148,11 @@ public class LyricArchiveTestProvider extends ContentProvider {
             return result;
         }
         if ("android:deleteDocument".equals(method)) {
+            DeletionGate gate = deletionGates.get(id(parent).split("/")[0]);
+            if (gate != null) {
+                gate.started.countDown();
+                if (!await(gate.release)) throw new IllegalStateException("Deletion fixture was not released");
+            }
             if ("delete".equals(fault(id(parent)))) throw new IllegalArgumentException("Fixture refuses deletion");
             deleteRecursively(parent); return result;
         }

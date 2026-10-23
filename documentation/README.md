@@ -81,6 +81,8 @@ supported.
 ### Shared lyric folder
 
 Home requires a connected folder before enabling project actions.
+Deleting a project disables its row and waits for its queued editor writes
+before removing the shared and local copies, so a pending save cannot recreate it.
 `PersistentLyricsStorage` uses Android's Storage Access Framework. Selecting
 an existing `Ghostwriter` folder uses it directly; another folder receives
 a `Ghostwriter` subfolder.
