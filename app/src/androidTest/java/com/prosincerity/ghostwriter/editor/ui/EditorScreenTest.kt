@@ -334,8 +334,9 @@ class EditorScreenTest {
             assertEquals(null, ProjectStorage.loadMetadata(project, title).bpm)
             assertEquals("keep", File(project, "project.json/keep").readText())
         } finally {
-            disposeEditorAndDeleteProject(visible, title)
+            disposeEditorAndDeleteProject(visible, project.name)
             com.prosincerity.ghostwriter.settings.Settings.setAutosaveIntervalSeconds(context, oldInterval)
+            assertFalse("The corrupt-metadata fixture must not survive cleanup", project.exists())
         }
     }
 
