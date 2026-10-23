@@ -36,13 +36,9 @@ Repository documentation takes precedence over assumptions about Android design.
 - Mirror production packages in `src/test` and `src/androidTest`; keep tests
   with their subject. Use `git mv` for moves and update package declarations,
   imports, manifests, JNI symbols, coverage policy, and documentation in the
-  same commit as the corresponding move. Update ProGuard/R8 rules if present.
+  same commit as the corresponding move.
 - Keep feature dependencies acyclic. Stop and report exposed cycles instead
   of repairing them as part of a package move.
-- Waveform owns `WaveformMarker` and `MarkerLoopRole`. The `waveform` feature
-  must not import `player`, `projects`, or `editor`; `player` must not import
-  `projects` or `editor`.
-- Make focused changes. Do not refactor unrelated code.
 - Follow [Testing](documentation/TESTING.md) for verification scope, test design,
   coverage gates, and device access. Documentation-only changes require diff
   and command review, not Gradle or device execution.
