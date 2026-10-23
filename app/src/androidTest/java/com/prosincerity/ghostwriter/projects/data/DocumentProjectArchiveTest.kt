@@ -372,6 +372,48 @@ class DocumentProjectArchiveTest {
         assertEquals("keep", blocked.readText())
     }
 
+    @Test fun corruptLocalMetadataCannotReplaceVerifiedSharedSnapshots() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "Retained title")
+        assertTrue(ProjectStorage.saveMetadata(project, ProjectMetadata("Retained title", bpm = 92, notes = "Keep notes")))
+        draft(project, "Verified lyrics")
+        archive.save(project, 3)
+        val before = savedFiles(project.name).associateWith { uri ->
+            resolver.openInputStream(uri)!!.bufferedReader().use { it.readText() }
+        }
+        val metadata = ProjectStorage.metadataFile(project)
+        metadata.writeText("{broken metadata")
+        draft(project, "New local lyrics")
+
+        assertThrows(IOException::class.java) { archive.save(project, 3) }
+
+        assertEquals("{broken metadata", metadata.readText())
+        assertEquals(before, savedFiles(project.name).associateWith { uri ->
+            resolver.openInputStream(uri)!!.bufferedReader().use { it.readText() }
+        })
+        val restoredRoot = File(localRoot, ".restored").apply { mkdir() }
+        assertEquals(1, archive.restore(restoredRoot))
+        val recovered = ProjectStorage.loadMetadata(File(restoredRoot, project.name), "fallback")
+        assertEquals("Retained title", recovered.title)
+        assertEquals(92, recovered.bpm)
+        assertEquals("Keep notes", recovered.notes)
+    }
+
+    @Test fun unreadableLocalMetadataCannotBeArchivedAsDefaults() {
+        val project = ProjectStorage.createProjectDirectory(localRoot, "Retained title")
+        draft(project, "Verified lyrics")
+        archive.save(project, 3)
+        val before = savedFiles(project.name).toSet()
+        val metadata = ProjectStorage.metadataFile(project)
+        assertTrue(metadata.delete())
+        assertTrue(metadata.mkdir())
+        File(metadata, "keep").writeText("Retained bytes")
+
+        assertThrows(IOException::class.java) { archive.save(project, 3) }
+
+        assertEquals(before, savedFiles(project.name).toSet())
+        assertEquals("Retained bytes", File(metadata, "keep").readText())
+    }
+
     @Test fun reinstallRecoveryKeepsStableIdUnicodeLyricsAndMetadata() {
         val project = ProjectStorage.createProjectDirectory(localRoot, "Verse / chorus 🎵")
         ProjectStorage.saveMetadata(project, ProjectMetadata("Verse / chorus 🎵", bpm = 92, notes = "keep notes"))

@@ -69,8 +69,9 @@ internal class DocumentProjectArchive(context: Context, private val treeUri: Uri
 
     private fun workingMetadata(project: File): String {
         val file = ProjectStorage.metadataFile(project)
-        val json = runCatching { JSONObject(file.readText()) }.getOrNull()
-        val metadata = ProjectStorage.loadMetadata(project, project.name)
+        val json = ProjectStorage.readMetadataJson(project)
+        val title = if (ProjectStorage.isProjectId(project.name)) "Untitled" else project.name
+        val metadata = json?.let { ProjectMetadata.fromJsonObject(it, title) } ?: ProjectMetadata(title)
         val fileTime = file.lastModified()
         val stable = metadata.copy(
             createdAt = if (json?.has("createdAt") == true) metadata.createdAt else fileTime,

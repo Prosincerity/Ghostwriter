@@ -7,6 +7,19 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class ProjectIdentityTest {
+    @Test fun legacyMigrationPreservesCorruptMetadataForRecovery() {
+        val root = temporaryFolder.newFolder()
+        val legacy = File(root, "Legacy song").apply { mkdir() }
+        val metadata = File(legacy, "project.json").apply { writeText("{broken metadata") }
+        File(legacy, "Legacy song.txt").writeText("Retained lyrics")
+
+        assertThrows(java.io.IOException::class.java) { ProjectStorage.migrateLegacyProjects(root) }
+
+        assertEquals("{broken metadata", metadata.readText())
+        assertEquals("Retained lyrics", File(legacy, "Legacy song.txt").readText())
+        assertEquals(listOf("Legacy song"), root.list()!!.toList())
+    }
+
     @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test fun migrationHandlesMissingMetadataEmptyProjectsAndUnrelatedEntries() {

@@ -72,6 +72,10 @@ its final exit save. `StagedFileWriter` syncs a complete temporary file before
 renaming it over the destination.
 Stopping the activity requests a save of the latest lyrics without closing the
 editor session, so switching apps does not have to wait for the autosave timer.
+Display reads tolerate missing or damaged metadata. Migration, metadata writes,
+and shared saves reject existing unreadable or malformed metadata, preserving
+the original file and verified shared history. Missing legacy metadata remains
+supported.
 
 ### Shared lyric folder
 

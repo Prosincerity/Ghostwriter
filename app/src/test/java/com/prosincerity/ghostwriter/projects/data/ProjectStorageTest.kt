@@ -13,6 +13,17 @@ import kotlin.text.Charsets.UTF_8
 
 class ProjectStorageTest {
     @Test
+    fun metadataWrite_rejectsCorruptExistingFile() {
+        val project = tempFolder.newFolder()
+        val file = ProjectStorage.metadataFile(project)
+        file.writeText("{broken metadata")
+
+        assertFalse(ProjectStorage.saveMetadata(project, ProjectMetadata("Replacement")))
+
+        assertEquals("{broken metadata", file.readText())
+    }
+
+    @Test
     fun renameFailure_rollsBackDirectoryAndManualSaveWhenMetadataCannotBeWritten() {
         for (hasManualSave in listOf(false, true)) {
             val project = tempFolder.newFolder("rollback_$hasManualSave")

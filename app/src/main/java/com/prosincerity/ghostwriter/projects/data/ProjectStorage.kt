@@ -75,8 +75,7 @@ object ProjectStorage {
                 // Persist the display title before changing its fallback folder name.
                 // A failed migration leaves the original directory available for retry.
                 runCatching {
-                    val json = runCatching { JSONObject(metadataFile(source).readText()) }
-                        .getOrElse { metadata.toJsonObject() }
+                    val json = readMetadataJson(source) ?: metadata.toJsonObject()
                     json.put("title", metadata.title)
                     // Freeze old missing timestamps once; otherwise the tolerant
                     // reader invents new times on every shared save/checkpoint.
@@ -277,6 +276,17 @@ object ProjectStorage {
         return ProjectMetadata.fromJsonString(contents, title)
     }
 
+    /** Missing legacy information is allowed; existing unreadable data must not be replaced. */
+    internal fun readMetadataJson(projectDir: File): JSONObject? {
+        val file = metadataFile(projectDir)
+        if (!file.exists()) return null
+        return try {
+            JSONObject(file.readText())
+        } catch (failure: Exception) {
+            throw IOException("Couldn't read the project's information", failure)
+        }
+    }
+
     @Synchronized
     fun saveMetadata(
         projectDir: File,
@@ -285,6 +295,7 @@ object ProjectStorage {
     ): Boolean =
         runCatching {
             val file = metadataFile(projectDir)
+            readMetadataJson(projectDir)
             val updated = metadata.copy(
                 updatedAt = now(),
                 version = maxOf(metadata.version, ProjectMetadata.CURRENT_VERSION),
