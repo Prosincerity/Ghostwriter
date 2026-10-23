@@ -85,6 +85,45 @@ class DictionaryDownloadsTest {
     }
 
     @Test
+    fun olderDictionary_offersAnUpdateAndKeepsWorkingAfterAFailedAttempt() = withDictionaryTestContext { context ->
+        val oldArchive = dictionaryArchive(context, listOf("older" to "/oʊld/"))
+        val updatedArchive = dictionaryArchive(context, listOf("newer" to "/njuː/"))
+        val response = AtomicReference(byteArrayOf(1, 2, 3))
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource { ByteArrayInputStream(response.get()) })
+        val oldDatabase = java.io.File(context.filesDir, "dictionaries/en/previous-release/wiktionary.db")
+        assertTrue(oldDatabase.parentFile!!.mkdirs())
+        java.util.zip.GZIPInputStream(ByteArrayInputStream(oldArchive)).use { input ->
+            oldDatabase.outputStream().use { input.copyTo(it) }
+        }
+        composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
+        val update = "Update Wiktionary Kaikki for English"
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithContentDescription(update).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Update available · Available offline").assertExists()
+        composeRule.onNodeWithContentDescription(update).performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithText("Could not download Wiktionary Kaikki for English:", substring = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(oldDatabase, installer.availableDatabase("en", DictionarySource.WIKTIONARY))
+        assertNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+
+        response.set(updatedArchive)
+        composeRule.onNodeWithContentDescription(update).performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithContentDescription(INSTALLED_ENGLISH_WIKTIONARY).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertNotNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+        installer.openReadOnly("en", DictionarySource.WIKTIONARY)!!.use { db ->
+            db.rawQuery("SELECT word FROM dictionary", null).use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("newer", cursor.getString(0))
+            }
+        }
+    }
+
+    @Test
     fun failedDownloadCanBeRetriedAndMarksInstalledSource() = withDictionaryTestContext { context ->
         val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         val invalid = ByteArrayOutputStream().use { output ->

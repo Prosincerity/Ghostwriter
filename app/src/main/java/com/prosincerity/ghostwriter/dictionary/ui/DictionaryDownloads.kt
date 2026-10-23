@@ -46,6 +46,8 @@ import com.prosincerity.ghostwriter.core.ui.theme.GhostButtonShape
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+private enum class InstalledSource { MISSING, OUTDATED, CURRENT }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DictionaryDownloadsScreen(onBack: () -> Unit) {
@@ -77,7 +79,7 @@ fun DictionaryDownloadsScreen(onBack: () -> Unit) {
 internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val installed = remember(installer) {
-        mutableStateMapOf<Pair<String, DictionarySource>, Boolean>()
+        mutableStateMapOf<Pair<String, DictionarySource>, InstalledSource>()
     }
     var checkingDictionaries by remember(installer) { mutableStateOf(true) }
     LaunchedEffect(installer) {
@@ -85,7 +87,11 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
             buildMap {
                 for (language in installer.release.languages.keys) {
                     for (source in DictionarySource.entries) {
-                        put(language to source, installer.availableDatabase(language, source) != null)
+                        put(language to source, when {
+                            installer.installedDatabase(language, source) != null -> InstalledSource.CURRENT
+                            installer.availableDatabase(language, source) != null -> InstalledSource.OUTDATED
+                            else -> InstalledSource.MISSING
+                        })
                     }
                 }
             }
@@ -99,7 +105,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
 
     fun startDownload(language: String, source: DictionarySource) {
         val key = language to source
-        downloadSession.start(key, onInstalled = { installed[key] = true }) { onProgress ->
+        downloadSession.start(key, onInstalled = { installed[key] = InstalledSource.CURRENT }) { onProgress ->
             installer.install(language, source, onProgress)
         }
     }
@@ -133,13 +139,16 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                         Column(Modifier.weight(1f)) {
                             Text(sourceLabel, style = MaterialTheme.typography.bodyMedium)
                             Text(
-                                if (installed[key] == true) "Installed · Available offline"
-                                else "${(asset.sizeBytes + 999_999) / 1_000_000} MB download",
+                                when (installed[key]) {
+                                    InstalledSource.CURRENT -> "Installed · Available offline"
+                                    InstalledSource.OUTDATED -> "Update available · Available offline"
+                                    else -> "${(asset.sizeBytes + 999_999) / 1_000_000} MB download"
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        if (installed[key] == true) {
+                        if (installed[key] == InstalledSource.CURRENT) {
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = "$sourceLabel installed for $languageLabel",
@@ -153,7 +162,8 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                                 onClick = { startDownload(language, source) },
                                 enabled = !checkingDictionaries && active == null,
                             ) {
-                                Icon(Icons.Default.Download, contentDescription = "Download $sourceLabel for $languageLabel")
+                                val action = if (installed[key] == InstalledSource.OUTDATED) "Update" else "Download"
+                                Icon(Icons.Default.Download, contentDescription = "$action $sourceLabel for $languageLabel")
                             }
                         }
                     }

@@ -26,6 +26,9 @@ Update it when changing data releases. Do not infer URLs from release dates.
 storage. It checks that the required columns can be queried before activating
 the staged database. This is a schema check, not a full content audit.
 Failed or cancelled installs remove staging files and retain usable older data.
+The downloads screen offers an update when an older release is available
+offline but the pinned release is missing. Failed updates retain that action
+and the older database until a retry succeeds.
 
 Downloaded databases are excluded from Android backup and the APK.
 Search opens them read-only and never inserts generated pronunciations.
