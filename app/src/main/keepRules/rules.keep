@@ -1,1 +1,6 @@
-# No additional R8 keep rules are currently required.
+# ipa_jni.c resolves these methods through Java_<package>_EspeakIpa_<method>.
+# Keep their class, names, and native signatures while optimizing other code.
+-keep,allowoptimization class com.prosincerity.ghostwriter.dictionary.data.EspeakIpa {
+    private native boolean nativeInitialize(byte[]);
+    private native byte[] nativePhonemize(byte[], int);
+}

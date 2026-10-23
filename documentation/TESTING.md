@@ -106,6 +106,22 @@ Confirm the selected classes in `app/build/outputs/androidTest-results/connected
 Android HTML reports are in `app/build/reports/androidTests/connected/`.
 The suite uses `AndroidJUnitRunner`, Espresso, and Compose UI testing.
 
+### Optimized JNI check
+
+On the selected device, exercise the JNI entry points after R8 optimization:
+
+```sh
+./gradlew --offline -Pghostwriter.releaseCheck=true :app:connectedReleaseCheckAndroidTest
+python3 scripts/check_release_native_tests.py
+```
+
+The `releaseCheck` build inherits release optimization, uses the local debug
+signing key, and installs as `com.prosincerity.ghostwriter.releasecheck`. It stays
+separate from the user's installation. Its platform instrumentation runner checks
+four known pronunciations without AndroidX test-runtime dependencies. The report
+checker requires all four tests, rejecting crashes or zero-test discovery.
+Distribution uses the ordinary `release` variant and its original application ID.
+
 ## Coverage and merge gate
 
 Debug builds enable JaCoCo for both suites. Module gates use weighted counters,

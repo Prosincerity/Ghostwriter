@@ -24,7 +24,10 @@ android {
         versionCode = 5
         versionName = "1.3.0-beta.1"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = if (providers.gradleProperty("ghostwriter.releaseCheck").orNull == "true")
+            "com.prosincerity.ghostwriter.dictionary.data.EspeakReleaseCheckInstrumentation"
+        else "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["testProviderAuthority"] = "com.prosincerity.ghostwriter.test"
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
@@ -42,9 +45,19 @@ android {
         }
         release {
             optimization {
-                enable = false
+                enable = true
             }
         }
+        create("releaseCheck") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".releasecheck"
+            signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["testProviderAuthority"] = "com.prosincerity.ghostwriter.releasecheck.test"
+            matchingFallbacks += listOf("release")
+        }
+    }
+    if (providers.gradleProperty("ghostwriter.releaseCheck").orNull == "true") {
+        testBuildType = "releaseCheck"
     }
     testCoverage {
         // Aggregated reports require the same JaCoCo version for JVM and Android tests.

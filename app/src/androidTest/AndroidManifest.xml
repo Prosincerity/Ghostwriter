@@ -2,11 +2,11 @@
     <application>
         <provider
             android:name="com.prosincerity.ghostwriter.editor.ui.BeatImportTestProvider"
-            android:authorities="com.prosincerity.ghostwriter.test.beat-import"
+            android:authorities="${testProviderAuthority}.beat-import"
             android:exported="true" />
         <provider
             android:name="com.prosincerity.ghostwriter.projects.data.LyricArchiveTestProvider"
-            android:authorities="com.prosincerity.ghostwriter.test.lyric-archive"
+            android:authorities="${testProviderAuthority}.lyric-archive"
             android:grantUriPermissions="true"
             android:exported="true" />
     </application>

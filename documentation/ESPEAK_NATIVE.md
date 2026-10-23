@@ -45,6 +45,12 @@ storage on the IO dispatcher. An initialization mutex protects setup.
 The JNI bridge serializes eSpeak's global state and copies returned IPA bytes
 into owned memory before releasing its lock.
 
+Release builds enable R8 code and resource optimization. The targeted rule in
+[`rules.keep`](../app/src/main/keepRules/rules.keep) preserves the
+`com.prosincerity.ghostwriter.dictionary.data.EspeakIpa` class and its two native
+method names. They must match the exported `Java_com_prosincerity_ghostwriter_dictionary_data_EspeakIpa_*`
+symbols in `ipa_jni.c`. Update both sides and the rule together after a package move.
+
 The bridge generates IPA from a UTF-8 word using a supported voice.
 It does not synthesize audio or expose a TTS service.
 Unsupported languages and invalid input return no IPA; missing data and

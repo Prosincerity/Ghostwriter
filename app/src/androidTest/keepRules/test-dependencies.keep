@@ -1,0 +1,4 @@
+# Error Prone's JVM-only annotation refers to javac's Modifier enum.
+# It is never executed by the Android instrumentation tests.
+-dontwarn javax.lang.model.element.Modifier
+
