@@ -43,6 +43,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.prosincerity.ghostwriter.R
 import com.prosincerity.ghostwriter.editor.data.EditorLyricsSession
 import com.prosincerity.ghostwriter.editor.data.importProjectBeat
@@ -77,7 +80,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Lyric editing, project information, and beat preparation for one project.
- * In-memory lyrics are saved manually, on the autosave tick, and on editor exit.
+ * Lyrics are saved manually, on the autosave tick, on activity stop, and on exit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -149,7 +152,8 @@ fun EditorScreen(
     var showReassignConfirmation by rememberSaveable(projectId) { mutableStateOf(false) }
     var markerPositionToAdd by remember(projectId) { mutableStateOf<Long?>(null) }
     var markerToEdit by remember(projectId) { mutableStateOf<WaveformMarker?>(null) }
-    val latestLyrics = rememberUpdatedState(lyrics)
+    // Read the text state directly: lifecycle callbacks can precede recomposition.
+    fun latestLyrics(): String = loadedLyrics ?: lyrics
     val latestKeepCount = rememberUpdatedState(keepCount)
     val latestWaveformCancellation = rememberUpdatedState(waveformCancellation)
     fun reportStorageFailure() {
@@ -159,6 +163,22 @@ fun EditorScreen(
         }
         if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) report()
         else android.os.Handler(android.os.Looper.getMainLooper()).post { report() }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, lyricsSession) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                val content = latestLyrics()
+                val backups = latestKeepCount.value
+                coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    val saved = withContext(Dispatchers.IO) { lyricsSession.autosave(content, backups) }
+                    if (!saved) reportStorageFailure()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val projectMutationMutex = remember(projectId) { Mutex() }
@@ -429,7 +449,7 @@ fun EditorScreen(
             delay(intervalSeconds.seconds)
             intervalSeconds = AppSettings.getAutosaveIntervalSeconds(context)
             keepCount = AppSettings.getAutosaveCount(context)
-            val contentToSave = latestLyrics.value
+            val contentToSave = latestLyrics()
             val backupsToKeep = keepCount
             val saved = withContext(Dispatchers.IO) {
                 lyricsSession.autosave(contentToSave, backupsToKeep)
@@ -445,7 +465,7 @@ fun EditorScreen(
         onDispose {
             latestWaveformCancellation.value?.set(true)
             if (!lyricsSession.finish(
-                latestLyrics.value,
+                latestLyrics(),
                 latestKeepCount.value,
             )) reportStorageFailure()
         }

@@ -11,7 +11,7 @@ define project constraints and non-goals.
 - [x] **Lyric editor:** edit lyrics in a full-screen notepad.
 - [x] **Project management:** create, rename, delete, and reopen projects.
 - [x] **Local persistence:** save manually, autosave at a configurable interval,
-  and save on editor exit; configure the number of rotating backups.
+  save when the activity stops and on editor exit; configure rotating backups.
 - [x] **Shared lyric folder:** retain lyrics and project metadata outside app
   storage. See [Project storage](README.md#project-storage) for recovery limits.
 - [x] **Project information:** store tempo, musical key, time signature, notes,

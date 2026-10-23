@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.toArgb
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.Lifecycle
 import com.prosincerity.ghostwriter.typography.LyricTextSettings
 import com.prosincerity.ghostwriter.projects.data.ProjectStorage
 import com.prosincerity.ghostwriter.projects.data.PersistentLyricsStorage
@@ -261,6 +262,31 @@ class MainActivityTest {
             assertTrue(theme.resolveAttribute(android.R.attr.windowBackground, background, true))
             val drawable = composeRule.activity.getDrawable(background.resourceId) as ColorDrawable
             assertEquals(GhostColorScheme.background.toArgb(), drawable.color)
+        }
+    }
+
+    @Test
+    fun stoppingActivity_savesLatestLyricsBeforeTheAutosaveTick() {
+        val title = uniqueProjectTitle("Background draft")
+        val context = composeRule.activity
+        val oldInterval = Settings.getAutosaveIntervalSeconds(context)
+        try {
+            Settings.setAutosaveIntervalSeconds(context, 300)
+            createProject(title)
+            val project = ProjectStorage.projectDir(context, title)
+            for (lyrics in listOf("Draft before switching apps", "Edited after returning")) {
+                composeRule.onNode(hasSetTextAction()).performTextReplacement(lyrics)
+                composeRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+                composeRule.waitUntil(5_000) { ProjectStorage.loadLatest(project) == lyrics }
+                composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                composeRule.onNodeWithText(lyrics).assertExists()
+            }
+            composeRule.onNodeWithContentDescription("Back").performClick()
+        } finally {
+            composeRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+            composeRule.activityRule.scenario.recreate()
+            ProjectStorage.deleteProject(context, title)
+            Settings.setAutosaveIntervalSeconds(context, oldInterval)
         }
     }
 

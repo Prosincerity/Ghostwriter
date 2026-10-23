@@ -68,6 +68,8 @@ reports the load failure and does not save over those files.
 `EditorLyricsSession` serializes writes within an editor visit and rejects
 queued saves after the final exit save. `StagedFileWriter` syncs a complete
 temporary file before renaming it over the destination.
+Stopping the activity requests a save of the latest lyrics without closing the
+editor session, so switching apps does not have to wait for the autosave timer.
 
 ### Shared lyric folder
 
