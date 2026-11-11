@@ -6,6 +6,8 @@ import android.database.sqlite.SQLiteException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 import java.io.File
 import java.io.FilterInputStream
@@ -129,6 +131,7 @@ internal class DictionaryInstaller(
     internal val appContext = context.applicationContext
     private val root = File(appContext.filesDir, "dictionaries")
     private val catalog = DictionaryReleaseCatalog(File(root, "release.json"), bundledRelease, metadataSource)
+    private val mutations = Mutex()
     val release: DictionaryRelease get() = catalog.release
 
     suspend fun refreshRelease(): DictionaryRelease = catalog.refresh()
@@ -154,35 +157,69 @@ internal class DictionaryInstaller(
         DictionarySource.entries.any { source -> availableDatabase(language, source) != null }
     }
 
+    fun hasStoredDictionary(language: String, source: DictionarySource): Boolean =
+        storedFiles(language, source).isNotEmpty()
+
+    /** Remove every version of this source so fallback discovery cannot restore an older copy. */
+    suspend fun remove(language: String, source: DictionarySource) = withContext(Dispatchers.IO) {
+        mutations.withLock {
+            val files = storedFiles(language, source)
+            for (file in files) {
+                coroutineContext.ensureActive()
+                check(file.delete()) { "Cannot remove dictionary ${file.name}" }
+            }
+            files.mapNotNull { it.parentFile }.distinct().forEach { directory ->
+                if (directory.listFiles()?.isEmpty() == true) directory.delete()
+            }
+            File(root, language).let { if (it.listFiles()?.isEmpty() == true) it.delete() }
+        }
+    }
+
+    private fun storedFiles(language: String, source: DictionarySource): List<File> {
+        require(language in release.languages)
+        val directory = File(root, language)
+        if (!directory.exists()) return emptyList()
+        val versions = checkNotNull(directory.listFiles()) { "Cannot read installed dictionaries" }
+        val sidecars = setOf("${source.fileName}-journal", "${source.fileName}-wal", "${source.fileName}-shm")
+        return versions.filter { it.isDirectory }.flatMap { version ->
+            checkNotNull(version.listFiles()) { "Cannot read dictionary version ${version.name}" }.filter { file ->
+                file.isFile && (file.name == source.fileName || file.name in sidecars ||
+                    (file.name.startsWith(".${source.fileName}-") && file.name.endsWith(".part")))
+            }
+        }
+    }
+
     suspend fun install(
         language: String,
         dictionarySource: DictionarySource,
         onProgress: suspend (DictionaryDownloadProgress) -> Unit = {},
     ): File = withContext(Dispatchers.IO) {
-        val release = release
-        require(language in release.languages)
-        installedDatabase(language, dictionarySource)?.let { return@withContext it }
-        val asset = release.languages.getValue(language).asset(dictionarySource)
-        val languageDir = File(root, language)
-        check(languageDir.mkdirs() || languageDir.isDirectory) { "Cannot create dictionary directory" }
-        val versionDir = File(languageDir, release.tag)
-        check(versionDir.mkdirs() || versionDir.isDirectory) { "Cannot create version directory" }
-        val staging = File(versionDir, ".${dictionarySource.fileName}-${System.nanoTime()}.part")
-        try {
-            unpackDictionaryArchive(source, asset, staging, onProgress)
-            coroutineContext.ensureActive()
-            check(isUsableDatabase(staging)) { "Downloaded dictionary is invalid" }
-            coroutineContext.ensureActive()
-            val installed = File(versionDir, dictionarySource.fileName)
-            if (installed.isFile) {
-                if (isUsableDatabase(installed)) return@withContext installed
-                check(installed.delete()) { "Cannot replace invalid dictionary" }
+        mutations.withLock {
+            val release = release
+            require(language in release.languages)
+            installedDatabase(language, dictionarySource)?.let { return@withLock it }
+            val asset = release.languages.getValue(language).asset(dictionarySource)
+            val languageDir = File(root, language)
+            check(languageDir.mkdirs() || languageDir.isDirectory) { "Cannot create dictionary directory" }
+            val versionDir = File(languageDir, release.tag)
+            check(versionDir.mkdirs() || versionDir.isDirectory) { "Cannot create version directory" }
+            val staging = File(versionDir, ".${dictionarySource.fileName}-${System.nanoTime()}.part")
+            try {
+                unpackDictionaryArchive(source, asset, staging, onProgress)
+                coroutineContext.ensureActive()
+                check(isUsableDatabase(staging)) { "Downloaded dictionary is invalid" }
+                coroutineContext.ensureActive()
+                val installed = File(versionDir, dictionarySource.fileName)
+                if (installed.isFile) {
+                    if (isUsableDatabase(installed)) return@withLock installed
+                    check(installed.delete()) { "Cannot replace invalid dictionary" }
+                }
+                check(staging.renameTo(installed)) { "Cannot activate downloaded dictionary" }
+                onProgress(DictionaryDownloadProgress(asset.sizeBytes, asset.sizeBytes))
+                installed
+            } finally {
+                staging.delete()
             }
-            check(staging.renameTo(installed)) { "Cannot activate downloaded dictionary" }
-            onProgress(DictionaryDownloadProgress(asset.sizeBytes, asset.sizeBytes))
-            installed
-        } finally {
-            staging.delete()
         }
     }
 

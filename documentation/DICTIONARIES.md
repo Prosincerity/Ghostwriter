@@ -13,6 +13,10 @@ Wiktionary-derived and eSpeak-generated indexes from
 3. Use **Previous** and **Next** to page through words, IPA, and source labels.
 
 Downloads require network access and offer progress, cancellation, and retry.
+Use the remove button beside an installed source to free storage. Removal works
+offline and deletes all versions of that language/source, including unusable
+files and abandoned downloads. Other languages and sources remain installed;
+the removed source can be downloaded again later.
 Installed search works offline. Bundled pronunciation generation can supply IPA
 for a missing input, but searchable result words come from installed indexes.
 

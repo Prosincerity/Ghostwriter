@@ -58,6 +58,52 @@ class DictionaryDownloadsTest {
     @get:Rule val composeRule = createComposeRule(StandardTestDispatcher())
 
     @Test
+    fun removeFreesSelectedSourceAndAllowsItToBeDownloadedAgain() = withDictionaryTestContext { context ->
+        val bytes = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
+        val installer = dictionaryTestInstaller(context, bytes, source = DictionaryArchiveSource { ByteArrayInputStream(bytes) })
+        runBlocking {
+            installer.install("en", DictionarySource.WIKTIONARY)
+            installer.install("en", DictionarySource.ESPEAK)
+        }
+        composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
+        val remove = "Remove Wiktionary Kaikki for English"
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithContentDescription(remove).fetchSemanticsNodes()
+                .any { !it.config.contains(SemanticsProperties.Disabled) }
+        }
+
+        composeRule.onNodeWithContentDescription(remove).performClick()
+        waitForDownloadButton()
+
+        assertNull(installer.availableDatabase("en", DictionarySource.WIKTIONARY))
+        assertNotNull(installer.availableDatabase("en", DictionarySource.ESPEAK))
+        composeRule.onNodeWithContentDescription(remove).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(DOWNLOAD_ENGLISH_WIKTIONARY).performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithContentDescription(INSTALLED_ENGLISH_WIKTIONARY).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertNotNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
+    }
+
+    @Test
+    fun unusableStoredDictionaryStillOffersRemoval() = withDictionaryTestContext { context ->
+        val bytes = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
+        val installer = dictionaryTestInstaller(context, bytes, source = DictionaryArchiveSource { ByteArrayInputStream(bytes) })
+        val damaged = java.io.File(context.filesDir, "dictionaries/en/previous/wiktionary.db")
+        damaged.parentFile!!.mkdirs()
+        damaged.writeText("damaged")
+        composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
+        waitForDownloadButton()
+
+        composeRule.onNodeWithContentDescription("Remove Wiktionary Kaikki for English").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithContentDescription("Remove Wiktionary Kaikki for English").fetchSemanticsNodes().isEmpty()
+        }
+
+        assertTrue(!damaged.exists())
+    }
+
+    @Test
     fun openingDownloadsDiscoversFutureReleaseAndOffersItsUpdate() = withDictionaryTestContext { context ->
         val old = dictionaryArchive(context, listOf("older" to "/oʊld/"))
         val latest = dictionaryArchive(context, listOf("newer" to "/njuː/"))

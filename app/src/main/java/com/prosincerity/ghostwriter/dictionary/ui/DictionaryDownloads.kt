@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,7 +49,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private enum class InstalledSource { MISSING, OUTDATED, CURRENT }
+private enum class InstalledSource { MISSING, UNUSABLE, OUTDATED, CURRENT }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +88,11 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
     var release by remember(installer) { mutableStateOf(installer.release) }
     var checkingRelease by remember(installer) { mutableStateOf(false) }
     var releaseError by remember(installer) { mutableStateOf<String?>(null) }
+    var removing by remember(installer) { mutableStateOf<Pair<String, DictionarySource>?>(null) }
+    var removalError by remember(installer) { mutableStateOf<String?>(null) }
+    val downloadSession = remember(scope) { DictionaryDownloadSession(scope) }
+    val downloadState by downloadSession.state.collectAsState()
+    val active = downloadState as? DictionaryDownloadState.Downloading
     suspend fun installedStatus() = withContext(Dispatchers.IO) {
         buildMap {
             for (language in installer.release.languages.keys) {
@@ -94,6 +100,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                     put(language to source, when {
                         installer.installedDatabase(language, source) != null -> InstalledSource.CURRENT
                         installer.availableDatabase(language, source) != null -> InstalledSource.OUTDATED
+                        installer.hasStoredDictionary(language, source) -> InstalledSource.UNUSABLE
                         else -> InstalledSource.MISSING
                     })
                 }
@@ -101,6 +108,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
         }
     }
     suspend fun checkLatestRelease() {
+        if (checkingRelease || removing != null || downloadSession.state.value is DictionaryDownloadState.Downloading) return
         checkingRelease = true
         releaseError = null
         try {
@@ -119,11 +127,8 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
         checkingDictionaries = false
         checkLatestRelease()
     }
-    val downloadSession = remember(scope) { DictionaryDownloadSession(scope) }
-    val downloadState by downloadSession.state.collectAsState()
-    val active = downloadState as? DictionaryDownloadState.Downloading
-
     fun startDownload(language: String, source: DictionarySource) {
+        if (checkingDictionaries || checkingRelease || removing != null) return
         val key = language to source
         downloadSession.start(key, onInstalled = { installed[key] = InstalledSource.CURRENT }) { onProgress ->
             installer.install(language, source, onProgress)
@@ -145,7 +150,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
         TextButton(shape = GhostButtonShape, onClick = { scope.launch { checkLatestRelease() } },
-            enabled = !checkingDictionaries && !checkingRelease && active == null) {
+            enabled = !checkingDictionaries && !checkingRelease && active == null && removing == null) {
             Text("Check for updates")
         }
         if (checkingDictionaries) {
@@ -174,6 +179,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                                 when (installed[key]) {
                                     InstalledSource.CURRENT -> "Installed · Available offline"
                                     InstalledSource.OUTDATED -> "Update available · Available offline"
+                                    InstalledSource.UNUSABLE -> "Stored dictionary is unusable · Download again"
                                     else -> "${(asset.sizeBytes + 999_999) / 1_000_000} MB download"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
@@ -192,12 +198,43 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                                 shape = GhostButtonShape,
                                 colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                                 onClick = { startDownload(language, source) },
-                                enabled = !checkingDictionaries && !checkingRelease && active == null,
+                                enabled = !checkingDictionaries && !checkingRelease && active == null && removing == null,
                             ) {
                                 val action = if (installed[key] == InstalledSource.OUTDATED) "Update" else "Download"
                                 Icon(Icons.Default.Download, contentDescription = "$action $sourceLabel for $languageLabel")
                             }
                         }
+                        if (installed[key] != null && installed[key] != InstalledSource.MISSING) {
+                            IconButton(
+                                shape = GhostButtonShape,
+                                enabled = !checkingDictionaries && !checkingRelease && active == null && removing == null,
+                                onClick = {
+                                    if (removing == null && !checkingRelease &&
+                                        downloadSession.state.value !is DictionaryDownloadState.Downloading) {
+                                        removing = key
+                                        removalError = null
+                                        scope.launch {
+                                            try {
+                                                installer.remove(language, source)
+                                                installed[key] = InstalledSource.MISSING
+                                            } catch (cancelled: CancellationException) {
+                                                throw cancelled
+                                            } catch (failure: Exception) {
+                                                installed.putAll(installedStatus())
+                                                removalError = "Could not remove $sourceLabel for $languageLabel: ${failure.message}"
+                                            } finally {
+                                                removing = null
+                                            }
+                                        }
+                                    }
+                                },
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Remove $sourceLabel for $languageLabel")
+                            }
+                        }
+                    }
+                    if (removing == key) {
+                        Text("Removing $sourceLabel…", style = MaterialTheme.typography.bodySmall)
                     }
                     if (active?.key == key) {
                         val fraction = active.fraction
@@ -229,6 +266,10 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(bottom = 24.dp),
             )
+        }
+        removalError?.let {
+            Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 24.dp))
         }
         SettingsSection("Dictionary sources") {
             Text(

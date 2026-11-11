@@ -22,6 +22,56 @@ import java.util.zip.GZIPOutputStream
 @RunWith(AndroidJUnit4::class)
 class DictionaryInstallerInstrumentedTest {
     @Test
+    fun removalDeletesAllVersionsOfOneSourceAndKeepsOtherDictionaries() = withDictionaryTestContext { context ->
+        val bytes = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
+        var downloadsAllowed = true
+        val installer = dictionaryTestInstaller(context, bytes, source = DictionaryArchiveSource {
+            check(downloadsAllowed) { "Removal must work offline" }
+            ByteArrayInputStream(bytes)
+        })
+        val wiki = runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
+        val espeak = runBlocking { installer.install("en", DictionarySource.ESPEAK) }
+        val turkish = runBlocking { installer.install("tr", DictionarySource.WIKTIONARY) }
+        val older = File(context.filesDir, "dictionaries/en/previous").apply { mkdirs() }
+        val oldWiki = wiki.copyTo(File(older, "wiktionary.db"))
+        val oldEspeak = espeak.copyTo(File(older, "espeak.db"))
+        val staged = File(older, ".wiktionary.db-abandoned.part").apply { writeText("partial") }
+        val journal = File(older, "wiktionary.db-journal").apply { writeText("journal") }
+        downloadsAllowed = false
+
+        runBlocking { installer.remove("en", DictionarySource.WIKTIONARY) }
+
+        assertFalse(wiki.exists())
+        assertFalse(oldWiki.exists())
+        assertFalse(staged.exists())
+        assertFalse(journal.exists())
+        assertFalse(installer.hasStoredDictionary("en", DictionarySource.WIKTIONARY))
+        assertNull(installer.availableDatabase("en", DictionarySource.WIKTIONARY))
+        assertTrue(espeak.exists())
+        assertTrue(oldEspeak.exists())
+        assertTrue(turkish.exists())
+        assertEquals(PronunciationSource.ESPEAK_DATABASE, lookup(installer, "word", "en")?.source)
+        runBlocking { installer.remove("en", DictionarySource.WIKTIONARY) }
+        downloadsAllowed = true
+        assertTrue(runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }.isFile)
+    }
+
+    @Test
+    fun unusableAndPartialDictionariesCanBeRemovedWithoutAnInstalledDatabase() = withDictionaryTestContext { context ->
+        val installer = DictionaryInstaller(context)
+        val oldVersion = File(context.filesDir, "dictionaries/de/previous").apply { mkdirs() }
+        File(oldVersion, "wiktionary.db").writeText("damaged")
+        File(oldVersion, ".wiktionary.db-abandoned.part").writeText("partial")
+        assertNull(installer.availableDatabase("de", DictionarySource.WIKTIONARY))
+        assertTrue(installer.hasStoredDictionary("de", DictionarySource.WIKTIONARY))
+
+        runBlocking { installer.remove("de", DictionarySource.WIKTIONARY) }
+
+        assertFalse(installer.hasStoredDictionary("de", DictionarySource.WIKTIONARY))
+        assertFalse(oldVersion.exists())
+    }
+
+    @Test
     fun newReleaseChecksHashesAndKeepsOlderDictionaryUntilVerified() = withDictionaryTestContext { context ->
         val old = dictionaryArchive(context, listOf("older" to "/oʊld/"))
         val latest = dictionaryArchive(context, listOf("newer" to "/njuː/"))
