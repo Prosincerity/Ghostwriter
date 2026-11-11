@@ -1,5 +1,6 @@
 package com.prosincerity.ghostwriter.player.audio
 
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.prosincerity.ghostwriter.waveform.domain.MarkerLoopFrames
@@ -18,6 +19,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SmoothLoopPlaybackTest {
+    @get:Rule val composeRule = createEmptyComposeRule()
     @get:Rule val folder = TemporaryFolder(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir)
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
 
@@ -118,8 +120,9 @@ class SmoothLoopPlaybackTest {
         }
         try {
             assertTrue("Eight-channel output did not start", started.await(5, TimeUnit.SECONDS))
+            // The start callback can arrive before the audio worker publishes a positive millisecond position.
+            composeRule.waitUntil(timeoutMillis = 5_000) { playback.currentPositionMs > 0 }
             assertNull(failure.get())
-            assertTrue("Output must advance in audio frames", playback.currentPositionMs > 0)
             instrumentation.runOnMainSync { playback.pause() }
             assertFalse(playback.isPlaying)
         } finally {
