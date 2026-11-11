@@ -8,6 +8,18 @@ import org.junit.Test
 
 class DictionaryReleaseTest {
     @Test
+    fun requiresAValidSha256ForEveryArchive() {
+        for (hash in listOf("", "a".repeat(63), "g".repeat(64), "a".repeat(65))) {
+            val json = manifest()
+            asset(json).put("sha256", hash)
+            assertThrows(IllegalArgumentException::class.java) { DictionaryRelease.parse(json) }
+        }
+        val json = manifest()
+        asset(json).remove("sha256")
+        assertThrows(JSONException::class.java) { DictionaryRelease.parse(json) }
+    }
+
+    @Test
     fun parsesBothSourcesForEachSupportedLanguage() {
         val release = DictionaryRelease.parse(manifest())
 
@@ -16,7 +28,7 @@ class DictionaryReleaseTest {
         release.languages.forEach { (language, assets) ->
             DictionarySource.entries.forEach { source ->
                 val file = "$language-${source.name.lowercase()}.db.gz"
-                assertEquals(DictionaryAsset(file, 123L, "$releaseUrl/$file"), assets.asset(source))
+                assertEquals(DictionaryAsset(file, 123L, "$releaseUrl/$file", "a".repeat(64)), assets.asset(source))
             }
         }
     }
@@ -117,7 +129,7 @@ class DictionaryReleaseTest {
             listOf("wiktionary", "espeak").forEach { source ->
                 val file = "$language-$source.db.gz"
                 sources.put(source, JSONObject().put("file", file).put("sizeBytes", 123L)
-                    .put("url", "$releaseUrl/$file"))
+                    .put("url", "$releaseUrl/$file").put("sha256", "a".repeat(64)))
             }
             languages.put(language, sources)
         }

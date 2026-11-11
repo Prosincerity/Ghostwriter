@@ -22,12 +22,55 @@ import java.util.zip.GZIPOutputStream
 @RunWith(AndroidJUnit4::class)
 class DictionaryInstallerInstrumentedTest {
     @Test
+    fun newReleaseChecksHashesAndKeepsOlderDictionaryUntilVerified() = withDictionaryTestContext { context ->
+        val old = dictionaryArchive(context, listOf("older" to "/oʊld/"))
+        val latest = dictionaryArchive(context, listOf("newer" to "/njuː/"))
+        val oldRelease = dictionaryFixtureRelease(context, old, tag = "previous")
+        val latestRelease = dictionaryFixtureRelease(context, latest, tag = "upcoming")
+        var bytes = old
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource { ByteArrayInputStream(bytes) },
+            oldRelease, DictionaryArchiveSource { url ->
+                ByteArrayInputStream((if (url == DictionaryReleaseCatalog.LATEST_URL) dictionaryFixtureMetadata(latestRelease)
+                    else dictionaryFixtureChecksums(latestRelease)).toByteArray())
+            })
+        val previous = runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
+
+        runBlocking { installer.refreshRelease() }
+        assertEquals("upcoming", installer.release.tag)
+        val failure = runCatching { runBlocking { installer.install("en", DictionarySource.WIKTIONARY) } }.exceptionOrNull()
+        assertTrue(failure?.message.orEmpty().contains("SHA-256"))
+        assertEquals(previous, installer.availableDatabase("en", DictionarySource.WIKTIONARY))
+        assertTrue(File(context.filesDir, "dictionaries/en/upcoming").listFiles().orEmpty().isEmpty())
+
+        bytes = latest
+        runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
+        assertEquals(PronunciationSource.WIKTIONARY, lookup(installer, "newer", "en")?.source)
+        val offline = DictionaryInstaller(context, DictionaryArchiveSource { error("Must stay offline") })
+        assertEquals("upcoming", offline.release.tag)
+        assertEquals(PronunciationSource.WIKTIONARY, lookup(offline, "newer", "en")?.source)
+    }
+
+    @Test
+    fun matchingHashStillRequiresAValidDictionarySchema() = withDictionaryTestContext { context ->
+        val bytes = ByteArrayOutputStream().use { output ->
+            GZIPOutputStream(output).use { it.write("not a SQLite database".toByteArray()) }
+            output.toByteArray()
+        }
+        val installer = dictionaryTestInstaller(context, bytes, source = DictionaryArchiveSource { ByteArrayInputStream(bytes) })
+
+        val failure = runCatching { runBlocking { installer.install("en", DictionarySource.WIKTIONARY) } }.exceptionOrNull()
+
+        assertEquals("Downloaded dictionary is invalid", failure?.message)
+        assertTrue(installer.availableLanguages().isEmpty())
+    }
+
+    @Test
     fun installsSourcesSeparatelyAndUsesWiktionaryFirst() = withDictionaryTestContext { context ->
         val wiki = dictionaryArchive(context, listOf("hammer" to "/ˈhæmə/", "hammer" to "/ˈhæmɚ/",
             "d'accord" to "/dakɔʁ/"))
         val espeak = dictionaryArchive(context, listOf("hammer" to "/hamɚ/", "fallback" to "/fɔlbæk/"))
         var downloadsAllowed = true
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
+        val installer = dictionaryTestInstaller(context, wiki, espeak, source = DictionaryArchiveSource { url ->
             check(downloadsAllowed) { "An installed source must remain available without downloading again" }
             ByteArrayInputStream(if ("_espeak_" in url) espeak else wiki)
         })
@@ -76,7 +119,7 @@ class DictionaryInstallerInstrumentedTest {
     @Test
     fun failedArchiveDoesNotRemoveInstalledOtherSource() = withDictionaryTestContext { context ->
         val wiki = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
+        val installer = dictionaryTestInstaller(context, wiki, source = DictionaryArchiveSource { url ->
             if ("_espeak_" in url) throw IOException("interrupted download")
             ByteArrayInputStream(wiki)
         })
@@ -100,7 +143,7 @@ class DictionaryInstallerInstrumentedTest {
             output.toByteArray()
         }
         var archive = invalid
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+        val installer = dictionaryTestInstaller(context, valid, source = DictionaryArchiveSource {
             ByteArrayInputStream(archive)
         })
 
@@ -119,7 +162,7 @@ class DictionaryInstallerInstrumentedTest {
     @Test
     fun corruptInstalledDatabaseCanBeReplaced() = withDictionaryTestContext { context ->
         val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+        val installer = dictionaryTestInstaller(context, valid, source = DictionaryArchiveSource {
             ByteArrayInputStream(valid)
         })
         val version = File(context.filesDir, "dictionaries/en/${installer.release.tag}")
@@ -136,7 +179,7 @@ class DictionaryInstallerInstrumentedTest {
     fun cancellationAfterReadingArchiveDoesNotActivateDictionary() = withDictionaryTestContext { context ->
         val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
         var cancelDownload: () -> Unit = {}
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+        val installer = dictionaryTestInstaller(context, valid, source = DictionaryArchiveSource {
             object : ByteArrayInputStream(valid) {
                 override fun close() {
                     super.close()
@@ -166,7 +209,7 @@ class DictionaryInstallerInstrumentedTest {
     @Test
     fun installationWaitsForProgressDelivery() = withDictionaryTestContext { context ->
         val valid = dictionaryArchive(context, listOf("word" to "/wɜːd/"))
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource { ByteArrayInputStream(valid) })
+        val installer = dictionaryTestInstaller(context, valid, source = DictionaryArchiveSource { ByteArrayInputStream(valid) })
 
         runBlocking {
             withTimeout(5_000) {

@@ -3,6 +3,8 @@ package com.prosincerity.ghostwriter.dictionary.data
 import kotlinx.coroutines.ensureActive
 import java.io.File
 import java.io.FilterInputStream
+import java.security.DigestInputStream
+import java.security.MessageDigest
 import java.util.zip.GZIPInputStream
 import kotlin.coroutines.coroutineContext
 
@@ -17,8 +19,9 @@ internal suspend fun unpackDictionaryArchive(
     onProgress: suspend (DictionaryDownloadProgress) -> Unit,
 ) {
     var compressedBytes = 0L
+    val digest = MessageDigest.getInstance("SHA-256")
     source.open(asset.url).use { input ->
-        val counted = object : FilterInputStream(input) {
+        val counted = object : FilterInputStream(DigestInputStream(input, digest)) {
             override fun read(): Int {
                 val value = super.read()
                 if (value >= 0) compressedBytes++
@@ -48,6 +51,15 @@ internal suspend fun unpackDictionaryArchive(
                     }
                 }
             }
+            // Include any bytes beyond the gzip payload in the published archive hash.
+            val trailing = ByteArray(8192)
+            while (true) {
+                coroutineContext.ensureActive()
+                if (counted.read(trailing) < 0) break
+            }
         }
     }
+    val actual = digest.digest().joinToString("") { "%02x".format(it) }
+    check(actual == asset.sha256) { "Dictionary archive SHA-256 does not match the release" }
+    check(compressedBytes == asset.sizeBytes) { "Dictionary archive size does not match the release" }
 }

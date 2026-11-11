@@ -44,6 +44,8 @@ import com.prosincerity.ghostwriter.dictionary.domain.DictionaryDownloadSession
 import com.prosincerity.ghostwriter.core.ui.SettingsSection
 import com.prosincerity.ghostwriter.core.ui.theme.GhostButtonShape
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private enum class InstalledSource { MISSING, OUTDATED, CURRENT }
@@ -82,22 +84,40 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
         mutableStateMapOf<Pair<String, DictionarySource>, InstalledSource>()
     }
     var checkingDictionaries by remember(installer) { mutableStateOf(true) }
-    LaunchedEffect(installer) {
-        val status = withContext(Dispatchers.IO) {
-            buildMap {
-                for (language in installer.release.languages.keys) {
-                    for (source in DictionarySource.entries) {
-                        put(language to source, when {
-                            installer.installedDatabase(language, source) != null -> InstalledSource.CURRENT
-                            installer.availableDatabase(language, source) != null -> InstalledSource.OUTDATED
-                            else -> InstalledSource.MISSING
-                        })
-                    }
+    var release by remember(installer) { mutableStateOf(installer.release) }
+    var checkingRelease by remember(installer) { mutableStateOf(false) }
+    var releaseError by remember(installer) { mutableStateOf<String?>(null) }
+    suspend fun installedStatus() = withContext(Dispatchers.IO) {
+        buildMap {
+            for (language in installer.release.languages.keys) {
+                for (source in DictionarySource.entries) {
+                    put(language to source, when {
+                        installer.installedDatabase(language, source) != null -> InstalledSource.CURRENT
+                        installer.availableDatabase(language, source) != null -> InstalledSource.OUTDATED
+                        else -> InstalledSource.MISSING
+                    })
                 }
             }
         }
-        installed.putAll(status)
+    }
+    suspend fun checkLatestRelease() {
+        checkingRelease = true
+        releaseError = null
+        try {
+            release = installer.refreshRelease()
+            installed.putAll(installedStatus())
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            releaseError = failure.message ?: "Unknown error"
+        } finally {
+            checkingRelease = false
+        }
+    }
+    LaunchedEffect(installer) {
+        installed.putAll(installedStatus())
         checkingDictionaries = false
+        checkLatestRelease()
     }
     val downloadSession = remember(scope) { DictionaryDownloadSession(scope) }
     val downloadState by downloadSession.state.collectAsState()
@@ -116,6 +136,18 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
             style = MaterialTheme.typography.bodyMedium,
         )
         Spacer(Modifier.height(24.dp))
+        Text("Release: ${release.tag}", style = MaterialTheme.typography.bodySmall)
+        if (checkingRelease) {
+            Text("Checking for dictionary updates…", style = MaterialTheme.typography.bodySmall)
+        }
+        releaseError?.let {
+            Text("Could not check for updates: $it. Saved release information is still available.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
+        TextButton(shape = GhostButtonShape, onClick = { scope.launch { checkLatestRelease() } },
+            enabled = !checkingDictionaries && !checkingRelease && active == null) {
+            Text("Check for updates")
+        }
         if (checkingDictionaries) {
             Text(
                 "Checking installed dictionaries…",
@@ -124,7 +156,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                 modifier = Modifier.padding(bottom = 12.dp),
             )
         }
-        for ((language, assets) in installer.release.languages) {
+        for ((language, assets) in release.languages) {
             val languageLabel = dictionaryLanguageLabel(language)
             SettingsSection(languageLabel) {
                 for (source in DictionarySource.entries) {
@@ -160,7 +192,7 @@ internal fun DictionaryDownloads(installer: DictionaryInstaller, modifier: Modif
                                 shape = GhostButtonShape,
                                 colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                                 onClick = { startDownload(language, source) },
-                                enabled = !checkingDictionaries && active == null,
+                                enabled = !checkingDictionaries && !checkingRelease && active == null,
                             ) {
                                 val action = if (installed[key] == InstalledSource.OUTDATED) "Update" else "Download"
                                 Icon(Icons.Default.Download, contentDescription = "$action $sourceLabel for $languageLabel")

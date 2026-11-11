@@ -24,6 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.prosincerity.ghostwriter.dictionary.data.DictionaryArchiveSource
 import com.prosincerity.ghostwriter.dictionary.data.DictionaryInstaller
+import com.prosincerity.ghostwriter.dictionary.data.dictionaryTestInstaller
+import com.prosincerity.ghostwriter.dictionary.data.dictionaryFixtureRelease
+import com.prosincerity.ghostwriter.dictionary.data.dictionaryFixtureMetadata
+import com.prosincerity.ghostwriter.dictionary.data.dictionaryFixtureChecksums
+import com.prosincerity.ghostwriter.dictionary.data.DictionaryReleaseCatalog
 import com.prosincerity.ghostwriter.dictionary.data.DictionarySource
 import com.prosincerity.ghostwriter.dictionary.data.dictionaryArchive
 import com.prosincerity.ghostwriter.dictionary.data.withDictionaryTestContext
@@ -45,6 +50,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.zip.GZIPOutputStream
 import kotlin.random.Random
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.runBlocking
 
 @RunWith(AndroidJUnit4::class)
 class DictionaryDownloadsTest {
@@ -52,9 +58,37 @@ class DictionaryDownloadsTest {
     @get:Rule val composeRule = createComposeRule(StandardTestDispatcher())
 
     @Test
+    fun openingDownloadsDiscoversFutureReleaseAndOffersItsUpdate() = withDictionaryTestContext { context ->
+        val old = dictionaryArchive(context, listOf("older" to "/oʊld/"))
+        val latest = dictionaryArchive(context, listOf("newer" to "/njuː/"))
+        val oldRelease = dictionaryFixtureRelease(context, old, tag = "previous")
+        val latestRelease = dictionaryFixtureRelease(context, latest, tag = "upcoming")
+        val installer = DictionaryInstaller(context, DictionaryArchiveSource { url ->
+            ByteArrayInputStream(if ("/upcoming/" in url) latest else old)
+        }, oldRelease, DictionaryArchiveSource { url ->
+            ByteArrayInputStream((if (url == DictionaryReleaseCatalog.LATEST_URL) dictionaryFixtureMetadata(latestRelease)
+                else dictionaryFixtureChecksums(latestRelease)).toByteArray())
+        })
+        runBlocking { installer.install("en", DictionarySource.WIKTIONARY) }
+
+        composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
+
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithContentDescription("Update Wiktionary Kaikki for English").fetchSemanticsNodes()
+                .any { !it.config.contains(SemanticsProperties.Disabled) }
+        }
+        composeRule.onNodeWithText("Release: upcoming").assertExists()
+        composeRule.onNodeWithContentDescription("Update Wiktionary Kaikki for English").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithContentDescription(INSTALLED_ENGLISH_WIKTIONARY).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals("upcoming", installer.installedDatabase("en", DictionarySource.WIKTIONARY)?.parentFile?.name)
+    }
+
+    @Test
     fun languageSectionsAndSourceNoticesRemainReachableWithLargeText() = withDictionaryTestContext { context ->
         val attempts = AtomicInteger()
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+        val installer = dictionaryTestInstaller(context, byteArrayOf(1), source = DictionaryArchiveSource {
             attempts.incrementAndGet()
             error("Downloads must be explicitly requested")
         })
@@ -89,7 +123,7 @@ class DictionaryDownloadsTest {
         val oldArchive = dictionaryArchive(context, listOf("older" to "/oʊld/"))
         val updatedArchive = dictionaryArchive(context, listOf("newer" to "/njuː/"))
         val response = AtomicReference(byteArrayOf(1, 2, 3))
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource { ByteArrayInputStream(response.get()) })
+        val installer = dictionaryTestInstaller(context, updatedArchive, source = DictionaryArchiveSource { ByteArrayInputStream(response.get()) })
         val oldDatabase = java.io.File(context.filesDir, "dictionaries/en/previous-release/wiktionary.db")
         assertTrue(oldDatabase.parentFile!!.mkdirs())
         java.util.zip.GZIPInputStream(ByteArrayInputStream(oldArchive)).use { input ->
@@ -131,7 +165,7 @@ class DictionaryDownloadsTest {
             output.toByteArray()
         }
         val archive = AtomicReference(invalid)
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+        val installer = dictionaryTestInstaller(context, valid, source = DictionaryArchiveSource {
             ByteArrayInputStream(archive.get())
         })
         composeRule.setContent { GhostwriterTheme { DictionaryDownloads(installer) } }
@@ -139,7 +173,7 @@ class DictionaryDownloadsTest {
         waitForDownloadButton()
         composeRule.onNodeWithContentDescription(DOWNLOAD_ENGLISH_WIKTIONARY).performClick()
         composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithText("Could not download Wiktionary Kaikki for English: Downloaded dictionary is invalid")
+            composeRule.onAllNodesWithText("Could not download Wiktionary Kaikki for English: Dictionary archive SHA-256 does not match the release")
                 .fetchSemanticsNodes().isNotEmpty()
         }
         waitForDownloadButton()
@@ -152,7 +186,7 @@ class DictionaryDownloadsTest {
 
         assertNotNull(installer.installedDatabase("en", DictionarySource.WIKTIONARY))
         composeRule.onNodeWithText("Installed · Available offline").assertExists()
-        composeRule.onNodeWithText("Could not download Wiktionary Kaikki for English: Downloaded dictionary is invalid")
+        composeRule.onNodeWithText("Could not download Wiktionary Kaikki for English: Dictionary archive SHA-256 does not match the release")
             .assertDoesNotExist()
     }
 
@@ -175,7 +209,7 @@ class DictionaryDownloadsTest {
         val beginReading = CountDownLatch(1)
         val paused = CountDownLatch(1)
         val release = CountDownLatch(1)
-        val installer = DictionaryInstaller(context, DictionaryArchiveSource {
+        val installer = dictionaryTestInstaller(context, archive, source = DictionaryArchiveSource {
             started.countDown()
             beginReading.await()
             object : InputStream() {

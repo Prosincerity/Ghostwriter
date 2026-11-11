@@ -18,16 +18,32 @@ for a missing input, but searchable result words come from installed indexes.
 
 ## Release manifest and installation
 
+Opening **Download Dictionaries** automatically checks the repository's latest
+published stable GitHub release. **Check for updates** repeats the check.
+The app reads explicit asset URLs and compressed sizes from GitHub, and hashes
+from that release's `SHA256SUMS`. Validated metadata is cached locally; a failed
+check retains the saved release and installed dictionaries. Editing and search
+never check GitHub. Archive downloads and updates start only when selected.
+
 [`dictionary_release.json`](../app/src/main/assets/dictionary_release.json)
-pins the release tag, explicit `.db.gz` URLs, filenames, and compressed sizes.
-Update it when changing data releases. Do not infer URLs from release dates.
+supplies a known release, URLs, sizes, and SHA-256 hashes before the first
+successful check. Publishing a newer dictionary release does not require
+changing this fallback or releasing a new app version.
+
+Publish the six `.db.gz` assets and `SHA256SUMS` in a stable release marked
+latest on GitHub. The supported names are `<lang>_<version>.db.gz` and
+`<lang>_espeak_<version>.db.gz` for `en`, `de`, and `tr`; dates are not parsed.
+Checksum entries can use archive basenames or paths such as `en/<archive>`.
+Every archive must have one checksum. Missing or ambiguous assets, invalid
+checksums, or conflicts with GitHub asset digests reject the release metadata.
 
 `DictionaryInstaller.kt` streams decompressed data into versioned app-private
-storage. It checks that the required columns can be queried before activating
-the staged database. This is a schema check, not a full content audit.
+storage. It verifies the entire compressed archive's SHA-256 and size, then
+checks that the required columns can be queried before activating the staged
+database. Schema validation is not a full content audit.
 Failed or cancelled installs remove staging files and retain usable older data.
 The downloads screen offers an update when an older release is available
-offline but the pinned release is missing. Failed updates retain that action
+offline but the selected latest release is missing. Failed updates retain that action
 and the older database until a retry succeeds.
 
 Downloaded databases are excluded from Android backup and the APK.

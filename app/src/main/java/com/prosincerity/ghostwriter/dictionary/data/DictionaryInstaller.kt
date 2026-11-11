@@ -14,7 +14,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.coroutines.coroutineContext
 
-internal data class DictionaryAsset(val file: String, val sizeBytes: Long, val url: String)
+internal data class DictionaryAsset(val file: String, val sizeBytes: Long, val url: String, val sha256: String)
 internal data class DictionaryLanguage(val wiktionary: DictionaryAsset, val espeak: DictionaryAsset) {
     fun asset(source: DictionarySource): DictionaryAsset = when (source) {
         DictionarySource.WIKTIONARY -> wiktionary
@@ -28,7 +28,7 @@ internal enum class DictionarySource(val fileName: String, val pronunciationSour
     ESPEAK("espeak.db", PronunciationSource.ESPEAK_DATABASE),
 }
 
-/** The app pins release URLs; it never needs to query GitHub while editing. */
+/** Validated release metadata, loaded locally while editing. */
 internal class DictionaryRelease private constructor(
     val tag: String,
     val languages: Map<String, DictionaryLanguage>,
@@ -48,29 +48,43 @@ internal class DictionaryRelease private constructor(
             val source = json.getJSONObject("languages")
             val languages = listOf("en", "de", "tr").associateWith { code ->
                 val pair = source.getJSONObject(code)
-                DictionaryLanguage(asset(pair.getJSONObject("wiktionary")), asset(pair.getJSONObject("espeak")))
+                DictionaryLanguage(asset(pair.getJSONObject("wiktionary"), tag), asset(pair.getJSONObject("espeak"), tag))
             }
             return DictionaryRelease(tag, languages)
         }
 
-        private fun asset(json: JSONObject): DictionaryAsset {
+        private fun asset(json: JSONObject, tag: String): DictionaryAsset {
             val file = json.getString("file")
             val url = json.getString("url")
             require(file.matches(Regex("[A-Za-z0-9._-]+\\.db\\.gz")))
-            require(url.startsWith("https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/"))
-            require(url.endsWith("/$file"))
+            require(url == "https://github.com/Prosincerity/Ghostwriter-Dict/releases/download/$tag/$file")
             val sizeBytes = json.getLong("sizeBytes")
             require(sizeBytes > 0) { "Dictionary archive size must be positive" }
-            return DictionaryAsset(file, sizeBytes, url)
+            val sha256 = json.getString("sha256").lowercase()
+            require(sha256.matches(Regex("[a-f0-9]{64}"))) { "Invalid dictionary SHA-256" }
+            return DictionaryAsset(file, sizeBytes, url, sha256)
         }
     }
+
+    fun toJson(): JSONObject = JSONObject().put("tag", tag).put("languages", JSONObject().also { result ->
+        languages.forEach { (language, pair) ->
+            result.put(language, JSONObject().also { sources ->
+                DictionarySource.entries.forEach { source ->
+                    val asset = pair.asset(source)
+                    sources.put(source.name.lowercase(), JSONObject()
+                        .put("file", asset.file).put("sizeBytes", asset.sizeBytes)
+                        .put("url", asset.url).put("sha256", asset.sha256))
+                }
+            })
+        }
+    })
 }
 
 internal fun interface DictionaryArchiveSource {
     fun open(url: String): InputStream
 }
 
-private val releaseSource = DictionaryArchiveSource { address ->
+internal val releaseSource = DictionaryArchiveSource { address ->
     openDictionaryArchive(URL(address).openConnection() as HttpURLConnection)
 }
 
@@ -79,6 +93,7 @@ internal fun openDictionaryArchive(connection: HttpURLConnection): InputStream {
     connection.connectTimeout = 15_000
     connection.readTimeout = 30_000
     connection.instanceFollowRedirects = true
+    connection.setRequestProperty("User-Agent", "Ghostwriter")
     try {
         val responseCode = connection.responseCode
         if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -108,10 +123,15 @@ internal data class DictionaryDownloadProgress(
 internal class DictionaryInstaller(
     context: Context,
     private val source: DictionaryArchiveSource = releaseSource,
+    bundledRelease: DictionaryRelease = DictionaryRelease.load(context),
+    metadataSource: DictionaryArchiveSource = releaseSource,
 ) {
     internal val appContext = context.applicationContext
-    val release = DictionaryRelease.load(appContext)
     private val root = File(appContext.filesDir, "dictionaries")
+    private val catalog = DictionaryReleaseCatalog(File(root, "release.json"), bundledRelease, metadataSource)
+    val release: DictionaryRelease get() = catalog.release
+
+    suspend fun refreshRelease(): DictionaryRelease = catalog.refresh()
 
     fun installedDatabase(language: String, source: DictionarySource): File? {
         require(language in release.languages)
@@ -139,6 +159,7 @@ internal class DictionaryInstaller(
         dictionarySource: DictionarySource,
         onProgress: suspend (DictionaryDownloadProgress) -> Unit = {},
     ): File = withContext(Dispatchers.IO) {
+        val release = release
         require(language in release.languages)
         installedDatabase(language, dictionarySource)?.let { return@withContext it }
         val asset = release.languages.getValue(language).asset(dictionarySource)

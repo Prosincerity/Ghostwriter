@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.Random
+import java.security.MessageDigest
 import java.util.zip.GZIPOutputStream
 
 class DictionaryArchiveTest {
@@ -29,7 +30,7 @@ class DictionaryArchiveTest {
         val payload = randomPayload()
         val compressed = gzip(payload)
         val input = TrackedInput(compressed)
-        val asset = asset(compressed.size.toLong())
+        val asset = asset(compressed.size.toLong(), sha256(compressed))
         val progress = mutableListOf<DictionaryDownloadProgress>()
         val staging = temporary.newFile()
         var openedUrl: String? = null
@@ -50,13 +51,16 @@ class DictionaryArchiveTest {
     }
 
     @Test
-    fun progressIsClampedToDeclaredArchiveSize() {
-        val input = TrackedInput(gzip(randomPayload()))
+    fun incorrectArchiveSizeIsRejectedEvenWhenGzipIsValid() {
+        val bytes = gzip(randomPayload())
+        val input = TrackedInput(bytes)
         val progress = mutableListOf<DictionaryDownloadProgress>()
 
-        runBlocking {
-            unpackDictionaryArchive(DictionaryArchiveSource { input }, asset(1), temporary.newFile()) {
-                progress += it
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking {
+                unpackDictionaryArchive(DictionaryArchiveSource { input }, asset(1, sha256(bytes)), temporary.newFile()) {
+                    progress += it
+                }
             }
         }
 
@@ -138,7 +142,37 @@ class DictionaryArchiveTest {
         output.toByteArray()
     }
 
-    private fun asset(sizeBytes: Long) = DictionaryAsset("dictionary.db.gz", sizeBytes, "https://example.invalid/archive")
+    @Test
+    fun mismatchingHashIsRejectedEvenWhenSizeAndGzipAreValid() {
+        val bytes = gzip(byteArrayOf(1, 2, 3))
+        val input = TrackedInput(bytes)
+
+        val failure = assertThrows(IllegalStateException::class.java) {
+            runBlocking {
+                unpackDictionaryArchive(DictionaryArchiveSource { input }, asset(bytes.size.toLong()), temporary.newFile()) {}
+            }
+        }
+
+        assertTrue(failure.message!!.contains("SHA-256"))
+        assertTrue(input.closed)
+    }
+
+    @Test
+    fun verifiesTheWholeCompressedFileIncludingTrailingBytes() = runBlocking {
+        val bytes = gzip(byteArrayOf(1, 2, 3)) + byteArrayOf(4, 5, 6)
+        val staging = temporary.newFile()
+
+        unpackDictionaryArchive(DictionaryArchiveSource { ByteArrayInputStream(bytes) },
+            asset(bytes.size.toLong(), sha256(bytes)), staging) {}
+
+        assertArrayEquals(byteArrayOf(1, 2, 3), staging.readBytes())
+    }
+
+    private fun sha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-256")
+        .digest(bytes).joinToString("") { "%02x".format(it) }
+
+    private fun asset(sizeBytes: Long, sha256: String = "0".repeat(64)) =
+        DictionaryAsset("dictionary.db.gz", sizeBytes, "https://example.invalid/archive", sha256)
 
     private class TrackedInput(bytes: ByteArray) : ByteArrayInputStream(bytes) {
         var closed = false
