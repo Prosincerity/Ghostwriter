@@ -44,21 +44,21 @@ val combinedReport = registerCoverageReport("jacocoDebugCombinedReport", "combin
 tasks.register<Exec>("verifyAggregatedCoverage") {
     group = "verification"
     description = "Checks weighted module/variant minimums in the saved aggregated dashboard."
-    val reportFile = layout.buildDirectory.file("reports/aggregated_code_coverage_html_report/global/data/report-data.js")
+    val reportFile = layout.buildDirectory.file("reports/testAllSuitesWithDependencies/coverage-report/data/report-data.js")
     inputs.files(reportFile, policyFile, rootProject.file("scripts/coverage_policy.py"))
     commandLine("python3", rootProject.file("scripts/coverage_policy.py"),
         "--aggregated-report", reportFile.get().asFile)
-    mustRunAfter("createAggregatedCoverageReport")
+    mustRunAfter("testAllSuitesWithDependencies")
 }
 
-tasks.matching { it.name == "createAggregatedCoverageReport" }.configureEach {
+tasks.matching { it.name == "testAllSuitesWithDependencies" }.configureEach {
     finalizedBy("verifyAggregatedCoverage")
 }
 
 tasks.register<Exec>("verifyDebugCoverage") {
     group = "verification"
     description = "Runs both suites, emits separate and aggregated reports, and checks module minimums."
-    dependsOn(unitReport, androidReport, combinedReport, "createAggregatedCoverageReport")
+    dependsOn(unitReport, androidReport, combinedReport, "testAllSuitesWithDependencies")
     val reportFile = layout.buildDirectory.file("reports/jacoco/combined/coverage.xml")
     inputs.files(reportFile, policyFile, rootProject.file("scripts/coverage_policy.py"))
     commandLine("python3", rootProject.file("scripts/coverage_policy.py"),

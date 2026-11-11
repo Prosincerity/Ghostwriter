@@ -147,11 +147,16 @@ exclude handwritten logic. Justify threshold changes and new exclusions explicit
 | `jacocoDebugUnitReport` | `jacoco/unit/html/index.html` |
 | `jacocoDebugAndroidReport` | `jacoco/android/html/index.html` |
 | `jacocoDebugCombinedReport` | `jacoco/combined/html/index.html` |
-| `createAggregatedCoverageReport` | `aggregated_code_coverage_html_report/global/index.html` |
+| `testAllSuitesWithDependencies` | `testAllSuitesWithDependencies/coverage-report/index.html` |
 
 Each filtered report writes `coverage.xml` beside `html/`. The dashboard shows
 unfiltered data; policy verification applies exclusions. Device-dependent report
 tasks follow the device rules above and can run full suites. Do not use them per step.
+
+AGP 9.5 replaces `createAggregatedCoverageReport` with
+`testAllSuitesWithDependencies`. In an existing Android Studio **Aggregated
+coverage** run configuration, set the task to `:app:verifyDebugCoverage` to run
+both suites and check both coverage gates.
 
 On the selected device, run both suites and generate all gate reports:
 
@@ -159,7 +164,7 @@ On the selected device, run both suites and generate all gate reports:
 ./gradlew --offline :app:verifyDebugCoverage --console=plain -Dorg.gradle.logging.level=lifecycle
 python3 scripts/coverage_policy.py \
   --report app=app/build/reports/jacoco/combined/coverage.xml \
-  --aggregated-report app/build/reports/aggregated_code_coverage_html_report/global/data/report-data.js \
+  --aggregated-report app/build/reports/testAllSuitesWithDependencies/coverage-report/data/report-data.js \
   --base-ref origin/main
 ```
 
