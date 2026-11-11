@@ -161,7 +161,7 @@ both suites and check both coverage gates.
 On the selected device, run both suites and generate all gate reports:
 
 ```sh
-./gradlew --offline :app:verifyDebugCoverage --console=plain -Dorg.gradle.logging.level=lifecycle
+./gradlew --offline :app:verifyDebugCoverage
 python3 scripts/coverage_policy.py \
   --report app=app/build/reports/jacoco/combined/coverage.xml \
   --aggregated-report app/build/reports/testAllSuitesWithDependencies/coverage-report/data/report-data.js \
@@ -169,6 +169,6 @@ python3 scripts/coverage_policy.py \
 ```
 
 The Gradle gate checks module minimums; the Python invocation also checks the
-merge diff. Require both coverage success and Gradle's `BUILD SUCCESSFUL`.
+merge diff. Require both coverage success and a zero Gradle exit code.
 Saved reports are evidence only for the code and execution data that produced them.
 Fixture suites do not replace the [release runtime checks](RELEASING.md#device-checks).

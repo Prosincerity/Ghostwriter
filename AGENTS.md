@@ -42,6 +42,13 @@ Repository documentation takes precedence over assumptions about Android design.
 - Follow [Testing](documentation/TESTING.md) for verification scope, test design,
   coverage gates, and device access. Documentation-only changes require diff
   and command review, not Gradle or device execution.
+- Run `./gradlew` with the logging and console settings from the local
+  `gradle.properties`: `org.gradle.logging.level=quiet` and
+  `org.gradle.console=plain`. Routine runs should produce minimal output and
+  report only errors. Do not routinely append `--console=plain`,
+  `-Dorg.gradle.logging.level=lifecycle`, or other output overrides. Override
+  these settings only when explicitly needed for a specific diagnostic or
+  requested by the maintainer.
 - Wait for Gradle builds and tests to finish before inspecting results.
   Do not poll partial logs or stream intermediate output. Use completion
   notifications or long blocking continuations when required.
