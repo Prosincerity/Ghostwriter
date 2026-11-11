@@ -72,6 +72,20 @@ An unstressed single-vowel pronunciation is eligible; an unmarked multi-vowel
 pronunciation has no reliable rime. Candidates with shorter pronunciations
 are scanned first within each source.
 
+Phoneme-based modes (rhyme, word suffix, and each double-rhyme anchor) share
+minimum overlap rules. A single-vowel input of up to four phonemes permits short
+matches such as cat/hat. Other inputs require at least three phonemes in the
+matching span. Inputs with multiple vowels require at least two vowels in that
+span; stress and tone markers do not count as phonemes. A final-stress rime
+below these minimums produces no rhyme matches rather than using a weaker key.
+Pronunciation variants are evaluated independently.
+
+Word suffix uses the whole input through four phonemes. Longer inputs use
+suffixes of x-2, x-4, and so on, extending any tier that falls below the minimum
+overlap. For example, writing can match lighting but cannot match baiting or
+sing solely through their final vowel. Assonance already stops shorter tiers
+at two vowels for multi-vowel inputs. Word prefix remains a spelling search.
+
 Rhyme suppresses compounds that repeat the written and phonetic ending of the
 query or an earlier result. German compares dictionary-backed final components.
 Word-suffix mode retains compounds.
@@ -124,8 +138,11 @@ or exactly two words such as `bleibe Straße`. Compound input uses its modifier
 and final head as anchors; each surface component receives a pronunciation.
 
 Both anchors must match complete vowel sequences. Attested compounds precede
-constructed pairs. Within each group, lower total distance ranks first: exact
-rimes score zero, voicing variants one, and other consonant differences two.
+constructed pairs. Each anchor's input and candidate rime must also meet the
+shared phoneme and vowel minimums, including for loose matches. Two short
+monosyllable anchors can still form a double rhyme. Within each group, lower
+total distance ranks first: exact rimes score zero, voicing variants one, and
+other consonant differences two.
 Syllabic consonants, diphthong marks, and German `ɑ`/`a` are normalized.
 
 Attested compounds show their parts underneath; free pairs use `+`.

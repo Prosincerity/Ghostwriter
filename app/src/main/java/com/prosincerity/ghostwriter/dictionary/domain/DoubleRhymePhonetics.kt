@@ -12,7 +12,12 @@ internal object DoubleRhymePhonetics {
 
     /** Compile query pronunciations once and analyse each distinct candidate IPA once per anchor. */
     class Matcher(input: List<String>, private val parse: (String) -> IpaSearchKeys.Keys? = ::keys) {
-        private data class Profile(val vowels: String, val rime: List<String>?, val devoiced: List<String>?)
+        private data class Profile(
+            val vowels: String,
+            val rime: List<String>?,
+            val devoiced: List<String>?,
+            val minimum: IpaSearchKeys.MatchMinimum,
+        )
         private val profiles = mutableMapOf<String, Profile?>()
         private val queries = input.distinct().mapNotNull(::profile)
         private val vowelKeys = queries.mapTo(mutableSetOf()) { it.vowels }
@@ -21,7 +26,7 @@ internal object DoubleRhymePhonetics {
             if (!profiles.containsKey(ipa)) {
                 profiles[ipa] = parse(ipa)?.let { keys ->
                     val rime = IpaSearchKeys.rimeTokens(keys, "de")?.let(IpaSearchKeys::phonemeTokens)
-                    Profile(keys.assonance, rime, rime?.map(::devoice))
+                    Profile(keys.assonance, rime, rime?.map(::devoice), IpaSearchKeys.matchMinimum(keys, "de"))
                 }
             }
             return profiles[ipa]
@@ -35,6 +40,7 @@ internal object DoubleRhymePhonetics {
             var best: Int? = null
             for (query in queries) {
                 if (query.vowels != other.vowels || query.rime == null) continue
+                if (!query.minimum.accepts(query.rime, "de") || !query.minimum.accepts(other.rime, "de")) continue
                 if (query.rime == other.rime) return 0
                 val score = if (query.devoiced == other.devoiced) 1 else 2
                 if (best == null || score < best) best = score

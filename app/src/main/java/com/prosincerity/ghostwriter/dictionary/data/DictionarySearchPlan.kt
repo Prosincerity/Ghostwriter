@@ -15,10 +15,11 @@ internal data class DictionarySearchPlan(
             val prefixes = when (mode) {
                 DictionarySearchMode.RHYME -> keys.mapNotNull { key ->
                     val rime = IpaSearchKeys.rimeTokens(key, language) ?: return@mapNotNull null
+                    if (!IpaSearchKeys.matchMinimum(key, language).accepts(rime, language)) return@mapNotNull null
                     Prefix(rime.asReversed().joinToString(""), rime.size, rime)
                 }
                 DictionarySearchMode.WORD_SUFFIX -> keys.flatMap { key ->
-                    IpaSearchKeys.phonemeSuffixes(key).map { suffix ->
+                    IpaSearchKeys.phonemeSuffixes(key, language).map { suffix ->
                         Prefix(suffix.asReversed().joinToString(""), suffix.size, suffix)
                     }
                 }

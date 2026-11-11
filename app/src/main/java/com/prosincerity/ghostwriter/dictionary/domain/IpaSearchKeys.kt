@@ -119,13 +119,30 @@ internal object IpaSearchKeys {
         return tokens.drop(vowelIndex)
     }
 
-    /** Words of up to four phonemes use all phonemes; longer words use x-2, x-4, ... above two. */
-    fun phonemeSuffixes(keys: Keys): List<List<String>> {
+    /** Minimum overlap shared by phoneme-based modes, counted without stress or tone markers. */
+    data class MatchMinimum(val phonemes: Int, val vowels: Int) {
+        fun accepts(tokens: List<String>, language: String): Boolean =
+            phonemeTokens(tokens).size >= phonemes && vowelCount(tokens, language) >= vowels
+    }
+
+    fun matchMinimum(keys: Keys, language: String): MatchMinimum {
+        val vowelCount = vowelCount(keys.tokens, language)
+        val shortMonosyllable = phonemeTokens(keys).size <= 4 && vowelCount == 1
+        return MatchMinimum(if (shortMonosyllable) 1 else 3, vowelCount.coerceIn(1, 2))
+    }
+
+    /** Keep the existing x-2, x-4 tiers, extending tiny endings to the minimum useful overlap. */
+    fun phonemeSuffixes(keys: Keys, language: String): List<List<String>> {
         val phonemes = phonemeTokens(keys)
+        val minimum = matchMinimum(keys, language)
+        val minimumLength = (1..phonemes.size).firstOrNull {
+            minimum.accepts(phonemes.takeLast(it), language)
+        } ?: return emptyList()
         if (phonemes.size <= 4) {
             return listOf(phonemes)
         }
-        return (phonemes.size - 2 downTo 3 step 2).map(phonemes::takeLast)
+        return (phonemes.size - 2 downTo 3 step 2)
+            .map { phonemes.takeLast(maxOf(it, minimumLength)) }.distinct()
     }
 
     fun phonemeTokens(keys: Keys): List<String> = phonemeTokens(keys.tokens)
@@ -134,6 +151,9 @@ internal object IpaSearchKeys {
 
     fun hasVowel(tokens: List<String>, language: String): Boolean =
         language in vowels && tokens.any { isVowel(it, language) }
+
+    private fun vowelCount(tokens: List<String>, language: String): Int =
+        if (language in vowels) tokens.count { isVowel(it, language) } else 0
 
     /** Reversed-key prefixes for x-1, x-2, ... vowel suffix matches, down to two vowels. */
     fun assonanceFallbacks(keys: Keys): List<String> {

@@ -4,6 +4,26 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DoubleRhymePhoneticsTest {
+    @Test fun multiVowelAnchorsRejectSingleVowelCandidates() {
+        val matcher = DoubleRhymePhonetics.Matcher(listOf("/ˈbandə/"))
+
+        assertFalse(matcher.matchesVowels("/ˈban/"))
+        assertNull(matcher.distance("/ˈban/"))
+        assertEquals(2, matcher.distance("/ˈkapə/"))
+    }
+
+    @Test fun multiVowelAnchorsRejectTinyRimesDespiteCompleteVowelAgreement() {
+        assertNull(DoubleRhymePhonetics.distance(listOf("/ˈbandə/"), "/baˈtə/"))
+        assertNull(DoubleRhymePhonetics.distance(listOf("/ˈbandə/"), "/ˈaə/"))
+        assertNull(DoubleRhymePhonetics.distance(listOf("/baˈtə/"), "/kaˈtə/"))
+    }
+
+    @Test fun shortMonosyllableAnchorsStillMatchShortRhymes() {
+        assertEquals(0, DoubleRhymePhonetics.distance(listOf("/ˈkat/"), "/ˈhat/"))
+        assertEquals(0, DoubleRhymePhonetics.distance(listOf("/ˈa/"), "/ˈba/"))
+        assertNull(DoubleRhymePhonetics.distance(listOf("/ˈʃtʁampfst/"), "/ˈat/"))
+    }
+
     @Test fun matcherParsesEachPronunciationOnlyOnceIncludingInvalidInput() {
         val calls = mutableMapOf<String, Int>()
         val query = "/ˈbandə/"

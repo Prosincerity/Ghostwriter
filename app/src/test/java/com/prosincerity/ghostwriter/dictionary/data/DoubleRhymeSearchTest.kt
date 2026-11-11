@@ -6,6 +6,33 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DoubleRhymeSearchTest {
+    @Test fun rejectsWeakAnchorsInCompoundsAndFreePairsAcrossSources() = runBlocking {
+        val rows = listOf(
+            row("Bande", "/ˈbandə/"), row("Bote", "/ˈboːtə/"),
+            row("Kante", "/ˈkantə/"), row("Note", "/ˈnoːtə/"),
+            row("Kantenote", "/ˈkantəˌnoːtə/"),
+            row("Kurz", "/ˈban/"), row("Winzig", "/ˈaə/"), row("Endbetont", "/baˈtə/"),
+            row("Kurzote", "/ˈboː/"), row("Endbote", "/boːˈtə/"),
+            row("Winzignote", "/ˈaəˌnoːtə/"), row("Endbetontnote", "/baˈtəˌnoːtə/"),
+        )
+        val search = DictionarySearch(Fixture(rows, rows.reversed()))
+
+        val result = search.search("Bande Bote", "de", DictionarySearchMode.DOUBLE_RHYME)
+
+        assertEquals(listOf("Kantenote"), result.matches.map { it.word })
+        assertFalse(result.hasNext)
+        assertTrue(search.search("Bande Bote", "de", DictionarySearchMode.DOUBLE_RHYME, 1).matches.isEmpty())
+    }
+
+    @Test fun shortMonosyllableAnchorsKeepShortPairs() = runBlocking {
+        val rows = listOf(row("Kat", "/ˈkat/"), row("Hund", "/hʊnt/"),
+            row("Hat", "/ˈhat/"), row("Bunt", "/bʊnt/"))
+
+        val result = DictionarySearch(Fixture(rows)).search("Kat Hund", "de", DictionarySearchMode.DOUBLE_RHYME)
+
+        assertEquals(listOf("Hat + Bunt"), result.matches.map { it.word })
+    }
+
     @Test fun aFullCompoundPageWithLookaheadDoesNotScanStandaloneAlternatives() = runBlocking {
         val compounds = (0..69).flatMap { index ->
             val suffix = "${('a'.code + index / 26).toChar()}${('a'.code + index % 26).toChar()}"

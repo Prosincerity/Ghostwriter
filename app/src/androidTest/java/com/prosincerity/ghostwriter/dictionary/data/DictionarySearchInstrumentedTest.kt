@@ -18,6 +18,29 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class DictionarySearchInstrumentedTest {
     @Test
+    fun doubleRhymesRejectWeakAnchorsFromBothSources() = withDictionaryTestContext { context ->
+        val installer = DictionaryInstaller(context)
+        val version = File(context.filesDir, "dictionaries/de/${installer.release.tag}").apply { mkdirs() }
+        val rows = listOf(
+            germanRow("Bande", "/ˈbandə/"), germanRow("Bote", "/ˈboːtə/"),
+            germanRow("Kante", "/ˈkantə/"), germanRow("Note", "/ˈnoːtə/"),
+            germanRow("Kantenote", "/ˈkantəˌnoːtə/"),
+            germanRow("Kurz", "/ˈban/"), germanRow("Winzig", "/ˈaə/"),
+            germanRow("Endbetont", "/baˈtə/"), germanRow("Kurzote", "/ˈboː/"),
+            germanRow("Endbote", "/boːˈtə/"), germanRow("Winzignote", "/ˈaəˌnoːtə/"),
+            germanRow("Endbetontnote", "/baˈtəˌnoːtə/"),
+        )
+        database(File(version, "wiktionary.db"), rows)
+        database(File(version, "espeak.db"), rows)
+        val search = DictionarySearch(installer, DictionaryPronunciations(installer) { _, _ -> null })
+
+        val result = runBlocking { search.search("Bande Bote", "de", DictionarySearchMode.DOUBLE_RHYME) }
+
+        assertEquals(listOf("Kantenote"), result.matches.map { it.word })
+        assertFalse(result.hasNext)
+    }
+
+    @Test
     fun germanDoubleRhymesUseRealIndexesAndGenerateBoundHeadIpa() = withDictionaryTestContext { context ->
         val installer = DictionaryInstaller(context)
         val version = File(context.filesDir, "dictionaries/de/${installer.release.tag}").apply { mkdirs() }
@@ -115,7 +138,7 @@ class DictionarySearchInstrumentedTest {
         val suffixSecond = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX, 1) }
         assertEquals(60, suffixFirst.matches.size)
         assertTrue(suffixFirst.hasNext)
-        assertEquals(12, suffixSecond.matches.size)
+        assertEquals(11, suffixSecond.matches.size)
         assertFalse(suffixSecond.hasNext)
         assertFalse((suffixFirst.matches + suffixSecond.matches).any { it.word == "sing" })
         assertTrue(suffixFirst.matches.map { it.word }.toSet().intersect(
@@ -349,7 +372,7 @@ class DictionarySearchInstrumentedTest {
         val prefix = runBlocking { search.search("ba", "en", DictionarySearchMode.WORD_PREFIX) }
         assertEquals(listOf("baiting", "bat"), prefix.matches.map { it.word })
         val suffix = runBlocking { search.search("writing", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertEquals(listOf("lighting", "baiting"), suffix.matches.take(2).map { it.word })
+        assertEquals(listOf("lighting"), suffix.matches.map { it.word })
         assertFalse(suffix.matches.any { it.word == "sing" })
         assertFalse(suffix.matches.any { it.word == "writing" })
 
@@ -363,8 +386,7 @@ class DictionarySearchInstrumentedTest {
         val batSuffix = runBlocking { search.search("bat", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertTrue(batSuffix.matches.isEmpty())
         val outpointSuffix = runBlocking { search.search("outpoint", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertTrue(outpointSuffix.matches.any { it.word == "point" })
-        assertTrue(outpointSuffix.matches.any { it.word == "checkpoint" })
+        assertTrue(outpointSuffix.matches.isEmpty())
         val jointRhymes = runBlocking { search.search("joint", "en", DictionarySearchMode.RHYME) }
         assertTrue(jointRhymes.matches.any { it.word == "point" })
         assertFalse(jointRhymes.matches.any { it.word == "outpoint" })
@@ -399,7 +421,7 @@ class DictionarySearchInstrumentedTest {
         val batEnding = runBlocking { search.search("bat", "en", DictionarySearchMode.WORD_SUFFIX) }
         assertEquals(listOf("acrobat"), batEnding.matches.map { it.word })
         val actionEnding = runBlocking { search.search("action", "en", DictionarySearchMode.WORD_SUFFIX) }
-        assertEquals(listOf("information"), actionEnding.matches.map { it.word })
+        assertTrue(actionEnding.matches.isEmpty())
     }
 
     private fun withDictionaryFixture(block: (DictionaryInstaller) -> Unit) = withDictionaryTestContext { context ->
