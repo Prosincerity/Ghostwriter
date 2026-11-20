@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -55,7 +56,7 @@ import kotlinx.coroutines.runBlocking
 @RunWith(AndroidJUnit4::class)
 class DictionaryDownloadsTest {
     // Queue resumptions after IO instead of running recomposition on the IO worker.
-    @get:Rule val composeRule = createComposeRule(StandardTestDispatcher())
+    @get:Rule val composeRule = createComposeRule(ComposeUiTestConfig(effectContext = StandardTestDispatcher()))
 
     @Test
     fun removeFreesSelectedSourceAndAllowsItToBeDownloadedAgain() = withDictionaryTestContext { context ->

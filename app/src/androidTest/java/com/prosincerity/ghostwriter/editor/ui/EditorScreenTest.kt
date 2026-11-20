@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.test.ComposeUiTestConfig
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -342,7 +343,7 @@ class EditorScreenTest {
 
     @get:Rule
     // Queue resumptions after IO instead of running recomposition on the IO worker.
-    val composeRule = createComposeRule(StandardTestDispatcher())
+    val composeRule = createComposeRule(ComposeUiTestConfig(effectContext = StandardTestDispatcher()))
 
     private val feedback = mutableListOf<HapticFeedbackType>()
     private val haptics = object : HapticFeedback {
