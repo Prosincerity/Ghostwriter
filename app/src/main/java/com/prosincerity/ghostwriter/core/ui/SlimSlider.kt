@@ -6,6 +6,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -25,13 +26,15 @@ internal fun SlimSlider(
     accentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val sliderState = remember(valueRange) { SliderState(value = value, trackRange = valueRange) }
+    sliderState.value = value
     val colors = SliderDefaults.colors(
         thumbColor = accentColor,
         activeTrackColor = accentColor,
         inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
     )
     Slider(
-        value = value, onValueChange = onValueChange, valueRange = valueRange,
+        state = sliderState, onValueChange = onValueChange,
         enabled = enabled, interactionSource = interactionSource, colors = colors,
         thumb = {
             SliderDefaults.Thumb(

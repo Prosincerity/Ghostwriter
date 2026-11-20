@@ -14,7 +14,9 @@ android {
     namespace = "com.prosincerity.ghostwriter"
     ndkVersion = "30.0.16248370"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 1
+        }
     }
 
     defaultConfig {
